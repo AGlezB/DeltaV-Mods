@@ -5,17 +5,20 @@
 
 .DESCRIPTION
 	Assembles a Godot project in <WorkDir>\project from this folder's sources, the game's own scripts (copied from
-	the decompiled game: DockingArm.gd, Arm.gd, CabinLight.gd, Boot.gd, Tool.gd, gdunzip.gd) and a stub mineral
-	scene carrying the chunk radius read from the game's. Packages each mod into <WorkDir>\build\<Mod>.zip (as a
-	release zip), and runs every suite with its mods loaded from those zips, the way the game loads them: by an
-	autoload, before the engine loads the main scene. Logs: <WorkDir>\logs. Nothing in the repo, the game folder or
-	the decompiled game is changed.
+	the decompiled game: DockingArm.gd, Arm.gd, CabinLight.gd, Boot.gd, LIDAR.gd, PitchAdjustedAudio.gd,
+	HardwareLabel.gd, Tool.gd, gdunzip.gd), the game's audio buses (default_bus_layout.tres), a stub mineral scene carrying the chunk radius read
+	from the game's and stubs of the two scenes LIDAR.gd preloads. Packages each mod into <WorkDir>\build\<Mod>.zip
+	(as a release zip), and runs every suite with its mods loaded from those zips, the way the game loads them:
+	by an autoload, before the engine loads the main scene. Logs: <WorkDir>\logs. Nothing in the repo, the game folder
+	or the decompiled game is changed.
 
 	Suites and the mods they load by default:
 	- units, still, moving: ArmAltPullBehavior + ArmAltTargetSelection (unit checks; the ship standing still, 9
 	  cases; the ship held, cruising, turning, 16 cases). still and moving need ArmAltPullBehavior.
 	- dive: DiveDisableAdrenalineBooster.
 	- boot: BootSkipLogos. Runs with harness\boot.tscn, which holds the game's Boot.gd, as the main scene.
+	- lidar: LidarLouderPing.
+	- hud: HudHideLabels.
 
 .EXAMPLE
 	pwsh _tests\run.ps1
@@ -31,8 +34,8 @@
 #>
 [CmdletBinding()]
 param(
-	[ValidateSet('units', 'still', 'moving', 'dive', 'boot')]
-	[string[]] $Suite = @('units', 'still', 'moving', 'dive', 'boot'),
+	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud')]
+	[string[]] $Suite = @('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud'),
 	# Mod folders to load for every selected suite, in load order (the game's order: by path); @() = none.
 	# Default: each suite's own mods (see the description).
 	[string[]] $Mods,
@@ -119,7 +122,7 @@ function Get-Permutations([object[]] $Items)
 	}
 }
 
-# 1. The project: harness sources + the game's scripts + the stub mineral scene.
+# 1. The project: harness sources + the game's scripts and audio buses + the stub scenes.
 $project = Join-Path $work 'project'
 $build = Join-Path $work 'build'
 $logs = Join-Path $work 'logs'
@@ -130,7 +133,7 @@ foreach ($dir in $project, $build, $logs)
 }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'project.godot'), (Join-Path $PSScriptRoot 'main.tscn') -Destination $project
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'harness'), (Join-Path $PSScriptRoot 'suites') -Destination $project -Recurse
-foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'Tool.gd', 'vendor\gdunzip.gd')
+foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres')
 {
 	$target = Join-Path $project $file
 	New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
@@ -155,6 +158,16 @@ radius = $($circle.Groups[2].Value)
 [node name="Collision" type="CollisionShape2D" parent="."]
 shape = SubResource( 1 )
 "@
+# LIDAR.gd preloads these two; the lidar suite never draws, so bare nodes do.
+New-Item -ItemType Directory -Force (Join-Path $project 'hud\components') | Out-Null
+foreach ($scene in 'LidarRangeMarker', 'LidarShipMarker')
+{
+	Write-Utf8Lf (Join-Path $project "hud\components\$scene.tscn") @"
+[gd_scene format=2]
+
+[node name="$scene" type="Node2D"]
+"@
+}
 
 # 2. The mods: each suite's own (or -Mods), packaged once each, or the release zip given for it.
 $suiteMods = @{
@@ -163,6 +176,8 @@ $suiteMods = @{
 	moving = @('ArmAltPullBehavior', 'ArmAltTargetSelection')
 	dive = @('DiveDisableAdrenalineBooster')
 	boot = @('BootSkipLogos')
+	lidar = @('LidarLouderPing')
+	hud = @('HudHideLabels')
 }
 $given = @{}
 foreach ($z in $ModZip)
@@ -209,7 +224,9 @@ foreach ($name in $given.Keys)
 	if (-not $used.ContainsKey($name)) { throw "-ModZip: none of the selected suites loads $name" }
 }
 
-$benign = '_first != nullptr|ObjectDB instances leaked|Resources still in use|^\s+at: |^\s*$'
+# Leaks reported at exit. installScriptExtension's throwaway instance is never freed (as in the game's loader); with
+# LIDAR.gd it holds a PoolRealArray, hence the MemoryPool line.
+$benign = '_first != nullptr|ObjectDB instances leaked|Resources still in use|MemoryPool allocs in use at exit|^\s+at: |^\s*$'
 $failed = 0
 $index = 0
 foreach ($run in $runs)

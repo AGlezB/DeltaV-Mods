@@ -1,0 +1,23 @@
+[mod_information]
+
+name="HudHideLabels"
+id="aglezb.HudHideLabels"
+description="Hides the VISUAL FEED, LIDAR name, REMOTE SCANNER and CARGO HOLD titles on the dive HUD's screens."
+author="aglezb"
+
+[version]
+
+version_major=1
+version_minor=0
+version_bugfix=0
+
+[tags]
+
+group={
+"type": "string",
+"value": "Hud"
+}
+
+[manifest_definitions]
+
+manifest_version=2.2

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Mods for **ΔV: Rings of Saturn** (Godot 3 engine, GDScript). Each top-level folder not starting with `_` is one
 independent mod and ships as one zip. There is no build system; `_tests\` is a test harness for the two arm mods,
-DiveDisableAdrenalineBooster and BootSkipLogos (see *Testing*). The source is in git since 14 Nov 2026; `.gitignore` keeps out every zip, so the
+DiveDisableAdrenalineBooster, BootSkipLogos, LidarLouderPing and HudHideLabels (see *Testing*). The source is in git since 14 Nov 2026; `.gitignore` keeps out every zip, so the
 versions released before that exist only as release zips.
 
 ## Local paths
@@ -28,14 +28,15 @@ cites and update that constant.
 
 ## Testing
 
-`_tests\run.ps1` (PowerShell 7) tests ArmAltPullBehavior, ArmAltTargetSelection, DiveDisableAdrenalineBooster and
-BootSkipLogos in a headless Godot 3.6, in a few seconds. It assembles a Godot project in
-`<TempDir>\tests\project` from `_tests\`, the game's own `DockingArm.gd`, `Arm.gd`, `CabinLight.gd`, `Boot.gd`,
-`Tool.gd` and `gdunzip.gd` (copied from the decompiled source on every run, never committed: they are the game's
-code) and a stub mineral scene with the chunk radius read from the game's. It packages each mod as a release
-zip and loads the zips as `ModLoader.gd` does, at the same moment (`_tests\harness\loader.gd` is the `ModLoader`
-autoload, and loads in its `_init`; the autoloads keep the game's order), so the zip layout is tested too. Logs:
-`<TempDir>\tests\logs`.
+`_tests\run.ps1` (PowerShell 7) tests ArmAltPullBehavior, ArmAltTargetSelection, DiveDisableAdrenalineBooster,
+BootSkipLogos, LidarLouderPing and HudHideLabels in a headless Godot 3.6, in a few seconds. It assembles a Godot
+project in `<TempDir>\tests\project` from `_tests\`, the game's own `DockingArm.gd`, `Arm.gd`, `CabinLight.gd`,
+`Boot.gd`, `LIDAR.gd`, `PitchAdjustedAudio.gd`, `HardwareLabel.gd`, `Tool.gd`, `gdunzip.gd` and audio buses (`default_bus_layout.tres`) (copied from
+the decompiled source on every run, never committed: they are the game's code), a stub mineral scene with the chunk
+radius read from the game's, and bare stubs of the two scenes `LIDAR.gd` preloads. It packages each mod as a
+release zip and loads the zips as `ModLoader.gd` does, at the same moment (`_tests\harness\loader.gd` is the
+`ModLoader` autoload, and loads in its `_init`; the autoloads keep the game's order), so the zip layout is tested
+too. Logs: `<TempDir>\tests\logs`.
 
 ```powershell
 .\_tests\run.ps1                                               # every suite, each with its own mods in the game's order
@@ -49,8 +50,8 @@ Call it from a pwsh prompt or `pwsh -Command`: under `pwsh -File`, list argument
 not parsed as arrays. Exit code 0 = every run passed; a script error fails its run even if every check passed.
 
 The suites are ported from the claude.ai harness (DVModTestHarness 1.0.0; the original was deleted once ported),
-except `boot`. `units`, `still` and `moving` load the two arm mods by default, `dive` loads
-DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos.
+except `boot`, `lidar` and `hud`. `units`, `still` and `moving` load the two arm mods by default, `dive` loads
+DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos, `lidar` loads LidarLouderPing, `hud` loads HudHideLabels.
 
 - `units`: the claude.ai unit tests (`arm/main.gd`) nearly verbatim, on synthetic arms around the game's
   `DockingArm.gd`. TargetSelection: area geometry on turned, scaled and offset arms, reach, the strip, the weighted
@@ -75,13 +76,26 @@ DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos.
   `Boot.tscn`. Checks that this startup scene got the extension, runs the game's own start-up and then asks for the
   title screen; that the first launch (`Settings.firstBoot`) keeps the logos; and, as control, that the game's
   script alone does not leave them. A `Loader` stub records the calls instead of switching scenes.
+- `lidar` (`suites/lidar.gd`): hidden lidars built in code around the game's `LIDAR.gd`, with a `Bleep` on the
+  game's `PitchAdjustedAudio.gd`, under stubs of the HUD and the ship (`harness/lidar_reader.gd`, `lidar_ship.gd`).
+  Checks that the ping moves to the mod's bus, which sends to its own bus (`ShipBowels`, or `SFX`) with the gain;
+  that the bus is shared, not added twice, and that a lidar without a ping is left alone; and that the Tuning
+  switch still sets `doBleep`. The control checks (the ping stays on its bus) run on the game's own script.
+- `hud` (`suites/hud.gd`): trees built in code with the node paths and types of the OCP-209's HUD
+  (`hud/Display-OCP209.tscn`), the station's Upgrades screen and the `J` screen (`hud/OMS.tscn`), each scene root
+  marked by its `filename`; the HUD is added in one go under stubs of the ship and its Hud (the `lidar` suite's),
+  as `Hud.gd` `instance()` does. Checks that the four titles (and the feed sub-scene's) are hidden from the first
+  frame, also the LIDAR's, which the game's `HardwareLabel.gd` renames in its `_ready`; that they keep their space;
+  that other labels, a button with a title's text and the same titles outside a `Display-*.tscn` are drawn; and
+  that a title added later is hidden. The control checks (with `-Mods @()`): every title is drawn.
 - `_tests\harness\rig.gd` builds the arm's node tree as the game nests it, with the values in
   `_tests\harness\vp_data.gd`; each cites its scene file and line, so re-check them after a game update. The ship
   is a stub moved by hand (it takes the arm's impulses and torque; inertia from the hull); the rotors don't collide.
 - **Baseline** (PullBehavior 1.5.0, TargetSelection 1.2.1; both load orders give the same results): `units` 114
   checks with both mods (64 with PullBehavior alone, 61 with TargetSelection alone), `still` 9, `moving` 16, `dive` 8
-  (DiveDisableAdrenalineBooster 1.0.0), `boot` 5 (BootSkipLogos 1.0.0; 3 control checks with `-Mods @()`), all
-  passing; `-Matrix` gives 16 of 16 in every combination. Feeding, a chunk beside the hull is in after 4.4–4.8 s.
+  (DiveDisableAdrenalineBooster 1.0.0), `boot` 5 (BootSkipLogos 1.0.0; 3 control checks with `-Mods @()`), `lidar`
+  19 (LidarLouderPing 1.0.0; 3 control checks with `-Mods @()`), `hud` 13 (HudHideLabels 1.0.0; 3 control checks
+  with `-Mods @()`), all passing; `-Matrix` gives 16 of 16 in every combination. Feeding, a chunk beside the hull is in after 4.4–4.8 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.4.0 (the claude.ai results,
   case for case) took 5.9–6.3 s there, fails the 8 time limits, and `-Matrix` gave 16, 15, 16, 16 (feeding while
   turning with a 5 t chunk touched a rotor: the game's pull measures speed against the swinging dock slot);
@@ -106,15 +120,17 @@ the game with the mods.
   `project.godot` (`Settings`, `Loader`, `CurrentGame`, …) are still null at that point.
 - `modLoader.installScriptExtension(path)` loads the child script, makes **one throwaway instance** of it (its
   `_init` runs with no scene or ship), then `take_over_path`s the parent's path: everything loaded afterwards gets
-  the child. A second mod extending the same game script extends the first mod's extension.
+  the child. A second mod extending the same game script extends the first mod's extension. The throwaway instance
+  is never freed, and it is what keeps the child script alive: freed, the script goes too and later loads get the
+  game's script back (tried in the harness).
 - `Mod.manifest` is not read by the game's loader.
 - The loader also has `addTranslationsFromCSV`, `appendNodeInScene` and `saveScene` (unused so far).
 
 ## The two ways these mods hook in
 
 1. **Script extension**: ArmAltTargetSelection and ArmAltPullBehavior (`ships/modules/DockingArm.gd`),
-   DiveDisableAdrenalineBooster (`ships/CabinLight.gd`), BootSkipLogos (`Boot.gd`), CrewPerfectSort (`enceladus/HireableCrew.gd`,
-   `enceladus/CurrentCrewManagement.gd`).
+   DiveDisableAdrenalineBooster (`ships/CabinLight.gd`), BootSkipLogos (`Boot.gd`), LidarLouderPing (`hud/LIDAR.gd`),
+   CrewPerfectSort (`enceladus/HireableCrew.gd`, `enceladus/CurrentCrewManagement.gd`).
    `ModMain.gd` only calls `installScriptExtension`; the extension `extends "res://<game script>"`. Rules that let
    mods stack on the same script (header of `ArmAltTargetSelection/DockingArmTargetSelection.gd`):
    - Never call the parent's `_ready` or `_physics_process`. Godot 3 runs them at every level of the script chain
@@ -130,6 +146,9 @@ the game with the mods.
    after entering the tree) and re-checks `is_instance_valid`. Entries get re-added (the dealer does it every hour),
    so handlers must be idempotent (`is_connected` checks, cached copies). Shared resources such as the game's fonts
    are duplicated, never edited; rows are hidden with `self_modulate` alpha 0, not `visible`, which the game toggles.
+   HudHideLabels (the titles of the `hud/Display-*.tscn` screens) matches a Label's `text` instead of a script, and
+   acts at once without the yield: `node_added` runs before any `_ready` of the new subtree, so the LIDAR's title
+   (`hud/HardwareLabel.gd`, renamed in `_ready`) still holds its key.
 
 ## Cross-mod dependencies
 
@@ -145,8 +164,9 @@ the game with the mods.
 - Read values from the game (the ship's nodes and collision shapes, scene files, the arm's own properties), never
   from per-ship tables. A constant is only a fallback for when the game data can't be read (`CHUNK_RADIUS_FALLBACK`).
 - Find field names and game behaviour in the decompiled source; don't ship a logging-only build to discover them.
-- Every zip handed over gets a new version (0.0.x before the first 1.0). Going to 1.0 means: remove all
-  logging, simplify, set 1.0.0, and document the what and why of each feature in the README for other modders.
+- A new mod always starts at **0.1.0**. Every zip handed over gets a
+  new version. Going to 1.0 means: remove all logging, simplify, set 1.0.0, and document the what and why of
+  each feature in the README for other modders.
 - The wiki's manifest format is outdated; follow [DVTools](https://github.com/rwqfsfasxc100/DVTools).
 
 ## Salvage arm facts (for the ArmAlt mods)
