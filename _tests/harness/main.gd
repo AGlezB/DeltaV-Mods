@@ -1,8 +1,9 @@
 extends Node
 
-# Entry point (run by run.ps1): loads the mods from --mod-zips=<zip>;<zip> (in that order), runs the suite named
-# by --suite=<name> (suites/<name>.gd) and quits. Exit code: the number of failures (at most 99), 100 when the
-# harness itself fails. Optional: --ship-mass=<t>, --chunk-mass=<t>.
+# Entry point (run by run.ps1): runs the suite named by --suite=<name> (suites/<name>.gd) and quits. The mods given
+# by --mod-zips=<zip>;<zip> are already loaded by then (the ModLoader autoload, harness/loader.gd). Exit code: the
+# number of failures (at most 99), 100 when the harness itself fails. Optional: --ship-mass=<t>, --chunk-mass=<t>.
+# The root of main.tscn, or a child of the root of harness/boot.tscn for the boot suite.
 
 const VP = preload("res://harness/vp_data.gd")
 
@@ -13,10 +14,7 @@ func _ready():
 			var kv = a.substr(2).split("=", true, 1)
 			args[kv[0]] = kv[1]
 	seed(1)
-	var loader = load("res://harness/loader.gd").new()
-	loader.name = "Loader"
-	add_child(loader)
-	if not loader.loadMods(Array(args.get("mod-zips", "").split(";", false))):
+	if not ModLoader.ok:
 		get_tree().quit(100)
 		return
 	var path = "res://suites/%s.gd" % args.get("suite", "")
@@ -26,7 +24,7 @@ func _ready():
 		return
 	var suite = load(path).new()
 	suite.name = "Suite"
-	suite.mods = loader.loaded
+	suite.mods = ModLoader.loaded
 	suite.shipMass = float(args.get("ship-mass", VP.SHIP_MASS))
 	suite.chunkMass = float(args.get("chunk-mass", VP.CHUNK_MASS))
 	add_child(suite)

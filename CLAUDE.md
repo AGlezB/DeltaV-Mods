@@ -5,8 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## What this is
 
 Mods for **ΔV: Rings of Saturn** (Godot 3 engine, GDScript). Each top-level folder not starting with `_` is one
-independent mod and ships as one zip. There is no build system; `_tests\` is a test harness for the two arm mods
-and DiveDisableAdrenalineBooster (see *Testing*). The source is in git since 14 Nov 2026; `.gitignore` keeps out every zip, so the
+independent mod and ships as one zip. There is no build system; `_tests\` is a test harness for the two arm mods,
+DiveDisableAdrenalineBooster and BootSkipLogos (see *Testing*). The source is in git since 14 Nov 2026; `.gitignore` keeps out every zip, so the
 versions released before that exist only as release zips.
 
 ## Local paths
@@ -25,12 +25,14 @@ After a game update, decompile it again with GDRE Tools
 
 ## Testing
 
-`_tests\run.ps1` (PowerShell 7) tests ArmAltPullBehavior, ArmAltTargetSelection and DiveDisableAdrenalineBooster in
-a headless Godot 3.6, in a few seconds. It assembles a Godot project in `<TempDir>\tests\project` from
-`_tests\`, the game's own `DockingArm.gd`, `Arm.gd`, `CabinLight.gd`, `Tool.gd` and `gdunzip.gd` (copied from the
-decompiled source on every run, never committed: they are the game's code) and a stub mineral scene with the chunk
-radius read from the game's. It packages each mod as a release zip and loads the zips as `ModLoader.gd`
-does, so the zip layout is tested too. Logs: `<TempDir>\tests\logs`.
+`_tests\run.ps1` (PowerShell 7) tests ArmAltPullBehavior, ArmAltTargetSelection, DiveDisableAdrenalineBooster and
+BootSkipLogos in a headless Godot 3.6, in a few seconds. It assembles a Godot project in
+`<TempDir>\tests\project` from `_tests\`, the game's own `DockingArm.gd`, `Arm.gd`, `CabinLight.gd`, `Boot.gd`,
+`Tool.gd` and `gdunzip.gd` (copied from the decompiled source on every run, never committed: they are the game's
+code) and a stub mineral scene with the chunk radius read from the game's. It packages each mod as a release
+zip and loads the zips as `ModLoader.gd` does, at the same moment (`_tests\harness\loader.gd` is the `ModLoader`
+autoload, and loads in its `_init`; the autoloads keep the game's order), so the zip layout is tested too. Logs:
+`<TempDir>\tests\logs`.
 
 ```powershell
 .\_tests\run.ps1                                               # every suite, each with its own mods in the game's order
@@ -43,8 +45,9 @@ does, so the zip layout is tested too. Logs: `<TempDir>\tests\logs`.
 Call it from a pwsh prompt or `pwsh -Command`: under `pwsh -File`, list arguments such as `-Suite still,moving` are
 not parsed as arrays. Exit code 0 = every run passed; a script error fails its run even if every check passed.
 
-The suites are ported from the claude.ai harness (DVModTestHarness 1.0.0; the original was deleted once ported).
-`units`, `still` and `moving` load the two arm mods by default, `dive` loads DiveDisableAdrenalineBooster.
+The suites are ported from the claude.ai harness (DVModTestHarness 1.0.0; the original was deleted once ported),
+except `boot`. `units`, `still` and `moving` load the two arm mods by default, `dive` loads
+DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos.
 
 - `units`: the claude.ai unit tests (`arm/main.gd`) nearly verbatim, on synthetic arms around the game's
   `DockingArm.gd`. TargetSelection: area geometry on turned, scaled and offset arms, reach, the strip, the weighted
@@ -61,12 +64,18 @@ The suites are ported from the claude.ai harness (DVModTestHarness 1.0.0; the or
   ship's booster, other cabin-light systems and a light with no ship are untouched; switching it on sticks; it gives
   adrenaline only when enabled. The control check (the game alone starts it enabled) runs on the game's own script,
   the base of the extension, so it needs no separate run.
+- `boot` (`suites/boot.gd`): runs with `_tests\harness\boot.tscn` as the main scene (a scene path on Godot's
+  command line), whose root has the game's `Boot.gd`, so the engine loads it after the autoloads, as the game loads
+  `Boot.tscn`. Checks that this startup scene got the extension, runs the game's own start-up and then asks for the
+  title screen; that the first launch (`Settings.firstBoot`) keeps the logos; and, as control, that the game's
+  script alone does not leave them. A `Loader` stub records the calls instead of switching scenes.
 - `_tests\harness\rig.gd` builds the arm's node tree as the game nests it, with the values in
   `_tests\harness\vp_data.gd`; each cites its scene file and line, so re-check them after a game update. The ship
   is a stub moved by hand (it takes the arm's impulses and torque; inertia from the hull); the rotors don't collide.
 - **Baseline** (PullBehavior 1.4.0, TargetSelection 1.2.1; both load orders give the same results, which match the
   claude.ai ones case for case): `units` 114 checks with both mods (64 with PullBehavior alone, 61 with
-  TargetSelection alone), `still` 9, `moving` 16, `dive` 8 (DiveDisableAdrenalineBooster 1.0.0), all passing. `-Matrix` gives 16, 15, 16, 16 of 16: the miss is
+  TargetSelection alone), `still` 9, `moving` 16, `dive` 8 (DiveDisableAdrenalineBooster 1.0.0), `boot` 5 (BootSkipLogos 1.0.0; 3 control checks with
+  `-Mods @()`), all passing. `-Matrix` gives 16, 15, 16, 16 of 16: the miss is
   feeding while turning at 20°/s with a 5 t chunk, the limit in ArmAltPullBehavior's README. PullBehavior 1.3.1,
   which broke in the game, gives 0, 0, 12, 4 of 16. The miss's numbers differ from the claude.ai ones in the third
   decimal only because this ship also takes the arm's torque reaction, as the game's does (the claude.ai stub
@@ -84,6 +93,10 @@ the game with the mods.
   must match.
 - `ModMain` scripts run sorted by an optional `const MOD_PRIORITY` (default 0, ascending), then by path. Each is
   created with `new(modLoader)` and added as a child of the `ModLoader` node, so its `_ready` runs once the tree is up.
+- All of this happens in `ModLoader`'s `_init`, while the engine creates the autoloads and before it loads the main
+  scene (`Boot.tscn`). An extension installed from a `ModMain`'s `_init` therefore applies even to the boot scene
+  (BootSkipLogos relies on it; the `boot` suite checks it). Autoloads after `ModLoader` in the game's
+  `project.godot` (`Settings`, `Loader`, `CurrentGame`, …) are still null at that point.
 - `modLoader.installScriptExtension(path)` loads the child script, makes **one throwaway instance** of it (its
   `_init` runs with no scene or ship), then `take_over_path`s the parent's path: everything loaded afterwards gets
   the child. A second mod extending the same game script extends the first mod's extension.
@@ -93,7 +106,7 @@ the game with the mods.
 ## The two ways these mods hook in
 
 1. **Script extension**: ArmAltTargetSelection and ArmAltPullBehavior (`ships/modules/DockingArm.gd`),
-   DiveDisableAdrenalineBooster (`ships/CabinLight.gd`), CrewPerfectSort (`enceladus/HireableCrew.gd`,
+   DiveDisableAdrenalineBooster (`ships/CabinLight.gd`), BootSkipLogos (`Boot.gd`), CrewPerfectSort (`enceladus/HireableCrew.gd`,
    `enceladus/CurrentCrewManagement.gd`).
    `ModMain.gd` only calls `installScriptExtension`; the extension `extends "res://<game script>"`. Rules that let
    mods stack on the same script (header of `ArmAltTargetSelection/DockingArmTargetSelection.gd`):

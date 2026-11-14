@@ -1,11 +1,12 @@
 extends Node
 
-# Stub of the game's Settings autoload: what Arm.gd (cfg.display.lights, settingsChanged) and Tool.gd (getFps)
-# read.
+# Stub of the game's Settings autoload: what Arm.gd (cfg.display.lights, settingsChanged), Tool.gd (getFps) and
+# Boot.gd (firstBoot) read.
 
 signal settingsChanged
 
 var cfg = {"display": {"lights": 1.0}}
+var firstBoot = false # the game's is true only until user://settings.cfg exists (loadFromFile)
 
 # The game sets this when it applies its fps setting (Settings.gd, 16 at 60 fps). Not every engine build has it.
 func _ready():

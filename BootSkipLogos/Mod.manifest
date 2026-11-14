@@ -1,0 +1,23 @@
+[mod_information]
+
+name="BootSkipLogos"
+id="aglezb.BootSkipLogos"
+description="The game starts on the title screen (the save slots) without the 22-second logo sequence first, except on the very first launch."
+author="aglezb"
+
+[version]
+
+version_major=1
+version_minor=0
+version_bugfix=0
+
+[tags]
+
+group={
+"type": "string",
+"value": "Boot"
+}
+
+[manifest_definitions]
+
+manifest_version=2.2

@@ -5,15 +5,17 @@
 
 .DESCRIPTION
 	Assembles a Godot project in <WorkDir>\project from this folder's sources, the game's own scripts (copied from
-	the decompiled game: DockingArm.gd, Arm.gd, CabinLight.gd, Tool.gd, gdunzip.gd) and a stub mineral scene
-	carrying the chunk radius read from the game's. Packages each mod into <WorkDir>\build\<Mod>.zip (as a release
-	zip), and runs every suite with its mods loaded from those zips, the way the game loads them. Logs:
-	<WorkDir>\logs. Nothing in the repo, the game folder or the decompiled game is changed.
+	the decompiled game: DockingArm.gd, Arm.gd, CabinLight.gd, Boot.gd, Tool.gd, gdunzip.gd) and a stub mineral
+	scene carrying the chunk radius read from the game's. Packages each mod into <WorkDir>\build\<Mod>.zip (as a
+	release zip), and runs every suite with its mods loaded from those zips, the way the game loads them: by an
+	autoload, before the engine loads the main scene. Logs: <WorkDir>\logs. Nothing in the repo, the game folder or
+	the decompiled game is changed.
 
 	Suites and the mods they load by default:
 	- units, still, moving: ArmAltPullBehavior + ArmAltTargetSelection (unit checks; the ship standing still, 9
 	  cases; the ship held, cruising, turning, 16 cases). still and moving need ArmAltPullBehavior.
 	- dive: DiveDisableAdrenalineBooster.
+	- boot: BootSkipLogos. Runs with harness\boot.tscn, which holds the game's Boot.gd, as the main scene.
 
 .EXAMPLE
 	pwsh _tests\run.ps1
@@ -29,8 +31,8 @@
 #>
 [CmdletBinding()]
 param(
-	[ValidateSet('units', 'still', 'moving', 'dive')]
-	[string[]] $Suite = @('units', 'still', 'moving', 'dive'),
+	[ValidateSet('units', 'still', 'moving', 'dive', 'boot')]
+	[string[]] $Suite = @('units', 'still', 'moving', 'dive', 'boot'),
 	# Mod folders to load for every selected suite, in load order (the game's order: by path); @() = none.
 	# Default: each suite's own mods (see the description).
 	[string[]] $Mods,
@@ -109,7 +111,7 @@ foreach ($dir in $project, $build, $logs)
 }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'project.godot'), (Join-Path $PSScriptRoot 'main.tscn') -Destination $project
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'harness'), (Join-Path $PSScriptRoot 'suites') -Destination $project -Recurse
-foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Tool.gd', 'vendor\gdunzip.gd')
+foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'Tool.gd', 'vendor\gdunzip.gd')
 {
 	$target = Join-Path $project $file
 	New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
@@ -141,6 +143,7 @@ $suiteMods = @{
 	still = @('ArmAltPullBehavior', 'ArmAltTargetSelection')
 	moving = @('ArmAltPullBehavior', 'ArmAltTargetSelection')
 	dive = @('DiveDisableAdrenalineBooster')
+	boot = @('BootSkipLogos')
 }
 $given = @{}
 foreach ($z in $ModZip)
@@ -196,6 +199,8 @@ foreach ($run in $runs)
 	$names = ($run.Order | ForEach-Object { $_.Name }) -join ' + '
 	# --fixed-fps: physics steps of exactly 1/60 s, as fast as the machine allows; no rendering, no vsync wait.
 	$godotArgs = @('--path', $project, '--no-window', '--disable-render-loop', '--audio-driver', 'Dummy', '--fixed-fps', '60', "--suite=$($run.Suite)", "--mod-zips=$(($run.Order | ForEach-Object { $_.Zip }) -join ';')")
+	# A scene path on the command line replaces the project's main scene (main.tscn).
+	if ($run.Suite -eq 'boot') { $godotArgs += 'res://harness/boot.tscn' }
 	if ($run.Ship -gt 0) { $godotArgs += "--ship-mass=$($run.Ship)" }
 	if ($run.Chunk -gt 0) { $godotArgs += "--chunk-mass=$($run.Chunk)" }
 	$out = Join-Path $logs ('{0:D2}-{1}.out.txt' -f $index, $run.Suite)

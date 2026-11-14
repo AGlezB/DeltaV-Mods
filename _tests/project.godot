@@ -1,6 +1,7 @@
-; Test harness for the arm mods (see run.ps1). Not a mod, and not run from here: run.ps1 assembles the project in
-; <TempDir>\tests\project from these sources plus the game's own scripts (ships/, vendor/, Tool.gd, copied from
-; the decompiled game, never committed) and the mods packaged as zips.
+; Test harness for the mods (see run.ps1). Not a mod, and not run from here: run.ps1 assembles the project in
+; <TempDir>\tests\project from these sources plus the game's own scripts (ships/, vendor/, Tool.gd, Boot.gd,
+; copied from the decompiled game, never committed) and the mods packaged as zips.
+; The autoloads keep the game's order (its project.godot); ModLoader is the harness's own mod loader, loader.gd.
 
 config_version=4
 
@@ -11,11 +12,13 @@ run/main_scene="res://main.tscn"
 
 [autoload]
 
-Debug="*res://harness/stubs/Debug.gd"
-Settings="*res://harness/stubs/Settings.gd"
-CurrentGame="*res://harness/stubs/CurrentGame.gd"
-Namer="*res://harness/stubs/Namer.gd"
 Tool="*res://Tool.gd"
+Debug="*res://harness/stubs/Debug.gd"
+ModLoader="*res://harness/loader.gd"
+Settings="*res://harness/stubs/Settings.gd"
+Loader="*res://harness/stubs/Loader.gd"
+Namer="*res://harness/stubs/Namer.gd"
+CurrentGame="*res://harness/stubs/CurrentGame.gd"
 
 [display]
 

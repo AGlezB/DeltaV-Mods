@@ -1,11 +1,20 @@
 extends Node
 
-# Loads mods the way the game's ModLoader.gd does, but from the zips given on the command line, in the order
-# given (the game sorts by MOD_PRIORITY, then path; the suites can test any order): mounts each zip with
-# load_resource_pack, runs every modmain*.gd entry with new(self), and offers installScriptExtension exactly as
-# the game does.
+# The harness's ModLoader autoload. Loads mods the way the game's ModLoader.gd does, at the same moment: in _init,
+# while the engine creates the autoloads and before it loads the main scene. It mounts each zip with
+# load_resource_pack, runs every modmain*.gd entry with new(self), and offers installScriptExtension exactly as the
+# game does. The zips come from --mod-zips=<zip>;<zip>, in the order given (the game sorts by MOD_PRIORITY, then
+# path; the suites can test any order).
 
 var loaded = [] # the mods' folder names, in load order
+var ok = true # false when a mod could not be loaded; main.gd then quits with 100
+
+func _init():
+	var zips = []
+	for a in OS.get_cmdline_args():
+		if a.begins_with("--mod-zips="):
+			zips = Array(a.substr(len("--mod-zips=")).split(";", false))
+	ok = loadMods(zips)
 
 func loadMods(zips: Array) -> bool:
 	var mains = []
