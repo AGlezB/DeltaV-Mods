@@ -1,10 +1,10 @@
 extends "res://harness/suite.gd"
 
-# HudHideLabels: the titles VISUAL FEED, the LIDAR's name (the game's hud/HardwareLabel.gd), REMOTE SCANNER and CARGO
-# HOLD are hidden inside the HUD's res://hud/Display-*.tscn scenes, and nowhere else. The trees are built in code with
-# the node paths and types of the OCP-209's HUD (hud/Display-OCP209.tscn), of the station's Upgrades screen and of the
-# J screen (hud/OMS.tscn); `filename` marks each scene root, as PackedScene.instance() does. The control checks (no
-# mod loaded): every title is drawn.
+# HudHideLabels: the titles whose keys are in the mod's HIDDEN_KEYS (read from the mod, so any list passes) are hidden
+# inside the HUD's res://hud/Display-*.tscn scenes, and nowhere else; the others are drawn. The LIDAR's title is renamed
+# by the game's hud/HardwareLabel.gd. The trees are built in code with the node paths and types of the OCP-209's HUD
+# (hud/Display-OCP209.tscn), of the station's Upgrades screen and of the J screen (hud/OMS.tscn); `filename` marks each
+# scene root, as PackedScene.instance() does. The control checks (no mod loaded): every title is drawn.
 
 var ship
 var hud
@@ -39,6 +39,10 @@ func hidden(node) -> bool:
 
 func drawn(node) -> bool:
 	return node.self_modulate.a == 1.0 and node.visible
+
+# Hidden when `key` is one of the mod's `keys`, drawn when not.
+func follows(node, key, keys) -> bool:
+	return hidden(node) if key in keys else drawn(node)
 
 func run():
 	var mod = hasMod("HudHideLabels")
@@ -82,25 +86,25 @@ func run():
 	add_child(upgrades)
 	yield(get_tree(), "physics_frame")
 
-	var titles = [feed, feedLabel2, lidar, cargo, remote]
-	check("the LIDAR's title shows the ship's LIDAR (the game's HardwareLabel.gd)", lidar.text == "SYSTEM_LIDAR_DOPPLER", lidar.text)
+	# [title, the key it was created with (the LIDAR's is renamed in its _ready), name]
+	var titles = [[feed, "HUD_VISUAL_FEED", "VISUAL FEED"], [feedLabel2, "HUD_VISUAL_FEED", "VISUAL FEED of the feed sub-scene (EnceladusFeed.tscn)"],
+		[lidar, "HUD_LIDAR", "the LIDAR's title"], [cargo, "HUD_CARGO", "CARGO HOLD"], [remote, "HUD_REMOTE_SCAN", "REMOTE SCANNER"]]
+	check("the LIDAR's title shows the ship's LIDAR (the game's HardwareLabel.gd)", lidar.text == ship.getLidarType(), lidar.text)
 	if not mod:
 		var allDrawn = true
 		for t in titles:
-			allDrawn = allDrawn and drawn(t)
+			allDrawn = allDrawn and drawn(t[0])
 		check("control: without the mod every title on the HUD is drawn", allDrawn)
 		check("control: without the mod the station's titles are drawn", drawn(stationCargo) and drawn(stationRemote))
 		return
 
-	check("VISUAL FEED is hidden", hidden(feed))
-	check("VISUAL FEED of the feed sub-scene (EnceladusFeed.tscn) is hidden", hidden(feedLabel2))
-	check("the LIDAR's title is hidden", hidden(lidar))
-	check("CARGO HOLD is hidden", hidden(cargo))
-	check("REMOTE SCANNER is hidden", hidden(remote))
+	var keys = load("res://HudHideLabels/ModMain.gd").get_script_constant_map()["HIDDEN_KEYS"]
+	for t in titles:
+		check("%s: hidden if its key is in HIDDEN_KEYS, drawn if not" % t[2], follows(t[0], t[1], keys), "%s in HIDDEN_KEYS: %s" % [t[1], t[1] in keys])
 	var keepSpace = true
 	for t in titles:
-		keepSpace = keepSpace and t.visible
-	check("the hidden titles stay visible, so they keep their space", keepSpace)
+		keepSpace = keepSpace and t[0].visible
+	check("the titles stay visible, so the hidden ones keep their space", keepSpace)
 	check("another label on the HUD is drawn", drawn(other))
 	check("a button with a title's text is drawn", button.self_modulate.a == 1.0)
 	check("the J screen's CARGO HOLD (OMS.tscn) is drawn", drawn(omsCargo))
@@ -109,4 +113,4 @@ func run():
 
 	var late = title(radar, "HUD_REMOTE_SCAN", "Late")
 	yield(get_tree(), "physics_frame")
-	check("a title added later to a HUD already shown is hidden", hidden(late))
+	check("a title added later to a HUD already shown follows HIDDEN_KEYS too", follows(late, "HUD_REMOTE_SCAN", keys))

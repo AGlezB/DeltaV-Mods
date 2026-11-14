@@ -44,7 +44,7 @@ func geometry(label, ship_rot, arm_pos, arm_rot, arm_scale, extents, area_off, r
 	var R = 2.0 * arm_scale.x * 300
 	var base = arm.global_position
 	var axis = Vector2(0, -1).rotated(arm.global_rotation)
-	var centre = base + axis * _fe() * R
+	var centre = base + axis * _const(arm, "BUFFER_AREA_FACTOR") * R
 	var n = arm.AREA_SEGMENTS
 	var ok = cs.shape is ConvexPolygonShape2D and cs.shape.points.size() == n + 1
 	var why = ""
@@ -93,9 +93,14 @@ func run():
 	var ship = r[1]; var arm = r[2]
 	ship.cutscene = false
 	var sb = {}
-	# centre of the reach circle: (60, -65); the base line: y = -20; the strip: -89.9 < y < -20
-	var sp = {"S1": Vector2(60, -50), "S2": Vector2(200, -60), "N1": Vector2(300, -300), "N2": Vector2(-200, -400),
-		"Behind": Vector2(60, 10), "Far": Vector2(60, -560), "Side": Vector2(560, -60), "Edge": Vector2(60, -505)}
+	var bal = _const(arm, "BALANCE")
+	# the base line: y = -20; the strip: -89.9 < y < -20. The targets outside the strip are placed from the reach
+	# circle, whose centre BUFFER_AREA_FACTOR moves ahead of the arm base.
+	var reach = 2.0 * 0.75 * 300
+	var centre = Vector2(60, -20) + Vector2(0, -1) * _const(arm, "BUFFER_AREA_FACTOR", 0.0) * reach
+	var sp = {"S1": Vector2(60, -50), "S2": Vector2(200, -60), "N1": centre + Vector2(240, -235), "N2": centre + Vector2(-260, -335),
+		"Behind": Vector2(60, 10), "Far": centre + Vector2(0, - (reach + 45)), "Side": centre + Vector2(reach + 50, 0),
+		"Edge": centre + Vector2(0, - (reach - 10))}
 	for k in sp:
 		var b = RigidBody2D.new(); b.name = k; b.gravity_scale = 0; b.position = sp[k]
 		var c = CollisionShape2D.new(); c.shape = CircleShape2D.new(); c.shape.radius = 1; b.add_child(c)
@@ -105,51 +110,55 @@ func run():
 		var a2 = arm.areaDockArea
 		check("area: strip targets S1, S2 are in it", a2.overlaps_body(sb["S1"]) and a2.overlaps_body(sb["S2"]))
 		check("area: N1, N2 are in it", a2.overlaps_body(sb["N1"]) and a2.overlaps_body(sb["N2"]))
-		check("area: straight ahead at 440 from the circle centre (buffer area) is in it", a2.overlaps_body(sb["Edge"]))
+		check("area: straight ahead, just inside the reach circle (the buffer area, if any) is in it", a2.overlaps_body(sb["Edge"]))
 		check("area: behind the arm base is not", not a2.overlaps_body(sb["Behind"]))
-		check("area: beyond the reach ahead (495 from the circle centre) is not", not a2.overlaps_body(sb["Far"]))
+		check("area: straight ahead, just beyond the reach circle is not", not a2.overlaps_body(sb["Far"]))
 		check("area: beyond the reach at the side is not", not a2.overlaps_body(sb["Side"]))
 		check("strip: alone, a strip target is taken", _pick(arm, ["S1"]) == sb["S1"])
 		check("strip: any target outside the strip comes first (N1 over S1)", _pick(arm, ["S1", "N1"]) == sb["N1"])
 		check("strip: ... whatever the queue order", _pick(arm, ["N1", "S1"]) == sb["N1"])
-		check("strip: between strip targets, the better score wins (S1 over S2)", _pick(arm, ["S2", "S1"]) == sb["S1"])
-		check("strip: between other targets, the better score wins (N2 over N1)", _pick(arm, ["S1", "N1", "S2", "N2"]) == sb["N2"])
+		var sBest = _best(["S1", "S2"], sb, bal, ship.global_position)
+		check("strip: between strip targets, the better score wins (%s)" % sBest.name, _pick(arm, ["S2", "S1"]) == sBest)
+		var nBest = _best(["N1", "N2"], sb, bal, ship.global_position)
+		check("strip: between other targets, the better score wins (%s)" % nBest.name, _pick(arm, ["S1", "N1", "S2", "N2"]) == nBest)
 		check("strip: targets out of the area are not taken", _pick(arm, ["Behind", "Far", "Side"]) == null)
 	r[0].queue_free()
 	yield(get_tree(), "physics_frame")
 
-	# ---- selection (arm at (60, -20), reach 600: circle centre (60, -80), base line y = -20)
+	# ---- selection (arm at (60, -20), reach 600, the circle centre moved BUFFER_AREA_FACTOR of it ahead, base line
+	# y = -20). C and D lie straight ahead (x = 0), E and F 10 ahead of the base line, just beyond / inside the circle.
 	r = make_arm(0.0, Vector2(60, -20), 0.0, Vector2(1, 1), Vector2(1500, 1500), Vector2(0, 0))
 	add_child(r[0])
 	ship = r[1]; arm = r[2]
 	ship.cutscene = false
 	var bodies = {}
-	var mk = {"A": Vector2(5, -400), "B": Vector2(100, -200), "C": Vector2(0, -720), "D": Vector2(0, -640), "E": Vector2(700, -30), "F": Vector2(-500, -30), "G": Vector2(140, -150), "G2": Vector2(130, -60), "H": Vector2(0, 40), "I": Vector2(300, -25)}
+	reach = 600.0
+	centre = Vector2(60, -20) + Vector2(0, -1) * _const(arm, "BUFFER_AREA_FACTOR", 0.0) * reach
+	var sideDy = -30 - centre.y
+	var mk = {"A": Vector2(5, -400), "B": Vector2(100, -200), "C": Vector2(0, centre.y - sqrt(pow(reach + 43, 2) - 3600)),
+		"D": Vector2(0, centre.y - sqrt(pow(reach - 37, 2) - 3600)), "E": Vector2(60 + sqrt(pow(reach + 42, 2) - sideDy * sideDy), -30),
+		"F": Vector2(60 - sqrt(pow(reach - 38, 2) - sideDy * sideDy), -30), "G": Vector2(140, -150), "G2": Vector2(130, -60), "H": Vector2(0, 40), "I": Vector2(300, -25)}
 	for k in mk:
 		var b = RigidBody2D.new(); b.name = k; b.gravity_scale = 0; b.position = mk[k]
 		var c = CollisionShape2D.new(); c.shape = CircleShape2D.new(); c.shape.radius = 1; b.add_child(c)
 		r[0].add_child(b); bodies[k] = b
 	for i in range(3): yield(get_tree(), "physics_frame")
 	if hasT:
-		check("reach: D (front, 563 from the circle centre) is allowed", _pick(arm, ["D"]) == bodies["D"])
-		check("reach: C (front, 643) rejected", _pick(arm, ["C"]) == null)
-		check("reach: E (side, 642) rejected", _pick(arm, ["E"]) == null)
-		check("reach: F (side, 562) allowed", _pick(arm, ["F"]) == bodies["F"])
+		check("reach: D (straight ahead, just inside the circle) is allowed", _pick(arm, ["D"]) == bodies["D"])
+		check("reach: C (straight ahead, just beyond the circle) rejected", _pick(arm, ["C"]) == null)
+		check("reach: E (side, just beyond the circle) rejected", _pick(arm, ["E"]) == null)
+		check("reach: F (side, just inside the circle) allowed", _pick(arm, ["F"]) == bodies["F"])
 		check("reach: H (behind the arm base) rejected", _pick(arm, ["H"]) == null)
 		check("reach: I (just ahead of the arm base) allowed", _pick(arm, ["I"]) == bodies["I"])
-	var bal = _const(arm, "BALANCE")
 	var slotpos = ship.global_position # no grinder or excavator: the entry point is the ship centre
 	var sets = [["B", "A"], ["A", "B", "G2"], ["B", "G", "G2", "A"], ["G2", "B"], ["F", "H", "A", "B", "G"], ["C", "E", "B"], ["H", "I", "C"]]
 	for names in (sets if hasT else []):
-		var best = null; var bs = INF
+		var inArea = []
 		for n in names:
 			var p = bodies[n].global_position
-			if hasT and (p.distance_to(Vector2(60, -80)) > 600 or p.y > -20):
-				continue
-			var sc = bal * abs(p.x) + (1.0 - bal) * p.distance_to(slotpos)
-			if sc < bs:
-				bs = sc
-				best = bodies[n]
+			if p.distance_to(centre) <= reach and p.y <= -20:
+				inArea.append(n)
+		var best = _best(inArea, bodies, bal, slotpos)
 		check("weighted pick " + str(names) + " -> " + (best.name if best else "none"), _pick(arm, names) == best)
 	if hasT and bal == 1.0:
 		check("balance 1: centerline only", _pick(arm, ["B", "G2", "A"]) == bodies["A"])
@@ -207,7 +216,11 @@ func run():
 	var c2 = Node2D.new(); c2.position = Vector2(40, 0); ship.add_child(c2)
 	cm.grinder1node = c1; cm.grinder2node = c2
 	ship.systems = {"SYSTEM_GRINDER": {"name": "SYSTEM_GRINDER", "ref": cm}}
-	var ct = RigidBody2D.new(); ct.gravity_scale = 0; ct.position = Vector2(250, -30); r[0].add_child(ct)   # behind the red line, outside the corridor
+	# These rotors have no shapes: they reach 0 ahead of the tip (10, 0), so the red line is the clearance
+	# (CHUNK_RADIUS_CLEARENCE_FACTOR chunk radii) ahead of it; the corridor is 30 either side.
+	var ctClear = _const(arm, "CHUNK_RADIUS_CLEARENCE_FACTOR", 0.0) * VP.CHUNK_RADIUS
+	var ctStart = Vector2(250, -0.7 * ctClear)   # behind the red line, outside the corridor
+	var ct = RigidBody2D.new(); ct.gravity_scale = 0; ct.position = ctStart; r[0].add_child(ct)
 	yield(get_tree(), "physics_frame")
 	if hasP:
 		var cdt = 1.0 / 60.0
@@ -239,7 +252,6 @@ func run():
 		arm.queue.append(ct); arm.target = ct; arm.locked = true
 		for i in range(10): yield(get_tree(), "physics_frame")
 		check("cost: pulling forward (behind the red line) wears the arm", arm._outside() != null and ship.damage.get("wear", 0.0) > 0, str(ship.damage))
-		# (these rotors have no shapes: they reach 0 ahead of the tip (10, 0), the red line is 41.6 ahead, the corridor 30 either side)
 		var done = false
 		for i in range(900):
 			yield(get_tree(), "physics_frame")
@@ -248,9 +260,10 @@ func run():
 				done = true
 				break
 		check("pull: feeding, straight to the opening: the target gets into the corridor, slows down and is pulled in", done and abs(ct.global_position.x - 10.0) <= 30.0, str(ct.global_position))
-		# a block of hull right below the target: the line to the opening comes too close, so it goes straight forward first
-		var hb = CollisionShape2D.new(); hb.shape = RectangleShape2D.new(); hb.shape.extents = Vector2(20, 20); hb.position = Vector2(250, 10); ship.add_child(hb)
-		ct.linear_velocity = Vector2(); ct.position = Vector2(250, -30); arm._lastTarget = null
+		# a block of hull right below the target, its top edge half the clearance away: the line to the opening comes
+		# too close, so it goes straight forward first
+		var hb = CollisionShape2D.new(); hb.shape = RectangleShape2D.new(); hb.shape.extents = Vector2(20, 20); hb.position = ctStart + Vector2(0, 0.5 * ctClear + 20); ship.add_child(hb)
+		ct.linear_velocity = Vector2(); ct.position = ctStart; arm._lastTarget = null
 		yield(get_tree(), "physics_frame")
 		var o2 = arm._outside()
 		var wasForward = o2 != null and abs(o2.x) < 0.01
@@ -331,36 +344,40 @@ func run():
 	for i in range(5): yield(get_tree(), "physics_frame")
 	arm.target = pb
 	# [label, system, tip, target position, target velocity, expected, feeding, hull]
-	#  expected: 1 = the game's pull, 2 = pulled straight to the middle of the opening (on the red line, 53.6 ahead of the tip),
+	#  expected: 1 = the game's pull, 2 = pulled straight to the middle of the opening (on the red line),
 	#  0 = pulled straight forward to a chunk's radius past the red line, 3 = feeding in the corridor: pulled straight in
 	#  by the mod (1.5.0; it used to be left to the game), towards the corridor's middle line
 	#  feeding: the excavator command is held (the arm's `feed`)
-	#  hull: a block of hull 120 wide and 40 deep, 40 behind the tip
-	# rotors/claws are 60 apart (circle radius 12): opening 60 wide, they reach 12 ahead of the tip; the red line is 4.0 * 10.4048 = 41.6192 further ahead
+	#  hull: a block of hull 120 wide and 40 deep, 40 behind the tip (sides at x = +-60, from 40 to 80 behind the tip)
+	# rotors/claws are 60 apart (circle radius 12): opening 60 wide, they reach 12 ahead of the tip; the red line is the
+	# clearance (CHUNK_RADIUS_CLEARENCE_FACTOR chunk radii) further ahead. Targets near the red line or the hull are
+	# placed from those two distances.
 	# the arm is moved in line with the corridor, its dock slot 300 ahead of it (at (160, -320))
+	var clear = _const(arm, "CHUNK_RADIUS_CLEARENCE_FACTOR", 0.0) * VP.CHUNK_RADIUS
+	var redAhead = 12.0 + clear
 	var T = Vector2(160, 40)
 	arm.position = Vector2(160, -20); arm.areaDockSlot.position = Vector2(0, -300)
 	var cases = [
 		["feeding: in the corridor, ahead of the tip", "SYSTEM_GRINDER", T, T + Vector2(0, -40), Vector2(0, 0), 3, 1],
 		["feeding: in the corridor, 28 sideways", "SYSTEM_GRINDER", T, T + Vector2(28, -30), Vector2(0, 0), 3, 1],
-		["feeding: in the corridor, past the red line", "SYSTEM_GRINDER", T, T + Vector2(10, -150), Vector2(0, 0), 3, 1],
+		["feeding: in the corridor, past the red line", "SYSTEM_GRINDER", T, T + Vector2(10, - (redAhead + 96)), Vector2(0, 0), 3, 1],
 		["feeding: behind the tip, in line", "SYSTEM_GRINDER", T, T + Vector2(24, 20), Vector2(0, 0), 3, 1],
-		["feeding: 45 sideways, 30 ahead (behind the red line)", "SYSTEM_GRINDER", T, T + Vector2(45, -30), Vector2(0, 0), 2, 1],
+		["feeding: 45 sideways, halfway to the red line", "SYSTEM_GRINDER", T, T + Vector2(45, - redAhead / 2), Vector2(0, 0), 2, 1],
 		["feeding: 35 sideways, 45 ahead, to the left", "SYSTEM_GRINDER", T, T + Vector2(-35, -45), Vector2(0, 0), 2, 1],
 		["feeding: beside the tip, 99", "SYSTEM_GRINDER", T, T + Vector2(99, 0), Vector2(0, 0), 2, 1],
 		["feeding: behind the tip, off to the side", "SYSTEM_GRINDER", T, T + Vector2(60, 20), Vector2(0, 0), 2, 1],
-		["feeding: 65 sideways, 70 ahead (past the red line, outside the corridor)", "SYSTEM_GRINDER", T, T + Vector2(65, -70), Vector2(0, 0), 2, 1],
+		["feeding: 65 sideways, past the red line, outside the corridor", "SYSTEM_GRINDER", T, T + Vector2(65, - (redAhead + 16)), Vector2(0, 0), 2, 1],
 		["feeding: far to the left, 200 ahead", "SYSTEM_GRINDER", T, T + Vector2(-150, -200), Vector2(0, 0), 2, 1],
-		["feeding, hull: 45 sideways, 30 ahead (the line to the opening stays clear of the hull)", "SYSTEM_GRINDER", T, T + Vector2(45, -30), Vector2(0, 0), 2, 1, true],
-		["feeding, hull: right beside the hull (100 sideways, 50 behind the tip)", "SYSTEM_GRINDER", T, T + Vector2(100, 50), Vector2(0, 0), 0, 1, true],
-		["feeding, hull: behind and beside the hull, the line to the opening passes close to it", "SYSTEM_GRINDER", T, T + Vector2(120, 120), Vector2(0, 0), 0, 1, true],
+		["feeding, hull: 45 sideways, halfway to the red line (the line to the opening stays clear of the hull)", "SYSTEM_GRINDER", T, T + Vector2(45, - redAhead / 2), Vector2(0, 0), 2, 1, true],
+		["feeding, hull: right beside the hull (half the clearance out, 50 behind the tip)", "SYSTEM_GRINDER", T, T + Vector2(60 + 0.5 * clear, 50), Vector2(0, 0), 0, 1, true],
+		["feeding, hull: behind and beside the hull, the line to the opening passes close to it", "SYSTEM_GRINDER", T, T + Vector2(60 + 1.44 * clear, 80 + 0.96 * clear), Vector2(0, 0), 0, 1, true],
 		["feeding: excavator, 45 sideways, 40 ahead", "SYSTEM_EXCAVATOR", T, T + Vector2(45, -40), Vector2(0, 0), 2, 1],
 		["feeding: excavator, 28 sideways, 30 ahead (inside)", "SYSTEM_EXCAVATOR", T, T + Vector2(28, -30), Vector2(0, 0), 3, 1],
 		["not feeding: 45 sideways, 30 ahead (the line to the dock slot is clear)", "SYSTEM_GRINDER", T, T + Vector2(45, -30), Vector2(0, 0), 1, 0],
-		["not feeding: 65 sideways, 70 ahead (past the red line)", "SYSTEM_GRINDER", T, T + Vector2(65, -70), Vector2(0, 0), 1, 0],
+		["not feeding: 65 sideways, past the red line", "SYSTEM_GRINDER", T, T + Vector2(65, - (redAhead + 16)), Vector2(0, 0), 1, 0],
 		["not feeding: in the corridor", "SYSTEM_GRINDER", T, T + Vector2(0, -40), Vector2(0, 0), 1, 0],
-		["not feeding, hull: right beside the hull (the line to the dock slot touches it)", "SYSTEM_GRINDER", T, T + Vector2(100, 50), Vector2(0, 0), 0, 0, true],
-		["not feeding, hull: far out beside the hull (the line to the dock slot is clear)", "SYSTEM_GRINDER", T, T + Vector2(150, 30), Vector2(0, 0), 1, 0, true],
+		["not feeding, hull: right beside the hull (the line to the dock slot touches it)", "SYSTEM_GRINDER", T, T + Vector2(60 + 0.5 * clear, 50), Vector2(0, 0), 0, 0, true],
+		["not feeding, hull: far out beside the hull (the line to the dock slot is clear)", "SYSTEM_GRINDER", T, T + Vector2(60 + 2.2 * clear, 30), Vector2(0, 0), 1, 0, true],
 	]
 	var hull = CollisionShape2D.new(); hull.shape = RectangleShape2D.new(); hull.shape.extents = Vector2(60, 20); hull.position = T + Vector2(0, 60)
 	for c in cases:
@@ -390,8 +407,8 @@ func run():
 				var v = arm._pullTo(side, Vector2(), 1.0 / 60.0) if side != null else Vector2()
 				check("pull: " + c[0] + ": pulled straight in along the corridor, towards its middle line", side != null and arm._feedIn and arm.maxThrust == 0.0 and v.dot(- axis) > 0 and (abs(across) < 0.01 or v.dot(lat) * across < 0), "maxThrust %s impulse %s side %s" % [arm.maxThrust, v, side])
 			else:
-				# red line: the front of the rotors / claws (12) plus 4.0 chunk radii (53.6 ahead of the tip). Forward: to a chunk's radius past it.
-				var F = 12.0 + 4.0 * 10.4048
+				# red line: the front of the rotors / claws (12) plus the clearance. Forward: to a chunk's radius past it.
+				var F = redAhead
 				var ok = side != null
 				var v = Vector2()
 				var why = ""
@@ -401,7 +418,7 @@ func run():
 					var lat = axis.rotated(PI / 2)
 					ok = arm.maxThrust == 0.0 and v.dot(side) < 0
 					if c[5] == 0:
-						ok = ok and abs((dest - c[2]).dot(axis) - (F + 10.4048)) < 0.01 and abs((dest - pb.global_position).dot(lat)) < 0.01
+						ok = ok and abs((dest - c[2]).dot(axis) - (F + VP.CHUNK_RADIUS)) < 0.01 and abs((dest - pb.global_position).dot(lat)) < 0.01
 					else:
 						ok = ok and (dest - (c[2] + axis * F)).length() < 0.01
 					why = "dest ahead %.2f, across %.2f" % [(dest - c[2]).dot(axis), (dest - c[2]).dot(lat)]
@@ -425,8 +442,8 @@ func run():
 		yield(get_tree(), "physics_frame")
 		var en = arm._entry()
 		check("claws tip to tip: half opening 48 (nodes 65 apart, tips 17 inside them)", abs(en[1] - 48.0) < 0.01, str(en))
-		check("claws tip to tip: red line 127 ahead of the tip + 4 chunk radii", abs(en[2] - (127.0 + 4.0 * 10.4048)) < 0.01, str(en))
-		var RL = 127.0 + 4.0 * 10.4048
+		var RL = 127.0 + clear
+		check("claws tip to tip: red line 127 ahead of the tip + the clearance", abs(en[2] - RL) < 0.01, str(en))
 		arm.feed = 1.0
 		arm._lastTarget = null
 		# hysteresis at the corridor's edge, 100 ahead of the tip (behind the red line): opening edge 48; pulling it straight in starts there and goes on until 48 + a chunk radius (58.4)
@@ -466,7 +483,7 @@ func run():
 		pb.position = T + Vector2(0, - (RL + 5))
 		yield(get_tree(), "physics_frame")
 		yield(get_tree(), "idle_frame")
-		check("closed beak, feeding: ahead of the red line, the mod holds it a chunk's radius past the line (nothing can go in)", arm._outside() != null and abs(arm._outside().y - (10.4048 - 5)) < 0.01, str(arm._outside()))
+		check("closed beak, feeding: ahead of the red line, the mod holds it a chunk's radius past the line (nothing can go in)", arm._outside() != null and abs(arm._outside().y - (VP.CHUNK_RADIUS - 5)) < 0.01, str(arm._outside()))
 		arm.feed = 0.0
 		arm._lastTarget = null
 		yield(get_tree(), "physics_frame")
@@ -506,9 +523,11 @@ func run():
 	if hasT:
 		check("intake: arm facing forward -> the ship's centreline (P, straight ahead, over Q, off to the side)", _pick(arm, ["Q", "P"]) == ib["P"])
 		arm.rotation = PI / 2
-		check("intake: arm turned 90 deg (OCP) -> the line across the side opening (Q, level with it, over P)", _pick(arm, ["P", "Q"]) == ib["Q"])
+		# scored against the line across the side opening (Q is level with it, P straight ahead of the ship)
+		var across = _best(["P", "Q"], ib, bal, ship.global_position, Vector2(0, -1).rotated(arm.global_rotation))
+		check("intake: arm turned 90 deg (OCP) -> the centerline is the line across the side opening (%s)" % across.name, _pick(arm, ["P", "Q"]) == across)
 		arm.feedVelocity = Vector2(-140, -280)
-		check("intake: the tilted feedVelocity is not used", _pick(arm, ["P", "Q"]) == ib["Q"])
+		check("intake: the tilted feedVelocity is not used (%s)" % across.name, _pick(arm, ["P", "Q"]) == across)
 		arm.feedVelocity = Vector2()
 		arm.rotation = 0.0
 		check("entry: no grinder -> the ship's centre", arm._intakePosition() == ship.global_position)
@@ -564,19 +583,27 @@ func _pick(arm, names):
 func _shape(b):
 	var c = CollisionShape2D.new(); c.shape = CircleShape2D.new(); c.shape.radius = 10; b.add_child(c)
 
-func _const(obj, cname):
+# A mod's constant, read from the arm's script chain (`default` when no loaded mod declares it). The checks take every
+# value of the mods' constants from here, so another value of a constant still passes.
+func _const(obj, cname, default = null):
 	var sc = obj.get_script()
 	while sc != null:
 		var m = sc.get_script_constant_map()
 		if cname in m:
 			return m[cname]
 		sc = sc.get_base_script()
-	return 0.75
+	return default
 
-func _fe():
-	var f = File.new()
-	f.open("res://ArmAltTargetSelection/DockingArmTargetSelection.gd", File.READ)
-	var rx = RegEx.new()
-	rx.compile("const BUFFER_AREA_FACTOR = ([0-9.]+)")
-	var m = rx.search(f.get_as_text())
-	return float(m.get_string(1))
+# The body among `names` that TargetSelection should pick by its weighted score with BALANCE `bal`: the distance to
+# the intake centerline (through the entry point `entry` along `axis`, the direction the arm faces) and the distance
+# to `entry`. Null for none.
+func _best(names, bodies, bal, entry, axis = Vector2(0, -1)):
+	var best = null
+	var bs = INF
+	for n in names:
+		var p = bodies[n].global_position
+		var sc = bal * abs((p - entry).cross(axis)) + (1.0 - bal) * p.distance_to(entry)
+		if sc < bs:
+			bs = sc
+			best = bodies[n]
+	return best

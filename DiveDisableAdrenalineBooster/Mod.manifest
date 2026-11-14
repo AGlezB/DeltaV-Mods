@@ -2,7 +2,7 @@
 
 name="DiveDisableAdrenalineBooster"
 id="aglezb.DiveDisableAdrenalineBooster"
-description="The Adrenaline Booster of the player's ship starts every dive switched off (it can still be switched on in the Mechanic tab)."
+description="The Adrenaline Booster of the player's ship starts every dive switched off."
 author="aglezb"
 
 [version]

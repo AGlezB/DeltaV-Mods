@@ -2,7 +2,7 @@
 
 name="ArmAltPullBehavior"
 id="aglezb.ArmAltPullBehavior"
-description="Salvage arm pull behavior: brings the target in through the opening of the grinder or excavator: while feeding, a target outside the opening's corridor is pulled straight to the opening and stopped there, then pulled straight in along the corridor at the feed's speed; while not feeding, a target behind the red line goes forward first if its way to the dock slot passes too close to the hull. Ships without either are left to the game."
+description="Salvage arm pull behavior: brings the target in through the opening of the grinder or excavator, clear of the rotors, claws and hull."
 author="aglezb"
 
 [version]

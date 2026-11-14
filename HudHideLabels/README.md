@@ -1,22 +1,22 @@
 # HudHideLabels - ΔV: Rings of Saturn
 
-Version 1.0.0. Hides the titles on the screens of the dive HUD: VISUAL FEED, the name of the installed LIDAR,
-REMOTE SCANNER and CARGO HOLD.
+Version 1.0.0. Hides the titles on the screens of the dive HUD.
 
 ## What it does and why
-- **What:** on every HUD, the four titles are no longer drawn. Each HUD shows some or all of them, depending on its
-  layout. The title of the LIDAR is the LIDAR's own name, for example RUNASIMI HIGH-RESOLUTION LIDAR. The titles keep
-  their space, so the visual feed, the LIDAR display, the cargo readout and the remote scanner stay where they were.
+- **What:** on every HUD, the titles whose keys are in `HIDDEN_KEYS` are no longer drawn. Each HUD shows some or all
+  of them, depending on its layout. The title of the LIDAR is the LIDAR's own name, for example RUNASIMI
+  HIGH-RESOLUTION LIDAR. The titles keep their space, so what is under them stays where it was.
 - **What not:** the same titles on the station's Upgrades and Tuning screens and the cargo title in the geologist tab
   of the management screen (`J` by default) are left alone. So is everything else on the HUD.
 - **Why:** they take room on small screens and some cover the readings, such as the cargo hold's mass on the
   OCP-209's HUD.
 - To keep one of the titles, remove its key from `HIDDEN_KEYS` at the top of `HudHideLabels/ModMain.gd` inside the
-  zip: `HUD_VISUAL_FEED`, `HUD_LIDAR` (the LIDAR's name), `HUD_REMOTE_SCAN`, `HUD_CARGO`.
+  zip; the comment there says which key is which.
 
 ## For modders
 - No game script or scene is changed. `ModMain._ready` connects the scene tree's `node_added`, and hides every
-  `Label` whose `text` is one of `HIDDEN_KEYS` and which has a `res://hud/Display-*.tscn` scene among its ancestors.
+  `Label` whose `text` is one of `HIDDEN_KEYS` and which has a scene whose path starts with `DISPLAY_PREFIX` among
+  its ancestors.
   The tag `group = Hud` in `Mod.manifest` names the part of the game it touches.
 - Each HUD is one `Display-*.tscn` (K37, Prospector and its Metric and Bald variants, EIME, HAL, AT225, OCP209,
   Kitsune, CERF). The ship's Hud (`hud/Hud.tscn`, `Huds/SYSTEM_HUD_*`) holds them as instance placeholders, and
@@ -29,7 +29,7 @@ REMOTE SCANNER and CARGO HOLD.
 - The LIDAR's title has `hud/HardwareLabel.gd` with `slot = "lidar.type"`, whose `_ready` replaces `HUD_LIDAR` with
   the ship's `getConfigWithDefaults("lidar.type")`. Godot emits `node_added` for every node of a newly added subtree
   before any `_ready` runs, so the mod still finds the key, and the name is never drawn. That is why it acts at once,
-  unlike the other observer mods here, which wait 0.3 s for their entries to fill in.
+  unlike the other observer mods here, which wait a moment for their entries to fill in.
 - A title is hidden with `self_modulate` alpha 0, not `visible`, so it keeps its place in its container (on the
   OCP-209 the cargo title is a 50 px row above the cargo scanner) and the `modulate` some titles have still applies.
   No game script or animation sets these properties on the titles.

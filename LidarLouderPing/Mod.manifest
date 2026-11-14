@@ -2,7 +2,7 @@
 
 name="LidarLouderPing"
 id="aglezb.LidarLouderPing"
-description="The lidar's ping for sensor contacts plays louder (10 dB by default); the Tuning switch for it still works."
+description="The lidar's ping for sensor contacts plays louder."
 author="aglezb"
 
 [version]

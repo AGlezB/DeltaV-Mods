@@ -2,7 +2,7 @@
 
 name="BootSkipLogos"
 id="aglezb.BootSkipLogos"
-description="The game starts on the title screen (the save slots) without the 22-second logo sequence first, except on the very first launch."
+description="The game starts on the title screen without the logo sequence first."
 author="aglezb"
 
 [version]

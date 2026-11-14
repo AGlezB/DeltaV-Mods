@@ -51,7 +51,7 @@ On an excavator (the EIME) the opening is the gap between the claw tips.*
 - **While not feeding (why):** the game would only take the target out to the dock slot, so going to the
   opening first would be a wasted trip; it is enough to keep it clear of the hull on the way.
 - **Too close to the hull:** a circle with the radius the red line keeps clear (`CHUNK_RADIUS_CLEARENCE_FACTOR`
-  times a chunk's radius, 4.2 m) is swept along the straight line (to the opening, or to the dock slot) and
+  times a chunk's radius) is swept along the straight line (to the opening, or to the dock slot) and
   tested against the ship's own collision shapes, read from the ship itself, so every hull is covered. If it
   touches them anywhere, the start included, the target goes straight forward, at least to a chunk's radius past
   the red line and on until the line is clear. It goes at full speed (`maxVelocity`), without slowing down for that
@@ -62,7 +62,7 @@ On an excavator (the EIME) the opening is the gap between the claw tips.*
   several metres; harmless at the dock slot, not next to the rotors. The mod's pull aims at where the target will
   be a moment later instead: the time that makes the formula critically damped, worked out from the arm's own
   force (`thrust`, `targetMassThrust`, `easeDistance`) and how fast the mod asks the target to move: full speed
-  (`maxVelocity`) until `APPROACH_EASE_DISTANCE` (6 m) from the opening, then slowing down (the game's own pull
+  (`maxVelocity`) until `APPROACH_EASE_DISTANCE` from the opening, then slowing down (the game's own pull
   starts slowing down 10 m away, its `easeDistance`). The target slows down in time and stops at the opening. The
   force is never more than the game's own formula gives.
 - **Speed measured against the hull:** the game measures the target's speed against its dock slot, 33.75 m
@@ -74,11 +74,11 @@ On an excavator (the EIME) the opening is the gap between the claw tips.*
   tips, so it follows the beak as it opens and closes (0 when closed). It is measured every time, since the
   rotors and claws move.
 - **Red line:** the front of the rotors / claws (how far ahead of the middle of the two their farthest
-  points are), moved forward by `CHUNK_RADIUS_CLEARENCE_FACTOR` (4.0) times the largest mineral chunk's
+  points are), moved forward by `CHUNK_RADIUS_CLEARENCE_FACTOR` times the largest mineral chunk's
   radius, so the chunk itself, not only its centre, stays clear. The radius (10.4 units, 1.04 m) is read from
   the game's mineral scene: every mineral chunk has the same collision circle and none is scaled above 1.0.
-  If the scene cannot be read (the game changed), `CHUNK_RADIUS_FALLBACK` (10.4048, the value in the game
-  files) is used.
+  If the scene cannot be read (the game changed), `CHUNK_RADIUS_FALLBACK` (the radius in the game files when the
+  mod was made) is used.
 - **No flip-flopping:** a target being pulled in goes back to being taken to the opening only once it is a little
   (as above) outside the corridor; while not feeding, the mod takes a target from the game only once it is that
   far outside the corridor and a chunk's radius behind the red line.

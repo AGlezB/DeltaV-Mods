@@ -3,7 +3,7 @@
 Version 1.0.0. The lidar's ping for sensor contacts plays louder.
 
 ## What it does and why
-- **What:** the ping the lidar plays for each contact it finds is 10 dB louder, about twice as loud. This is the
+- **What:** the ping the lidar plays for each contact it finds is louder, by `LOUDER_PING_DB` decibels. This is the
   sound that the Tuning setting "Audible feedback for sensor contacts" switches on and off, and that switch still
   works. The ping in the lidar preview of the Tuning and Upgrades screens is louder too, so the change can be heard
   there.
@@ -15,8 +15,8 @@ Version 1.0.0. The lidar's ping for sensor contacts plays louder.
 - What pings is up to the game: anything a lidar ray hits whose lidar response is above 1, such as mineral chunks
   with any purity, ships, equipment and projectiles. Plain rock does not.
 - To change the gain, edit `LOUDER_PING_DB` at the top of `LidarLouderPing.gd` inside the zip. 0 leaves the game's
-  volume. The sound already peaks at full scale, so well above 10 the game's compressor on the main bus squashes the
-  pings and briefly lowers other sounds along with them.
+  volume. The sound already peaks at full scale, so with a large gain the game's compressor on the main bus squashes
+  the pings and briefly lowers other sounds along with them.
 
 ## For modders
 - Script extension of `res://hud/LIDAR.gd` (`installScriptExtension` in `ModMain.gd`), the lidar display of every

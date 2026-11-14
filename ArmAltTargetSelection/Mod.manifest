@@ -2,7 +2,7 @@
 
 name="ArmAltTargetSelection"
 id="aglezb.ArmAltTargetSelection"
-description="Salvage arm target selection: target area matching the arm's reach (the strip next to the arm base as a last resort), weighted intake-centerline/entry-point priority, reset when switched off and on."
+description="Salvage arm target selection: the arm targets only what it can reach, and prefers targets lined up with its intake."
 author="aglezb"
 
 [version]

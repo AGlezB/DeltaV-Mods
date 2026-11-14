@@ -7,7 +7,7 @@ need it (the two do not touch each other's code).
 ![What the mod changes, shown on the Eagle-Prospector-VP](TargetSelection.png)
 
 *Eagle-Prospector-VP, arm base at the white dot, ship facing right. Cyan: the area the mod gives the arm,
-a polygon of 16 straight segments (the dots). Orange: the buffer area, the part of it beyond the arm's
+a polygon of `AREA_SEGMENTS` straight segments (the dots). Orange: the buffer area, the part of it beyond the arm's
 45 m reach. Purple: the first 7 m ahead of the arm base, whose targets are taken only when there is nothing
 else. Dashed rectangle: the game's own area.*
 
@@ -15,23 +15,23 @@ else. Dashed rectangle: the game's own area.*
 
 ### 1. Target area
 - **What:** the shape of the arm's dock area (`areaDockArea`) is replaced with the area the arm can reach:
-  a circle with the arm's reach as its radius, its centre moved `BUFFER_AREA_FACTOR` (10%) of the reach in the
+  a circle with the arm's reach as its radius, its centre moved `BUFFER_AREA_FACTOR` times the reach in the
   direction the arm faces, cut by a line through the arm base across that direction. Since this is
   the area itself, the game's own checks follow it: only targets in it enter the arm's queue, and a target that
   leaves it is dropped.
 - **Buffer area:** the part of that area beyond the arm's reach from its base. Moving the circle puts it there:
-  4.5 m deep straight ahead of the arm for the AR-1500 (49.5 m from the arm base), thinning to nothing towards the
-  sides, where the reach stays about 45 m. It is part of the polygon, and its targets count like any other. On
+  `BUFFER_AREA_FACTOR` times the reach deep straight ahead of the arm, thinning to nothing towards the sides, where
+  the reach stays the arm's own. It is part of the polygon, and its targets count like any other. On
   most ships the arm faces forward; on the OCP-209, whose arm mounts are turned, it points out of the side
   opening.
 - **Why:** the game's area is much bigger than what the arm can reach (it extends 78.5 m ahead of the arm base,
   the arm reaches 45 m), so the arm would pick targets it cannot bring in. The buffer area is there because the intake
   is ahead of the arm base, so it can still take in a target a little past the arm's nominal reach straight
   ahead of the arm.
-- **Shape:** a polygon of `AREA_SEGMENTS` (16) straight segments along the arc, plus the line at the arm base.
-  A straight segment cuts slightly inside the circle, by up to 0.25 m in the middle of a segment for the
-  AR-1500. A mineral chunk's radius is about 1 m and a chunk counts as in the area as soon as its edge touches
-  it, so the difference only shows as a slightly later detection right at the edge.
+- **Shape:** a polygon of `AREA_SEGMENTS` straight segments along the arc, plus the line at the arm base.
+  A straight segment cuts slightly inside the circle, most in the middle of the segment. A mineral chunk's radius
+  is about 1 m and a chunk counts as in the area as soon as its edge touches it, so the difference only shows as a
+  slightly later detection right at the edge.
 - **Reach:** `2 * scale * arm scale * armLength`, read from the arm itself (45 m for the AR-1500; the game
   shows 10 units as 1 m).
 
@@ -45,7 +45,7 @@ else. Dashed rectangle: the game's own area.*
 ### 3. Target choice
 - **What:** the best target (among those outside the strip, see 2) has the lowest weighted sum of the
   distance to the intake's centerline and the distance to the entry point. `BALANCE` sets the weight: `1.0` = only the centerline counts,
-  `0.5` = both equal, `0.0` = only the entry point (default `0.75`). The game still keeps the
+  `0.5` = both equal, `0.0` = only the entry point. The game still keeps the
   current target until it is lost or taken in.
 - **Why:** the game takes the first target in its queue, the one that entered the area first, wherever it is.
   A target lined up with the intake is the easiest and quickest to bring in.

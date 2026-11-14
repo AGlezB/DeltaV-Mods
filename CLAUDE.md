@@ -78,23 +78,25 @@ DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos, `lidar` loads LidarLou
   script alone does not leave them. A `Loader` stub records the calls instead of switching scenes.
 - `lidar` (`suites/lidar.gd`): hidden lidars built in code around the game's `LIDAR.gd`, with a `Bleep` on the
   game's `PitchAdjustedAudio.gd`, under stubs of the HUD and the ship (`harness/lidar_reader.gd`, `lidar_ship.gd`).
-  Checks that the ping moves to the mod's bus, which sends to its own bus (`ShipBowels`, or `SFX`) with the gain;
-  that the bus is shared, not added twice, and that a lidar without a ping is left alone; and that the Tuning
-  switch still sets `doBleep`. The control checks (the ping stays on its bus) run on the game's own script.
+  Checks that the ping moves to the mod's bus, which sends to its own bus (`ShipBowels`, or `SFX`) with the gain
+  (with a gain of 0, that the ping stays where it was); that the bus is shared, not added twice, and that a lidar
+  without a ping is left alone; and that the Tuning switch still sets `doBleep`. The control checks (the ping stays
+  on its bus) run on the game's own script.
 - `hud` (`suites/hud.gd`): trees built in code with the node paths and types of the OCP-209's HUD
   (`hud/Display-OCP209.tscn`), the station's Upgrades screen and the `J` screen (`hud/OMS.tscn`), each scene root
   marked by its `filename`; the HUD is added in one go under stubs of the ship and its Hud (the `lidar` suite's),
-  as `Hud.gd` `instance()` does. Checks that the four titles (and the feed sub-scene's) are hidden from the first
-  frame, also the LIDAR's, which the game's `HardwareLabel.gd` renames in its `_ready`; that they keep their space;
-  that other labels, a button with a title's text and the same titles outside a `Display-*.tscn` are drawn; and
-  that a title added later is hidden. The control checks (with `-Mods @()`): every title is drawn.
+  as `Hud.gd` `instance()` does. Checks that each title on the HUD (and the feed sub-scene's) is hidden from the
+  first frame when its key is in the mod's `HIDDEN_KEYS` and drawn when not, also the LIDAR's, which the game's
+  `HardwareLabel.gd` renames in its `_ready`; that hidden titles keep their space; that other labels, a button with
+  a title's text and the same titles outside a `Display-*.tscn` are drawn; and that a title added later follows
+  `HIDDEN_KEYS` too. The control checks (with `-Mods @()`): every title is drawn.
 - `_tests\harness\rig.gd` builds the arm's node tree as the game nests it, with the values in
   `_tests\harness\vp_data.gd`; each cites its scene file and line, so re-check them after a game update. The ship
   is a stub moved by hand (it takes the arm's impulses and torque; inertia from the hull); the rotors don't collide.
 - **Baseline** (PullBehavior 1.5.0, TargetSelection 1.2.1; both load orders give the same results): `units` 114
   checks with both mods (64 with PullBehavior alone, 61 with TargetSelection alone), `still` 9, `moving` 16, `dive` 8
   (DiveDisableAdrenalineBooster 1.0.0), `boot` 5 (BootSkipLogos 1.0.0; 3 control checks with `-Mods @()`), `lidar`
-  19 (LidarLouderPing 1.0.0; 3 control checks with `-Mods @()`), `hud` 13 (HudHideLabels 1.0.0; 3 control checks
+  18 (LidarLouderPing 1.0.0; 3 control checks with `-Mods @()`), `hud` 13 (HudHideLabels 1.0.0; 3 control checks
   with `-Mods @()`), all passing; `-Matrix` gives 16 of 16 in every combination. Feeding, a chunk beside the hull is in after 4.4–4.8 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.4.0 (the claude.ai results,
   case for case) took 5.9–6.3 s there, fails the 8 time limits, and `-Matrix` gave 16, 15, 16, 16 (feeding while
@@ -185,14 +187,23 @@ the game with the mods.
 - Tabs; UTF-8 without BOM; LF line endings (`.gitattributes` enforces them whatever `core.autocrlf` says). Script
   extensions use the game's camelCase, the observer mods snake_case: match the file.
 - Tunables are commented `const`s at the top of the script, and the README names them as what a user may edit
-  inside the zip. When a tunable or the behaviour changes, update the README's text and figures too (e.g. the 45 m
-  reach and 4.5 m buffer in ArmAltTargetSelection; the game shows 10 world units as 1 m).
+  inside the zip.
+- **A constant's value exists in one place only: where the constant is declared**, so that
+  changing it touches nothing but that file. READMEs, manifests, this file, comments in other files and the tests
+  refer to a constant by its name and never repeat its value or a figure computed from it. The tests read constants
+  from the mod (`_const` in `units.gd`, the instance in `lidar.gd`, the script's constant map in `hud.gd`) and build
+  their layouts from them, so another value of a constant still passes. Base-game values a modder would have trouble
+  finding may be quoted (the arm's 45 m reach; the game shows 10 world units as 1 m). Known exception, to fix when
+  those mods next change: the legends of `ArmAltTargetSelection/TargetSelection.png` and of the two
+  `ArmAltPullBehavior` images still show values of their constants. When the behaviour changes, update the README's
+  text and figures too.
 - Game behaviour a mod relies on is cited with the game file and function it comes from (`Game.gd`
   `_respawn_ship`, `hud/SystemList.gd`). Check it in the decompiled source, not from memory.
 - **A version bump touches three places**: `[version]` in `Mod.manifest`, the `Version X.Y.Z.` line of the README,
   and the zip name in the README's *Install* step.
-- `Mod.manifest`: `id = "aglezb.<ModName>"`, `author = "aglezb"`, a one-line `description`, the `group` tag naming
-  the game script the mod touches, `manifest_version = 2.2`.
+- `Mod.manifest`: `id = "aglezb.<ModName>"`, `author = "aglezb"`, a one-line `description` that only says what the
+  mod does (the details go in the README), the `group` tag naming the game script the mod touches,
+  `manifest_version = 2.2`.
 - README layout: `# <ModName> - ΔV: Rings of Saturn`; version line and summary; *What it does and why* (What / Why
   bullets); *For modders* for script extensions (what is extended, overrides, new members, constants, how it was
   tested); *Install* (three steps, `--enable-mods`); the "Mods are unofficial … Keep a backup of your save." line;

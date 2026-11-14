@@ -2,10 +2,8 @@ extends "res://harness/suite.gd"
 
 # LidarLouderPing: the lidar's contact ping (the `Bleep` child of the game's hud/LIDAR.gd) plays through a bus of the
 # mod's, which sends to the ping's own bus with the mod's gain. The buses are the game's (its default_bus_layout.tres,
-# copied by run.ps1). The control checks run on the game's own script: with the mod loaded, that is the base of the
-# extension.
-
-const SUFFIX = " (LidarLouderPing)"
+# copied by run.ps1). The mod's gain and bus name are read from the mod, so any value of them passes. The control
+# checks run on the game's own script: with the mod loaded, that is the base of the extension.
 
 # A lidar as the game's HUD scenes nest it: the reader (HUD) above it, its `Bleep` below on `bus`. Hidden, so it
 # neither draws nor renders, which the ping does not need.
@@ -49,24 +47,31 @@ func run():
 	var k225 = make("SFX")
 	yield(get_tree(), "physics_frame")
 	var gain = ping.LOUDER_PING_DB
-	var own = AudioServer.get_bus_index("ShipBowels")
-	var louder = AudioServer.get_bus_index("ShipBowels" + SUFFIX)
+	var suffix = ping._LOUDER_PING_BUS_SUFFIX
 	check("the ping is still the game's Bleep", ping.soundBleep == ping.get_node("Bleep"))
-	check("the ping plays on the mod's bus", ping.soundBleep.bus == "ShipBowels" + SUFFIX, ping.soundBleep.bus)
-	check("the mod's bus sends to the ping's own bus", busSends("ShipBowels" + SUFFIX, "ShipBowels"))
-	check("the mod's bus comes after the bus it sends to", louder > own, "%d, %d" % [louder, own])
-	check("the gain is positive", gain > 0, gain)
-	check("the mod's bus has the gain", louder != -1 and is_equal_approx(AudioServer.get_bus_volume_db(louder), gain), AudioServer.get_bus_volume_db(louder))
-	check("the mod's bus has no effects", louder != -1 and AudioServer.get_bus_effect_count(louder) == 0)
-	check("a ping on SFX (K225, Kitsune) gets a bus sending to SFX", k225.soundBleep.bus == "SFX" + SUFFIX and busSends("SFX" + SUFFIX, "SFX"), k225.soundBleep.bus)
+	if gain == 0:
+		check("a gain of 0 leaves the ping on its own bus (ShipBowels, SFX)", ping.soundBleep.bus == "ShipBowels" and k225.soundBleep.bus == "SFX", "%s, %s" % [ping.soundBleep.bus, k225.soundBleep.bus])
+		check("a gain of 0 adds no bus", AudioServer.bus_count == buses, "%d, was %d" % [AudioServer.bus_count, buses])
+	else:
+		var own = AudioServer.get_bus_index("ShipBowels")
+		var louder = AudioServer.get_bus_index("ShipBowels" + suffix)
+		check("the ping plays on the mod's bus", ping.soundBleep.bus == "ShipBowels" + suffix, ping.soundBleep.bus)
+		check("the mod's bus sends to the ping's own bus", busSends("ShipBowels" + suffix, "ShipBowels"))
+		check("the mod's bus comes after the bus it sends to", louder > own, "%d, %d" % [louder, own])
+		check("the mod's bus has the gain", louder != -1 and is_equal_approx(AudioServer.get_bus_volume_db(louder), gain), "%s, gain %s" % [AudioServer.get_bus_volume_db(louder), gain])
+		check("the mod's bus has no effects", louder != -1 and AudioServer.get_bus_effect_count(louder) == 0)
+		check("a ping on SFX (K225, Kitsune) gets a bus sending to SFX", k225.soundBleep.bus == "SFX" + suffix and busSends("SFX" + suffix, "SFX"), k225.soundBleep.bus)
 
+	# where a ping on ShipBowels ends up: the mod's bus, or its own with a gain of 0
+	var expected = "ShipBowels" + (suffix if gain != 0 else "")
 	buses = AudioServer.bus_count
 	var second = make("ShipBowels")
-	var twice = make("ShipBowels" + SUFFIX)
+	var twice = make(expected) if gain != 0 else null
 	var silent = make("", null, false)
 	yield(get_tree(), "physics_frame")
-	check("a second lidar on ShipBowels shares the mod's bus", second.soundBleep.bus == "ShipBowels" + SUFFIX)
-	check("a ping already on the mod's bus is left there (no double gain)", twice.soundBleep.bus == "ShipBowels" + SUFFIX, twice.soundBleep.bus)
+	check("a second lidar on ShipBowels ends up on the same bus", second.soundBleep.bus == expected, second.soundBleep.bus)
+	if twice != null:
+		check("a ping already on the mod's bus is left there (no double gain)", twice.soundBleep.bus == expected, twice.soundBleep.bus)
 	check("a lidar without a ping does not fail", silent.soundBleep == null)
 	check("none of these adds a bus", AudioServer.bus_count == buses, "%d, was %d" % [AudioServer.bus_count, buses])
 

@@ -2,7 +2,7 @@
 
 name="HudHideLabels"
 id="aglezb.HudHideLabels"
-description="Hides the VISUAL FEED, LIDAR name, REMOTE SCANNER and CARGO HOLD titles on the dive HUD's screens."
+description="Hides the titles on the dive HUD's screens."
 author="aglezb"
 
 [version]
