@@ -48,7 +48,10 @@ param(
 	# Print Godot's whole output, not only failures.
 	[switch] $ShowOutput,
 	[string] $GodotPath = '<GodotDir>\Godot_v3.6-stable_win64.exe',
-	[string] $GameSource = '<TempDir>\gdre\Delta-V-1.91.61',
+	# The decompiled game to take the game's scripts from. Default: the newest Delta-V-<version> folder in
+	# $DecompiledRoot (by version number), so the tests always run against the latest game available.
+	[string] $GameSource = '',
+	[string] $DecompiledRoot = '<TempDir>\gdre',
 	[string] $WorkDir = '<TempDir>\tests',
 	[int] $TimeoutSeconds = 120
 )
@@ -61,6 +64,22 @@ $work = [IO.Path]::GetFullPath($WorkDir)
 if ($work.Length -le 3 -or $work.StartsWith($repo, [StringComparison]::OrdinalIgnoreCase))
 {
 	throw "WorkDir must be outside the repo and not a drive root: $work"
+}
+if (-not $GameSource)
+{
+	$latest = Get-ChildItem -LiteralPath $DecompiledRoot -Directory -ErrorAction SilentlyContinue |
+		Where-Object { $_.Name -match '^Delta-V-\d+(\.\d+){1,3}$' } |
+		Sort-Object { [version]($_.Name -replace '^Delta-V-', '') } -Descending |
+		Select-Object -First 1
+	if (-not $latest) { throw "No decompiled game (Delta-V-<version>) in $DecompiledRoot" }
+	$GameSource = $latest.FullName
+}
+$gameVersion = (Split-Path $GameSource -Leaf) -replace '^Delta-V-', ''
+Write-Host "Game scripts from $GameSource"
+$vpData = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'harness\vp_data.gd') -Raw
+if ($vpData -match 'const CHECKED_AGAINST = "([^"]+)"' -and $Matches[1] -ne $gameVersion)
+{
+	Write-Host "WARNING: harness\vp_data.gd was checked against game $($Matches[1]), not ${gameVersion}: re-check its values against the scenes it cites." -ForegroundColor Yellow
 }
 foreach ($path in $GodotPath, $GameSource)
 {

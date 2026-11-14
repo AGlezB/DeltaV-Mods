@@ -243,10 +243,11 @@ func run():
 		var done = false
 		for i in range(900):
 			yield(get_tree(), "physics_frame")
-			if arm._outside() == null:
+			arm._outside()
+			if arm._feedIn:
 				done = true
 				break
-		check("pull: feeding, straight to the opening: the target gets into the corridor, slows down and is handed back", done and abs(ct.global_position.x - 10.0) <= 30.0, str(ct.global_position))
+		check("pull: feeding, straight to the opening: the target gets into the corridor, slows down and is pulled in", done and abs(ct.global_position.x - 10.0) <= 30.0, str(ct.global_position))
 		# a block of hull right below the target: the line to the opening comes too close, so it goes straight forward first
 		var hb = CollisionShape2D.new(); hb.shape = RectangleShape2D.new(); hb.shape.extents = Vector2(20, 20); hb.position = Vector2(250, 10); ship.add_child(hb)
 		ct.linear_velocity = Vector2(); ct.position = Vector2(250, -30); arm._lastTarget = null
@@ -258,12 +259,12 @@ func run():
 		for i in range(900):
 			yield(get_tree(), "physics_frame")
 			var o3 = arm._outside()
-			if o3 != null and abs(o3.x) < 0.01 and abs(ct.global_position.x - 250.0) > 0.5:
-				straight = false
-			if o3 == null:
+			if arm._feedIn:
 				done = true
 				break
-		check("pull: feeding, too close to the hull: straight forward first, then to the opening and handed back in the corridor", wasForward and straight and done and abs(ct.global_position.x - 10.0) <= 30.0, str(ct.global_position))
+			if o3 != null and abs(o3.x) < 0.01 and abs(ct.global_position.x - 250.0) > 0.5:
+				straight = false
+		check("pull: feeding, too close to the hull: straight forward first, then to the opening and pulled in from the corridor", wasForward and straight and done and abs(ct.global_position.x - 10.0) <= 30.0, str(ct.global_position))
 		hb.queue_free()
 	r[0].queue_free()
 	yield(get_tree(), "physics_frame")
@@ -331,7 +332,8 @@ func run():
 	arm.target = pb
 	# [label, system, tip, target position, target velocity, expected, feeding, hull]
 	#  expected: 1 = the game's pull, 2 = pulled straight to the middle of the opening (on the red line, 53.6 ahead of the tip),
-	#  0 = pulled straight forward to a chunk's radius past the red line
+	#  0 = pulled straight forward to a chunk's radius past the red line, 3 = feeding in the corridor: pulled straight in
+	#  by the mod (1.5.0; it used to be left to the game), towards the corridor's middle line
 	#  feeding: the excavator command is held (the arm's `feed`)
 	#  hull: a block of hull 120 wide and 40 deep, 40 behind the tip
 	# rotors/claws are 60 apart (circle radius 12): opening 60 wide, they reach 12 ahead of the tip; the red line is 4.0 * 10.4048 = 41.6192 further ahead
@@ -339,10 +341,10 @@ func run():
 	var T = Vector2(160, 40)
 	arm.position = Vector2(160, -20); arm.areaDockSlot.position = Vector2(0, -300)
 	var cases = [
-		["feeding: in the corridor, ahead of the tip", "SYSTEM_GRINDER", T, T + Vector2(0, -40), Vector2(0, 0), 1, 1],
-		["feeding: in the corridor, 28 sideways", "SYSTEM_GRINDER", T, T + Vector2(28, -30), Vector2(0, 0), 1, 1],
-		["feeding: in the corridor, past the red line", "SYSTEM_GRINDER", T, T + Vector2(10, -150), Vector2(0, 0), 1, 1],
-		["feeding: behind the tip, in line", "SYSTEM_GRINDER", T, T + Vector2(24, 20), Vector2(0, 0), 1, 1],
+		["feeding: in the corridor, ahead of the tip", "SYSTEM_GRINDER", T, T + Vector2(0, -40), Vector2(0, 0), 3, 1],
+		["feeding: in the corridor, 28 sideways", "SYSTEM_GRINDER", T, T + Vector2(28, -30), Vector2(0, 0), 3, 1],
+		["feeding: in the corridor, past the red line", "SYSTEM_GRINDER", T, T + Vector2(10, -150), Vector2(0, 0), 3, 1],
+		["feeding: behind the tip, in line", "SYSTEM_GRINDER", T, T + Vector2(24, 20), Vector2(0, 0), 3, 1],
 		["feeding: 45 sideways, 30 ahead (behind the red line)", "SYSTEM_GRINDER", T, T + Vector2(45, -30), Vector2(0, 0), 2, 1],
 		["feeding: 35 sideways, 45 ahead, to the left", "SYSTEM_GRINDER", T, T + Vector2(-35, -45), Vector2(0, 0), 2, 1],
 		["feeding: beside the tip, 99", "SYSTEM_GRINDER", T, T + Vector2(99, 0), Vector2(0, 0), 2, 1],
@@ -353,7 +355,7 @@ func run():
 		["feeding, hull: right beside the hull (100 sideways, 50 behind the tip)", "SYSTEM_GRINDER", T, T + Vector2(100, 50), Vector2(0, 0), 0, 1, true],
 		["feeding, hull: behind and beside the hull, the line to the opening passes close to it", "SYSTEM_GRINDER", T, T + Vector2(120, 120), Vector2(0, 0), 0, 1, true],
 		["feeding: excavator, 45 sideways, 40 ahead", "SYSTEM_EXCAVATOR", T, T + Vector2(45, -40), Vector2(0, 0), 2, 1],
-		["feeding: excavator, 28 sideways, 30 ahead (inside)", "SYSTEM_EXCAVATOR", T, T + Vector2(28, -30), Vector2(0, 0), 1, 1],
+		["feeding: excavator, 28 sideways, 30 ahead (inside)", "SYSTEM_EXCAVATOR", T, T + Vector2(28, -30), Vector2(0, 0), 3, 1],
 		["not feeding: 45 sideways, 30 ahead (the line to the dock slot is clear)", "SYSTEM_GRINDER", T, T + Vector2(45, -30), Vector2(0, 0), 1, 0],
 		["not feeding: 65 sideways, 70 ahead (past the red line)", "SYSTEM_GRINDER", T, T + Vector2(65, -70), Vector2(0, 0), 1, 0],
 		["not feeding: in the corridor", "SYSTEM_GRINDER", T, T + Vector2(0, -40), Vector2(0, 0), 1, 0],
@@ -382,6 +384,11 @@ func run():
 			var axis = Vector2(0, -1).rotated(arm.global_rotation)
 			if c[5] == 1:
 				check("pull: " + c[0] + ": original pull", side == null and arm.maxThrust == arm._maxThrust and arm._maxThrust > 0, "maxThrust %s side %s" % [arm.maxThrust, side])
+			elif c[5] == 3:
+				var lat = axis.rotated(PI / 2)
+				var across = (pb.global_position - c[2]).dot(lat)
+				var v = arm._pullTo(side, Vector2(), 1.0 / 60.0) if side != null else Vector2()
+				check("pull: " + c[0] + ": pulled straight in along the corridor, towards its middle line", side != null and arm._feedIn and arm.maxThrust == 0.0 and v.dot(- axis) > 0 and (abs(across) < 0.01 or v.dot(lat) * across < 0), "maxThrust %s impulse %s side %s" % [arm.maxThrust, v, side])
 			else:
 				# red line: the front of the rotors / claws (12) plus 4.0 chunk radii (53.6 ahead of the tip). Forward: to a chunk's radius past it.
 				var F = 12.0 + 4.0 * 10.4048
@@ -422,13 +429,14 @@ func run():
 		var RL = 127.0 + 4.0 * 10.4048
 		arm.feed = 1.0
 		arm._lastTarget = null
-		# hysteresis at the corridor's edge, 100 ahead of the tip (behind the red line): opening edge 48; the game's pull takes over there and keeps it until 48 + a chunk radius (58.4)
+		# hysteresis at the corridor's edge, 100 ahead of the tip (behind the red line): opening edge 48; pulling it straight in starts there and goes on until 48 + a chunk radius (58.4)
 		var steps = [[0, true], [40, true], [55, true], [62, false], [55, false], [45, true]]
 		for st in steps:
 			pb.linear_velocity = Vector2(); pb.position = T + Vector2(st[0], -100)
 			yield(get_tree(), "physics_frame")
 			yield(get_tree(), "idle_frame")
-			check("hysteresis: %s sideways, behind the red line -> %s" % [st[0], "the game's pull" if st[1] else "pulled forward"], (arm._outside() == null) == st[1], str(arm._outside()))
+			var hs = arm._outside()
+			check("hysteresis: %s sideways, behind the red line -> %s" % [st[0], "pulled straight in" if st[1] else "pulled forward"], hs != null and arm._feedIn == st[1], "%s, pulled in %s" % [hs, arm._feedIn])
 		# while feeding, crossing the red line outside the corridor does not hand it back (the feed would push it behind the line again)
 		var fsteps = [[-30, false], [1, false], [40, false], [-5, false]]
 		for st in fsteps:
@@ -444,9 +452,10 @@ func run():
 		pb.linear_velocity = Vector2()
 		for i in range(30):
 			yield(get_tree(), "physics_frame")
-			if arm._outside() == null:
+			arm._outside()
+			if arm._feedIn:
 				break
-		check("feeding: in the corridor, slowed down -> handed back", arm._outside() == null, str(pb.position))
+		check("feeding: in the corridor, slowed down -> pulled straight in", arm._outside() != null and arm._feedIn, str(pb.position))
 		# a closed beak: nothing fits, so there is no corridor
 		w1.position = T - Vector2(17, 0); w2.position = T + Vector2(17, 0)
 		pb.position = T + Vector2(0, -100)

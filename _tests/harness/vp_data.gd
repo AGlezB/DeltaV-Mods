@@ -3,6 +3,10 @@ extends Reference
 # The Eagle-Prospector-VP with an AR-1500 salvage arm and its grinder, as the game builds it (decompiled 1.91.61).
 # Every value cites the scene line it comes from; re-check them after a game update. Units: 10 = 1 m.
 
+# The decompiled game version these values were checked against; run.ps1 warns when it tests against another one.
+# Update it after re-checking the values against a newer game.
+const CHECKED_AGAINST = "1.91.61"
+
 # ships/Eagle-Prospector-VP.tscn:28, the hull (`Collider`). The MineralProcessingUnit polygons depend on the cargo
 # configuration and are left out, as in the claude.ai tests.
 const HULL = [

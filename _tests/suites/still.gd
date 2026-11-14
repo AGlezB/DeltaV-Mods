@@ -13,8 +13,10 @@ func run():
 	fixedShip = true
 	dockLimit = 40.0
 	forwardTolerance = 0.01
-	for start in [["close beside the hull", Vector2(58, -130)], ["beside the hull, behind the red line", Vector2(120, -150)], ["near the corridor, behind the red line", Vector2(45, -215)], ["ahead of the red line, off to the side", Vector2(150, -330)], ["far ahead, off to the side", Vector2(-120, -480)]]:
-		yield(pull(start[0] + ", ship still", start[1], 1.0, 720, "in"), "completed")
+	# Time limits (s) on the feeding cases behind the red line: ArmAltPullBehavior 1.5.0's times + 25 %, all below
+	# 1.4.0's, so a slow-down fails.
+	for start in [["close beside the hull", Vector2(58, -130), 5.6], ["beside the hull, behind the red line", Vector2(120, -150), 5.7], ["near the corridor, behind the red line", Vector2(45, -215), 3.6], ["ahead of the red line, off to the side", Vector2(150, -330), INF], ["far ahead, off to the side", Vector2(-120, -480), INF]]:
+		yield(pull(start[0] + ", ship still", start[1], 1.0, 720, "in", start[2]), "completed")
 	yield(pull("close beside the hull, ship still", Vector2(58, -130), 0.0, 720, "forward-dock"), "completed")
 	for start in [["beside the hull, behind the red line", Vector2(120, -150)], ["near the corridor, behind the red line", Vector2(45, -215)], ["ahead of the red line, off to the side", Vector2(150, -330)]]:
 		yield(pull(start[0] + ", ship still", start[1], 0.0, 720, "dock"), "completed")

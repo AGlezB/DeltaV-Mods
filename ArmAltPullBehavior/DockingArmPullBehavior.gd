@@ -12,13 +12,20 @@ const CHUNK_RADIUS_CLEARENCE_FACTOR = 4.0
 const CHUNK_SCENE = "res://asteroids/mineral-fe-1.tscn"
 # The radius found in all those scenes, used if the scene cannot be read (the game changed).
 const CHUNK_RADIUS_FALLBACK = 10.4048
+# How far from the place it is pulled to (the middle of the opening) the mod's pull starts slowing the target down,
+# in world units (10 = 1 m). The game's own pull uses the arm's easeDistance (100 for the AR-1500); a shorter one
+# keeps the target faster for longer and still stops it there (see _pullTo). Tuned value: at 40 the harness's
+# feeding-while-turning case starts touching a rotor.
+const APPROACH_EASE_DISTANCE = 60.0
 
 var _active = false # a salvage arm on a ship
 var _radius = 0.0 # a mineral chunk's radius
 var _clearance = 0.0 # how far ahead of the rotors / claws the red line is
 var _sweep = null # a circle with the radius _clearance, swept along a path to test it against the hull
 var _maxThrust = 0.0 # the arm's own, as maxThrust is switched off while the mod pulls the target
-var _gamePull = false # the game's own pull is in charge (see _outside)
+var _gamePull = false # the target is in the corridor and ready to go in, or left to the game (see _outside)
+var _feedIn = false # feeding: the mod pulls the target straight in along the corridor (see _outside, _pullTo)
+var _passThrough = false # the place _outside gives is only to be passed on the way, not stopped at (see _pullTo)
 var _lastTarget = null
 
 func _ready():
@@ -100,10 +107,12 @@ func _frontPoint(part, axis: Vector2) -> Vector2:
 # - While feeding, the feed pushes a target straight back, so one that is not in line with the
 #   opening (the corridor) would reach the red line outside the corridor, too fast to be stopped
 #   before the rotors / claws. Any target outside the corridor, ahead of the red line or behind it,
-#   is pulled straight to the middle of the opening (where the red line meets the corridor), and
-#   handed back once it is in the corridor and no longer moving sideways faster than the pull itself
-#   does a little (a chunk's radius, or half the opening if that is less) from the middle. The feed
-#   then carries it straight in.
+#   is pulled straight to the middle of the opening (where the red line meets the corridor), until it
+#   is in the corridor and no longer moving sideways faster than the pull itself does a little (a
+#   chunk's radius, or half the opening if that is less) from the middle. A target in the corridor
+#   is not handed back to the game: the mod pulls it straight in (_feedIn, see _pullTo), as the feed
+#   would, without the game's pull back towards the dock slot, which works against the feed close to
+#   the ship.
 # - While not feeding, the game only takes a target out to the dock slot, which is safe from ahead of
 #   the red line and from the corridor. Behind the red line and outside the corridor, the target is
 #   left to the game as soon as the straight line to the dock slot is clear of the hull (see
@@ -117,9 +126,12 @@ func _frontPoint(part, axis: Vector2) -> Vector2:
 # and, while not feeding, a chunk's radius behind the red line, so a target near the line or the
 # corridor's edge is not handed back and forth.
 # `entry` is _entry()'s result (it is measured here if not given).
-# Returns the offset from the place the target is pulled to (the pull goes against it), or null while
-# the game's pull is in charge or the ship is not covered by the mod.
+# Returns the offset from the place the target is pulled to (the pull goes against it; while it is
+# pulled in, the offset from the middle of the rotors / claws), or null while the game's pull is in
+# charge or the ship is not covered by the mod.
 func _outside(entry = null):
+	_feedIn = false
+	_passThrough = false
 	if not Tool.ov(target):
 		return null
 	if entry == null:
@@ -148,12 +160,19 @@ func _outside(entry = null):
 	else:
 		_gamePull = ahead >= 0 or (open and outside <= 0) or not _hitsHull(target.global_position, areaDockSlot.global_position)
 	if _gamePull:
+		if feeding and open:
+			_feedIn = true
+			return off
 		return null
 	if feeding and open:
 		var middle = entry[0] + axis * entry[2]
 		if not _hitsHull(target.global_position, middle):
 			return target.global_position - middle
+		# Forward only to clear the hull: the line to the opening clears on the way, so nothing to stop at.
+		_passThrough = ahead < _radius
 		return - axis * max(_radius - ahead, _radius)
+	# Not feeding, the game takes it on once clear; a closed beak holds it where it is pulled to.
+	_passThrough = not feeding
 	return axis * (ahead - _radius)
 
 # Whether a circle as big as the room the red line keeps (_clearance, CHUNK_RADIUS_CLEARENCE_FACTOR
@@ -176,16 +195,39 @@ func _hitsHull(from: Vector2, to: Vector2) -> bool:
 # The game's formula aims at where the target is now, so it overshoots: by several metres at the dock
 # slot, which does no harm there, but next to the rotors / claws it would. So this aims at where the
 # target will be a moment later (`lead`): the time that makes the formula critically damped, worked
-# out from the arm's own values (how fast it wants the target to move per unit of distance,
-# maxVelocity / easeDistance, and how hard it pushes per unit of speed difference, thrust or
-# targetMassThrust per mass, over easeDistance). The target then slows down in time and stops at the
-# place.
+# out from how fast the mod wants the target to move per unit of distance (maxVelocity /
+# APPROACH_EASE_DISTANCE: full speed until that close) and how hard the arm pushes per unit of speed
+# difference (thrust or targetMassThrust per mass, over easeDistance: the game's own force, never
+# more). The target then slows down in time and stops at the place.
+# A place that is only to be passed (_passThrough: straight forward to clear the hull) gets the full
+# maxVelocity towards it, with no slowing down.
+# While the target is pulled in (_feedIn; `side` is then its offset from the middle of the rotors /
+# claws), it is wanted moving straight in along the corridor at the feed's speed (feed times the
+# length of feedVelocity), plus the game's own pull where that points in too (ahead of the dock slot),
+# so never slower than the game would take it; the game's pull back towards the dock slot, which
+# works against the feed behind the dock slot, is left out. Across the corridor it is brought back to
+# its middle line the same way as to a place.
 func _pullTo(side: Vector2, rel: Vector2, delta) -> Vector2:
 	var push = max(thrust, target.mass * targetMassThrust) / target.mass / easeDistance
 	var want = maxVelocity / easeDistance
 	var lead = max(0.0, (2.0 * sqrt(want / push) - 1.0) / want)
-	side -= rel * lead
-	var vd = rel - side.normalized() * clamp(side.length() / easeDistance, 0, 1) * maxVelocity
+	var wanted
+	if _passThrough:
+		wanted = side.normalized() * maxVelocity
+	elif not _feedIn:
+		want = maxVelocity / APPROACH_EASE_DISTANCE
+		lead = max(0.0, (2.0 * sqrt(want / push) - 1.0) / want)
+		side -= rel * lead
+		wanted = side.normalized() * clamp(side.length() / APPROACH_EASE_DISTANCE, 0, 1) * maxVelocity
+	else:
+		var axis = Vector2(0, -1).rotated(global_rotation)
+		var lateral = axis.rotated(PI / 2)
+		var across = (side - rel * lead).dot(lateral)
+		var fromSlot = target.global_position - areaDockSlot.global_position
+		var gamePull = (fromSlot.normalized() * clamp(fromSlot.length() / easeDistance, 0, 1) * maxVelocity).dot(axis)
+		var inward = feed * feedVelocity.length() + max(0.0, gamePull)
+		wanted = lateral * sign(across) * clamp(abs(across) / easeDistance, 0, 1) * maxVelocity + axis * inward
+	var vd = rel - wanted
 	var vadj = clamp((rel.length() - maxVelocity) / (maxVelocityConsidered - maxVelocity), 0, 1)
 	var force = lerp(max(thrust, target.mass * targetMassThrust), fullThrust, vadj)
 	return vd.normalized() * min(_maxThrust, force * vd.length() / easeDistance) * delta

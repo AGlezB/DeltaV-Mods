@@ -14,14 +14,17 @@ versions released before that exist only as release zips.
 | What | Path |
 |---|---|
 | Game (GOG) | `<GameDir>` (`Delta-V.exe`, `mods\`) |
-| Decompiled game 1.91.61 | `<TempDir>\gdre\Delta-V-1.91.61\`, where the `res://` paths the mods extend resolve (`res://ModLoader.gd`, `res://ships/modules/DockingArm.gd`, …) |
+| Decompiled game, one folder per game version | `<TempDir>\gdre\Delta-V-<version>\` (1.91.61 so far), where the `res://` paths the mods extend resolve (`res://ModLoader.gd`, `res://ships/modules/DockingArm.gd`, …). **Always read and test against the newest version there.** |
 | Godot 3.6 (the game's engine) and GDRE Tools 2.7.4 | `<GodotDir>\` |
 | Generated and temporary files: zips being packaged, test runs, scratch scripts | `<TempDir>\`, never the repo |
 
 Do not read outside these paths and this folder without asking first.
 
 After a game update, decompile it again with GDRE Tools
-(`gdre_tools.exe --recover=<the game's Delta-V.pck>`).
+(`gdre_tools.exe --recover=<the game's Delta-V.pck>`) into `<TempDir>\gdre\Delta-V-<version>\` next to
+the older versions. The harness takes the newest folder by itself (by version number) and warns when
+`_tests\harness\vp_data.gd` was checked against another version (`CHECKED_AGAINST`): then re-check the values it
+cites and update that constant.
 
 ## Testing
 
@@ -52,14 +55,17 @@ DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos.
 - `units`: the claude.ai unit tests (`arm/main.gd`) nearly verbatim, on synthetic arms around the game's
   `DockingArm.gd`. TargetSelection: area geometry on turned, scaled and offset arms, reach, the strip, the weighted
   pick, keeping the current target, switch off/on, intake and entry point. PullBehavior: where the pull goes (20
-  cases: feeding or not, grinder or excavator, a block of hull), the EIME's claws, hand-back hysteresis, closed
-  beak, switching ship types, cost, nothing pushed while the game pulls (the 1.3.0 bug). Plus 4 checks on the real
+  cases: feeding or not, grinder or excavator, a block of hull; feeding in the corridor, pulled straight in by the
+  mod since 1.5.0), the EIME's claws, the hysteresis at the corridor's edge, closed beak, switching ship types,
+  cost, nothing pushed while the game pulls (the 1.3.0 bug). Plus 4 checks on the real
   Eagle-Prospector-VP rig, including the hull inertia `moving` uses. A group whose mod is not loaded runs "control"
   checks of the game alone.
 - `still` (9 cases, `arm/real.gd`) and `moving` (16 cases, `arm/real_move.gd`): ArmAltPullBehavior bringing a chunk
   in on a simulated Eagle-Prospector-VP, standing still, held in place, cruising at 10–40 m/s or turning, feeding
   or not; two start points are where the author's in-game logs started. Each case expects the chunk in between the
-  rotors without touching them, at the dock slot, or moved straight forward first.
+  rotors without touching them, at the dock slot, or moved straight forward first, and prints how long it took.
+  The feeding cases behind the red line beside the hull also have a time limit (1.5.0's times + 25 %, below
+  1.4.0's), so a slow-down fails.
 - `dive` (`dive/main.gd`): the player's Adrenaline Booster (the game's `CabinLight.gd`) starts disabled; another
   ship's booster, other cabin-light systems and a light with no ship are untouched; switching it on sticks; it gives
   adrenaline only when enabled. The control check (the game alone starts it enabled) runs on the game's own script,
@@ -72,14 +78,15 @@ DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos.
 - `_tests\harness\rig.gd` builds the arm's node tree as the game nests it, with the values in
   `_tests\harness\vp_data.gd`; each cites its scene file and line, so re-check them after a game update. The ship
   is a stub moved by hand (it takes the arm's impulses and torque; inertia from the hull); the rotors don't collide.
-- **Baseline** (PullBehavior 1.4.0, TargetSelection 1.2.1; both load orders give the same results, which match the
-  claude.ai ones case for case): `units` 114 checks with both mods (64 with PullBehavior alone, 61 with
-  TargetSelection alone), `still` 9, `moving` 16, `dive` 8 (DiveDisableAdrenalineBooster 1.0.0), `boot` 5 (BootSkipLogos 1.0.0; 3 control checks with
-  `-Mods @()`), all passing. `-Matrix` gives 16, 15, 16, 16 of 16: the miss is
-  feeding while turning at 20°/s with a 5 t chunk, the limit in ArmAltPullBehavior's README. PullBehavior 1.3.1,
-  which broke in the game, gives 0, 0, 12, 4 of 16. The miss's numbers differ from the claude.ai ones in the third
-  decimal only because this ship also takes the arm's torque reaction, as the game's does (the claude.ai stub
-  dropped it).
+- **Baseline** (PullBehavior 1.5.0, TargetSelection 1.2.1; both load orders give the same results): `units` 114
+  checks with both mods (64 with PullBehavior alone, 61 with TargetSelection alone), `still` 9, `moving` 16, `dive` 8
+  (DiveDisableAdrenalineBooster 1.0.0), `boot` 5 (BootSkipLogos 1.0.0; 3 control checks with `-Mods @()`), all
+  passing; `-Matrix` gives 16 of 16 in every combination. Feeding, a chunk beside the hull is in after 4.4–4.8 s.
+  For comparison with `-ModZip` and older release zips: PullBehavior 1.4.0 (the claude.ai results,
+  case for case) took 5.9–6.3 s there, fails the 8 time limits, and `-Matrix` gave 16, 15, 16, 16 (feeding while
+  turning with a 5 t chunk touched a rotor: the game's pull measures speed against the swinging dock slot);
+  1.3.1, which broke in the game, gives 0, 0, 12, 4 of 16. This ship also takes the arm's torque reaction, as the
+  game's does (the claude.ai stub dropped it), which shifts some numbers in the third decimal.
 
 The harness doesn't replace the game, and the crew and ship-list mods have no tests at all. The real check is playing
 the game with the mods.

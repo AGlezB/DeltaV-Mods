@@ -31,26 +31,29 @@ func run():
 	yield(pull("where the logs start, held in place", logsDock, 0.0, 420, "dock"), "completed")
 	yield(pull("where the logs start, held in place", logsIn, 1.0, 720, "in"), "completed")
 	yield(pull("close beside the hull, held in place", closeBesideHull, 0.0, 420, "forward-dock"), "completed")
-	for start in [["ahead-left (the video)", aheadLeft], ["beside the hull", besideHull], ["close beside the hull", closeBesideHull], ["near the corridor", nearCorridor]]:
-		yield(pull(start[0] + ", held in place", start[1], 1.0, 660, "in"), "completed")
+	# Time limits (s) on the feeding cases behind the red line beside the hull: ArmAltPullBehavior 1.5.0's times + 25 %,
+	# all below 1.4.0's, so a slow-down fails.
+	for start in [["ahead-left (the video)", aheadLeft, INF], ["beside the hull", besideHull, 6.0], ["close beside the hull", closeBesideHull, 5.7], ["near the corridor", nearCorridor, 3.6]]:
+		yield(pull(start[0] + ", held in place", start[1], 1.0, 660, "in", start[2]), "completed")
 	cruise = Vector2(0, -100)
 	yield(pull("where the logs start, cruising at 10 m/s", logsDock, 0.0, 420, "dock"), "completed")
 	yield(pull("where the logs start, cruising at 10 m/s", logsIn, 1.0, 720, "in"), "completed")
 	cruise = Vector2(0, -200)
 	yield(pull("ahead-left (the video), cruising at 20 m/s", aheadLeft, 0.0, 420, "dock"), "completed")
-	yield(pull("beside the hull, cruising at 20 m/s", besideHull, 1.0, 660, "in"), "completed")
+	yield(pull("beside the hull, cruising at 20 m/s", besideHull, 1.0, 660, "in", 6.1), "completed")
 	cruise = Vector2(0, -400)
 	yield(pull("ahead-left (the video), cruising at 40 m/s", aheadLeft, 1.0, 660, "in"), "completed")
 	yield(pull("close beside the hull, cruising at 40 m/s", closeBesideHull, 0.0, 420, "forward-dock"), "completed")
 	cruise = Vector2(0, -200)
 	turn = deg2rad(20)
 	yield(pull("ahead-left (the video), cruising at 20 m/s and turning 20 deg/s for 2 s", aheadLeft, 0.0, 480, "dock"), "completed")
-	yield(pull("beside the hull, cruising at 20 m/s and turning 20 deg/s for 2 s", besideHull, 1.0, 720, "in"), "completed")
+	yield(pull("beside the hull, cruising at 20 m/s and turning 20 deg/s for 2 s", besideHull, 1.0, 720, "in", 6.7), "completed")
 	cruise = Vector2()
 	turn = 0.0
 
 # One case: a chunk at `start` (ship coordinates), the arm's target from the first frame, `feed` 1 = feeding.
-func pull(label, start, feed, frameCount, expect):
+# `maxSeconds`: for "in", how soon it must be in.
+func pull(label, start, feed, frameCount, expect, maxSeconds = INF):
 	var rig = Rig.build(self, {"shipMass": shipMass})
 	var ship = rig.ship
 	var arm = rig.arm
@@ -68,6 +71,8 @@ func pull(label, start, feed, frameCount, expect):
 	var wasMod = false
 	var firstMod = null
 	var xAtRotors = null
+	var inAfter = null # seconds until the chunk crossed the rotors' line
+	var dockedAfter = null # seconds until it first came within dockLimit of the dock slot
 	var minClear = INF
 	var lastY = start.y
 	ship.linear_velocity = cruise
@@ -107,6 +112,9 @@ func pull(label, start, feed, frameCount, expect):
 		var local = ship.global_transform.affine_inverse().xform(chunk.global_position)
 		if xAtRotors == null and local.y >= tipY and lastY < tipY:
 			xAtRotors = local.x
+			inAfter = (i + 1) / 60.0
+		if dockedAfter == null and chunk.global_position.distance_to(arm.areaDockSlot.global_position) < dockLimit:
+			dockedAfter = (i + 1) / 60.0
 		lastY = local.y
 		# clearance to the rotors while the chunk is not in line with the gap between them
 		if abs(local.x) >= gap:
@@ -115,10 +123,16 @@ func pull(label, start, feed, frameCount, expect):
 	var end = ship.global_transform.affine_inverse().xform(chunk.global_position)
 	var docked = chunk.global_position.distance_to(arm.areaDockSlot.global_position)
 	var what = "%s, %s" % [label, "feeding" if feed > 0 else "not feeding"]
-	var details = "end (%.1f, %.1f), %.1f from the dock slot, mod frames %d, handed back %d, x at the rotors %s, closest to a rotor %.1f" % [end.x, end.y, docked, modFrames, handbacks, xAtRotors, minClear]
+	var timing = ""
+	if expect == "in":
+		timing = "in after %s s, " % ("%.2f" % inAfter if inAfter != null else "-")
+	else:
+		timing = "docked after %s s, " % ("%.2f" % dockedAfter if dockedAfter != null else "-")
+	var details = timing + "end (%.1f, %.1f), %.1f from the dock slot, mod frames %d, handed back %d, x at the rotors %s, closest to a rotor %.1f" % [end.x, end.y, docked, modFrames, handbacks, xAtRotors, minClear]
 	match expect:
 		"in":
-			check(what + ": goes in between the rotors without touching them", xAtRotors != null and abs(xAtRotors) < gap and minClear > 0 and handbacks <= 1 and end.y > -50, details)
+			var inTime = maxSeconds == INF or (inAfter != null and inAfter <= maxSeconds)
+			check(what + ": goes in between the rotors without touching them" + ("" if maxSeconds == INF else " within %.1f s" % maxSeconds), xAtRotors != null and abs(xAtRotors) < gap and minClear > 0 and handbacks <= 1 and end.y > -50 and inTime, details)
 		"dock":
 			check(what + ": the game takes it to the dock slot", docked < dockLimit and handbacks <= 1, details)
 		"forward-dock":
