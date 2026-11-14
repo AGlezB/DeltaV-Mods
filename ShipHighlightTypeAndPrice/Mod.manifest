@@ -1,0 +1,23 @@
+[mod_information]
+
+name="ShipHighlightTypeAndPrice"
+id="aglezb.ShipHighlightTypeAndPrice"
+description="Highlights the type and price in the dealer and fleet ship lists."
+author="aglezb"
+
+[version]
+
+version_major=1
+version_minor=0
+version_bugfix=2
+
+[tags]
+
+group={
+"type": "string",
+"value": "SystemBuyUI"
+}
+
+[manifest_definitions]
+
+manifest_version=2.2

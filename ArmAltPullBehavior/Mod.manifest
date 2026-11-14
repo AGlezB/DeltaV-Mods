@@ -1,0 +1,23 @@
+[mod_information]
+
+name="ArmAltPullBehavior"
+id="aglezb.ArmAltPullBehavior"
+description="Salvage arm pull behavior: brings the target in through the opening of the grinder or excavator: while feeding, a target outside the opening's corridor is pulled straight to the opening and stopped there before the feed takes it in; while not feeding, a target behind the red line goes forward first if its way to the dock slot passes too close to the hull. Ships without either are left to the game."
+author="aglezb"
+
+[version]
+
+version_major=1
+version_minor=4
+version_bugfix=0
+
+[tags]
+
+group={
+"type": "string",
+"value": "DockingArm"
+}
+
+[manifest_definitions]
+
+manifest_version=2.2

@@ -1,0 +1,23 @@
+[mod_information]
+
+name="DiveDisableAdrenalineBooster"
+id="aglezb.DiveDisableAdrenalineBooster"
+description="The Adrenaline Booster of the player's ship starts every dive switched off (it can still be switched on in the Mechanic tab)."
+author="aglezb"
+
+[version]
+
+version_major=1
+version_minor=0
+version_bugfix=0
+
+[tags]
+
+group={
+"type": "string",
+"value": "CabinLight"
+}
+
+[manifest_definitions]
+
+manifest_version=2.2

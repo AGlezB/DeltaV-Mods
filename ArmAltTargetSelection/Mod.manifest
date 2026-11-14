@@ -1,0 +1,23 @@
+[mod_information]
+
+name="ArmAltTargetSelection"
+id="aglezb.ArmAltTargetSelection"
+description="Salvage arm target selection: target area matching the arm's reach (the strip next to the arm base as a last resort), weighted intake-centerline/entry-point priority, reset when switched off and on."
+author="aglezb"
+
+[version]
+
+version_major=1
+version_minor=2
+version_bugfix=1
+
+[tags]
+
+group={
+"type": "string",
+"value": "DockingArm"
+}
+
+[manifest_definitions]
+
+manifest_version=2.2

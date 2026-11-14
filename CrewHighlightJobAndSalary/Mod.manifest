@@ -1,0 +1,23 @@
+[mod_information]
+
+name="CrewHighlightJobAndSalary"
+id="aglezb.CrewHighlightJobAndSalary"
+description="Highlights the job and salary of every crew entry and dims the rest."
+author="aglezb"
+
+[version]
+
+version_major=1
+version_minor=0
+version_bugfix=1
+
+[tags]
+
+group={
+"type": "string",
+"value": "CrewBio"
+}
+
+[manifest_definitions]
+
+manifest_version=2.2
