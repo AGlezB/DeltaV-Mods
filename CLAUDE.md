@@ -5,8 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## What this is
 
 Mods for **ΔV: Rings of Saturn** (Godot 3 engine, GDScript). Each top-level folder not starting with `_` is one
-independent mod and ships as one zip. There is no build system and no test suite. The source is in git since 14 Nov
-2026; `.gitignore` keeps out every zip, so the
+independent mod and ships as one zip. There is no build system; `_tests\` is a test harness for the two arm mods
+and DiveDisableAdrenalineBooster (see *Testing*). The source is in git since 14 Nov 2026; `.gitignore` keeps out every zip, so the
 versions released before that exist only as release zips.
 
 ## Local paths
@@ -16,6 +16,7 @@ versions released before that exist only as release zips.
 | Game (GOG) | `<GameDir>` (`Delta-V.exe`, `mods\`) |
 | Decompiled game 1.91.61 | `<TempDir>\gdre\Delta-V-1.91.61\`, where the `res://` paths the mods extend resolve (`res://ModLoader.gd`, `res://ships/modules/DockingArm.gd`, …) |
 | Godot 3.6 (the game's engine) and GDRE Tools 2.7.4 | `<GodotDir>\` |
+| Generated and temporary files: zips being packaged, test runs, scratch scripts | `<TempDir>\`, never the repo |
 
 Do not read outside these paths and this folder without asking first.
 
@@ -24,10 +25,55 @@ After a game update, decompile it again with GDRE Tools
 
 ## Testing
 
-There is no test harness. ArmAltTargetSelection, ArmAltPullBehavior and DiveDisableAdrenalineBooster were tested
-only in claude.ai, in a headless Godot 3.5.3 with the game's scripts and stub scenes; for ArmAltPullBehavior that
-includes a simulated ship and chunks (109 and 330 t, 2.8 and 5 t; standing still, 10–40 m/s, turning). Their READMEs
-say which versions were never checked in the real game. The real check is playing the game with the mods.
+`_tests\run.ps1` (PowerShell 7) tests ArmAltPullBehavior, ArmAltTargetSelection and DiveDisableAdrenalineBooster in
+a headless Godot 3.6, in a few seconds. It assembles a Godot project in `<TempDir>\tests\project` from
+`_tests\`, the game's own `DockingArm.gd`, `Arm.gd`, `CabinLight.gd`, `Tool.gd` and `gdunzip.gd` (copied from the
+decompiled source on every run, never committed: they are the game's code) and a stub mineral scene with the chunk
+radius read from the game's. It packages each mod as a release zip and loads the zips as `ModLoader.gd`
+does, so the zip layout is tested too. Logs: `<TempDir>\tests\logs`.
+
+```powershell
+.\_tests\run.ps1                                               # every suite, each with its own mods in the game's order
+.\_tests\run.ps1 -Suite moving -AllOrders                      # one suite, every load order
+.\_tests\run.ps1 -Matrix                                       # moving with 109.29/330 t ships x 2.8/5 t chunks, every order
+.\_tests\run.ps1 -ModZip <a release zip>                       # a release zip in place of the mod's folder
+.\_tests\run.ps1 -Suite units -Mods ArmAltPullBehavior         # other mods than the suite's own (@() = none)
+```
+
+Call it from a pwsh prompt or `pwsh -Command`: under `pwsh -File`, list arguments such as `-Suite still,moving` are
+not parsed as arrays. Exit code 0 = every run passed; a script error fails its run even if every check passed.
+
+The suites are ported from the claude.ai harness (DVModTestHarness 1.0.0; the original was deleted once ported).
+`units`, `still` and `moving` load the two arm mods by default, `dive` loads DiveDisableAdrenalineBooster.
+
+- `units`: the claude.ai unit tests (`arm/main.gd`) nearly verbatim, on synthetic arms around the game's
+  `DockingArm.gd`. TargetSelection: area geometry on turned, scaled and offset arms, reach, the strip, the weighted
+  pick, keeping the current target, switch off/on, intake and entry point. PullBehavior: where the pull goes (20
+  cases: feeding or not, grinder or excavator, a block of hull), the EIME's claws, hand-back hysteresis, closed
+  beak, switching ship types, cost, nothing pushed while the game pulls (the 1.3.0 bug). Plus 4 checks on the real
+  Eagle-Prospector-VP rig, including the hull inertia `moving` uses. A group whose mod is not loaded runs "control"
+  checks of the game alone.
+- `still` (9 cases, `arm/real.gd`) and `moving` (16 cases, `arm/real_move.gd`): ArmAltPullBehavior bringing a chunk
+  in on a simulated Eagle-Prospector-VP, standing still, held in place, cruising at 10–40 m/s or turning, feeding
+  or not; two start points are where the author's in-game logs started. Each case expects the chunk in between the
+  rotors without touching them, at the dock slot, or moved straight forward first.
+- `dive` (`dive/main.gd`): the player's Adrenaline Booster (the game's `CabinLight.gd`) starts disabled; another
+  ship's booster, other cabin-light systems and a light with no ship are untouched; switching it on sticks; it gives
+  adrenaline only when enabled. The control check (the game alone starts it enabled) runs on the game's own script,
+  the base of the extension, so it needs no separate run.
+- `_tests\harness\rig.gd` builds the arm's node tree as the game nests it, with the values in
+  `_tests\harness\vp_data.gd`; each cites its scene file and line, so re-check them after a game update. The ship
+  is a stub moved by hand (it takes the arm's impulses and torque; inertia from the hull); the rotors don't collide.
+- **Baseline** (PullBehavior 1.4.0, TargetSelection 1.2.1; both load orders give the same results, which match the
+  claude.ai ones case for case): `units` 114 checks with both mods (64 with PullBehavior alone, 61 with
+  TargetSelection alone), `still` 9, `moving` 16, `dive` 8 (DiveDisableAdrenalineBooster 1.0.0), all passing. `-Matrix` gives 16, 15, 16, 16 of 16: the miss is
+  feeding while turning at 20°/s with a 5 t chunk, the limit in ArmAltPullBehavior's README. PullBehavior 1.3.1,
+  which broke in the game, gives 0, 0, 12, 4 of 16. The miss's numbers differ from the claude.ai ones in the third
+  decimal only because this ship also takes the arm's torque reaction, as the game's does (the claude.ai stub
+  dropped it).
+
+The harness doesn't replace the game, and the crew and ship-list mods have no tests at all. The real check is playing
+the game with the mods.
 
 ## How the game loads a mod (`res://ModLoader.gd`, an autoload)
 

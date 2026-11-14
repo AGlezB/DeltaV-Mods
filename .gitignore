@@ -4,5 +4,5 @@
 # Earlier release zips, moved here out of the game's mods folder
 _backup/
 
-# Claude Code per-user settings
-.claude/settings.local.json
+# Claude Code's per-user folder
+.claude/

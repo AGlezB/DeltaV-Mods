@@ -1,0 +1,27 @@
+; Test harness for the arm mods (see run.ps1). Not a mod, and not run from here: run.ps1 assembles the project in
+; <TempDir>\tests\project from these sources plus the game's own scripts (ships/, vendor/, Tool.gd, copied from
+; the decompiled game, never committed) and the mods packaged as zips.
+
+config_version=4
+
+[application]
+
+config/name="dV mod tests"
+run/main_scene="res://main.tscn"
+
+[autoload]
+
+Debug="*res://harness/stubs/Debug.gd"
+Settings="*res://harness/stubs/Settings.gd"
+CurrentGame="*res://harness/stubs/CurrentGame.gd"
+Namer="*res://harness/stubs/Namer.gd"
+Tool="*res://Tool.gd"
+
+[display]
+
+window/vsync/use_vsync=false
+
+[logging]
+
+file_logging/enable_file_logging=false
+file_logging/enable_file_logging.pc=false
