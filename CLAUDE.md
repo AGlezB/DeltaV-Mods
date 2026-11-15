@@ -79,6 +79,27 @@ uses, or that term has its own entry.
   the chunks taken in into processed ore and, in most models, their water into remass.
 - **OMS** (`HUD_OMS`, `hud/OMS.gd`, `hud/OMS.tscn`): the Onboard Maintenance System, the console opened with `J` in
   flight. Its tabs are named by the crew occupation keys: Mechanic, Astrogator, Geologist, Pilot.
+- **Reactor** (`SYSTEM_REACTOR_*`; `ships/Reactor.gd`): the ship's nuclear reactor, the equipment that makes heat. The
+  turbine (`SYSTEM_TURBINE_*`, equipment for fission ships, read as the config `turbine.power`) turns that heat into
+  electricity and burns remass to do it (`turbineConsumption`). With no remass left, it makes no power. The reactor
+  engages and disengages by itself to hold its target temperature, a Tuning setting (`TUNE_TARGET_TEMPERATURE`). The
+  HUD shows the temperature as `HUD_REACTOR_TEMP`, and the `power_reactor_toggle` action switches the reactor on and
+  off. Its damage is listed in the Mechanic tab (`hud/SystemList.gd`): Fuel rods jammed (`DAMAGE_RODS`, from hard
+  accelerations: slower to engage and disengage, and the temperature swings), Reactor leak (`DAMAGE_LEAK`) and
+  Turbine Galling (`DAMAGE_TURBINE`, from overheating: the turbine needs more heat to make power). If the reactor
+  stays above its meltdown temperature for a few seconds (`telegraphTimeLimit`, with a growing glow as warning), it
+  explodes and the ship is lost. For the player's ship, that is game over. The EIME's StarCAT Stellarator
+  (`SYSTEM_REACTOR_EIME`, `ships/modules/FusionReactor.gd`) is a fusion reactor with other kinds of damage (coils,
+  coolant, lasers) and no leak.
+- **Reactor leak** (`DAMAGE_LEAK`): damage to a nuclear reactor from impacts close to it (`Reactor.gd` `_on_impact`:
+  the impact's power divided by the distance squared, counted above a threshold). The spot that was hit becomes a
+  leak point. Used ships start with some leak damage (`ageIfNeeded`). Past a quarter of its capacity
+  (`damageLeakOffset`), the leak vents remass at random moments. It vents more often the worse the leak, and more
+  remass the hotter the reactor; it doesn't vent while the reactor is below `leakTemperature`. Each vent wastes
+  remass, cools the reactor and pushes the ship from the leak point. The leak also lowers the meltdown temperature
+  (`meltdownTemperature - jamTemperatureAdj * leak`), so an overheating reactor explodes sooner. Leaks matter most in
+  combat: they are the only way to disable an enemy ship so it can be captured, because a ship that
+  runs out of remass stops working.
 - **Remass**: reaction mass, the ship's propellant (`HUD_FUEL`, shown as "propellant").
 - **Roid**: an asteroid (`asteroids/asteroid.gd`, a `RigidBody2D`), the rocks that fill the rings; the game's own
   texts say "roids" too.
