@@ -14,11 +14,9 @@ keep these docs up to date as they ask.
 
 ## For Claude
 
-This machine's folders outside the repo (MODDING.md *Folders outside the repo*), from the git-ignored
-`paths.local.psd1`:
-
-[@paths.local.psd1](paths.example.psd1)
-
+- This machine's folders outside the repo (MODDING.md *Folders outside the repo*) are in the git-ignored
+  `paths.local.psd1`: read it before using any of them. It can't be imported here, because Claude Code doesn't import
+  `.psd1` files.
 - Imports in the repo's `CLAUDE.md` files are written as links, `[@README.md](README.md)`: Claude Code imports the
   link text, and GitHub shows a link instead of a bare `@` line.
 - Don't read outside the repo and those folders without asking first.
