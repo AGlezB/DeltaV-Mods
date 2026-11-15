@@ -8,17 +8,19 @@ the game's terms). The test harness's documentation, `_tests\README.md`, loads w
 `_tests\`; read it before running the tests to compare with its baseline. Follow the conventions in every change, and
 keep these docs up to date as they ask.
 
-@README.md
+[@README.md](README.md)
 
-@MODDING.md
+[@MODDING.md](MODDING.md)
 
 ## For Claude
 
 This machine's folders outside the repo (MODDING.md *Folders outside the repo*), from the git-ignored
 `paths.local.psd1`:
 
-@paths.local.psd1
+[@paths.local.psd1](paths.example.psd1)
 
+- Imports in the repo's `CLAUDE.md` files are written as links, `[@README.md](README.md)`: Claude Code imports the
+  link text, and GitHub shows a link instead of a bare `@` line.
 - Don't read outside the repo and those folders without asking first.
 - Find field names and game behaviour in the newest decompiled game; don't ship a logging-only build to discover
   them.
