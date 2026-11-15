@@ -86,11 +86,16 @@ HudHideLabels, `crew` loads CrewCheapHireNotifier.
   title screen; that the first launch (`Settings.firstBoot`) keeps the logos; and, as control, that the game's
   script alone does not leave them. A `Loader` stub records the calls instead of switching scenes.
 - `lidar` (`suites/lidar.gd`): hidden lidars built in code around the game's `LIDAR.gd`, with a `Bleep` on the
-  game's `PitchAdjustedAudio.gd`, under stubs of the HUD and the ship (`harness/lidar_reader.gd`, `lidar_ship.gd`).
-  Checks that the ping moves to the mod's bus, which sends to its own bus (`ShipBowels`, or `SFX`) with the gain
-  (with a gain of 0, that the ping stays where it was); that the bus is shared, not added twice, and that a lidar
-  without a ping is left alone; and that the Tuning switch still sets `doBleep`. The control checks (the ping stays
-  on its bus) run on the game's own script.
+  game's `PitchAdjustedAudio.gd` that records each `play()` (`harness/recording_bleep.gd`), under stubs of the HUD and
+  the ship (`harness/lidar_reader.gd`, `lidar_ship.gd`). Checks that the slider is registered right below the Tuning
+  switch, in its group, with the mod's range, and stays there; that its value (clamped, the default for a non-number)
+  moves the ping to the mod's bus, which sends to its own bus (`ShipBowels`, or `SFX`) with the gain, and a gain of 0
+  back to its own bus; that the bus is shared, not added twice, and that a lidar without a ping is left alone; that
+  the switch still sets `doBleep`. The demo, on a preview's lidar (`dynamicConnect`) with a synthetic sound, driven
+  frame by frame with the game's `TuningFloatValue` row focused: the game's volume and pitch for each distance, the
+  spacing and the interval, the preview's own pings muted, nothing with another row, no focus, the switch off or a
+  lidar that isn't a preview's. And the texts of `i18n/en.po`, also in a language without them. The control checks (the
+  ping stays on its bus) run on the game's own script.
 - `hud` (`suites/hud.gd`): trees built in code with the node paths and types of the OCP-209's HUD
   (`hud/Display-OCP209.tscn`), the station's Upgrades screen and the `J` screen (`hud/OMS.tscn`), each scene root
   marked by its `filename`; the HUD is added in one go under stubs of the ship and its Hud (the `lidar` suite's),
@@ -125,7 +130,7 @@ HudHideLabels, `crew` loads CrewCheapHireNotifier.
   is a stub moved by hand (it takes the arm's impulses and torque; inertia from the hull); the rotors don't collide.
 - **Baseline** (both arm load orders give the same results): `units` 114 checks with both arm mods (64 with
   PullBehavior alone, 61 with TargetSelection alone), `still` 9, `moving` 16, `dive` 8, `boot` 5 (3 control checks
-  with `-Mods @()`), `lidar` 18 (3 control checks with `-Mods @()`), `hud` 13 (3 control checks with `-Mods @()`),
+  with `-Mods @()`), `lidar` 40 (3 control checks with `-Mods @()`), `hud` 13 (3 control checks with `-Mods @()`),
   `crew` 67 (2 control checks with `-Mods @()`), all passing; `-Matrix` gives 16 of 16 in every combination.
   Feeding, a chunk beside the hull is in after 4.4–4.8 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.4.0 (the claude.ai results,
@@ -156,7 +161,12 @@ check is playing the game with the mods.
   is never freed, and it is what keeps the child script alive: freed, the script goes too and later loads get the
   game's script back (tried in the harness).
 - `Mod.manifest` is not read by the game's loader.
-- The loader also has `addTranslationsFromCSV`, `appendNodeInScene` and `saveScene` (unused so far).
+- The loader also has `addTranslationsFromCSV`, `appendNodeInScene` and `saveScene` (unused so far; the harness's
+  loader offers `addTranslationsFromCSV` too). **`addTranslationsFromCSV` reads nothing from a mod's zip**: a file in
+  a zip reports its end before the first read (`eof_reached()` is true right after `open`, false after one `get_8()`),
+  and `get_csv_line` checks for the end before reading (found in the harness's Godot 3.6). A mod's texts go in a
+  `i18n/<locale>.po` loaded with `TranslationServer.add_translation(load(...))`, as the game loads its own `.po` files
+  (LidarLouderPing).
 
 ## The two ways these mods hook in
 
@@ -168,9 +178,10 @@ check is playing the game with the mods.
    `ModMain.gd` only calls `installScriptExtension("res://<ModName>/Code.gd")` (CrewPerfectSort: once for each of its
    two extension files); `Code.gd` `extends "res://<game script>"`. Rules that let mods stack on the same script
    (header of `ArmAltTargetSelection/Code.gd`):
-   - Never call the parent's `_ready`, `_physics_process` or `_notification`. Godot 3 runs them at every level of the
-     script chain by itself: `_ready` base first (so `ship` etc. are set), `_physics_process` and `_notification` child
-     first.
+   - Never call the parent's `_ready`, `_process`, `_physics_process` or `_notification`. Godot 3 runs them at every
+     level of the script chain by itself: `_ready` base first (so `ship` etc. are set), `_process`,
+     `_physics_process` and `_notification` child first. LidarLouderPing overrides `onSetup` (an ordinary function)
+     and `_process`.
    - Ordinary functions are not chained: call the parent with `.name()`, and fall through to it where the mod does
      not apply (`if not _targeting: return .switchTarget()`).
    - Gate the change on a condition (`systemName == "SYSTEM_SALVAGE_ARM" and ship != null`,
@@ -269,9 +280,19 @@ check is playing the game with the mods.
     station is rebuilt after every load and new game) and listens to `settingsChanged`.
   - A mod without a settings UI has no `Settings.gd`, and no constants file either: that would only add a prefix to
     every use.
+  - Settings that belong to a ship system go in the game's Tuning screen instead (`registerSubsystem` from the
+    system's `onSetup`; LidarLouderPing). The game draws them, keeps them per ship with its tuning (saved with the
+    game) and signals a change (`tuningChanged`), so the mod has no stored value, saving or signal of its own. With
+    one or two, their default, range and step are constants in `Code.gd`, read through a clamping helper. With more,
+    or spread over several game systems, they split into `Settings.gd` (the descriptions and a clamped read from a
+    ship; no shared instance) and `TuningUI.gd` (the registration, called from `Code.gd`'s `onSetup`).
+  - `i18n/<locale>.po` (`i18n/en.po`, …), in a subfolder named as the game's own `i18n/`: the mod's texts in that
+    language, loaded by `ModMain.gd` (see *How the game loads a mod*). English is Godot's fallback language, so
+    `en.po` covers every language until it gets its own file.
   - CrewPerfectSort, with two extensions and no single main file, keeps its file names for now.
 - Tunables are commented `const`s at the top of `Code.gd`, and the README names them as what a user may edit inside
-  the zip. In a mod with a settings UI they are settings in `Settings.gd`, and the README names them as settings.
+  the zip. In a mod with a settings UI they are settings in `Settings.gd`, and the README names them as settings; a
+  Tuning entry's default, range and step stay constants in `Code.gd` (see above), and the README names the entry.
 - **A constant's value exists in one place only: where the constant is declared**, so that
   changing it touches nothing but that file. READMEs, manifests, this file, comments in other files and the tests
   refer to a constant by its name and never repeat its value or a figure computed from it. The tests read constants

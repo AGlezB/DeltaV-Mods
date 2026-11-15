@@ -1,0 +1,17 @@
+# LidarLouderPing: the texts of its Tuning slider, in English. Godot shows English for any language without its own
+# file (its fallback locale), so another language only needs a copy of this file with its Language and msgstr lines
+# translated, loaded in ModMain.gd.
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "TUNE_LIDARLOUDERPING_GAIN"
+msgstr "Audible feedback boost"
+
+msgid "TUNE_LIDARLOUDERPING_GAIN_DESC"
+msgstr ""
+"LidarLouderPing mod: how much louder the ping for sensor contacts plays, on top of the game's own volume. Only "
+"applies while \"Audible feedback for sensor contacts\" is on. About every 10 dB sounds twice as loud; 0 dB leaves "
+"the game's volume. With a large boost, the game holds the pings back and briefly lowers other sounds along with "
+"them. While this setting is selected, the preview plays pings from a far, a halfway and a close contact."
