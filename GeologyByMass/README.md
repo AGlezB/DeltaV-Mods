@@ -3,6 +3,15 @@
 Judges the ore your geologist identifies by the mass of each mineral in it instead of its value, as set on a new tab
 of the OMS.
 
+## Warning
+This mod changes how the game plays. Compared to vanilla, while the switch on the mod's OMS tab is on, your
+geologist's info boxes stay full for chunks holding enough mass of a mineral switched on in the Geologist tab,
+whatever the chunk is worth: the *Minimum value* no longer counts. With the switch off the game plays as vanilla; the
+mod's OMS tab is there either way.
+
+Before reporting a bug with the info boxes or the Geologist tab to the game's developers, check that it also happens
+without the mod.
+
 ## What it does and why
 - **What:** in a dive, your geologist puts an info box on each chunk they identify. The game shrinks the box (hiding
   its kg list and price) when the chunk falls short of the Geologist tab's settings for the HUD: worth less than its

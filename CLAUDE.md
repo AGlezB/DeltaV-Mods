@@ -9,6 +9,10 @@ independent mod and ships as one zip. There is no build system; `_tests\` is a t
 *Testing*). The source has been in git since 14 Nov 2026; `.gitignore` keeps out every zip, so the
 versions released before that exist only as release zips.
 
+The root `README.md` is the repository's own (it ships in no zip): a table of every mod with its README's summary,
+and, in a section of their own, the mods that change how the game plays (those with a *Warning* in their README).
+Update it when a mod is added or removed, when a mod's summary changes, or when a mod gains or loses its *Warning*.
+
 Later changes are in the git history and, from 1.0.0 on, in each mod's `CHANGES.md`.
 
 ## Glossary
@@ -527,9 +531,12 @@ check is playing the game with the mods.
 - `Mod.manifest`: `id = "aglezb.<ModName>"`, `author = "aglezb"`, a one-line `description` that only says what the
   mod does (the details go in the README), the `group` tag naming the game script or the part of the game the mod
   touches (`DockingArm`, `Hud`), `manifest_version = 2.2`.
-- README layout: `# <ModName> - ΔV: Rings of Saturn`; the summary (no version); *What it does and why* (What / Why
-  bullets); *For modders* for script extensions (what is extended, overrides, new members, constants, how it was
-  tested); *Install* (three steps; the second, the same in every README, is "Put the mod's zip in it, and remove any
-  other version of the mod from there: they would all load. Do not unzip it."; the third, `--enable-mods`); the
-  "Mods are unofficial … Keep a backup of your save." line; *About* (made with the help of Claude; GPLv3). When the
-  behaviour changes, update the README's text and figures too.
+- README layout: `# <ModName> - ΔV: Rings of Saturn`; the summary (no version), with its images, if any; for a mod
+  that changes how the game plays in a dive, *Warning*: in short, what it changes compared to
+  vanilla, and to check a bug without the mod before reporting it to the game's developers; *What it does and why*
+  (What / Why bullets); *For modders* for script extensions (what is extended, overrides, new members, constants, how
+  it was tested); *Install* (three steps; the second, the same in every README, is "Put the mod's zip in it, and
+  remove any other version of the mod from there: they would all load. Do not unzip it."; the third,
+  `--enable-mods`); the "Mods are unofficial … Keep a backup of your save." line; *About* (made with the help of
+  Claude; GPLv3). When the behaviour changes, update the README's text, *Warning* and figures too (and the root
+  `README.md`, see *What this is*).

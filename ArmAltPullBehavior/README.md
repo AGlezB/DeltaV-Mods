@@ -21,6 +21,18 @@ where the line to the dock slot would come too close to the hull, the target goe
 Pale: the area the arm can take targets from with `ArmAltTargetSelection`, which reaches back to the arm base.
 On an excavator (the EIME) the opening is the gap between the claw tips.*
 
+## Warning
+This mod changes how the game plays. Compared to vanilla, on ships with a grinder or an excavator, the AR-1500 arm:
+- while feeding, first takes a chunk to the middle of the intake's opening, then pulls it straight in, faster than
+  the game does;
+- while not feeding, moves a chunk beside the hull straight forward first, so it doesn't hit the hull on its way to
+  the dock slot;
+- measures a chunk's speed against the hull, so turning the ship doesn't fling the chunk away or push it into the
+  rotors / claws.
+
+On other ships (the OCP-209, for one) nothing changes. Before reporting a bug with the arm to the game's developers,
+check that it also happens without the mod.
+
 ## What it does and why
 
 ### 1. Red line and opening

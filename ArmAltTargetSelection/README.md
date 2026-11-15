@@ -11,6 +11,16 @@ a polygon of `AREA_SEGMENTS` straight segments (the dots). Orange: the buffer ar
 45 m reach. Purple: the first 7 m ahead of the arm base, whose targets are taken only when there is nothing
 else. Dashed rectangle: the game's own area.*
 
+## Warning
+This mod changes how the game plays. Compared to vanilla, the AR-1500 arm on your ship:
+- only takes targets it can reach, plus a little beyond straight ahead, not from the game's much larger area;
+- also takes targets right next to its base, but only when nothing else is in reach;
+- picks the target best lined up with the intake, not the one that came into range first;
+- drops its target and empties its queue as soon as it is switched off, and picks a fresh target when it is switched
+  on again.
+
+Before reporting a bug with the arm to the game's developers, check that it also happens without the mod.
+
 ## What it does and why
 
 ### 1. Target area

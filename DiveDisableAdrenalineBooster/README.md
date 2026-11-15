@@ -2,6 +2,15 @@
 
 The Adrenaline Booster of your ship starts every dive switched off.
 
+## Warning
+This mod changes how the game plays. Compared to vanilla:
+- your ship's Adrenaline Booster starts every dive switched off, until you switch it on in the OMS's `Mechanic` tab;
+- while it is off, the pilot and the smart camera also get little or no bullet time: a booster that is switched off
+  pushes adrenaline down every frame (the game's `ships/CabinLight.gd` `_process`).
+
+Before reporting a bug with the Adrenaline Booster or bullet time to the game's developers, check that it also
+happens without the mod.
+
 ## What it does and why
 - **What:** when a dive starts, the booster is off on the player's ship. In the `Mechanic` tab of the
   management screen (`J` by default) its switch shows as off, and it can be switched on there at any time.
