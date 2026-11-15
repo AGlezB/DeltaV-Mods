@@ -4,4 +4,4 @@ extends Node
 # engine loads the main scene (Boot.tscn), so the boot scene gets the extended script.
 func _init(modLoader = null):
 	if modLoader != null:
-		modLoader.installScriptExtension("res://BootSkipLogos/BootNoLogos.gd")
+		modLoader.installScriptExtension("res://BootSkipLogos/Code.gd")

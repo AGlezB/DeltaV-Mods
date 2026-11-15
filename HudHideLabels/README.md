@@ -1,6 +1,6 @@
 # HudHideLabels - ΔV: Rings of Saturn
 
-Version 1.0.0. Hides the titles on the screens of the dive HUD.
+Version 1.0.1. Hides the titles on the screens of the dive HUD.
 
 ## What it does and why
 - **What:** on every HUD, the titles whose keys are in `HIDDEN_KEYS` are no longer drawn. Each HUD shows some or all
@@ -10,13 +10,13 @@ Version 1.0.0. Hides the titles on the screens of the dive HUD.
   of the management screen (`J` by default) are left alone. So is everything else on the HUD.
 - **Why:** they take room on small screens and some cover the readings, such as the cargo hold's mass on the
   OCP-209's HUD.
-- To keep one of the titles, remove its key from `HIDDEN_KEYS` at the top of `HudHideLabels/ModMain.gd` inside the
+- To keep one of the titles, remove its key from `HIDDEN_KEYS` at the top of `HudHideLabels/Code.gd` inside the
   zip; the comment there says which key is which.
 
 ## For modders
-- No game script or scene is changed. `ModMain._ready` connects the scene tree's `node_added`, and hides every
-  `Label` whose `text` is one of `HIDDEN_KEYS` and which has a scene whose path starts with `DISPLAY_PREFIX` among
-  its ancestors.
+- No game script or scene is changed. `ModMain.gd` adds a node with `Code.gd`, which connects the scene tree's
+  `node_added` in its `_ready` and hides every `Label` whose `text` is one of `HIDDEN_KEYS` and which has a scene
+  whose path starts with `DISPLAY_PREFIX` among its ancestors.
   The tag `group = Hud` in `Mod.manifest` names the part of the game it touches.
 - Each HUD is one `Display-*.tscn` (K37, Prospector and its Metric and Bald variants, EIME, HAL, AT225, OCP209,
   Kitsune, CERF). The ship's Hud (`hud/Hud.tscn`, `Huds/SYSTEM_HUD_*`) holds them as instance placeholders, and
@@ -40,7 +40,7 @@ Version 1.0.0. Hides the titles on the screens of the dive HUD.
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.
-2. Put `HudHideLabels-1.0.0.zip` in it. Do not unzip it.
+2. Put `HudHideLabels-1.0.1.zip` in it. Do not unzip it.
 3. Launch the game with `--enable-mods`.
 
 Mods are unofficial and can break after game updates. Keep a backup of your save.

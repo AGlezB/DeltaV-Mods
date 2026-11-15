@@ -1,6 +1,6 @@
 # DiveDisableAdrenalineBooster - ΔV: Rings of Saturn
 
-Version 1.0.0. The Adrenaline Booster of your ship starts every dive switched off.
+Version 1.0.1. The Adrenaline Booster of your ship starts every dive switched off.
 
 ## What it does and why
 - **What:** when a dive starts, the booster is off on the player's ship. In the `Mechanic` tab of the
@@ -28,7 +28,7 @@ Version 1.0.0. The Adrenaline Booster of your ship starts every dive switched of
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.
-2. Put `DiveDisableAdrenalineBooster-1.0.0.zip` in it. Do not unzip it.
+2. Put `DiveDisableAdrenalineBooster-1.0.1.zip` in it. Do not unzip it.
 3. Launch the game with `--enable-mods`.
 
 Mods are unofficial and can break after game updates. Keep a backup of your save.

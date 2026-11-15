@@ -1,6 +1,6 @@
 # ArmAltPullBehavior - ΔV: Rings of Saturn
 
-Version 1.5.0. Changes how the AR-1500 salvage arm (`SYSTEM_SALVAGE_ARM` on a ship) brings a target in.
+Version 1.5.1. Changes how the AR-1500 salvage arm (`SYSTEM_SALVAGE_ARM` on a ship) brings a target in.
 Station dock arms are left alone. Works together with `ArmAltTargetSelection`, but does not need it
 (the two do not touch each other's code).
 
@@ -121,7 +121,7 @@ On an excavator (the EIME) the opening is the gap between the claw tips.*
   shapes (its hull), and the arm's own
   `maxThrust`, `easeDistance`, `maxVelocity` and so on. No list of ship models is needed.
 - The mod only applies where `systemName == "SYSTEM_SALVAGE_ARM"` and the arm has a `ship`.
-- Constants at the top of `ArmAltPullBehavior/DockingArmPullBehavior.gd` inside the zip:
+- Constants at the top of `ArmAltPullBehavior/Code.gd` inside the zip:
   `ENTRY_SYSTEMS`, `CHUNK_RADIUS_CLEARENCE_FACTOR`, `CHUNK_SCENE`, `CHUNK_RADIUS_FALLBACK`,
   `APPROACH_EASE_DISTANCE`. The game shows 10 units as 1 m.
 - Tested outside the game, in a headless Godot (3.5.3, then 3.6 with the game's 1.91.61 scripts) with the game's
@@ -135,7 +135,7 @@ On an excavator (the EIME) the opening is the gap between the claw tips.*
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.
-2. Put `ArmAltPullBehavior-1.5.0.zip` in it. Do not unzip it.
+2. Put `ArmAltPullBehavior-1.5.1.zip` in it. Do not unzip it.
 3. Launch the game with `--enable-mods`.
 
 Mods are unofficial and can break after game updates. Keep a backup of your save.

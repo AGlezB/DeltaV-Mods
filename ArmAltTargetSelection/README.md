@@ -1,6 +1,6 @@
 # ArmAltTargetSelection - ΔV: Rings of Saturn
 
-Version 1.2.1. Changes how the AR-1500 salvage arm (`SYSTEM_SALVAGE_ARM` on a ship) chooses its
+Version 1.2.2. Changes how the AR-1500 salvage arm (`SYSTEM_SALVAGE_ARM` on a ship) chooses its
 target. Station dock arms are left alone. Works together with `ArmAltPullBehavior`, but does not
 need it (the two do not touch each other's code).
 
@@ -79,14 +79,14 @@ else. Dashed rectangle: the game's own area.*
 - The area's `CollisionShape2D` gets a new `ConvexPolygonShape2D` in place of the game's `RectangleShape2D`;
   nothing in the game reads that shape, only the area's overlaps.
 - The mod only applies where `systemName == "SYSTEM_SALVAGE_ARM"` and the arm has a `ship`.
-- Constants at the top of `ArmAltTargetSelection/DockingArmTargetSelection.gd` inside the zip:
+- Constants at the top of `ArmAltTargetSelection/Code.gd` inside the zip:
   `BUFFER_AREA_FACTOR`, `BALANCE`, `AREA_SEGMENTS`, `INTAKES`.
 - Tested only outside the game, in a headless Godot 3.5.3 with the game's scripts (`DockingArm.gd`, `Tool.gd` ...)
   and stub scenes. It has not been checked in a real game.
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.
-2. Put `ArmAltTargetSelection-1.2.1.zip` in it. Do not unzip it.
+2. Put `ArmAltTargetSelection-1.2.2.zip` in it. Do not unzip it.
 3. Launch the game with `--enable-mods`.
 
 Mods are unofficial and can break after game updates. Keep a backup of your save.

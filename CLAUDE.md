@@ -103,11 +103,11 @@ HudHideLabels, `crew` loads CrewCheapHireNotifier.
 - `_tests\harness\rig.gd` builds the arm's node tree as the game nests it, with the values in
   `_tests\harness\vp_data.gd`; each cites its scene file and line, so re-check them after a game update. The ship
   is a stub moved by hand (it takes the arm's impulses and torque; inertia from the hull); the rotors don't collide.
-- **Baseline** (PullBehavior 1.5.0, TargetSelection 1.2.1; both load orders give the same results): `units` 114
+- **Baseline** (PullBehavior 1.5.1, TargetSelection 1.2.2; both load orders give the same results): `units` 114
   checks with both mods (64 with PullBehavior alone, 61 with TargetSelection alone), `still` 9, `moving` 16, `dive` 8
-  (DiveDisableAdrenalineBooster 1.0.0), `boot` 5 (BootSkipLogos 1.0.0; 3 control checks with `-Mods @()`), `lidar`
-  18 (LidarLouderPing 1.0.0; 3 control checks with `-Mods @()`), `hud` 13 (HudHideLabels 1.0.0; 3 control checks
-  with `-Mods @()`), `crew` 24 (CrewCheapHireNotifier 0.1.0; 2 control checks with `-Mods @()`), all passing; `-Matrix` gives 16 of 16 in every combination. Feeding, a chunk beside the hull is in after 4.4–4.8 s.
+  (DiveDisableAdrenalineBooster 1.0.1), `boot` 5 (BootSkipLogos 1.0.1; 3 control checks with `-Mods @()`), `lidar`
+  18 (LidarLouderPing 1.0.1; 3 control checks with `-Mods @()`), `hud` 13 (HudHideLabels 1.0.1; 3 control checks
+  with `-Mods @()`), `crew` 24 (CrewCheapHireNotifier 0.1.1; 2 control checks with `-Mods @()`), all passing; `-Matrix` gives 16 of 16 in every combination. Feeding, a chunk beside the hull is in after 4.4–4.8 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.4.0 (the claude.ai results,
   case for case) took 5.9–6.3 s there, fails the 8 time limits, and `-Matrix` gave 16, 15, 16, 16 (feeding while
   turning with a 5 t chunk touched a rotor: the game's pull measures speed against the swinging dock slot);
@@ -144,8 +144,9 @@ the game with the mods.
    DiveDisableAdrenalineBooster (`ships/CabinLight.gd`), BootSkipLogos (`Boot.gd`), LidarLouderPing (`hud/LIDAR.gd`),
    CrewPerfectSort (`enceladus/HireableCrew.gd`, `enceladus/CurrentCrewManagement.gd`), CrewCheapHireNotifier
    (`enceladus/EnceladusMenu.gd`).
-   `ModMain.gd` only calls `installScriptExtension`; the extension `extends "res://<game script>"`. Rules that let
-   mods stack on the same script (header of `ArmAltTargetSelection/DockingArmTargetSelection.gd`):
+   `ModMain.gd` only calls `installScriptExtension("res://<ModName>/Code.gd")`; `Code.gd`
+   `extends "res://<game script>"`. Rules that let mods stack on the same script (header of
+   `ArmAltTargetSelection/Code.gd`):
    - Never call the parent's `_ready`, `_physics_process` or `_notification`. Godot 3 runs them at every level of the
      script chain by itself: `_ready` base first (so `ship` etc. are set), `_physics_process` and `_notification` child
      first.
@@ -155,7 +156,8 @@ the game with the mods.
      `ship.isPlayerControlled()`), so the script's other users are untouched.
    - New members and helpers start with `_`, have unique names, and are listed in the README's *For modders*.
 2. **Scene-tree observer**: CrewHighlightJobAndSalary (`enceladus/CrewBio.gd`), ShipHighlightTypeAndPrice and
-   ShipSortByTypeAndPrice (`enceladus/SystemBuyUI.gd`). No game script is changed: `ModMain._ready` connects the
+   ShipSortByTypeAndPrice (`enceladus/SystemBuyUI.gd`). No game script is changed: `ModMain.gd` adds a node with
+   `Code.gd` (`add_child(preload("res://<ModName>/Code.gd").new())` in its `_init`), whose `_ready` connects the
    tree's `node_added`, matches `node.get_script().resource_path`, `yield`s a 0.3 s timer (entries fill their labels
    after entering the tree) and re-checks `is_instance_valid`. Entries get re-added (the dealer does it every hour),
    so handlers must be idempotent (`is_connected` checks, cached copies). Shared resources such as the game's fonts
@@ -178,9 +180,13 @@ the game with the mods.
 - Read values from the game (the ship's nodes and collision shapes, scene files, the arm's own properties), never
   from per-ship tables. A constant is only a fallback for when the game data can't be read (`CHUNK_RADIUS_FALLBACK`).
 - Find field names and game behaviour in the decompiled source; don't ship a logging-only build to discover them.
-- A new mod always starts at **0.1.0**. Every zip handed over gets a
-  new version. Going to 1.0 means: remove all logging, simplify, set 1.0.0, and document the what and why of
-  each feature in the README for other modders.
+- Versions follow [semver](https://semver.org): **major** for a change that breaks what players or modders rely on
+  (a feature removed or changed incompatibly, saved settings that no longer load), **minor** for new behaviour or
+  settings that keep the old working, **patch** for fixes and for changes with no visible effect (a file renamed,
+  code moved between files). Every zip handed over gets a new version, and a released version is never changed.
+  A new mod always starts at **0.1.0**. Going to 1.0 means:
+  remove all logging, simplify, set 1.0.0, and document the what and why of each feature in the README for other
+  modders.
 - The wiki's manifest format is outdated; follow [DVTools](https://github.com/rwqfsfasxc100/DVTools).
 
 ## Salvage arm facts (for the ArmAlt mods)
@@ -198,8 +204,29 @@ the game with the mods.
   "method")`, `PoolVector2Array`, `xform`, `extents`, `add_color_override`.
 - Tabs; UTF-8 without BOM; LF line endings (`.gitattributes` enforces them whatever `core.autocrlf` says). Script
   extensions use the game's camelCase, the observer mods snake_case: match the file.
-- Tunables are commented `const`s at the top of the script, and the README names them as what a user may edit
-  inside the zip.
+- **File names in a mod folder**:
+  - `ModMain.gd` only hooks the mod in, and keeps its name (the game runs only zip entries named `modmain*.gd`): a
+    script extension calls `installScriptExtension("res://<ModName>/Code.gd")`, an observer adds a node with
+    `Code.gd` (see *The two ways these mods hook in*).
+  - `Code.gd` is the mod's main code.
+  - `SettingsUI.gd` is the mod's settings UI, when it has one.
+  - `Settings.gd`, only in a mod with a settings UI, is the settings model `Code.gd` and `SettingsUI.gd` share, built
+    like the game's own `Settings` autoload (`res://Settings.gd`: a `cfg` dict of defaults, a `ConfigFile` in
+    `user://`, `loadFromFile` / `saveToFile`, a `settingsChanged` signal). A `const` can't hold a value the player
+    changes and Godot 3 has no static variables, so one shared instance holds, for each setting: its current value;
+    its description (key, default, type, range or choices, label keys), so each default is declared once, there; the
+    conversion between the units shown and the ones the code uses (10 world units = 1 m, a fraction shown as %);
+    clamping of what is loaded, so a settings file edited by hand can't break the code; saving, with a format
+    version (renaming a saved key without a migration is a major version); and a change signal, so a change applies
+    at once. The mod's version is read from the zip's `Mod.manifest`, not repeated. Scripts reach the file through
+    a preload constant named for the mod, never `Settings`, which would hide the game's autoload (and stacked
+    extensions break on same-named constants). The first mod with settings settles the API. Constants that aren't
+    settings (game paths, fallbacks) stay in `Code.gd`.
+  - A mod without a settings UI has no `Settings.gd` (nor a constants file, which would only add a prefix to every
+    use): its tunables stay at the top of `Code.gd`.
+  - CrewPerfectSort, with two extensions and no single main file, keeps its file names for now.
+- Tunables are commented `const`s at the top of `Code.gd`, and the README names them as what a user may edit inside
+  the zip. In a mod with a settings UI they are settings in `Settings.gd`, and the README names them as settings.
 - **A constant's value exists in one place only: where the constant is declared**, so that
   changing it touches nothing but that file. READMEs, manifests, this file, comments in other files and the tests
   refer to a constant by its name and never repeat its value or a figure computed from it. The tests read constants

@@ -98,7 +98,7 @@ func run():
 		check("control: without the mod the station's titles are drawn", drawn(stationCargo) and drawn(stationRemote))
 		return
 
-	var keys = load("res://HudHideLabels/ModMain.gd").get_script_constant_map()["HIDDEN_KEYS"]
+	var keys = load("res://HudHideLabels/Code.gd").get_script_constant_map()["HIDDEN_KEYS"]
 	for t in titles:
 		check("%s: hidden if its key is in HIDDEN_KEYS, drawn if not" % t[2], follows(t[0], t[1], keys), "%s in HIDDEN_KEYS: %s" % [t[1], t[1] in keys])
 	var keepSpace = true

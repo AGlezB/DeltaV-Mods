@@ -1,6 +1,6 @@
 # CrewCheapHireNotifier - ΔV: Rings of Saturn
 
-Version 0.1.0. Marks the Crew entry of the Enceladus Prime menu while someone cheap is for hire.
+Version 0.1.1. Marks the Crew entry of the Enceladus Prime menu while someone cheap is for hire.
 
 ## What it does and why
 - **What:** the limit for a job is the higher of `SALARY_THRESHOLD` and the salary of your best-paid crew member with
@@ -14,7 +14,7 @@ Version 0.1.0. Marks the Crew entry of the Enceladus Prime menu while someone ch
   next), whenever you hire or fire someone, and when the game's language changes.
 - **Why:** so you know when the Hire screen is worth a look without opening it every day.
 - To change the rule or the mark, edit `SALARY_THRESHOLD`, `SALARY_TOLERANCE` or `ALERT_FORMAT` at the top of
-  `CrewCheapHireNotifier.gd` inside the zip.
+  `CrewCheapHireNotifier/Code.gd` inside the zip.
 
 ## For modders
 - Script extension of `res://enceladus/EnceladusMenu.gd` (`installScriptExtension` in `ModMain.gd`): the script of the
@@ -43,7 +43,7 @@ Version 0.1.0. Marks the Crew entry of the Enceladus Prime menu while someone ch
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.
-2. Put `CrewCheapHireNotifier-0.1.0.zip` in it. Do not unzip it.
+2. Put `CrewCheapHireNotifier-0.1.1.zip` in it. Do not unzip it.
 3. Launch the game with `--enable-mods`.
 
 Mods are unofficial and can break after game updates. Keep a backup of your save.

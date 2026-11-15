@@ -1,6 +1,6 @@
 # BootSkipLogos - ΔV: Rings of Saturn
 
-Version 1.0.0. The game starts on the title screen, where the save slots are, without the logo sequence first.
+Version 1.0.1. The game starts on the title screen, where the save slots are, without the logo sequence first.
 
 ## What it does and why
 - **What:** at launch, the 22-second sequence of logos (the studio, Godot, the Kurki collective) and the
@@ -34,7 +34,7 @@ Version 1.0.0. The game starts on the title screen, where the save slots are, wi
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.
-2. Put `BootSkipLogos-1.0.0.zip` in it. Do not unzip it.
+2. Put `BootSkipLogos-1.0.1.zip` in it. Do not unzip it.
 3. Launch the game with `--enable-mods`.
 
 Mods are unofficial and can break after game updates. Keep a backup of your save.

@@ -2,4 +2,4 @@ extends Node
 
 func _init(modLoader = null):
 	if modLoader != null:
-		modLoader.installScriptExtension("res://LidarLouderPing/LidarLouderPing.gd")
+		modLoader.installScriptExtension("res://LidarLouderPing/Code.gd")

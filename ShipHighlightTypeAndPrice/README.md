@@ -1,6 +1,6 @@
 # ShipHighlightTypeAndPrice - ΔV: Rings of Saturn
 
-Version 1.0.2. Makes the **type** of every ship in the dealer and fleet lists stand
+Version 1.0.3. Makes the **type** of every ship in the dealer and fleet lists stand
 out when scanning:
 
 - **Type** (e.g. `K37 TNTRL`): bold amber.
@@ -10,11 +10,11 @@ out when scanning:
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.
-2. Put `ShipHighlightTypeAndPrice-1.0.2.zip` in it. Do not unzip it.
+2. Put `ShipHighlightTypeAndPrice-1.0.3.zip` in it. Do not unzip it.
 3. Launch the game with `--enable-mods`.
 
 To change a color, edit `TYPE_COLOR` or `DIM_COLOR` at the top of
-`ShipHighlightTypeAndPrice/ModMain.gd` inside the zip (red, green, blue, each 0 to 1).
+`ShipHighlightTypeAndPrice/Code.gd` inside the zip (red, green, blue, each 0 to 1).
 
 Mods are unofficial and can break after game updates. Keep a backup of your save.
 
