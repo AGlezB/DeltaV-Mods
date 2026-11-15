@@ -61,6 +61,38 @@ uses, or that term has its own entry.
   `enceladus/Upgrades.tscn`; also called the Upgrades screen, after its key and scene). The code calls one piece a
   system: each has a `SYSTEM_*` key, which its script holds in `systemName` (`SYSTEM_SALVAGE_ARM`); a few texts say
   "system" too (the OMS's on/off switch, the trade-in tip).
+- **EVA** (extravehicular activity): a crew member in a space suit outside the ship. It has no key of its own; the
+  word is in conversation lines ("Getting into EVA.", `DIALOG_DERELICT_GO_SURE`). In flight an EVA is only a suited
+  sprite with a lamp (`ships/modules/EVAflight.tscn`, `EVAflight.gd`), which flies between the player's ship and the
+  ship the player is talking with when a conversation line sets `evaDirection` (`comms/ConversationPlayer.gd`
+  `execute`, over the line's `evaTime`; `ship-ctrl.gd` `handleEvaProgress`). -1 flies from the player's ship to the
+  other ship, 1 from the other ship to the player's. The sprite is decoration: the line's other fields decide what
+  happens. The player can't order an EVA. The base game shows one only in the cases below. The first three are
+  conversations during a dive, and in them the one who goes out is a member of the dive crew, so a captain flying
+  alone never gets them:
+  - **Derelicts**: abandoned ships with their reactor off, in the `helpless` faction (`story/RescueOperation.gd`, a
+    random event of the rings in `story/TheRing.tscn`, sometimes with a rescue ship nearby;
+    `story/FlightForRescue.gd`, on a rescue ship's path). A derelict can't be hailed. It opens its conversation
+    (`comms/conversation/DerelictConversation.tscn`) by itself, once, when the player's ship comes within its
+    `aiCuriosityDisance` (150 m; `ship-ctrl.gd` `AI.examine`). Unless a rescue ship (faction `helper`) is in sight
+    (then it's taken), a random crew member reports it (`DIALOG_DERELICT_RANDOM.tscn`), and the player can send
+    them over to restart it (`DIALOG_DERELICT_GO_AND_BRING_IT`). On board, they may get it running, and it joins
+    the player's fleet (`getThisShip`). Or they come back with nothing, or injured (leave days,
+    `addAgendaLeaveTime`). What they find varies (the `DIALOG_DERELICT_*` subtrees: brick, junk, solo dead, hole,
+    ghost ship).
+  - **Crew agendas**: an agenda is a crew member's personal story (`AGENDA_*`, followed in
+    `CurrentGame.state.agenda`). The member looking for their child (`AGENDA_LOOKING_FOR_CHILD`, a branch of the same
+    derelict conversation) and the one looking for their sibling (`AGENDA_LOOKING_FOR_SIBLING`, a derelict spawned for
+    it by `story/AgendaSpecificDerelict.gd`, which talks within 250 m: `AI.playDeadButTalk`) go over to the ship
+    they were looking for.
+  - **Vilcy** (faction `vilcy`, bounty hunters): a Vilcy ship hails the player about an ex-pirate in the crew
+    (`AGENDA_EX_PIRATE`, `comms/conversation/VilcyConversation.tscn`). Handing them over
+    (`AGENDA_EX_PIRATE_TAKE_HIM`) fires them, with an EVA.
+  - **At the station**, outside any conversation: the dock in Enceladus's background shows up to five suited
+    workers with flickering welding lights (`faces/EVA.tscn`, `faces/EVA.gd`; `EVA01`–`EVA05` in
+    `enceladus/Enceladus.tscn`). Each one is there while the player's ship is in maintenance
+    (`CurrentGame.isShipMaintained`: the in-game hours that fitting equipment and repairs take) or damaged past its
+    `damageRequired` (`1 - getCombatCapacity()`). They are scenery, not crew.
 - **Geologist**: the crew occupation for mining, and the OMS tab with the cargo's composition and the mineral
   targeting: which minerals the HUD marks, and their Minimum value (`HUD_MIN_PRICE`), kept in the HUD's
   `mineralConfig`.
