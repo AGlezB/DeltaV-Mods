@@ -1,0 +1,67 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://hud/OMS.gd" type="Script" id=1]
+[ext_resource path="res://menu/TabsWithGamepadControl.gd" type="Script" id=2]
+
+[node name="Inventory" type="MarginContainer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource( 1 )
+dialogPath = NodePath("MarginContainer/VBoxContainer/Comms")
+tabsPath = NodePath("MarginContainer/VBoxContainer/TabHintContainer/TabContainer")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+margin_right = 960.0
+margin_bottom = 720.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+margin_right = 960.0
+margin_bottom = 720.0
+
+[node name="TabHintContainer" type="MarginContainer" parent="MarginContainer/VBoxContainer"]
+margin_right = 960.0
+margin_bottom = 417.0
+size_flags_vertical = 3
+
+[node name="TabContainer" type="TabContainer" parent="MarginContainer/VBoxContainer/TabHintContainer"]
+margin_right = 960.0
+margin_bottom = 417.0
+rect_min_size = Vector2( 960, 0 )
+size_flags_horizontal = 3
+size_flags_vertical = 3
+use_hidden_tabs_for_min_size = true
+script = ExtResource( 2 )
+grabFocusIfNone = true
+
+[node name="CREW_OCCUPATION_MECHANIC" type="Tabs" parent="MarginContainer/VBoxContainer/TabHintContainer/TabContainer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+rect_clip_content = true
+
+[node name="Fix" type="Button" parent="MarginContainer/VBoxContainer/TabHintContainer/TabContainer/CREW_OCCUPATION_MECHANIC"]
+margin_right = 40.0
+margin_bottom = 20.0
+text = "Fix"
+
+[node name="CREW_OCCUPATION_ASTROGATOR" type="Tabs" parent="MarginContainer/VBoxContainer/TabHintContainer/TabContainer"]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="CREW_OCCUPATION_GEOLOGIST" type="Tabs" parent="MarginContainer/VBoxContainer/TabHintContainer/TabContainer"]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+rect_clip_content = true
+
+[node name="CREW_OCCUPATION_PILOT" type="Tabs" parent="MarginContainer/VBoxContainer/TabHintContainer/TabContainer"]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+rect_clip_content = true
+
+[node name="Comms" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
+margin_top = 417.0
+margin_right = 960.0
+margin_bottom = 720.0
+size_flags_vertical = 3

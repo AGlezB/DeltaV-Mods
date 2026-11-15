@@ -1,0 +1,23 @@
+[mod_information]
+
+name="GeologyByMass"
+id="aglezb.GeologyByMass"
+description="Judges identified ore by the mass of each mineral instead of its value."
+author="aglezb"
+
+[version]
+
+version_major=1
+version_minor=0
+version_bugfix=0
+
+[tags]
+
+group={
+"type": "string",
+"value": "Hud"
+}
+
+[manifest_definitions]
+
+manifest_version=2.2

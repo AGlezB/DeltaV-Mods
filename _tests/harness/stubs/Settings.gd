@@ -1,11 +1,12 @@
 extends Node
 
 # Stub of the game's Settings autoload: what Arm.gd (cfg.display.lights, settingsChanged), Tool.gd (getFps),
-# Boot.gd (firstBoot) and AnalogControlSlider.gd (getControlDeviceNr, while a slider has the focus) read.
+# Boot.gd (firstBoot), AnalogControlSlider.gd (getControlDeviceNr, while a slider has the focus) and Hud.gd instance()
+# (cfg.gameplay.tutorial) read.
 
 signal settingsChanged
 
-var cfg = {"display": {"lights": 1.0}}
+var cfg = {"display": {"lights": 1.0}, "gameplay": {"tutorial": false}}
 var firstBoot = false # the game's is true only until user://settings.cfg exists (loadFromFile)
 
 # The game sets this when it applies its fps setting (Settings.gd, 16 at 60 fps). Not every engine build has it.

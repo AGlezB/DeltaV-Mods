@@ -7,11 +7,12 @@
 	Assembles a Godot project in <WorkDir>\project from this folder's sources, the game's own scripts (copied from
 	the decompiled game: DockingArm.gd, Arm.gd, CabinLight.gd, Boot.gd, LIDAR.gd, PitchAdjustedAudio.gd,
 	HardwareLabel.gd, EnceladusMenu.gd, HidingMarginContainer.gd, AnalogControlSlider.gd, TuningFloatValue.gd,
-	TuningItems.gd, HireableCrew.gd, CrewBio.gd, CurrentCrewManagement.gd, PlaySoundsOnTheseButtons.gd, Tool.gd,
+	TuningItems.gd, Hud.gd, OMS.gd, TabsWithGamepadControl.gd, PriceLabel.gd, RepeatingHSlider.gd, MineralLabel.gd,
+	MineralSystemToggle.gd, HireableCrew.gd, CrewBio.gd, CurrentCrewManagement.gd, PlaySoundsOnTheseButtons.gd, Tool.gd,
 	gdunzip.gd), the game's Shower.tscn, audio buses (default_bus_layout.tres) and the skill icons CrewBio.gd preloads,
 	a stub mineral scene carrying the chunk radius read from the game's, stubs of the two scenes LIDAR.gd preloads, of
-	the Tuning parts CrewCheapHireNotifier's settings screen is built from and of a Hire screen entry (CrewBio.tscn).
-	Packages each mod into <WorkDir>\build\<Mod>.zip
+	the Tuning parts CrewCheapHireNotifier's settings screen is built from, of a Hire screen entry (CrewBio.tscn) and of
+	the Geologist tab's parts GeologyByMass's OMS tab is built from. Packages each mod into <WorkDir>\build\<Mod>.zip
 	(as a release zip), and runs every suite with its mods loaded from those zips, the way the game loads them:
 	by an autoload, before the engine loads the main scene. Logs: <WorkDir>\logs. Nothing in the repo, the game folder
 	or the decompiled game is changed.
@@ -24,6 +25,7 @@
 	- lidar: LidarLouderPing.
 	- hud: HudHideLabels.
 	- crew: CrewCheapHireNotifier.
+	- geology: GeologyByMass. Builds a HUD from harness\geology_hud.tscn, which holds the game's Hud.gd.
 
 .EXAMPLE
 	pwsh _tests\run.ps1
@@ -39,8 +41,8 @@
 #>
 [CmdletBinding()]
 param(
-	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew')]
-	[string[]] $Suite = @('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew'),
+	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology')]
+	[string[]] $Suite = @('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology'),
 	# Mod folders to load for every selected suite, in load order (the game's order: by path); @() = none.
 	# Default: each suite's own mods (see the description).
 	[string[]] $Mods,
@@ -138,7 +140,7 @@ foreach ($dir in $project, $build, $logs)
 }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'project.godot'), (Join-Path $PSScriptRoot 'main.tscn') -Destination $project
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'harness'), (Join-Path $PSScriptRoot 'suites') -Destination $project -Recurse
-foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningItems.gd', 'enceladus\HireableCrew.gd', 'enceladus\CrewBio.gd', 'enceladus\CurrentCrewManagement.gd', 'menu\sfx\PlaySoundsOnTheseButtons.gd', 'enceladus\Shower.tscn', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres')
+foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningItems.gd', 'hud\Hud.gd', 'hud\OMS.gd', 'menu\TabsWithGamepadControl.gd', 'hud\components\PriceLabel.gd', 'hud\components\RepeatingHSlider.gd', 'hud\components\MineralLabel.gd', 'hud\components\MineralSystemToggle.gd', 'enceladus\HireableCrew.gd', 'enceladus\CrewBio.gd', 'enceladus\CurrentCrewManagement.gd', 'menu\sfx\PlaySoundsOnTheseButtons.gd', 'enceladus\Shower.tscn', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres')
 {
 	$target = Join-Path $project $file
 	New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
@@ -253,6 +255,90 @@ size_flags_vertical = 0
 text = "PUT_HEADER_HERE"
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
+'@
+# The Geologist tab's parts GeologyByMass's OMS tab is built from (hud\components\MineralSystemToggle.tscn,
+# MineralLabel.tscn, PriceLabel.tscn, as hud\SystemMineralList.gd uses them): the game's node paths, scripts, values
+# and connections, without the theme, the toggle's click sound, the slider's smooth scrolling and button sounds.
+Write-Utf8Lf (Join-Path $project 'hud\components\MineralSystemToggle.tscn') @'
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://hud/components/MineralSystemToggle.gd" type="Script" id=1]
+
+[node name="MineralSystemToggle" type="CheckButton"]
+margin_right = 80.0
+margin_bottom = 40.0
+rect_min_size = Vector2( 0, 30 )
+size_flags_horizontal = 4
+size_flags_vertical = 3
+pressed = true
+flat = true
+clip_text = true
+align = 1
+script = ExtResource( 1 )
+
+[node name="Label" type="Label" parent="."]
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+margin_left = -60.0
+margin_top = -8.0
+margin_right = 60.0
+align = 1
+clip_text = true
+'@
+Write-Utf8Lf (Join-Path $project 'hud\components\MineralLabel.tscn') @'
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://hud/components/MineralLabel.gd" type="Script" id=1]
+
+[node name="MineralLabel" type="Button"]
+margin_right = 40.0
+margin_bottom = 14.0
+text = "Be"
+flat = true
+align = 0
+script = ExtResource( 1 )
+'@
+Write-Utf8Lf (Join-Path $project 'hud\components\PriceLabel.tscn') @'
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://hud/components/PriceLabel.gd" type="Script" id=1]
+[ext_resource path="res://hud/components/RepeatingHSlider.gd" type="Script" id=2]
+
+[node name="PriceLabel" type="MarginContainer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource( 1 )
+
+[node name="Box" type="HBoxContainer" parent="."]
+alignment = 1
+
+[node name="HSlider" type="HSlider" parent="Box"]
+rect_min_size = Vector2( 120, 0 )
+hint_tooltip = "HINT_FILTER_PRICE"
+focus_mode = 0
+size_flags_vertical = 4
+max_value = 20000.0
+step = 1000.0
+scrollable = false
+ticks_on_borders = true
+script = ExtResource( 2 )
+
+[node name="MarginContainer" type="MarginContainer" parent="Box"]
+rect_min_size = Vector2( 100, 0 )
+
+[node name="Label" type="Button" parent="Box/MarginContainer"]
+rect_min_size = Vector2( 110, 0 )
+size_flags_horizontal = 3
+size_flags_vertical = 3
+flat = true
+align = 0
+
+[connection signal="blur" from="Box/HSlider" to="." method="grab_focus"]
+[connection signal="focus_exited" from="Box/HSlider" to="Box/HSlider" method="_on_HSlider_focus_exited"]
+[connection signal="value_changed" from="Box/HSlider" to="." method="_on_HSlider_value_changed"]
+[connection signal="pressed" from="Box/MarginContainer/Label" to="Box/HSlider" method="_on_Label_pressed"]
 '@
 # A Hire screen entry (enceladus\CrewBio.tscn, as enceladus\HireableCrew.gd instances it): the game's node paths,
 # script, values and connection, a stub of the portrait (faces\VideoComms.tscn), the hire animation's player without
@@ -398,6 +484,7 @@ $suiteMods = @{
 	lidar = @('LidarLouderPing')
 	hud = @('HudHideLabels')
 	crew = @('CrewCheapHireNotifier')
+	geology = @('GeologyByMass')
 }
 $given = @{}
 foreach ($z in $ModZip)

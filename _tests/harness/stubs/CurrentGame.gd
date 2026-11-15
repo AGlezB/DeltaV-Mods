@@ -1,11 +1,12 @@
 extends Node
 
 # Stub of the game's CurrentGame autoload: what DockingArm.gd, CabinLight.gd, Tool.gd, TuningFloatValue.gd,
-# HireableCrew.gd, CrewBio.gd and CrewCheapHireNotifier reach.
+# Hud.gd, PriceLabel.gd, HireableCrew.gd, CrewBio.gd, CrewCheapHireNotifier and GeologyByMass reach.
 
 signal dayPassed()
 signal employmentChanged()
 signal moneyChanged(money)
+signal broadcast(from, to, msg, replies)
 
 # The game's crew occupations and level keys (CurrentGame.gd), for the Hire screen's entries.
 var occupations = ["CREW_OCCUPATION_PILOT", "CREW_OCCUPATION_MECHANIC", "CREW_OCCUPATION_GEOLOGIST", "CREW_OCCUPATION_ASTROGATOR"]
@@ -13,7 +14,22 @@ var experienceLevels = ["CREW_EXPERIENCE_NO", "CREW_EXPERIENCE_BEGINNER", "CREW_
 var talentLevels = ["CREW_EDUCATION_NO", "CREW_EDUCATION_BASIC", "CREW_EDUCATION_HIGH", "CREW_EDUCATION_MASTER"]
 var money = 1000000 # what getMoney() returns
 
-var traceMinerals = []
+# The game's minerals (CurrentGame.gd): the market's list, the ones a HUD can target, and their colours.
+var mineralPrices = {"H2O": 0.1, "Be": 20.5, "Fe": 0.9, "Pd": 2.5, "Pt": 2.7, "V": 3.0, "W": 6.5}
+var traceMinerals = ["Be", "Pt", "Fe", "Pd", "V", "W"]
+var specificMineralColors = {
+	"H2O": Color(0.1, 0.2, 1.0),
+	"Be": Color(0.0, 0.7, 1.0),
+	"Pt": Color(1.0, 1.0, 1.0),
+	"Fe": Color(1.0, 0.2, 0.2),
+	"Pd": Color(1.0, 0.4, 0.2),
+	"V": Color(1.0, 0.35, 1.0),
+	"W": Color(0.4, 1.0, 0.3),
+	"C": Color(0.2, 0.2, 0.2),
+	"Ca": Color(1.0, 1.0, 0.8),
+	"CARGO_EQUIPMENT": Color(0.0, 1.0, 0.0),
+}
+var stories = {} # what setStory() was given (Hud.gd instance() sets the tutorial's)
 var adrenalineSum = 0.0 # what CabinLight.gd has added through adrenaline()
 var state = {"crew": {}, "ui": {}} # the game's hired crew by full name, and its per-save UI store; the crew suite fills them
 var availableCrew = [] # what getAvailableCrew() returns; the crew suite fills it
@@ -74,3 +90,6 @@ func getUiValue(flag, default = null):
 
 func formatThousands(nr):
 	return "%d" % nr
+
+func setStory(story, to, _onlyRise = true):
+	stories[story] = to

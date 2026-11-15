@@ -1,0 +1,22 @@
+# GeologyByMass: the texts of its OMS tab, in English. Godot shows English for any language without its own file
+# (its fallback locale), so another language only needs a copy of this file with its Language and msgstr lines
+# translated, loaded in ModMain.gd.
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "GEOLOGYBYMASS_TAB"
+msgstr "Ore mass"
+
+msgid "GEOLOGYBYMASS_ENABLED"
+msgstr "Judge ore by mineral mass instead of the minimum value"
+
+msgid "GEOLOGYBYMASS_HINT"
+msgstr ""
+"GeologyByMass mod: while this is on, an identified chunk keeps its full info box when it holds at least the mass "
+"set below of a mineral switched on in the Geologist tab. Its value and the Geologist tab's minimum value no longer "
+"count."
+
+msgid "GEOLOGYBYMASS_MIN_MASS"
+msgstr "Least mass of this mineral, as your geologist estimates it, for a chunk to keep its full info box."

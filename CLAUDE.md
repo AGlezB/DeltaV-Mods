@@ -179,17 +179,19 @@ cites and update that constant.
 `_tests\run.ps1` (PowerShell 7) tests the mods listed below in a headless Godot 3.6, in a few seconds. It assembles
 a Godot project in `<TempDir>\tests\project` from `_tests\`; the game's own `DockingArm.gd`, `Arm.gd`,
 `CabinLight.gd`, `Boot.gd`, `LIDAR.gd`, `PitchAdjustedAudio.gd`, `HardwareLabel.gd`, `EnceladusMenu.gd`,
-`HidingMarginContainer.gd`, `AnalogControlSlider.gd`, `TuningFloatValue.gd`, `TuningItems.gd`, `HireableCrew.gd`,
-`CrewBio.gd`, `CurrentCrewManagement.gd`, `PlaySoundsOnTheseButtons.gd`, `Tool.gd`, `gdunzip.gd`, `Shower.tscn`,
-audio buses (`default_bus_layout.tres`) and the skill icons `CrewBio.gd` preloads (their `.png.import` and imported
-`.stex`, so they load without an import step), copied from the decompiled source on every run and never committed,
-since they are the game's; a stub mineral scene with the chunk radius read from the game's; bare stubs of the two
-scenes `LIDAR.gd` preloads; and stubs of the Tuning scenes (`TuningFloatValue.tscn`, `TuningItems.tscn`,
-`TuningBoolValue.tscn`, `HeaderWithMoney.tscn`) and of a Hire screen entry (`CrewBio.tscn`, with a portrait stub,
-`harness/crew_video.gd`, and the game's tooltip node, `PlaySoundsOnTheseButtons`) with the game's node paths and
-scripts but no theme, textures or sounds. It packages each mod as a release zip and loads the zips as
-`ModLoader.gd` does, at the same moment (`_tests\harness\loader.gd` is the `ModLoader` autoload, and loads in its
-`_init`; the autoloads keep the game's order), so the zip layout is tested too. Logs: `<TempDir>\tests\logs`.
+`HidingMarginContainer.gd`, `AnalogControlSlider.gd`, `TuningFloatValue.gd`, `TuningItems.gd`, `Hud.gd`, `OMS.gd`,
+`TabsWithGamepadControl.gd`, `PriceLabel.gd`, `RepeatingHSlider.gd`, `MineralLabel.gd`, `MineralSystemToggle.gd`,
+`HireableCrew.gd`, `CrewBio.gd`, `CurrentCrewManagement.gd`, `PlaySoundsOnTheseButtons.gd`, `Tool.gd`, `gdunzip.gd`,
+`Shower.tscn`, audio buses (`default_bus_layout.tres`) and the skill icons `CrewBio.gd` preloads (their `.png.import`
+and imported `.stex`, so they load without an import step), copied from the decompiled source on every run and never
+committed, since they are the game's; a stub mineral scene with the chunk radius read from the game's; bare stubs of
+the two scenes `LIDAR.gd` preloads; and stubs of the Tuning scenes (`TuningFloatValue.tscn`, `TuningItems.tscn`,
+`TuningBoolValue.tscn`, `HeaderWithMoney.tscn`), of a Hire screen entry (`CrewBio.tscn`, with a portrait stub,
+`harness/crew_video.gd`, and the game's tooltip node, `PlaySoundsOnTheseButtons`) and of the Geologist tab's parts
+(`MineralSystemToggle.tscn`, `MineralLabel.tscn`, `PriceLabel.tscn`) with the game's node paths and scripts but no
+theme, textures or sounds. It packages each mod as a release zip and loads the zips as `ModLoader.gd` does, at
+the same moment (`_tests\harness\loader.gd` is the `ModLoader` autoload, and loads in its `_init`; the autoloads keep
+the game's order), so the zip layout is tested too. Logs: `<TempDir>\tests\logs`.
 
 ```powershell
 .\_tests\run.ps1                                               # every suite, its own mods, the game's order
@@ -203,9 +205,9 @@ Call it from a pwsh prompt or `pwsh -Command`: under `pwsh -File`, list argument
 not parsed as arrays. Exit code 0 = every run passed; a script error fails its run even if every check passed.
 
 The suites are ported from the claude.ai harness (DVModTestHarness 1.0.0; the original was deleted once ported),
-except `boot`, `lidar`, `hud` and `crew`. `units`, `still` and `moving` load the two arm mods by default, `dive`
-loads DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos, `lidar` loads LidarLouderPing, `hud` loads
-HudHideLabels, `crew` loads CrewCheapHireNotifier.
+except `boot`, `lidar`, `hud`, `crew` and `geology`. `units`, `still` and `moving` load the two arm mods by default,
+`dive` loads DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos, `lidar` loads LidarLouderPing, `hud` loads
+HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology` loads GeologyByMass.
 
 - `units`: the claude.ai unit tests (`arm/main.gd`) nearly verbatim, on synthetic arms around the game's
   `DockingArm.gd`. TargetSelection: area geometry on turned, scaled and offset arms, reach, the strip, the weighted
@@ -285,14 +287,32 @@ HudHideLabels, `crew` loads CrewCheapHireNotifier.
   input events in the idle part of a frame, with the game's bindings: a bare `InputEventAction`, or one sent during
   physics, doesn't make `Input.is_action_just_pressed` true. The control checks (the entry keeps its key; a Hire
   screen entry gets no badge) run on the game's own scripts.
+- `geology` (`suites/geology.gd`): HUDs from `harness/geology_hud.tscn` (the game's `Hud.gd`, with an `Inventory`
+  placeholder of `harness/geology_oms.tscn`: the game's `OMS.gd` and `TabsWithGamepadControl.gd` over the OMS's four
+  role tabs) on `harness/geology_ship.gd`, a ship stub whose `isValidMineralTarget` records each call in place of the
+  game's rule; the OMS is built on the ship's `instance` signal, as the game builds it. The mod's settings
+  descriptions come from its `Settings.gd`. Checks that the tab comes right after the Geologist tab, titled by its
+  key, once however often the OMS is built, and that opening it stores nothing; its switch, with its label at the
+  mod's spacing (once laid out), then one row per mineral the HUD can switch on, with the Geologist tab's parts, the
+  mod's range, step, unit, tooltip and bar width (also once laid out), and the stored values; the switch and the
+  sliders store what they show, and the switch dims the rows; choosing the tab focuses the switch. The rule: off, the
+  game decides; on, below, at and above a mineral's mass, a mineral switched off in the Geologist tab, one of two
+  minerals enough, the value and Minimum value ignored both ways; the game decides a chunk not yet identified,
+  another ship's HUD and a HUD without mineral targeting. The settings model: defaults for a ship without the entry;
+  reading and unchanged sets store nothing; the mineral list with and without `onlyMinerals`; clamping and snapping
+  of what is set or hand-edited; the entry in the HUD's `mineralConfig` (the ship's `hud.config`) under the
+  manifest's id, with the format and mod versions, the game's keys untouched; a JSON round trip. A preheated ship
+  (its HUD builds the OMS before loading `mineralConfig`) gets the tab with its stored values. And the texts of
+  `i18n/en.po`, also in a language without them. The control checks (the OMS keeps its four tabs; the game decides)
+  run on the game's own script.
 - `_tests\harness\rig.gd` builds the arm's node tree as the game nests it, with the values in
   `_tests\harness\vp_data.gd`; each cites its scene file and line, so re-check them after a game update. The ship
   is a stub moved by hand (it takes the arm's impulses and torque; inertia from the hull); the rotors don't collide.
 - **Baseline** (both arm load orders give the same results): `units` 114 checks with both arm mods (64 with
   PullBehavior alone, 61 with TargetSelection alone), `still` 9, `moving` 16, `dive` 8, `boot` 5 (3 control checks
   with `-Mods @()`), `lidar` 40 (3 control checks with `-Mods @()`), `hud` 13 (3 control checks with `-Mods @()`),
-  `crew` 97 (98 with CrewPerfectSort too, in both load orders; 3 control checks with `-Mods @()`), all passing;
-  `-Matrix` gives 16 of 16 in every combination.
+  `crew` 97 (98 with CrewPerfectSort too, in both load orders; 3 control checks with `-Mods @()`), `geology` 50 (3
+  control checks with `-Mods @()`), all passing; `-Matrix` gives 16 of 16 in every combination.
   Feeding, a chunk beside the hull is in after 4.4–4.8 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.4.0 (the claude.ai results,
   case for case) took 5.9–6.3 s there, fails the 8 time limits, and `-Matrix` gave 16, 15, 16, 16 (feeding while
@@ -337,7 +357,8 @@ check is playing the game with the mods.
    CrewPerfectSort (`enceladus/HireableCrew.gd`, `enceladus/CurrentCrewManagement.gd`), CrewCheapHireNotifier
    (`enceladus/EnceladusMenu.gd`; it also adds its settings screen to the station's right-hand screens, the children
    of `enceladus/HidingMarginContainer.gd`, copying the Tuning screen's frame and behaving like the game's screens;
-   and `enceladus/HireableCrew.gd`, the Hire screen). `ModMain.gd` only calls
+   and `enceladus/HireableCrew.gd`, the Hire screen), GeologyByMass (`hud/Hud.gd`; it also adds its tab to the OMS,
+   right after the Geologist tab, from `instance()`). `ModMain.gd` only calls
    `installScriptExtension("res://<ModName>/Code.gd")` (CrewPerfectSort: once for each of its two extension files;
    CrewCheapHireNotifier: `Code.gd`, then `HireScreen.gd`); `Code.gd` `extends "res://<game script>"`. Rules that let
    mods stack on the same script (header of `ArmAltTargetSelection/Code.gd`):
@@ -456,6 +477,14 @@ check is playing the game with the mods.
     one or two, their default, range and step are constants in `Code.gd`, read through a clamping helper. With more,
     or spread over several game systems, they split into `Settings.gd` (the descriptions and a clamped read from a
     ship; no shared instance) and `TuningUI.gd` (the registration, called from `Code.gd`'s `onSetup`).
+  - Settings that change what a game system's own settings already decide follow that system's pattern
+    (GeologyByMass): they live in that system's config, next to the game's, under the mod's id from
+    `Mod.manifest`, changed in place as the game changes its own, so the game saves, loads and carries them. Then
+    `Settings.gd` has one instance per system, made by `Code.gd` (no `shared()`, no `loadFrom…` / `saveTo…`, no
+    signal when the game re-reads by itself): the descriptions as constants, getters that never write and give the
+    defaults where nothing is stored (clamped, snapped to the step), setters that write only a change, an entry with
+    `formatVersion` and `modVersion`, and `modId()` / `modName()` / `modVersion()`. GeologyByMass: the HUD's
+    `mineralConfig` (the ship's `hud.config`), next to the Geologist tab's settings.
   - `i18n/<locale>.po` (`i18n/en.po`, …), in a subfolder named as the game's own `i18n/`: the mod's texts in that
     language, loaded by `ModMain.gd` (see *How the game loads a mod*). English is Godot's fallback language, so
     `en.po` covers every language until it gets its own file.
