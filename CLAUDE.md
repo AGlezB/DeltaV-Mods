@@ -50,7 +50,13 @@ uses, or that term has its own entry.
   (`ENCELADUS_CREW_CURRENT`, `enceladus/CurrentCrewManagement.gd`) and the Hire screen.
 - **Dealer** (`ENCELADUS_SHIP_MARKET`, `enceladus/Dealer.tscn`): the station's ship market. Its entries are
   `enceladus/SystemBuyUI.gd` (the ship-list mods change them); its Examine tab can launch the simulator. **Fleet**
-  (`ENCELADUS_OWNED_SHIPS`): the ships the player owns.
+  (`ENCELADUS_OWNED_SHIPS`): the ships the player owns, and the station screen listing them (`enceladus/Owned.tscn`,
+  an instance of `Dealer.tscn` with the same entries, the current ship first), where the player switches ships
+  (`GARAGE_SWITCH`, `Dealer.gd` `use`) and sells them (`GARAGE_SELL`). Each owned ship keeps its own config: equipment,
+  Tuning, mineral targeting, damage, cargo (`CurrentGame.state.ship`, the others in `state.garage`), and a crew list
+  (`preferredCrew`), which the game writes only when the crew changes while that ship is flown (hiring, firing, who
+  dives) and puts aboard when the player switches to it (`CurrentGame.gd` `validateEmployment`); a ship without one
+  keeps whoever is aboard. The crew itself belongs to the player, not to a ship.
 - **Depth** (`HUD_DEPTH`): how far into the rings the ship is.
 - **Dive** (ring dive): one trip from the station into Saturn's rings to mine, until the ship is back. Started with
   Launch Ring Dive (`ENCELADUS_RETURN_TO_RING`), at the dive entry point picked before launch
@@ -145,6 +151,14 @@ uses, or that term has its own entry.
   combat: they are the only way to disable an enemy ship so it can be captured, because a ship that
   runs out of remass stops working.
 - **Remass**: reaction mass, the ship's propellant (`HUD_FUEL`, shown as "propellant").
+- **Repairs** (`ENCELADUS_SHIP_REPAIRS`, `enceladus/Repairs.gd`): the station screen that fixes the current ship's
+  damaged equipment for E$ and in-game hours (`enceladus/SystemShipRepairUI.gd`): Replace (the piece's
+  `repairReplacementPrice` less what it is still worth, in `repairReplacementTime` hours) or Fix (`repairFixPrice` per
+  step, in `repairFixTime` hours shortened by the crew's mechanics). The hours are the ship's maintenance, a time
+  stored in that ship's own config (`maintaineceUntil`, `CurrentGame.isShipMaintained`); fitting equipment adds to it
+  only when the piece replaced was damaged (`ship-ctrl.gd` `getSlotTime`). A ship in maintenance can't dive
+  (`Enceladus.gd` `shipPassesInspection`; the pre-flight inspection offers a hotel stay until it is done) or be sold,
+  but the player can switch to another ship of the fleet, while the first one's maintenance runs on.
 - **Roid**: an asteroid (`asteroids/asteroid.gd`, a `RigidBody2D`), the rocks that fill the rings; the game's own
   texts say "roids" too.
 - **Ship models**: Eagle-Prospector-VP (the VP), EIME, OCP-209, K37 TNTRL, the Cothon series, the Kitsune, …: names
@@ -160,12 +174,20 @@ uses, or that term has its own entry.
 
 ## Local paths
 
-| What | Path |
+The folders outside the repo differ per machine, so they are set in `paths.local.psd1` at the repo root (git-ignored;
+`paths.example.psd1` is its committed template) and named here by its keys. `TempDir\gdre` means the `gdre` folder
+under `TempDir`. Never write their values into a committed file. `_tests\run.ps1` reads the file too, and in a
+command `$paths = Import-PowerShellDataFile .\paths.local.psd1` (from the repo root) gives `$paths.GameDir` and the
+others. This machine's values:
+
+@paths.local.psd1
+
+| Key or path | What |
 |---|---|
-| Game (GOG) | `<GameDir>` (`Delta-V.exe`, `mods\`) |
-| Decompiled game, one folder per game version | `<TempDir>\gdre\Delta-V-<version>\` (1.91.61 so far) |
-| Godot 3.6 (the game's engine) and GDRE Tools 2.7.4 | `<GodotDir>\` |
-| Generated and temporary files: zips being packaged, test runs, scratch scripts | `<TempDir>\`, never the repo |
+| `GameDir` | The game (`Delta-V.exe`, `mods\`) |
+| `TempDir\gdre\Delta-V-<version>\` | The decompiled game, one folder per game version (1.91.61 so far) |
+| `GodotDir` | Godot 3.6 (the game's engine) and GDRE Tools 2.7.4 |
+| `TempDir` | Generated and temporary files: zips being packaged, test runs, scratch scripts; never the repo |
 
 Do not read outside these paths and this folder without asking first.
 
@@ -173,29 +195,36 @@ The decompiled game is where the `res://` paths the mods extend resolve (`res://
 `res://ships/modules/DockingArm.gd`, …). **Always read and test against the newest version there.**
 
 After a game update, decompile it again with GDRE Tools
-(`gdre_tools.exe --recover=<the game's Delta-V.pck>`) into `<TempDir>\gdre\Delta-V-<version>\` next to
-the older versions. The harness takes the newest folder by itself (by version number) and warns when
+(`gdre_tools.exe --recover=<the game's Delta-V.pck>`) into `TempDir\gdre\Delta-V-<version>\` next to the older
+versions. The harness takes the newest folder by itself (by version number) and warns when
 `_tests\harness\vp_data.gd` was checked against another version (`CHECKED_AGAINST`): then re-check the values it
 cites and update that constant.
 
 ## Testing
 
 `_tests\run.ps1` (PowerShell 7) tests the mods listed below in a headless Godot 3.6, in a few seconds. It assembles
-a Godot project in `<TempDir>\tests\project` from `_tests\`; the game's own `DockingArm.gd`, `Arm.gd`,
+a Godot project in `TempDir\tests\project` from `_tests\`; the game's own `DockingArm.gd`, `Arm.gd`,
 `CabinLight.gd`, `Boot.gd`, `LIDAR.gd`, `PitchAdjustedAudio.gd`, `HardwareLabel.gd`, `EnceladusMenu.gd`,
 `HidingMarginContainer.gd`, `AnalogControlSlider.gd`, `TuningFloatValue.gd`, `TuningItems.gd`, `Hud.gd`, `OMS.gd`,
 `TabsWithGamepadControl.gd`, `PriceLabel.gd`, `RepeatingHSlider.gd`, `MineralLabel.gd`, `MineralSystemToggle.gd`,
-`HireableCrew.gd`, `CrewBio.gd`, `CurrentCrewManagement.gd`, `PlaySoundsOnTheseButtons.gd`, `Tool.gd`, `gdunzip.gd`,
-`Shower.tscn`, audio buses (`default_bus_layout.tres`) and the skill icons `CrewBio.gd` preloads (their `.png.import`
-and imported `.stex`, so they load without an import step), copied from the decompiled source on every run and never
+`HireableCrew.gd`, `CrewBio.gd`, `CurrentCrewManagement.gd`, `PlaySoundsOnTheseButtons.gd`, `SystemBuyUI.gd`,
+`SystemShipUpgradeUI.gd`, `Tool.gd`, `gdunzip.gd`, `Shower.tscn`, audio buses (`default_bus_layout.tres`), the skill
+icons `CrewBio.gd` preloads and a Fleet entry's Use icon (`enceladus/Upgrades/switch.png`; their `.png.import` and
+imported `.stex`, so they load without an import step), copied from the decompiled source on every run and never
 committed, since they are the game's; a stub mineral scene with the chunk radius read from the game's; bare stubs of
 the two scenes `LIDAR.gd` preloads; and stubs of the Tuning scenes (`TuningFloatValue.tscn`, `TuningItems.tscn`,
 `TuningBoolValue.tscn`, `HeaderWithMoney.tscn`), of a Hire screen entry (`CrewBio.tscn`, with a portrait stub,
-`harness/crew_video.gd`, and the game's tooltip node, `PlaySoundsOnTheseButtons`) and of the Geologist tab's parts
-(`MineralSystemToggle.tscn`, `MineralLabel.tscn`, `PriceLabel.tscn`) with the game's node paths and scripts but no
-theme, textures or sounds. It packages each mod as a release zip and loads the zips as `ModLoader.gd` does, at
+`harness/crew_video.gd`, and the game's tooltip node, `PlaySoundsOnTheseButtons`), of the Geologist tab's parts
+(`MineralSystemToggle.tscn`, `MineralLabel.tscn`, `PriceLabel.tscn`), of a Fleet entry (`SystemBuyUI.tscn`, with the
+Use and OK icons, the confirmation's frame (`PanelWithHugeShadow.tres`) and margins, the confirmation animations read
+from the game's scene, the default fonts of the game's themes for the entry and its labels' grid (`MenuFontAudiowide.tres`,
+`FontNoto.tres` and their `.ttf`), so its sizes are the game's, and a flicker stub, `harness/fleet_flicker.gd`) and of
+an Equipment item (`SystemShipUpgradeUI.tscn`) with the game's node paths and scripts but no theme, textures or
+sounds (beyond those named). It packages each mod as a release zip and loads the zips as `ModLoader.gd` does, at
 the same moment (`_tests\harness\loader.gd` is the `ModLoader` autoload, and loads in its `_init`; the autoloads keep
-the game's order), so the zip layout is tested too. Logs: `<TempDir>\tests\logs`.
+the game's order), so the zip layout is tested too. Logs: `TempDir\tests\logs`. Godot and these folders come from
+`paths.local.psd1` (see *Local paths*), or from the parameters `-GodotPath`, `-DecompiledRoot`, `-GameSource` and
+`-WorkDir`.
 
 ```powershell
 .\_tests\run.ps1                                               # every suite, its own mods, the game's order
@@ -209,9 +238,9 @@ Call it from a pwsh prompt or `pwsh -Command`: under `pwsh -File`, list argument
 not parsed as arrays. Exit code 0 = every run passed; a script error fails its run even if every check passed.
 
 The suites are ported from the claude.ai harness (DVModTestHarness 1.0.0; the original was deleted once ported),
-except `boot`, `lidar`, `hud`, `crew` and `geology`. `units`, `still` and `moving` load the two arm mods by default,
-`dive` loads DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos, `lidar` loads LidarLouderPing, `hud` loads
-HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology` loads GeologyByMass.
+except `boot`, `lidar`, `hud`, `crew`, `geology` and `fleet`. `units`, `still` and `moving` load the two arm mods by
+default, `dive` loads DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos, `lidar` loads LidarLouderPing, `hud`
+loads HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology` loads GeologyByMass, `fleet` loads ShipCopyPaste.
 
 - `units`: the claude.ai unit tests (`arm/main.gd`) nearly verbatim, on synthetic arms around the game's
   `DockingArm.gd`. TargetSelection: area geometry on turned, scaled and offset arms, reach, the strip, the weighted
@@ -326,6 +355,36 @@ HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology` loads GeologyByMass
   A preheated ship (its HUD builds the OMS before loading `mineralConfig`) gets the tab with its stored values. And
   the texts of `i18n/en.po`, also in a language without them. The control checks (the OMS keeps its four tabs; the
   game decides) run on the game's own script.
+- `fleet` (`suites/fleet.gd`): Fleet entries built from the stub `SystemBuyUI.tscn` (the game's `SystemBuyUI.gd`) as
+  `Dealer.gd` `doAddShips` makes them, under a Fleet screen stub (`harness/fleet_screen.gd`, which records
+  `shipChanged` and `addShips`) and beside a market entry and an Equipment screen stub (`harness/fleet_equipment.gd`:
+  `getItems`, and a count of `updatePricesAndAvailability`) holding the game's `SystemShipUpgradeUI.gd` items, whose
+  prices the suite sets as the game does (`setValuesDiscount`); the ships are `harness/fleet_ship.gd` (the game's
+  config accessors, a recording `clearDamageInSlot`), the game's state the `CurrentGame` stub's (`state.ship`,
+  `state.garage`, money, log, maintenance; a `validateEmployment` that records the crew list it would put aboard).
+  Checks that the market's entry gets nothing; every Fleet entry gets Copy, then Paste, right before Use, copies of it,
+  Copy shown on every entry but the current ship's; pressing Copy doesn't switch ships; the icons have the Use icon's
+  size and flags and its colours (light strokes, dark edge), and differ from it and each other. The template: Copy
+  sets it on the Fleet screen, marked in the Owned label's colour with its own tooltip; Paste only on the current
+  entry, not for another model or no template; pressing the template's Copy again, closing the screen or selling the
+  template forgets it; it survives switches while the screen stays open (switched to the template itself, no Copy on
+  its entry and no Paste; back on the spare, Paste again); none of this writes to the state. The confirmation: a
+  hidden copy of the Buy confirmation, with copies of its animations retargeted to it and to Paste; Paste reprices the
+  Equipment screen first, then shows the template's name, the price, the repair time and what isn't sold (a missing
+  lidar read as the ship's default, a missing number as none), Paste hiding as Buy does and the entry's Buy button
+  staying hidden; its text wraps in the registration label's small font at no more than `TEXT_SHARE` of the entry, and
+  in a Fleet list of the entry's design width and in a narrower one the entry keeps the list's width and the
+  confirmation, OK and Cancel lie within it; Cancel hides it, Paste coming back with the focus, nothing changed;
+  above the money, OK is disabled, says so and does nothing; a price changed while it showed makes OK show the new
+  plan without pasting. Pasting: the money, each piece fitted (damage cleared, value set) at `getNetPrice()`, pieces
+  already the same or not sold left, the repair time from now and not the template's, the log as the Equipment screen
+  logs it; the tuning replaced, the spare's own kept for the piece not sold; the mineral targeting, slot configs
+  (but the slot kept) and crew list copied, the crew put aboard at once (`validateEmployment` after the list is
+  written); identity, damage, cargo and consumables kept; the template untouched; then `shipChanged` and `addShips`.
+  A refund (no repair time when the piece replaced isn't damaged); the same equipment (settings and crew only, nothing
+  bought, logged or added) with a template without a crew list (the confirmation says its crew is unknown, the
+  spare's list stays, nothing put aboard); closing the screen with the confirmation open. The texts of `i18n/en.po`, also in a language without them; the entries' script
+  keeps the game's path. The control checks (no Copy, Paste or confirmation) run on the game's own script.
 - `_tests\harness\rig.gd` builds the arm's node tree as the game nests it, with the values in
   `_tests\harness\vp_data.gd`; each cites its scene file and line, so re-check them after a game update. The ship
   is a stub moved by hand (it takes the arm's impulses and torque; inertia from the hull); the rotors don't collide.
@@ -333,7 +392,8 @@ HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology` loads GeologyByMass
   PullBehavior alone, 61 with TargetSelection alone), `still` 9, `moving` 16, `dive` 8, `boot` 5 (3 control checks
   with `-Mods @()`), `lidar` 40 (3 control checks with `-Mods @()`), `hud` 13 (3 control checks with `-Mods @()`),
   `crew` 140 (141 with CrewPerfectSort too, in both load orders; 3 control checks with `-Mods @()`), `geology` 60 (3
-  control checks with `-Mods @()`), all passing; `-Matrix` gives 16 of 16 in every combination.
+  control checks with `-Mods @()`), `fleet` 62 (the same with ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice
+  too; 3 control checks with `-Mods @()`), all passing; `-Matrix` gives 16 of 16 in every combination.
   Feeding, a chunk beside the hull is in after 4.4–4.8 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.4.0 (the claude.ai results,
   case for case) took 5.9–6.3 s there, fails the 8 time limits, and `-Matrix` gave 16, 15, 16, 16 (feeding while
@@ -341,8 +401,9 @@ HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology` loads GeologyByMass
   1.3.1, which broke in the game, gives 0, 0, 12, 4 of 16. This ship also takes the arm's torque reaction, as the
   game's does (the claude.ai stub dropped it), which shifts some numbers in the third decimal.
 
-The harness doesn't replace the game. CrewHighlightJobAndSalary and the ship-list mods have no tests at all, and
-CrewPerfectSort has none of its own: only its Hire screen sort runs, beside CrewCheapHireNotifier in `crew`. The real
+The harness doesn't replace the game. CrewHighlightJobAndSalary has no tests at all, and CrewPerfectSort and the
+ship-list mods have none of their own: only CrewPerfectSort's Hire screen sort runs, beside CrewCheapHireNotifier in
+`crew`, and the ship-list mods load beside ShipCopyPaste in `fleet` without checks of their own. The real
 check is playing the game with the mods.
 
 ## How the game loads a mod (`res://ModLoader.gd`, an autoload)
@@ -379,7 +440,8 @@ check is playing the game with the mods.
    (`enceladus/EnceladusMenu.gd`; it also adds its settings screen to the station's right-hand screens, the children
    of `enceladus/HidingMarginContainer.gd`, copying the Tuning screen's frame and behaving like the game's screens;
    and `enceladus/HireableCrew.gd`, the Hire screen), GeologyByMass (`hud/Hud.gd`; it also adds its tab to the OMS,
-   right after the Geologist tab, from `instance()`). `ModMain.gd` only calls
+   right after the Geologist tab, from `instance()`), ShipCopyPaste (`enceladus/SystemBuyUI.gd`, the Fleet screen's
+   entries; it prices through the Equipment screen's items). `ModMain.gd` only calls
    `installScriptExtension("res://<ModName>/Code.gd")` (CrewPerfectSort: once for each of its two extension files;
    CrewCheapHireNotifier: `Code.gd`, then `HireScreen.gd`); `Code.gd` `extends "res://<game script>"`. Rules that let
    mods stack on the same script (header of `ArmAltTargetSelection/Code.gd`):
@@ -415,6 +477,9 @@ check is playing the game with the mods.
   and both override `fillCrew`, each calling the parent's first: by path the chain is game ← CrewCheapHireNotifier ←
   CrewPerfectSort, and CrewPerfectSort only reorders the entries, so the marks stay (both orders tested in `crew`).
   Their member names must stay distinct.
+- ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice find the ship entries by `node.get_script().resource_path`;
+  ShipCopyPaste extends that script, and `take_over_path` keeps the path, so they still find them (loaded together in
+  `fleet`).
 
 ## Working rules
 

@@ -1,0 +1,23 @@
+[mod_information]
+
+name="ShipCopyPaste"
+id="AGlezB.ShipCopyPaste"
+description="Copies one ship's equipment, tuning and crew onto another ship of the same model, from the Fleet screen."
+author="AGlezB"
+
+[version]
+
+version_major=0
+version_minor=1
+version_bugfix=1
+
+[tags]
+
+group={
+"type": "string",
+"value": "Fleet"
+}
+
+[manifest_definitions]
+
+manifest_version=2.2

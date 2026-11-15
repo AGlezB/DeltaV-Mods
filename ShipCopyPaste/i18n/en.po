@@ -1,0 +1,40 @@
+# ShipCopyPaste: the texts of its Fleet screen buttons and confirmation, in English. Godot shows English for any
+# language without its own file (its fallback locale), so another language only needs a copy of this file with its
+# Language and msgstr lines translated, loaded in ModMain.gd.
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "SHIPCOPYPASTE_COPY"
+msgstr "Copy this ship's setup, to paste it onto another ship of the same model"
+
+msgid "SHIPCOPYPASTE_TEMPLATE"
+msgstr "This ship's setup is copied: paste it onto the current ship. Press again to forget it"
+
+msgid "SHIPCOPYPASTE_PASTE"
+msgstr "Paste the copied ship's setup onto this ship: equipment, tuning, mineral targeting and crew"
+
+msgid "SHIPCOPYPASTE_CONFIRM"
+msgstr "Make this ship like %s?"
+
+msgid "SHIPCOPYPASTE_PRICE"
+msgstr "Equipment: %s E$"
+
+msgid "SHIPCOPYPASTE_REFUND"
+msgstr "Equipment refund: %s E$"
+
+msgid "SHIPCOPYPASTE_SAME"
+msgstr "Same equipment: tuning, mineral targeting and crew only"
+
+msgid "SHIPCOPYPASTE_REPAIRS"
+msgstr "Repairs: %s"
+
+msgid "SHIPCOPYPASTE_UNFIT"
+msgstr "Not sold here, left as it is: %s"
+
+msgid "SHIPCOPYPASTE_CREW_UNKNOWN"
+msgstr "Crew left as it is: %s has no crew list yet (it gets one when you change its crew while flying it)"
+
+msgid "SHIPCOPYPASTE_NO_MONEY"
+msgstr "Not enough money"

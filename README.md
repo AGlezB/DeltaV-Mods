@@ -17,6 +17,7 @@ how to set it up and how to install it.
 | [GeologyByMass](GeologyByMass/README.md) | Judges the ore your geologist identifies by the mass of each mineral in it instead of its value, as set on a new tab of the OMS. |
 | [HudHideLabels](HudHideLabels/README.md) | Hides the titles on the screens of the dive HUD. |
 | [LidarLouderPing](LidarLouderPing/README.md) | The lidar's ping for sensor contacts plays louder, by as much as you set in the ship's Tuning. |
+| [ShipCopyPaste](ShipCopyPaste/README.md) | On the Fleet screen, copies one ship's setup onto the current ship when both are the same model: the equipment, bought at the Equipment screen's prices, the tuning, the mineral targeting and the crew aboard. |
 | [ShipHighlightTypeAndPrice](ShipHighlightTypeAndPrice/README.md) | Makes the type of every ship in the dealer and fleet lists stand out, and hides the ship image behind each row. |
 | [ShipSortByTypeAndPrice](ShipSortByTypeAndPrice/README.md) | Sorts the ship list on the dealer screen by type, then by price (cheapest first). |
 

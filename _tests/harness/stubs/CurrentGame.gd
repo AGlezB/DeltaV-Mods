@@ -1,12 +1,15 @@
 extends Node
 
 # Stub of the game's CurrentGame autoload: what DockingArm.gd, CabinLight.gd, Tool.gd, TuningFloatValue.gd,
-# Hud.gd, PriceLabel.gd, HireableCrew.gd, CrewBio.gd, CrewCheapHireNotifier and GeologyByMass reach.
+# Hud.gd, PriceLabel.gd, HireableCrew.gd, CrewBio.gd, SystemBuyUI.gd, SystemShipUpgradeUI.gd, CrewCheapHireNotifier,
+# GeologyByMass and ShipCopyPaste reach.
 
 signal dayPassed()
 signal employmentChanged()
 signal moneyChanged(money)
 signal broadcast(from, to, msg, replies)
+signal playerShipChanged()
+signal hourPassed()
 
 # The game's crew occupations and level keys (CurrentGame.gd), for the Hire screen's entries.
 var occupations = ["CREW_OCCUPATION_PILOT", "CREW_OCCUPATION_MECHANIC", "CREW_OCCUPATION_GEOLOGIST", "CREW_OCCUPATION_ASTROGATOR"]
@@ -31,14 +34,48 @@ var specificMineralColors = {
 }
 var stories = {} # what setStory() was given (Hud.gd instance() sets the tutorial's)
 var adrenalineSum = 0.0 # what CabinLight.gd has added through adrenaline()
-var state = {"crew": {}, "ui": {}} # the game's hired crew by full name, and its per-save UI store; the crew suite fills them
+var state = {"crew": {}, "ui": {}} # the game's hired crew by full name, and its per-save UI store; the crew suite fills them; the fleet suite adds the ships (ship, garage)
 var availableCrew = [] # what getAvailableCrew() returns; the crew suite fills it
+var playerShip = null # what getPlayerShip() returns; the fleet suite sets it
+var time = 0 # the in-game time (s), getInGameTimestamp()
+var logs = [] # what logEvent() was given: [type, details]
+var validated = [] # the current ship's crew list at each validateEmployment()
+var shipSellMarkdown = 0.9 # the game's, which SystemBuyUI.gd checkPrice reads
 
 func adrenaline(amount):
 	adrenalineSum += amount
 
 func getPlayerShip():
-	return null
+	return playerShip
+
+# As the game's, without the money hash, the achievements and the insurance.
+func changeMoney(by, _insurance = false):
+	money += by
+	emit_signal("moneyChanged", money)
+
+func logEvent(type, details = {}):
+	logs.append([type, details.duplicate(true)])
+
+func getInGameTimestamp():
+	return time
+
+# As the game's: the current ship's maintenance ends that much later, counted from now if it had ended.
+func addShipMaintanenceTime(seconds):
+	state.ship.maintaineceUntil = max(state.ship.get("maintaineceUntil", 0), time) + seconds
+
+func getInspectionLimit():
+	return 50
+
+# The game's generates and stores a name for a transponder it doesn't know; this one stores nothing.
+func getShipNameByTransponder(transponder):
+	return state.get("shipNames", {}).get(transponder, "Ship " + transponder)
+
+func getStory(story):
+	return stories.get(story, 0)
+
+# The game's puts the current ship's crew list aboard; this one records the list it would put aboard.
+func validateEmployment():
+	validated.append(state.ship.config.get("preferredCrew"))
 
 func getAgendaMember(_agenda):
 	return null

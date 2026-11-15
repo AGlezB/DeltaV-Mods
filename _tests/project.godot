@@ -1,6 +1,6 @@
 ; Test harness for the mods (see run.ps1). Not a mod, and not run from here: run.ps1 assembles the project in
-; <TempDir>\tests\project from these sources plus the game's own scripts (ships/, vendor/, Tool.gd, Boot.gd,
-; copied from the decompiled game, never committed) and the mods packaged as zips.
+; <TempDir>\tests\project (TempDir: paths.local.psd1 at the repo root) from these sources plus the game's own scripts
+; (ships/, vendor/, Tool.gd, Boot.gd, copied from the decompiled game, never committed) and the mods packaged as zips.
 ; The autoloads keep the game's order (its project.godot); ModLoader is the harness's own mod loader, loader.gd.
 
 config_version=4
