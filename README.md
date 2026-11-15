@@ -23,8 +23,8 @@ how to set it up and how to install it.
 | [ShipHighlightTypeAndPrice](ShipHighlightTypeAndPrice/README.md) | Makes the type of every ship in the dealer and fleet lists stand out, and hides the ship image behind each row. |
 | [ShipSortByTypeAndPrice](ShipSortByTypeAndPrice/README.md) | Sorts the ship list on the dealer screen by type, then by price (cheapest first). |
 
-The two arm mods work together or alone. Do not install CrewPerfectSort together with `CrewSortByJobAndSalary`, the
-older mod it replaces: both sort the same lists.
+The two arm mods work together or alone. Do not install `CrewPerfectSort` together with `CrewSortByJobAndSalary`, the
+older mod it replaced: both sort the same lists.
 
 ## Mods that change how the game plays
 
