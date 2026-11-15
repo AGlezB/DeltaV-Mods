@@ -1,0 +1,23 @@
+[mod_information]
+
+name="CrewCheapHireNotifier"
+id="aglezb.CrewCheapHireNotifier"
+description="Marks the station menu's Crew entry while someone cheap is for hire."
+author="aglezb"
+
+[version]
+
+version_major=0
+version_minor=1
+version_bugfix=0
+
+[tags]
+
+group={
+"type": "string",
+"value": "EnceladusMenu"
+}
+
+[manifest_definitions]
+
+manifest_version=2.2

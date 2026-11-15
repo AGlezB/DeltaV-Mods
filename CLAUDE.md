@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Mods for **ΔV: Rings of Saturn** (Godot 3 engine, GDScript). Each top-level folder not starting with `_` is one
 independent mod and ships as one zip. There is no build system; `_tests\` is a test harness for the two arm mods,
-DiveDisableAdrenalineBooster, BootSkipLogos, LidarLouderPing and HudHideLabels (see *Testing*). The source is in git since 14 Nov 2026; `.gitignore` keeps out every zip, so the
+DiveDisableAdrenalineBooster, BootSkipLogos, LidarLouderPing, HudHideLabels and CrewCheapHireNotifier (see *Testing*). The source is in git since 14 Nov 2026; `.gitignore` keeps out every zip, so the
 versions released before that exist only as release zips.
 
 ## Local paths
@@ -29,9 +29,9 @@ cites and update that constant.
 ## Testing
 
 `_tests\run.ps1` (PowerShell 7) tests ArmAltPullBehavior, ArmAltTargetSelection, DiveDisableAdrenalineBooster,
-BootSkipLogos, LidarLouderPing and HudHideLabels in a headless Godot 3.6, in a few seconds. It assembles a Godot
-project in `<TempDir>\tests\project` from `_tests\`, the game's own `DockingArm.gd`, `Arm.gd`, `CabinLight.gd`,
-`Boot.gd`, `LIDAR.gd`, `PitchAdjustedAudio.gd`, `HardwareLabel.gd`, `Tool.gd`, `gdunzip.gd` and audio buses (`default_bus_layout.tres`) (copied from
+BootSkipLogos, LidarLouderPing, HudHideLabels and CrewCheapHireNotifier in a headless Godot 3.6, in a few seconds. It
+assembles a Godot project in `<TempDir>\tests\project` from `_tests\`, the game's own `DockingArm.gd`, `Arm.gd`,
+`CabinLight.gd`, `Boot.gd`, `LIDAR.gd`, `PitchAdjustedAudio.gd`, `HardwareLabel.gd`, `EnceladusMenu.gd`, `Tool.gd`, `gdunzip.gd` and audio buses (`default_bus_layout.tres`) (copied from
 the decompiled source on every run, never committed: they are the game's code), a stub mineral scene with the chunk
 radius read from the game's, and bare stubs of the two scenes `LIDAR.gd` preloads. It packages each mod as a
 release zip and loads the zips as `ModLoader.gd` does, at the same moment (`_tests\harness\loader.gd` is the
@@ -50,8 +50,9 @@ Call it from a pwsh prompt or `pwsh -Command`: under `pwsh -File`, list argument
 not parsed as arrays. Exit code 0 = every run passed; a script error fails its run even if every check passed.
 
 The suites are ported from the claude.ai harness (DVModTestHarness 1.0.0; the original was deleted once ported),
-except `boot`, `lidar` and `hud`. `units`, `still` and `moving` load the two arm mods by default, `dive` loads
-DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos, `lidar` loads LidarLouderPing, `hud` loads HudHideLabels.
+except `boot`, `lidar`, `hud` and `crew`. `units`, `still` and `moving` load the two arm mods by default, `dive`
+loads DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos, `lidar` loads LidarLouderPing, `hud` loads
+HudHideLabels, `crew` loads CrewCheapHireNotifier.
 
 - `units`: the claude.ai unit tests (`arm/main.gd`) nearly verbatim, on synthetic arms around the game's
   `DockingArm.gd`. TargetSelection: area geometry on turned, scaled and offset arms, reach, the strip, the weighted
@@ -90,6 +91,15 @@ DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos, `lidar` loads LidarLou
   `HardwareLabel.gd` renames in its `_ready`; that hidden titles keep their space; that other labels, a button with
   a title's text and the same titles outside a `Display-*.tscn` are drawn; and that a title added later follows
   `HIDDEN_KEYS` too. The control checks (with `-Mods @()`): every title is drawn.
+- `crew` (`suites/crew.gd`): station menus built in code around the game's `EnceladusMenu.gd`, nested as
+  `enceladus/EnceladusMenu.tscn` nests them (a `Crew` and a `Logs` Button), with the hire list and the crew set in the
+  `CurrentGame` stub and a test translation in two languages. Salaries are built from the mod's `SALARY_THRESHOLD`
+  and `SALARY_TOLERANCE`. Checks that the Crew entry is marked from the first frame; the rule's edges (at the
+  threshold, within the tolerance above it, at and above its end; the same for the best-paid member in that job;
+  another job; the threshold above a cheap crew); that
+  `dayPassed` and `employmentChanged` refresh it both ways and an unmarked entry gets its key back; that a marked
+  entry follows a language change; and that the other entries, a menu without `Crew` and the game's `disable()` are
+  untouched. The control checks (the entry keeps its key) run on the game's own script.
 - `_tests\harness\rig.gd` builds the arm's node tree as the game nests it, with the values in
   `_tests\harness\vp_data.gd`; each cites its scene file and line, so re-check them after a game update. The ship
   is a stub moved by hand (it takes the arm's impulses and torque; inertia from the hull); the rotors don't collide.
@@ -97,14 +107,14 @@ DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos, `lidar` loads LidarLou
   checks with both mods (64 with PullBehavior alone, 61 with TargetSelection alone), `still` 9, `moving` 16, `dive` 8
   (DiveDisableAdrenalineBooster 1.0.0), `boot` 5 (BootSkipLogos 1.0.0; 3 control checks with `-Mods @()`), `lidar`
   18 (LidarLouderPing 1.0.0; 3 control checks with `-Mods @()`), `hud` 13 (HudHideLabels 1.0.0; 3 control checks
-  with `-Mods @()`), all passing; `-Matrix` gives 16 of 16 in every combination. Feeding, a chunk beside the hull is in after 4.4–4.8 s.
+  with `-Mods @()`), `crew` 24 (CrewCheapHireNotifier 0.1.0; 2 control checks with `-Mods @()`), all passing; `-Matrix` gives 16 of 16 in every combination. Feeding, a chunk beside the hull is in after 4.4–4.8 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.4.0 (the claude.ai results,
   case for case) took 5.9–6.3 s there, fails the 8 time limits, and `-Matrix` gave 16, 15, 16, 16 (feeding while
   turning with a 5 t chunk touched a rotor: the game's pull measures speed against the swinging dock slot);
   1.3.1, which broke in the game, gives 0, 0, 12, 4 of 16. This ship also takes the arm's torque reaction, as the
   game's does (the claude.ai stub dropped it), which shifts some numbers in the third decimal.
 
-The harness doesn't replace the game, and the crew and ship-list mods have no tests at all. The real check is playing
+The harness doesn't replace the game, and the other crew mods and the ship-list mods have no tests at all. The real check is playing
 the game with the mods.
 
 ## How the game loads a mod (`res://ModLoader.gd`, an autoload)
@@ -132,11 +142,13 @@ the game with the mods.
 
 1. **Script extension**: ArmAltTargetSelection and ArmAltPullBehavior (`ships/modules/DockingArm.gd`),
    DiveDisableAdrenalineBooster (`ships/CabinLight.gd`), BootSkipLogos (`Boot.gd`), LidarLouderPing (`hud/LIDAR.gd`),
-   CrewPerfectSort (`enceladus/HireableCrew.gd`, `enceladus/CurrentCrewManagement.gd`).
+   CrewPerfectSort (`enceladus/HireableCrew.gd`, `enceladus/CurrentCrewManagement.gd`), CrewCheapHireNotifier
+   (`enceladus/EnceladusMenu.gd`).
    `ModMain.gd` only calls `installScriptExtension`; the extension `extends "res://<game script>"`. Rules that let
    mods stack on the same script (header of `ArmAltTargetSelection/DockingArmTargetSelection.gd`):
-   - Never call the parent's `_ready` or `_physics_process`. Godot 3 runs them at every level of the script chain
-     by itself: `_ready` base first (so `ship` etc. are set), `_physics_process` child first.
+   - Never call the parent's `_ready`, `_physics_process` or `_notification`. Godot 3 runs them at every level of the
+     script chain by itself: `_ready` base first (so `ship` etc. are set), `_physics_process` and `_notification` child
+     first.
    - Ordinary functions are not chained: call the parent with `.name()`, and fall through to it where the mod does
      not apply (`if not _targeting: return .switchTarget()`).
    - Gate the change on a condition (`systemName == "SYSTEM_SALVAGE_ARM" and ship != null`,

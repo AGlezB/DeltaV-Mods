@@ -6,7 +6,7 @@
 .DESCRIPTION
 	Assembles a Godot project in <WorkDir>\project from this folder's sources, the game's own scripts (copied from
 	the decompiled game: DockingArm.gd, Arm.gd, CabinLight.gd, Boot.gd, LIDAR.gd, PitchAdjustedAudio.gd,
-	HardwareLabel.gd, Tool.gd, gdunzip.gd), the game's audio buses (default_bus_layout.tres), a stub mineral scene carrying the chunk radius read
+	HardwareLabel.gd, EnceladusMenu.gd, Tool.gd, gdunzip.gd), the game's audio buses (default_bus_layout.tres), a stub mineral scene carrying the chunk radius read
 	from the game's and stubs of the two scenes LIDAR.gd preloads. Packages each mod into <WorkDir>\build\<Mod>.zip
 	(as a release zip), and runs every suite with its mods loaded from those zips, the way the game loads them:
 	by an autoload, before the engine loads the main scene. Logs: <WorkDir>\logs. Nothing in the repo, the game folder
@@ -19,6 +19,7 @@
 	- boot: BootSkipLogos. Runs with harness\boot.tscn, which holds the game's Boot.gd, as the main scene.
 	- lidar: LidarLouderPing.
 	- hud: HudHideLabels.
+	- crew: CrewCheapHireNotifier.
 
 .EXAMPLE
 	pwsh _tests\run.ps1
@@ -34,8 +35,8 @@
 #>
 [CmdletBinding()]
 param(
-	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud')]
-	[string[]] $Suite = @('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud'),
+	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew')]
+	[string[]] $Suite = @('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew'),
 	# Mod folders to load for every selected suite, in load order (the game's order: by path); @() = none.
 	# Default: each suite's own mods (see the description).
 	[string[]] $Mods,
@@ -133,7 +134,7 @@ foreach ($dir in $project, $build, $logs)
 }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'project.godot'), (Join-Path $PSScriptRoot 'main.tscn') -Destination $project
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'harness'), (Join-Path $PSScriptRoot 'suites') -Destination $project -Recurse
-foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres')
+foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres')
 {
 	$target = Join-Path $project $file
 	New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
@@ -178,6 +179,7 @@ $suiteMods = @{
 	boot = @('BootSkipLogos')
 	lidar = @('LidarLouderPing')
 	hud = @('HudHideLabels')
+	crew = @('CrewCheapHireNotifier')
 }
 $given = @{}
 foreach ($z in $ModZip)
