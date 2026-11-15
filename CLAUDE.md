@@ -258,16 +258,25 @@ HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology` loads GeologyByMass
 - `crew` (`suites/crew.gd`): station menus built in code around the game's `EnceladusMenu.gd`, nested as
   `enceladus/EnceladusMenu.tscn` nests them (a `Crew` and a `Logs` Button), with the hire list and the crew set in the
   `CurrentGame` stub and a test translation in two languages. Salaries and slider values are built from the
-  descriptions in the mod's `Settings.gd` (`SETTINGS`). Checks that the Crew entry is marked from the first frame; the
+  descriptions in the mod's `Settings.gd` (`SETTINGS`) and the jobs from `CurrentGame.occupations`; expected texts
+  with `tr()` from the mod's keys. Checks that the Crew entry is marked from the first frame; the
   rule's edges (at and above the threshold, which the tolerance never moves either way, also within the tolerance
   above it; at, within the tolerance of, at the end of and above the best-paid member's salary in that job; the
   threshold above a best-paid below it even after the tolerance; the tolerance clamped to its minimum, and there a
   hire at the best-paid salary times it, above it and, when negative, at the best-paid salary itself; another job);
+  the crew limit (a job below it judged as usual; a limit lowered to the crew hired fills the job at once; in a full
+  job a hire at the best-paid salary not marked and one below it marked, the threshold and the tolerance at its
+  minimum ignored; another job judged as usual; benched and on-leave crew counted; a limit of 0 with nobody in the job
+  and with someone; firing frees the job and hiring fills it);
   that `dayPassed` and `employmentChanged` refresh it both ways and an unmarked entry gets its key back; that a marked entry follows a language change; and
   that the other entries, a menu without `Crew` and the game's `disable()` are untouched. The settings model: one
-  shared instance; defaults for a save without the mod's entry; clamping of what is loaded or set; saving into
-  `CurrentGame.state.ui` under the manifest's id, with the format and mod versions, and a signal only on a change; the
-  % conversion. The Hire screen: the Hire tab built as `enceladus/Crew.tscn` nests it, around the game's
+  shared instance; the crew limit per job, for each of `CurrentGame.occupations`, and the salary settings not;
+  defaults for a save without the mod's entry, every crew limit at its maximum; a save from before the crew limit;
+  a tolerance saved as a dictionary by job read as the default; clamping and snapping of what is loaded or set, also per job,
+  and a job missing or not a number in a saved dictionary, or a crew limit that is not one; saving into
+  `CurrentGame.state.ui` under the manifest's id, with the format and mod versions and every job, a job's change
+  stored for that job only and as a copy, and a signal only on a change; the % conversion. The texts of
+  `i18n/en.po`, also in a language without them. The Hire screen: the Hire tab built as `enceladus/Crew.tscn` nests it, around the game's
   `HireableCrew.gd` and `CrewBio.gd`, with a theme holding a Button font color and a flat frame with an overbright
   border, and the menu beside it. Each qualifying person's entry, at and below the limit, has a visible badge:
   above the details grid's values, right-aligned with them, one grid row gap above, at its minimum size and inside
@@ -278,16 +287,21 @@ HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology` loads GeologyByMass
   `PlaySoundsOnTheseButtons`), which took over its `hint_tooltip`, and moving away hides it; the Hire button untouched
   and the entry's height unchanged. Above the limit, no badge; the menu is marked exactly when an entry has one. A new
   day judges kept entries again, one badge each; firing (`employmentChanged`) hides it; hiring there gives another
-  pilot one with the new limit; a setting shows and hides it; the tooltip follows a language change. A new entry is
+  pilot one with the new limit; a setting shows and hides it; in a full job the tooltip tells so, with the best-paid
+  salary, and gives the limit again once there is room; every tooltip has a second line with how many of that job I have
+  hired (benched and on-leave crew too) out of its crew limit; the tooltip follows a language change. A new entry is
   hovered a frame after it is made, once its containers have laid it out. With CrewPerfectSort loaded too (`-Mods
   CrewCheapHireNotifier,CrewPerfectSort`), the list is sorted and the badges stay. Then a station built as
-  `enceladus/Enceladus.tscn` nests it (the menu, and the game's `HidingMarginContainer.gd` with stubs of the Crew and Tuning screens, `harness/crew_screen.gd`), clicked through the
-  scene tree's input: the tooltip; Shift+Click opens the settings and not the Crew screen, a plain click the Crew
-  screen, a disabled entry nothing; the screen copies Tuning's frame and place and lists one row per setting with
-  its range, step and value; moving a slider flips the mark at once and stores the value; reset; Esc (handled, so
-  `harness/unhandled_probe.gd`, standing in for the pause menu, doesn't get it), the controller's B and Start, and
-  focusing another entry close it; after a JSON round trip of the state a new station has the saved value; and
-  without a Tuning screen there is no tooltip and Shift+Click is a plain click. Keys and buttons are sent as real
+  `enceladus/Enceladus.tscn` nests it (the menu, and the game's `HidingMarginContainer.gd` with stubs of the Crew and Tuning screens, `harness/crew_screen.gd`),
+  clicked through the scene tree's input: the tooltip, also after a language change; Shift+Click opens the
+  settings and not the Crew screen, a plain click the Crew screen, a disabled entry nothing; the screen copies
+  Tuning's frame and place; it has two groups in an `Items` box right below the header (the settings that are not per
+  job, then the crew limit, one row per job named by its key, in alphabetical order of the jobs' names whatever the case, and in a second language that language's order; test names for all four jobs in both), each row with its range, step and
+  value (each job's own); opening it stores nothing; moving a slider (the threshold, the tolerance, the pilots' crew
+  limit) flips the mark at once and stores the value (the pilots' only); reset;
+  Esc (handled, so `harness/unhandled_probe.gd`, standing in for the pause menu, doesn't get it), the controller's B
+  and Start, and focusing another entry close it; after a JSON round trip of the state a new station has the saved
+  values; and without a Tuning screen there is no tooltip and Shift+Click is a plain click. Keys and buttons are sent as real
   input events in the idle part of a frame, with the game's bindings: a bare `InputEventAction`, or one sent during
   physics, doesn't make `Input.is_action_just_pressed` true. The control checks (the entry keeps its key; a Hire
   screen entry gets no badge) run on the game's own scripts.
@@ -318,7 +332,7 @@ HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology` loads GeologyByMass
 - **Baseline** (both arm load orders give the same results): `units` 114 checks with both arm mods (64 with
   PullBehavior alone, 61 with TargetSelection alone), `still` 9, `moving` 16, `dive` 8, `boot` 5 (3 control checks
   with `-Mods @()`), `lidar` 40 (3 control checks with `-Mods @()`), `hud` 13 (3 control checks with `-Mods @()`),
-  `crew` 97 (98 with CrewPerfectSort too, in both load orders; 3 control checks with `-Mods @()`), `geology` 60 (3
+  `crew` 140 (141 with CrewPerfectSort too, in both load orders; 3 control checks with `-Mods @()`), `geology` 60 (3
   control checks with `-Mods @()`), all passing; `-Matrix` gives 16 of 16 in every combination.
   Feeding, a chunk beside the hull is in after 4.4–4.8 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.4.0 (the claude.ai results,
@@ -461,20 +475,24 @@ check is playing the game with the mods.
     - `static func shared()`: the one instance, kept as metadata of the script (`load()` of its own path), which every
       script that preloads the file gets as the same cached resource.
     - `const SETTINGS`: one description per setting, in display order: `label`, `default`, `min`, `max`, `step`,
-      `unit`, and `shown`, the factor from the stored value to the one shown (a fraction shown as %). `var cfg`: the
-      current values by key, set to the defaults in `_init`. `const FORMAT_VERSION`.
-    - `getValue(key)`; `setValue(key, value)` clamps, and only on a change stores (`saveToState()`) and emits
-      `settingsChanged`; `toShown(key, value)` / `fromShown(key, shown)`.
+      `unit`, `shown`, the factor from the stored value to the one shown (a fraction shown as %), and `perJob` where
+      the setting holds one value per job (CrewCheapHireNotifier's crew limit), all sharing its default, range and
+      step. `label` is a translation key of the mod's `i18n/en.po`. `var cfg`: the current values by key (a dictionary
+      by job key for a per-job setting), set to the defaults in `_init`. `const FORMAT_VERSION`.
+    - `jobs()`: the jobs a per-job setting has values for, the game's `CurrentGame.occupations`; `isPerJob(key)`.
+    - `getValue(key, job = null)`; `setValue(key, value, job = null)` clamps and snaps to the step, and only on a change stores
+      (`saveToState()`) and emits `settingsChanged`; `job` is only for a per-job setting. `toShown(key, value)` /
+      `fromShown(key, shown)`.
     - `loadFromState()` / `saveToState()`: settings kept per save game (CrewCheapHireNotifier's)
       live in `CurrentGame.state.ui` (the game's per-save UI store, `setUiValue` / `getUiValue`, written with the save
       as JSON, so numbers come back as floats) under the mod's id from `Mod.manifest`, so other authors' mods can't
-      collide; the entry holds `formatVersion`, `modVersion` and one value per setting. Loading starts from the
-      defaults and clamps each saved value. A mod whose settings are game-wide uses the `user://` `ConfigFile` above
+      collide; the entry holds `formatVersion`, `modVersion` and one value per setting (a copy of the dictionary for
+      a per-job setting). Loading starts from the defaults and clamps and snaps each saved value. A mod whose settings are game-wide uses the `user://` `ConfigFile` above
       instead, with `loadFromFile` / `saveToFile`.
     - `modId()`, `modName()`, `modVersion()`: read from `Mod.manifest` (path: the script's folder) with `ConfigFile`.
 
     `SettingsUI.gd` builds the screen from `SETTINGS` through `toShown`, with the game's own UI parts, and writes back
-    with `setValue(key, fromShown(key, shown))`; `Code.gd` loads the save's values when its scene is built (the
+    with `setValue(key, fromShown(key, shown), job)`; `Code.gd` loads the save's values when its scene is built (the
     station is rebuilt after every load and new game) and listens to `settingsChanged`.
   - A mod without a settings UI has no `Settings.gd`, and no constants file either: that would only add a prefix to
     every use.

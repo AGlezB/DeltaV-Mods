@@ -1,0 +1,42 @@
+# CrewCheapHireNotifier: its texts, in English. Godot shows English for any language without its own file (its
+# fallback locale), so another language only needs a copy of this file with its Language and msgstr lines translated,
+# loaded in ModMain.gd. Keep each %s: the code fills them in.
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+# The station menu's Crew entry while someone cheap is for hire; %s is the entry's own text.
+msgid "CREWCHEAPHIRENOTIFIER_ALERT"
+msgstr "%s (*)"
+
+# The Crew entry's tooltip; the first %s is the key to hold while clicking, the second the mod's name.
+msgid "CREWCHEAPHIRENOTIFIER_SETTINGS_TOOLTIP"
+msgstr "Click while pressing %s to open the %s settings."
+
+# The Hire screen badge's tooltip; the first %s is the job, the second the limit.
+msgid "CREWCHEAPHIRENOTIFIER_LIMIT_TOOLTIP"
+msgstr "Your limit for %s: %s"
+
+# The badge's tooltip when the job's crew limit is reached; the first %s is the job, the second the salary of your
+# best-paid crew member in that job.
+msgid "CREWCHEAPHIRENOTIFIER_FULL_TOOLTIP"
+msgstr "Your %s crew is full: only hires earning less than %s"
+
+# The badge tooltip's second line; the first %d is how many crew members with the job you have hired, the second its
+# crew limit.
+msgid "CREWCHEAPHIRENOTIFIER_HIRED_TOOLTIP"
+msgstr "You've hired %d out of %d"
+
+# The settings screen.
+msgid "CREWCHEAPHIRENOTIFIER_GROUP"
+msgstr "Cheap hire alert"
+
+msgid "CREWCHEAPHIRENOTIFIER_SALARY_THRESHOLD"
+msgstr "Salary threshold"
+
+msgid "CREWCHEAPHIRENOTIFIER_SALARY_TOLERANCE"
+msgstr "Salary tolerance"
+
+msgid "CREWCHEAPHIRENOTIFIER_CREW_LIMIT"
+msgstr "Crew limit"

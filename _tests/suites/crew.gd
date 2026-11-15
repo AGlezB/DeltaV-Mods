@@ -1,19 +1,22 @@
 extends "res://harness/suite.gd"
 
 # CrewCheapHireNotifier: the station menu's Crew entry (the `Crew` Button of the game's enceladus/EnceladusMenu.tscn,
-# with no script and the translation key ENCELADUS_CREW as its text) shows the mod's ALERT_FORMAT while someone for
+# with no script and the translation key ENCELADUS_CREW as its text) shows the mod's alert text while someone for
 # hire earns at most the higher of the salary threshold and the salary of the best-paid hired member with the same job
-# changed by the salary tolerance, which never touches the threshold. Those are settings (the mod's Settings.gd): their
-# defaults, ranges and steps are read from its
-# SETTINGS, and every salary and slider value is built from them, so any value of them passes. The hire list, the crew
-# and the save game's UI store are the CurrentGame stub's. The control checks run on the game's own script: with the
-# mod loaded, that is the base of the extension.
+# changed by the salary tolerance, which never touches the threshold; in a job whose hired crew has reached its crew
+# limit, only while they earn less than that best-paid member. Those are settings (the mod's Settings.gd): their
+# defaults, ranges and steps are read from its SETTINGS, the jobs from CurrentGame.occupations, and every salary and
+# slider value is built from them, so any value of them passes. The mod's texts are its i18n/en.po, and every expected
+# text is built with tr() from the mod's keys, so any wording passes. The hire list, the crew and the save game's UI
+# store are the CurrentGame stub's. The control checks run on the game's own script: with the mod loaded, that is the
+# base of the extension.
 #
 # The Hire screen: the Crew screen's Hire tab built as enceladus/Crew.tscn nests it, around the game's HireableCrew.gd,
 # whose entries are the game's CrewBio.gd in a stub of its scene (run.ps1). Everyone the same rule counts gets a badge
-# above the values of their details, with the limit for their job in the game's tooltip (the entry's
-# PlaySoundsOnTheseButtons), which a mouse moved through the scene tree's input shows. The tab's theme has a Button
-# font color and a flat frame with an overbright border, as the game's has, for the badge to be built from.
+# above the values of their details, with the limit for their job (or, in a full job, the best-paid salary) in the
+# game's tooltip (the entry's PlaySoundsOnTheseButtons), which a mouse moved through the scene tree's input shows. The
+# tab's theme has a Button font color and a flat frame with an overbright border, as the game's has, for the badge to
+# be built from.
 #
 # The settings screen opens on Shift+Click in a station tree built as enceladus/Enceladus.tscn nests it: the menu, and
 # the right-hand screens' container (the game's HidingMarginContainer.gd) with stubs of the Crew and Tuning screens.
@@ -27,13 +30,29 @@ const TEXT_EN = "Crew"
 const TEXT_DE = "Besatzung"
 const PILOT_EN = "Pilot"
 const PILOT_DE = "Pilotin"
+const GEOLOGIST = "CREW_OCCUPATION_GEOLOGIST"
+const ASTROGATOR = "CREW_OCCUPATION_ASTROGATOR"
+# The jobs' names in the two test languages, in a different alphabetical order in each, and neither the game's
+# (CurrentGame.occupations); the German one isn't the keys' either. One English name is lowercase: sorted by case
+# (uppercase first), it would come last.
+const JOBS_EN = {PILOT: PILOT_EN, MECHANIC: "Mechanic", GEOLOGIST: "Geologist", ASTROGATOR: "astrogator"}
+const JOBS_DE = {PILOT: PILOT_DE, MECHANIC: "Technikerin", GEOLOGIST: "Geologin", ASTROGATOR: "Navigatorin"}
+# A German text for the mod's settings tooltip, which its en.po has only in English.
+const SETTINGS_TOOLTIP_DE = "Mit %s klicken: Einstellungen von %s"
 
 # The Hire screen theme's Button font color and frame border.
 const HIRE_FONT_COLOR = Color(0.8, 0.7, 0.6, 1.0)
 const HIRE_FRAME_BORDER = Color(2, 2, 2, 1)
 
 const SETTINGS_SCRIPT = "res://CrewCheapHireNotifier/Settings.gd"
+# The scripts the mod extends: once installed, its extensions load by these paths (take_over_path), and loading them by
+# their own path would parse them again on top of themselves.
+const MENU_SCRIPT = "res://enceladus/EnceladusMenu.gd"
+const HIRE_TAB_SCRIPT = "res://enceladus/HireableCrew.gd"
+const UI_SCRIPT = "res://CrewCheapHireNotifier/SettingsUI.gd"
 const MANIFEST = "res://CrewCheapHireNotifier/Mod.manifest"
+const TOLERANCE = "salaryTolerance"
+const CREW_LIMIT = "crewLimit"
 
 var tol = 0.0 # the salary tolerance's default
 var changes = 0 # settingsChanged signals counted
@@ -81,11 +100,12 @@ func day(forHire, hired = []):
 func entry(menu) -> String:
 	return menu.get_node("Crew").text
 
-func addTranslation(locale, text, pilotText):
+func addTranslation(locale, text, jobs):
 	var t = Translation.new()
 	t.locale = locale
 	t.add_message(KEY, text)
-	t.add_message(PILOT, pilotText)
+	for job in jobs:
+		t.add_message(job, jobs[job])
 	TranslationServer.add_translation(t)
 
 # The Crew screen's Hire tab as enceladus/Crew.tscn nests it: the HireableCrew MarginContainer (`script`, or what
@@ -134,8 +154,22 @@ func badgeOf(tab, e):
 
 # A visible badge, with the limit for `job` as the tooltip the game shows for it.
 func badged(tab, e, job, limit) -> bool:
+	return badgedWith(tab, e, limitTip(tab, job, limit))
+
+# A visible badge, with `text` as the first line of the tooltip the game shows for it, and hiredLine() as its second.
+func badgedWith(tab, e, text) -> bool:
 	var badge = badgeOf(tab, e)
-	return badge != null and badge.visible and shownTip(tab, e) == limitTip(tab, job, limit)
+	return badge != null and badge.visible and shownTip(tab, e) == text + "\n" + hiredLine(tab, e)
+
+# The tooltip's second line for the entry's job: how many of my crew have it (counted here, everyone in
+# CurrentGame.state.crew) out of its crew limit (the stored setting).
+func hiredLine(tab, e) -> String:
+	var count = 0
+	for memberName in CurrentGame.state.crew:
+		if CurrentGame.state.crew[memberName].occupation == e.occupation:
+			count += 1
+	var limit = load(SETTINGS_SCRIPT).shared().getValue(CREW_LIMIT, e.occupation)
+	return tr(tab._CHEAP_HIRE_HIRED_TOOLTIP) % [count, limit]
 
 # The mouse moved to `at` through the scene tree's input, as the player moves it. Controls get the mouse's enter and
 # exit only once the window has had the mouse enter it (Godot 3.6, found in the harness), which the OS reports with
@@ -188,7 +222,41 @@ func tip(tab, e) -> String:
 
 # The tooltip the mod's format gives for a job's name and limit, shown as the game shows a salary.
 func limitTip(tab, job, limit) -> String:
-	return tab.LIMIT_TOOLTIP_FORMAT % [job, CurrentGame.formatThousands(floor(limit)) + " E$"]
+	return tr(tab._CHEAP_HIRE_LIMIT_TOOLTIP) % [job, CurrentGame.formatThousands(floor(limit)) + " E$"]
+
+# The tooltip the mod's format gives for a full job's name and best-paid salary.
+func fullTip(tab, job, best) -> String:
+	return tr(tab._CHEAP_HIRE_FULL_TOOLTIP) % [job, CurrentGame.formatThousands(floor(best)) + " E$"]
+
+# Whether every job's crew limit is `value`, in the shared settings.
+func everyJob(settings, value) -> bool:
+	for job in CurrentGame.occupations:
+		if settings.getValue(CREW_LIMIT, job) != value:
+			return false
+	return true
+
+# A hired member who is benched (not active) or on leave (CurrentGame.isCrewOnLeave: `leave`, an in-game timestamp,
+# after now; here far in the future), as the game keeps them in CurrentGame.state.crew.
+func benched(m):
+	m["active"] = false
+	return m
+
+func onLeave(m):
+	m["leave"] = 1e12
+	return m
+
+# The same for a saved per-job dictionary.
+func everySavedJob(saved, value) -> bool:
+	if not saved is Dictionary:
+		return false
+	for job in CurrentGame.occupations:
+		if not (job in saved and is_equal_approx(saved[job], value)):
+			return false
+	return true
+
+# The Crew entry's tooltip, in the language set now.
+func settingsTip(menu) -> String:
+	return tr(menu._CHEAP_HIRE_SETTINGS_TOOLTIP) % [OS.get_scancode_string(KEY_SHIFT), manifestValue("mod_information", "name")]
 
 # The game's own script under a chain of extensions: the one at its root.
 func rootScript(script):
@@ -280,16 +348,63 @@ func bindGameKeys():
 func settingsScreen(s):
 	return s.screens.get_node_or_null("CrewCheapHireNotifierSettings")
 
+# The settings screen's groups (the game's TuningItems), in order, in its Items box (as Tuning.tscn's).
+func groups(screen):
+	var out = []
+	for items in screen.get_node("VB/ScrollContainer").get_children():
+		if items.is_queued_for_deletion() or items.name != "Items":
+			continue
+		for group in items.get_children():
+			if "tuning" in group and not group.is_queued_for_deletion():
+				out.append(group)
+	return out
+
 # The settings screen's rows (the game's TuningFloatValue), in order.
 func rows(screen):
 	var out = []
-	for items in screen.get_node("VB/ScrollContainer").get_children():
-		if items.is_queued_for_deletion():
-			continue
-		for row in items.get_children():
+	for group in groups(screen):
+		for row in group.get_children():
 			if "tune" in row:
 				out.append(row)
 	return out
+
+# The rows the settings screen should have, in order: each setting that is not per job, then each per-job setting's
+# jobs, in the game's order. Each is [the row's name, the setting's key, the job or null].
+func expectedRows(model):
+	var out = []
+	for key in model.SETTINGS:
+		if not model.SETTINGS[key].get("perJob", false):
+			out.append([model.SETTINGS[key].label, key, null])
+	for key in model.SETTINGS:
+		if model.SETTINGS[key].get("perJob", false):
+			for job in jobsByName():
+				out.append([job, key, job])
+	return out
+
+# The game's jobs in alphabetical order of their names in the language set now, whatever the case.
+func jobsByName() -> Array:
+	var out = CurrentGame.occupations.duplicate()
+	out.sort_custom(self, "_jobNameBefore")
+	return out
+
+func _jobNameBefore(a, b) -> bool:
+	return tr(a).to_lower() < tr(b).to_lower()
+
+# The jobs a group's rows are for (its rows' names, the jobs' keys), in order.
+func rowJobs(group) -> Array:
+	var out = []
+	for row in group.get_children():
+		if "tune" in row:
+			out.append(row.get_node("HBoxContainer/Name").text)
+	return out
+
+# The index of the row of `job` for a per-job setting `key`.
+func rowOf(model, key, job) -> int:
+	var expected = expectedRows(model)
+	for i in range(expected.size()):
+		if expected[i][1] == key and expected[i][2] == job:
+			return i
+	return -1
 
 func manifestValue(section, key):
 	var manifest = ConfigFile.new()
@@ -304,8 +419,8 @@ func run():
 	var game = load("res://enceladus/EnceladusMenu.gd")
 	if mod:
 		game = game.get_base_script()
-	addTranslation("en", TEXT_EN, PILOT_EN)
-	addTranslation("de", TEXT_DE, PILOT_DE)
+	addTranslation("en", TEXT_EN, JOBS_EN)
+	addTranslation("de", TEXT_DE, JOBS_DE)
 	TranslationServer.set_locale("en")
 
 	var t = 0 # the salary threshold's default; without the mod any salary will do
@@ -332,7 +447,7 @@ func run():
 
 	var menu = make()
 	yield(get_tree(), "physics_frame")
-	var marked = menu.ALERT_FORMAT % TEXT_EN
+	var marked = tr(menu._CHEAP_HIRE_ALERT) % TEXT_EN
 	check("a cheap hire marks the entry as soon as the menu is ready, with the translated text", entry(menu) == marked, entry(menu))
 
 	day([])
@@ -374,8 +489,8 @@ func run():
 
 	# The tolerance at its minimum (negative, unless SETTINGS says otherwise): it changes my best-paid salary only.
 	var least = load(SETTINGS_SCRIPT).SETTINGS.salaryTolerance.min
-	menu._settings.setValue("salaryTolerance", least - 1.0)
-	check("a tolerance set below its minimum is clamped to it", menu._settings.getValue("salaryTolerance") == least, menu._settings.getValue("salaryTolerance"))
+	menu._settings.setValue(TOLERANCE, least - 1.0)
+	check("a tolerance set below its minimum is clamped to it", menu._settings.getValue(TOLERANCE) == least, menu._settings.getValue(TOLERANCE))
 	var paid = (t + 500) / (1.0 + least) # a best-paid pilot whose salary, with the tolerance, stays above the threshold
 	var paidPilot = [member("Hired Pilot", PILOT, paid)]
 	day([member("Pilot", PILOT, paid * (1.0 + least))], paidPilot)
@@ -392,6 +507,60 @@ func run():
 	CurrentGame.state.ui = {}
 	menu._settings.loadFromState()
 
+	# The crew limit: a job whose hired crew has reached it is full, and there only a hire earning less than my best-paid
+	# in that job counts, whatever the threshold and the tolerance say. The limits used are 0 to 3.
+	var crewLimit = load(SETTINGS_SCRIPT).SETTINGS.crewLimit
+	check("every job's crew limit starts at its default, the most it can be", everyJob(menu._settings, crewLimit.default) and crewLimit.default == crewLimit.max, crewLimit)
+	if crewLimit.min > 0 or crewLimit.max < 3:
+		note("the crew limit's range doesn't reach from 0 to 3: its checks are skipped")
+	else:
+		menu._settings.setValue(CREW_LIMIT, 2, PILOT)
+		day([member("Pilot", PILOT, capped(h))], hired)
+		check("a job below its crew limit: the usual rule, a hire at my best-paid plus the tolerance is marked", entry(menu) == marked, entry(menu))
+		menu._settings.setValue(CREW_LIMIT, 1, PILOT)
+		check("a limit lowered to the crew I have fills the job at once: that hire is no longer marked", entry(menu) == KEY, entry(menu))
+		day([member("Pilot", PILOT, h)], hired)
+		check("in a full job, a hire at my best-paid's salary: not marked", entry(menu) == KEY, entry(menu))
+		day([member("Pilot", PILOT, h - 100)], hired)
+		check("and one earning less: marked", entry(menu) == marked, entry(menu))
+		var lowPilot = [member("Low Pilot", PILOT, t - 300)]
+		day([member("Pilot", PILOT, t - 200)], lowPilot)
+		check("in a full job the threshold doesn't apply: a hire below it but not below my best-paid is not marked", entry(menu) == KEY, entry(menu))
+		day([member("Pilot", PILOT, t - 400)], lowPilot)
+		check("and one below my best-paid is", entry(menu) == marked, entry(menu))
+		menu._settings.setValue(TOLERANCE, least)
+		day([member("Pilot", PILOT, h - 100)], hired)
+		check("nor does the tolerance: at its minimum, a hire earning less than my best-paid is still marked", entry(menu) == marked, entry(menu))
+		menu._settings.setValue(TOLERANCE, tol)
+		day([member("Mechanic", MECHANIC, top - 100)], hired)
+		check("another job is judged as usual while the pilots are full", entry(menu) == marked, entry(menu))
+		menu._settings.setValue(CREW_LIMIT, 3, PILOT)
+		var away = [member("Hired Pilot", PILOT, h), benched(member("Benched Pilot", PILOT, h - 500)), onLeave(member("Away Pilot", PILOT, h - 400))]
+		day([member("Pilot", PILOT, capped(h))], away)
+		check("benched and on-leave crew count toward the limit: a job full with them takes no hire above my best-paid", entry(menu) == KEY, entry(menu))
+		day([member("Pilot", PILOT, h - 100)], away)
+		check("and takes a cheaper one", entry(menu) == marked, entry(menu))
+		menu._settings.setValue(CREW_LIMIT, 0, PILOT)
+		day([member("Pilot", PILOT, t - 100)])
+		check("a limit of 0 with nobody in the job: even a hire below the threshold is not marked", entry(menu) == KEY, entry(menu))
+		day([member("Pilot", PILOT, h - 100)], hired)
+		check("and with someone in it, a hire earning less than them is", entry(menu) == marked, entry(menu))
+		# Firing frees the job and hiring fills it, as CurrentGame.fireCrewmember and hireCrewmember announce it.
+		menu._settings.setValue(CREW_LIMIT, 1, PILOT)
+		var atThreshold = member("Pilot", PILOT, t)
+		var lowHired = member("Low Pilot", PILOT, t - 100)
+		day([atThreshold], [lowHired])
+		check("a full job: a hire at the threshold, above my best-paid there, is not marked", entry(menu) == KEY, entry(menu))
+		setCrew([atThreshold], [])
+		CurrentGame.emit_signal("employmentChanged")
+		check("firing that crew member frees the job: the threshold applies again (employmentChanged)", entry(menu) == marked, entry(menu))
+		setCrew([atThreshold], [lowHired])
+		CurrentGame.emit_signal("employmentChanged")
+		check("and hiring one fills it again", entry(menu) == KEY, entry(menu))
+	CurrentGame.state.ui = {}
+	menu._settings.loadFromState()
+	check("a save game without the mod's settings gives every job the default crew limit again", everyJob(menu._settings, crewLimit.default))
+
 	# Hiring and firing, as CurrentGame.hireCrewmember and fireCrewmember announce them.
 	var cheap = member("Pilot", PILOT, top + 100)
 	var dear = member("Dear Pilot", PILOT, top + 200)
@@ -406,7 +575,7 @@ func run():
 
 	day([member("Pilot", PILOT, top - 100)])
 	TranslationServer.set_locale("de")
-	check("after a language change a marked entry is in the new language", entry(menu) == menu.ALERT_FORMAT % TEXT_DE, entry(menu))
+	check("after a language change a marked entry is in the new language", entry(menu) == tr(menu._CHEAP_HIRE_ALERT) % TEXT_DE, entry(menu))
 	day([])
 	check("and an unmarked one is the game's key again, which the button translates", entry(menu) == KEY, entry(menu))
 	TranslationServer.set_locale("en")
@@ -431,35 +600,79 @@ func run():
 	var version = "%d.%d.%d" % [manifestValue("version", "version_major"), manifestValue("version", "version_minor"), manifestValue("version", "version_bugfix")]
 	check("there is one shared settings instance, and the menu uses it", model.shared() == settings and menu._settings == settings)
 	check("the mod's id and name come from its manifest", settings.modId() == id and settings.modName() == manifestValue("mod_information", "name"), "%s, %s" % [settings.modId(), settings.modName()])
+	var cl = model.SETTINGS.crewLimit
+	var third = CurrentGame.occupations[2] # a job besides the pilots and the mechanics
+	check("the crew limit is per job, for each job the game draws hires from, and the salary settings are not", settings.isPerJob(CREW_LIMIT) and not settings.isPerJob(TOLERANCE) and not settings.isPerJob("salaryThreshold") and settings.jobs() == CurrentGame.occupations, settings.jobs())
 	CurrentGame.state.ui = {"unrelated": 1}
 	settings.loadFromState()
-	check("a save game without the mod's settings gives the defaults", settings.getValue("salaryThreshold") == th.default and settings.getValue("salaryTolerance") == to.default)
-	CurrentGame.state.ui[id] = {"salaryThreshold": th.max + th.step, "salaryTolerance": "much"}
+	check("a save game without the mod's settings gives the defaults, the crew limit's for every job", settings.getValue("salaryThreshold") == th.default and settings.getValue(TOLERANCE) == to.default and everyJob(settings, cl.default))
+	CurrentGame.state.ui[id] = {"salaryThreshold": th.max + th.step, "salaryTolerance": "much", "crewLimit": "many"}
 	settings.loadFromState()
 	check("a saved value above its range is clamped to the maximum", settings.getValue("salaryThreshold") == th.max, settings.getValue("salaryThreshold"))
-	check("a saved value that is not a number gives the default", settings.getValue("salaryTolerance") == to.default, settings.getValue("salaryTolerance"))
+	check("a saved value that is not a number gives the default, and so does a crew limit that is not a dictionary", settings.getValue(TOLERANCE) == to.default and everyJob(settings, cl.default))
 	CurrentGame.state.ui[id] = {"salaryThreshold": th.min - th.step}
 	settings.loadFromState()
 	check("a saved value below its range is clamped to the minimum", settings.getValue("salaryThreshold") == th.min, settings.getValue("salaryThreshold"))
+	var newTol = to.default + to.step if to.default + to.step <= to.max else to.default - to.step
+	CurrentGame.state.ui[id] = {"salaryThreshold": th.default, "salaryTolerance": newTol}
+	settings.loadFromState()
+	check("a save from before the crew limit keeps its tolerance, and every job gets the default limit", is_equal_approx(settings.getValue(TOLERANCE), newTol) and everyJob(settings, cl.default), settings.getValue(TOLERANCE))
+	CurrentGame.state.ui[id] = {"salaryThreshold": th.default, "salaryTolerance": {PILOT: newTol, MECHANIC: newTol}}
+	settings.loadFromState()
+	check("a tolerance saved as a dictionary by job, as the rolled-back per-job tolerance saved it, gives the default tolerance", settings.getValue(TOLERANCE) == to.default, settings.getValue(TOLERANCE))
+	CurrentGame.state.ui[id] = {"crewLimit": {PILOT: cl.max + 5, MECHANIC: "many", third: cl.min + 1.6 * cl.step}}
+	settings.loadFromState()
+	var others = true
+	for job in CurrentGame.occupations:
+		if not job in [PILOT, MECHANIC, third]:
+			others = others and settings.getValue(CREW_LIMIT, job) == cl.default
+	check("a saved job's crew limit above its range is clamped to the maximum", settings.getValue(CREW_LIMIT, PILOT) == cl.max, settings.getValue(CREW_LIMIT, PILOT))
+	check("one that is not a number gives the default, and so does a job the save has no value for", settings.getValue(CREW_LIMIT, MECHANIC) == cl.default and others)
+	check("one between steps is snapped to the nearest", settings.getValue(CREW_LIMIT, third) == cl.min + 2 * cl.step, settings.getValue(CREW_LIMIT, third))
 	CurrentGame.state.ui = {}
 	settings.loadFromState()
 	settings.connect("settingsChanged", self, "_countChange")
 	changes = 0
 	settings.setValue("salaryThreshold", th.default)
+	settings.setValue(CREW_LIMIT, cl.default, PILOT)
 	check("setting the value a setting already has stores and signals nothing", changes == 0 and not CurrentGame.state.ui.has(id))
 	var newT = th.default + th.step if th.default + th.step <= th.max else th.default - th.step
 	settings.setValue("salaryThreshold", newT)
 	var saved = CurrentGame.state.ui.get(id, {})
 	check("a changed value signals once", changes == 1, changes)
-	check("and is stored in the save game's UI store under the mod's id, with every setting", saved.get("salaryThreshold") == newT and saved.get("salaryTolerance") == to.default, saved)
+	check("and is stored in the save game's UI store under the mod's id, with every setting and every job's crew limit", saved.get("salaryThreshold") == newT and saved.get(TOLERANCE) == to.default and everySavedJob(saved.get(CREW_LIMIT), cl.default), saved)
 	check("with the format version and the manifest's version", saved.get("formatVersion") == model.FORMAT_VERSION and saved.get("modVersion") == version, saved)
+	var newLimit = cl.default - cl.step if cl.default - cl.step >= cl.min else cl.default + cl.step
+	settings.setValue(CREW_LIMIT, newLimit, PILOT)
+	var savedLimits = CurrentGame.state.ui.get(id, {}).get(CREW_LIMIT, {})
+	check("a job's changed crew limit signals once and is stored for that job only", changes == 2 and savedLimits.get(PILOT) == newLimit and savedLimits.get(MECHANIC) == cl.default and settings.getValue(CREW_LIMIT, MECHANIC) == cl.default, savedLimits)
+	settings.setValue(CREW_LIMIT, cl.min - cl.step, MECHANIC)
+	check("a job's crew limit set below the range is clamped", settings.getValue(CREW_LIMIT, MECHANIC) == cl.min, settings.getValue(CREW_LIMIT, MECHANIC))
+	check("and what was stored before is a copy, which the change left alone", savedLimits.get(MECHANIC) == cl.default, savedLimits)
+	settings.setValue(CREW_LIMIT, cl.min + 1.6 * cl.step, third)
+	check("a crew limit set between steps is snapped to the nearest", settings.getValue(CREW_LIMIT, third) == cl.min + 2 * cl.step, settings.getValue(CREW_LIMIT, third))
 	settings.setValue("salaryThreshold", th.max + th.step)
 	check("a value set above the range is clamped", settings.getValue("salaryThreshold") == th.max)
-	var shown = settings.toShown("salaryTolerance", to.default)
-	check("the tolerance is shown multiplied by its `shown` (as %) and converted back", is_equal_approx(shown, to.default * to.shown) and is_equal_approx(settings.fromShown("salaryTolerance", shown), to.default), shown)
+	var shown = settings.toShown(TOLERANCE, to.default)
+	check("the tolerance is shown multiplied by its `shown` (as %) and converted back", is_equal_approx(shown, to.default * to.shown) and is_equal_approx(settings.fromShown(TOLERANCE, shown), to.default), shown)
 	settings.disconnect("settingsChanged", self, "_countChange")
 	CurrentGame.state.ui = {}
 	settings.loadFromState()
+
+	# The texts (i18n/en.po), also in a language without them (Godot's fallback, en)
+	var textKeys = [load(MENU_SCRIPT)._CHEAP_HIRE_ALERT, load(MENU_SCRIPT)._CHEAP_HIRE_SETTINGS_TOOLTIP, load(HIRE_TAB_SCRIPT)._CHEAP_HIRE_LIMIT_TOOLTIP, load(HIRE_TAB_SCRIPT)._CHEAP_HIRE_FULL_TOOLTIP, load(HIRE_TAB_SCRIPT)._CHEAP_HIRE_HIRED_TOOLTIP, load(UI_SCRIPT).GROUP_LABEL]
+	for key in model.SETTINGS:
+		textKeys.append(model.SETTINGS[key].label)
+	var translated = true
+	for key in textKeys:
+		translated = translated and tr(key) != key
+	check("the mod's texts are translated", translated, textKeys)
+	TranslationServer.set_locale("fr")
+	translated = true
+	for key in textKeys:
+		translated = translated and tr(key) != key
+	check("a language without them shows the English texts", translated)
+	TranslationServer.set_locale("en")
 
 	# The Hire screen (HireScreen.gd), with the station menu beside it.
 	var cheapPilot = member("Cheap Pilot", PILOT, top - 100)
@@ -496,7 +709,7 @@ func run():
 		check("and the theme's frame is left as it was", frame.border_color == HIRE_FRAME_BORDER)
 		check("it lets the mouse through to the list (the wheel) and still gets the mouse's enter and exit", badge.mouse_filter == Control.MOUSE_FILTER_PASS)
 		var hovered = shownTip(tab, e)
-		check("moving the mouse over it shows the game's tooltip, giving the limit for their job, in the game's language", hovered == limitTip(tab, PILOT_EN, top), hovered)
+		check("moving the mouse over it shows the game's tooltip, giving the limit for their job, in the game's language, and how many of that job I've hired out of its crew limit", hovered == limitTip(tab, PILOT_EN, top) + "\n" + hiredLine(tab, e), hovered)
 		check("the game's tooltip took over its hint_tooltip, so Godot's own (off screen in the released game) shows nothing", badge.hint_tooltip == "", badge.hint_tooltip)
 		check("moving the mouse away hides the game's tooltip", not e.get_node("PlaySoundsOnTheseButtons").tooltipPosition.visible)
 	check("the Hire button is the game's: no color override, no tooltip", untouched(e))
@@ -550,6 +763,27 @@ func run():
 	CurrentGame.state.ui = {}
 	settings.loadFromState()
 
+	# A full job: the badge says so, with my best-paid salary there; with room again, it gives the limit.
+	if cl.min <= 1 and cl.max >= 2:
+		var cheaperPilot = member("Cheaper Pilot", PILOT, h - 100)
+		day([cheaperPilot], [hiredPilot])
+		yield(frames(1), "completed") # a new entry, laid out at the frame's end
+		settings.setValue(CREW_LIMIT, 1, PILOT)
+		e = hireEntry(tab, cheaperPilot)
+		check("in a full job, a cheaper hire's badge tells the job is full, with my best-paid salary there", badgedWith(tab, e, fullTip(tab, PILOT_EN, h)), tip(tab, e))
+		check("and, on a second line, that I've hired 1 pilot out of 1", tip(tab, e).ends_with("\n" + tr(tab._CHEAP_HIRE_HIRED_TOOLTIP) % [1, 1]), tip(tab, e))
+		settings.setValue(CREW_LIMIT, 2, PILOT)
+		check("with room in the job again, the badge gives the limit", badged(tab, e, PILOT_EN, capped(h)), tip(tab, e))
+		check("and that I've hired 1 out of 2", tip(tab, e).ends_with("\n" + tr(tab._CHEAP_HIRE_HIRED_TOOLTIP) % [1, 2]), tip(tab, e))
+		CurrentGame.state.ui = {}
+		settings.loadFromState()
+		day([cheaperPilot], [hiredPilot, benched(member("Benched Pilot", PILOT, h - 500)), onLeave(member("Away Pilot", PILOT, h - 400))])
+		yield(frames(1), "completed")
+		e = hireEntry(tab, cheaperPilot)
+		check("benched and on-leave pilots count in that line too, out of the default limit", tip(tab, e).ends_with("\n" + tr(tab._CHEAP_HIRE_HIRED_TOOLTIP) % [3, cl.default]), tip(tab, e))
+	else:
+		note("the crew limit's range doesn't reach from 1 to 2: the full job's badge isn't checked")
+
 	day([cheapPilot])
 	yield(frames(1), "completed") # a new entry, laid out at the frame's end
 	TranslationServer.set_locale("de")
@@ -571,8 +805,15 @@ func run():
 	setCrew([], [])
 	var s = station()
 	yield(frames(2), "completed")
-	var tooltip = s.menu.SETTINGS_TOOLTIP_FORMAT % [OS.get_scancode_string(KEY_SHIFT), manifestValue("mod_information", "name")]
-	check("the Crew entry's tooltip tells about Shift+Click", s.crew.hint_tooltip == tooltip, s.crew.hint_tooltip)
+	check("the Crew entry's tooltip tells about Shift+Click", s.crew.hint_tooltip == settingsTip(s.menu), s.crew.hint_tooltip)
+	var german = Translation.new()
+	german.locale = "de"
+	german.add_message(s.menu._CHEAP_HIRE_SETTINGS_TOOLTIP, SETTINGS_TOOLTIP_DE)
+	TranslationServer.add_translation(german)
+	TranslationServer.set_locale("de")
+	check("after a language change the tooltip is in the new language", s.crew.hint_tooltip == SETTINGS_TOOLTIP_DE % [OS.get_scancode_string(KEY_SHIFT), manifestValue("mod_information", "name")], s.crew.hint_tooltip)
+	TranslationServer.set_locale("en")
+	check("and back", s.crew.hint_tooltip == settingsTip(s.menu), s.crew.hint_tooltip)
 	click(s.crew, false)
 	yield(frames(2), "completed")
 	check("a plain click on Crew opens the Crew screen and not the settings", s.crewScreen.opened == 1 and settingsScreen(s) == null, s.crewScreen.opened)
@@ -592,23 +833,58 @@ func run():
 	check("and its size and size flags", screen.rect_min_size == s.tuning.rect_min_size and screen.size_flags_horizontal == s.tuning.size_flags_horizontal and screen.size_flags_vertical == s.tuning.size_flags_vertical)
 	check("so it opens at the right edge, where Tuning does", is_equal_approx(screen.rect_position.x + screen.rect_size.x, s.screens.rect_size.x) and is_equal_approx(screen.rect_size.x, s.tuning.rect_min_size.x), "%s of %s" % [screen.get_rect(), s.screens.rect_size])
 	check("its title is the Crew entry's", screen.get_node("VB/HeaderWithMoney/MarketLabel").text == KEY)
+	var g = groups(screen)
+	check("two Tuning groups: the settings that are not per job, then the crew limit, one row per job", g.size() == 2 and g[0].get_node("Label").text == load(UI_SCRIPT).GROUP_LABEL and g[1].get_node("Label").text == cl.label, g.size())
+	check("in an Items box in the scroll, as the Tuning screen's", screen.get_node_or_null("VB/ScrollContainer/Items") is VBoxContainer)
+	check("right below the header", screen.get_node("VB/ScrollContainer").get_index() == screen.get_node("VB/HeaderWithMoney").get_index() + 1)
+	# A different crew limit for each job, so each row shows its own.
+	var step = 0
+	for job in CurrentGame.occupations:
+		settings.setValue(CREW_LIMIT, clamp(cl.max - step * cl.step, cl.min, cl.max), job)
+		step += 1
+	screen.hide()
+	yield(frames(40), "completed")
+	click(s.crew, true)
+	yield(frames(5), "completed")
 	var r = rows(screen)
-	var keys = model.SETTINGS.keys()
-	var labelsOk = r.size() == keys.size()
+	var expected = expectedRows(model)
+	var labelsOk = r.size() == expected.size()
 	var rangesOk = labelsOk
 	var valuesOk = labelsOk
-	for i in range(min(r.size(), keys.size())):
-		var key = keys[i]
+	for i in range(min(r.size(), expected.size())):
+		var key = expected[i][1]
 		var setting = model.SETTINGS[key]
 		var slider = r[i].get_node("HSlider")
-		labelsOk = labelsOk and r[i].get_node("HBoxContainer/Name").text == setting.label and r[i].get_node("HBoxContainer/Unit").text == setting.unit
+		labelsOk = labelsOk and r[i].get_node("HBoxContainer/Name").text == expected[i][0] and r[i].get_node("HBoxContainer/Unit").text == setting.unit
 		rangesOk = rangesOk and is_equal_approx(slider.min_value, settings.toShown(key, setting.min)) and is_equal_approx(slider.max_value, settings.toShown(key, setting.max)) and is_equal_approx(slider.step, settings.toShown(key, setting.step))
-		valuesOk = valuesOk and is_equal_approx(slider.value, settings.toShown(key, settings.getValue(key)))
-	check("one Tuning row per setting, in order, with its label and unit", labelsOk, r.size())
+		valuesOk = valuesOk and is_equal_approx(slider.value, settings.toShown(key, settings.getValue(key, expected[i][2])))
+	check("one Tuning row per setting, a crew-limit row per job, named by its key, with the setting's unit", labelsOk, r.size())
 	check("each slider has its setting's range and step, in the units shown", rangesOk)
-	check("and starts from the current value", valuesOk)
+	check("and starts from the current value, its job's for a crew limit", valuesOk)
 	check("the first slider has the focus", r.size() > 0 and r[0].get_node("HSlider").has_focus())
+	# The crew limit's rows by the jobs' names, in the language the screen opens in.
+	g = groups(screen)
+	var orderEn = rowJobs(g[1]) if g.size() > 1 else []
+	check("the crew limit's rows are in alphabetical order of the jobs' names, whatever the case", orderEn == jobsByName() and orderEn != CurrentGame.occupations, orderEn)
+	screen.hide()
+	yield(frames(40), "completed")
+	TranslationServer.set_locale("de")
+	click(s.crew, true)
+	yield(frames(5), "completed")
+	g = groups(screen)
+	var orderDe = rowJobs(g[1]) if g.size() > 1 else []
+	check("opened in another language, they follow its names", orderDe == jobsByName() and orderDe != orderEn, orderDe)
+	TranslationServer.set_locale("en")
+	CurrentGame.state.ui = {}
+	settings.loadFromState()
+	screen.hide()
+	yield(frames(40), "completed")
+	click(s.crew, true)
+	yield(frames(5), "completed")
+	r = rows(screen)
 	check("opening the screen stores nothing", not CurrentGame.state.ui.has(id), CurrentGame.state.ui)
+	var toleranceRow = rowOf(model, TOLERANCE, null)
+	var pilotRow = rowOf(model, CREW_LIMIT, PILOT)
 
 	# Moving a slider applies at once: a hire between the old and the new limit flips the mark.
 	day([member("Pilot", PILOT, (t + newT) / 2.0)])
@@ -616,17 +892,28 @@ func run():
 	r[0].get_node("HSlider").value = settings.toShown("salaryThreshold", newT)
 	check("moving the threshold slider flips the mark at once", entry(s.menu) != before, "%s -> %s" % [before, entry(s.menu)])
 	check("and stores the value in the save game", CurrentGame.state.ui.get(id, {}).get("salaryThreshold") == newT, CurrentGame.state.ui)
-	var newTol = to.default + to.step if to.default + to.step <= to.max else to.default - to.step
 	# The tolerance changes only my best-paid salary: a hired pilot, paid so that with either tolerance the limit is
 	# above the threshold, and a hire between the two limits.
 	var paidMore = 2 * newT + 1000
 	day([member("Pilot", PILOT, paidMore * (1.0 + (tol + newTol) / 2.0))], [member("Hired Pilot", PILOT, paidMore)])
 	before = entry(s.menu)
-	r[1].get_node("HSlider").value = settings.toShown("salaryTolerance", newTol)
+	if toleranceRow < r.size():
+		r[toleranceRow].get_node("HSlider").value = settings.toShown(TOLERANCE, newTol)
 	check("moving the tolerance slider flips the mark at once", entry(s.menu) != before, "%s -> %s" % [before, entry(s.menu)])
-	check("and stores it as a fraction", is_equal_approx(CurrentGame.state.ui.get(id, {}).get("salaryTolerance", -1.0), newTol), CurrentGame.state.ui)
+	check("and stores it as a fraction", is_equal_approx(CurrentGame.state.ui.get(id, {}).get(TOLERANCE, -1.0), newTol), CurrentGame.state.ui)
 	r[0].get_node("HBoxContainer/Reset").emit_signal("pressed")
 	check("a row's reset button brings the default back, and stores it", settings.getValue("salaryThreshold") == th.default and CurrentGame.state.ui.get(id, {}).get("salaryThreshold") == th.default, settings.getValue("salaryThreshold"))
+	# The pilots' crew limit down to the one pilot I have: a hire below the threshold but not below my best-paid there.
+	if cl.min <= 1 and cl.max >= 1:
+		day([member("Pilot", PILOT, t - 200)], [member("Low Pilot", PILOT, t - 300)])
+		before = entry(s.menu)
+		if pilotRow < r.size():
+			r[pilotRow].get_node("HSlider").value = settings.toShown(CREW_LIMIT, 1)
+		check("moving the pilots' crew limit slider flips the mark at once", entry(s.menu) != before, "%s -> %s" % [before, entry(s.menu)])
+		var stored = CurrentGame.state.ui.get(id, {}).get(CREW_LIMIT, {})
+		check("and stores it for the pilots only", stored is Dictionary and stored.get(PILOT) == 1 and stored.get(MECHANIC) == cl.default and settings.getValue(CREW_LIMIT, MECHANIC) == cl.default, stored)
+	else:
+		note("the crew limit's range doesn't hold 1: its slider isn't checked")
 
 	# Closing, as the game's screens close: Esc, or the controller's B or Start.
 	var unhandled = probe.count
@@ -658,18 +945,21 @@ func run():
 
 	# After a save and a load (CurrentGame writes the state as JSON and reads it back), a new station has the values.
 	settings.setValue("salaryThreshold", newT)
+	settings.setValue(CREW_LIMIT, newLimit, PILOT)
 	CurrentGame.state = parse_json(to_json(CurrentGame.state))
-	settings.cfg.salaryThreshold = th.default # what another save game would leave in the shared instance
+	# What another save game would leave in the shared instance.
+	settings.cfg.salaryThreshold = th.default
+	settings.cfg.crewLimit[PILOT] = cl.default
 	freeStation(s)
 	yield(frames(1), "completed")
 	s = station()
 	yield(frames(2), "completed")
-	check("after a save and a load, a new station uses the saved value", settings.getValue("salaryThreshold") == newT, settings.getValue("salaryThreshold"))
+	check("after a save and a load, a new station uses the saved values", settings.getValue("salaryThreshold") == newT and settings.getValue(CREW_LIMIT, PILOT) == newLimit and settings.getValue(CREW_LIMIT, MECHANIC) == cl.default, [settings.getValue("salaryThreshold"), settings.getValue(CREW_LIMIT, PILOT)])
 	click(s.crew, true)
 	yield(frames(5), "completed")
 	screen = settingsScreen(s)
 	r = rows(screen) if screen != null else []
-	check("and the settings screen opens on it", r.size() > 0 and is_equal_approx(r[0].get_node("HSlider").value, settings.toShown("salaryThreshold", newT)))
+	check("and the settings screen opens on them", r.size() > pilotRow and is_equal_approx(r[0].get_node("HSlider").value, settings.toShown("salaryThreshold", newT)) and is_equal_approx(r[pilotRow].get_node("HSlider").value, settings.toShown(CREW_LIMIT, newLimit)))
 	freeStation(s)
 	yield(frames(1), "completed")
 

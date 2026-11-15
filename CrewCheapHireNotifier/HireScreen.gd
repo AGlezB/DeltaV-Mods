@@ -2,19 +2,25 @@ extends "res://enceladus/HireableCrew.gd"
 
 # The Hire screen: everyone who counts (the settings model's isCheapHire, the rule that marks the station menu's Crew
 # entry) gets a badge above the values of their entry's details, right-aligned with them: the capitals of the mod's
-# name in an outline, with a tooltip giving the limit for their job.
+# name in an outline, with a tooltip giving the limit for their job, or telling that the job is full, and how many
+# crew members with the job you have hired out of its crew limit.
 
 # The settings and the rule: their model, shared with the station menu and the settings screen.
 const CrewCheapHireNotifier = preload("res://CrewCheapHireNotifier/Settings.gd")
 
-# The badge's tooltip; the first %s is the job, in the game's language, the second the limit.
-const LIMIT_TOOLTIP_FORMAT = "Your limit for %s: %s"
+# The badge tooltip's first line, translation keys of i18n/en.po; the first %s is the job, in the game's language. The
+# second is the limit, or, in a full job (isJobFull), the salary of your best-paid crew member in it.
+const _CHEAP_HIRE_LIMIT_TOOLTIP = "CREWCHEAPHIRENOTIFIER_LIMIT_TOOLTIP"
+const _CHEAP_HIRE_FULL_TOOLTIP = "CREWCHEAPHIRENOTIFIER_FULL_TOOLTIP"
+# Its second line: the first %d is how many crew members with the job you have hired (crewCount), the second its crew
+# limit.
+const _CHEAP_HIRE_HIRED_TOOLTIP = "CREWCHEAPHIRENOTIFIER_HIRED_TOOLTIP"
 
 # The badge's node name in an entry, so that a refresh finds the badge it made.
 const _CHEAP_HIRE_BADGE = "CrewCheapHireNotifierBadge"
 
 # The game calls fillCrew on every new day (dayPassed), after a hire and when the screen is first shown. A hire or
-# a dismissal changes a job's limit, and so does a setting.
+# a dismissal changes a job's limit and can fill or free the job, and so does a setting.
 func _ready():
 	CurrentGame.connect("employmentChanged", self, "_markCheapHires")
 	CrewCheapHireNotifier.shared().connect("settingsChanged", self, "_markCheapHires")
@@ -40,10 +46,21 @@ func _markCheapHires():
 		var badge = _cheapHireAnchor(entry).get_node_or_null(_CHEAP_HIRE_BADGE)
 		if settings.isCheapHire(entry):
 			badge = _cheapHireBadge(entry)
-			badge.hint_tooltip = LIMIT_TOOLTIP_FORMAT % [tr(entry.occupation), CurrentGame.formatThousands(floor(settings.limitFor(entry.occupation))) + " E$"]
+			badge.hint_tooltip = _cheapHireTooltip(settings, entry.occupation)
 			badge.visible = true
 		elif badge != null:
 			badge.visible = false
+
+# The badge's tooltip for a job, with the salary formatted as CrewBio.gd formats one, rounded down. Each sentence on
+# its own line, as the game's own tooltips are; the tooltip's Label grows with them. The crew limit comes back from the
+# save as a float, so it is made a whole number for %d.
+func _cheapHireTooltip(settings, occupation) -> String:
+	var text
+	if settings.isJobFull(occupation):
+		text = tr(_CHEAP_HIRE_FULL_TOOLTIP) % [tr(occupation), CurrentGame.formatThousands(floor(settings.bestPaid(occupation))) + " E$"]
+	else:
+		text = tr(_CHEAP_HIRE_LIMIT_TOOLTIP) % [tr(occupation), CurrentGame.formatThousands(floor(settings.limitFor(occupation))) + " E$"]
+	return text + "\n" + tr(_CHEAP_HIRE_HIRED_TOOLTIP) % [settings.crewCount(occupation), int(settings.getValue("crewLimit", occupation))]
 
 # What the badge hangs from: the game's fullNameNode, the top value of the entry's details grid, which spans the
 # values' column to the grid's right edge, its text right-aligned (CrewBio.tscn). A Label is no container, so it

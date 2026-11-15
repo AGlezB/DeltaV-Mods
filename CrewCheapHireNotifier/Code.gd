@@ -1,13 +1,14 @@
 extends "res://enceladus/EnceladusMenu.gd"
 
-# The settings (salary threshold and tolerance): their model, shared with the settings screen.
+# The settings (the salary threshold and tolerance, and the crew limit for each job): their model, shared with the
+# settings screen.
 const CrewCheapHireNotifier = preload("res://CrewCheapHireNotifier/Settings.gd")
 
-# The Crew entry's text while someone cheap is for hire; %s is the entry's own text, in the game's language.
-const ALERT_FORMAT = "%s (*)"
-
-# The Crew entry's tooltip; the first %s is the key to hold while clicking, the second the mod's name.
-const SETTINGS_TOOLTIP_FORMAT = "Click while pressing %s to open the %s settings."
+# Translation keys of i18n/en.po. The Crew entry's text while someone cheap is for hire, whose %s is the entry's own
+# text in the game's language; and its tooltip, whose first %s is the key to hold while clicking, the second the mod's
+# name.
+const _CHEAP_HIRE_ALERT = "CREWCHEAPHIRENOTIFIER_ALERT"
+const _CHEAP_HIRE_SETTINGS_TOOLTIP = "CREWCHEAPHIRENOTIFIER_SETTINGS_TOOLTIP"
 
 const _CHEAP_HIRE_SETTINGS_UI = preload("res://CrewCheapHireNotifier/SettingsUI.gd")
 
@@ -36,20 +37,23 @@ func _ready():
 	if screens != null and screens.has_signal("hidefoka") and screens.get_node_or_null("Tuning") is Control:
 		_cheapHireScreens = screens
 		_cheapHireTuning = screens.get_node("Tuning")
-		_crewButton.hint_tooltip = SETTINGS_TOOLTIP_FORMAT % [OS.get_scancode_string(KEY_SHIFT), _settings.modName()]
 		_crewButton.connect("gui_input", self, "_onCrewInput")
 	_updateCheapHire()
 
-# A marked entry holds translated text, which the button cannot translate again.
+# A marked entry and the tooltip hold translated text, which the button cannot translate again.
 func _notification(what):
 	if what == NOTIFICATION_TRANSLATION_CHANGED and _crewButton != null:
 		_updateCheapHire()
 
+# The tooltip only where Shift+Click opens the settings. The game's tooltip node (the menu's PlaySoundsOnTheseButtons,
+# menu/sfx/PlaySoundsOnTheseButtons.gd) takes it over and reads it again on every hover, so setting it again is enough.
 func _updateCheapHire():
 	if _cheapHireAvailable():
-		_crewButton.text = ALERT_FORMAT % tr(_crewKey)
+		_crewButton.text = tr(_CHEAP_HIRE_ALERT) % tr(_crewKey)
 	else:
 		_crewButton.text = _crewKey
+	if _cheapHireScreens != null:
+		_crewButton.hint_tooltip = tr(_CHEAP_HIRE_SETTINGS_TOOLTIP) % [OS.get_scancode_string(KEY_SHIFT), _settings.modName()]
 
 # The rule is the settings model's (isCheapHire), so the Hire screen (HireScreen.gd) marks the same people.
 func _cheapHireAvailable() -> bool:
