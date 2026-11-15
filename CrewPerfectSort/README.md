@@ -4,7 +4,7 @@ Sorts the crew lists at Enceladus Prime:
 
 - **Hire** screen: by **salary** (cheapest first), then by **occupation**
   (plain string order, so Astrogator, Geologist, Mechanic, Pilot).
-- **Your crew** screen: by **occupation**, then by **salary** (highest first).
+- **Your crew** screen: by **occupation**, then by **salary** (lowest first).
 
 Entries that are equal in both are ordered by name, so the order never shuffles.
 On the Hire screen the keyboard/gamepad focus starts on the first entry of the

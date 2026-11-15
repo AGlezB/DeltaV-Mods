@@ -1,6 +1,6 @@
 extends "res://enceladus/CurrentCrewManagement.gd"
 
-# The "Your crew" screen, sorted by job, then salary (highest first).
+# The "Your crew" screen, sorted by job, then salary (lowest first).
 
 
 func fillCrew():
@@ -18,5 +18,5 @@ func _before(a, b):
 	if a.occupation != b.occupation:
 		return a.occupation < b.occupation
 	if a.salary != b.salary:
-		return a.salary > b.salary
+		return a.salary < b.salary
 	return a.fullName < b.fullName

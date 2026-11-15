@@ -1,6 +1,7 @@
 # CrewPerfectSort - Changes
 
-## NEXT
+## 1.2.0
+- The Your crew screen sorts each occupation by salary lowest first (was highest first); the README says so.
 - Adds this CHANGES.md.
 - The README no longer states the version (it is in `Mod.manifest` and here), and its Install step says to remove
   any other version of the mod from the `mods` folder.
