@@ -14,9 +14,15 @@ msgstr "Judge ore by mineral mass instead of the minimum value"
 
 msgid "GEOLOGYBYMASS_HINT"
 msgstr ""
-"GeologyByMass mod: while this is on, an identified chunk keeps its full info box when it holds at least the mass "
-"set below of a mineral switched on in the Geologist tab. Its value and the Geologist tab's minimum value no longer "
-"count."
+"GeologyByMass mod: while this is on, an identified chunk keeps its full info box when it holds, of a mineral "
+"switched on in the Geologist tab, at least the base mass plus the extra mass set for that mineral. Its value and the "
+"Geologist tab's minimum value no longer count."
 
-msgid "GEOLOGYBYMASS_MIN_MASS"
-msgstr "Least mass of this mineral, as your geologist estimates it, for a chunk to keep its full info box."
+msgid "GEOLOGYBYMASS_BASE_MASS"
+msgstr "Base"
+
+msgid "GEOLOGYBYMASS_BASE_MASS_DESC"
+msgstr "Least mass of every mineral, as your geologist estimates it, for a chunk to keep its full info box. Each mineral's extra mass is added to it."
+
+msgid "GEOLOGYBYMASS_EXTRA_MASS"
+msgstr "Mass of this mineral needed on top of the base, as your geologist estimates it, for a chunk to keep its full info box."

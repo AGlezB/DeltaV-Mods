@@ -1,10 +1,11 @@
 extends Reference
 
 # GeologyByMass's settings for one HUD (hud/Hud.gd), shared by Code.gd and SettingsUI.gd: the switch at the top of the
-# mod's OMS tab and the least mass for each mineral. They live where the game keeps that HUD's Geologist tab settings,
-# its mineralConfig (Hud.gd _ready: the ship's config "hud.config"), under the mod's id from Mod.manifest, and are
-# changed in place, as Hud.gd setMinValue changes the Minimum value. So they are saved, loaded and carried with the
-# ship exactly as the game's own are. Reading never writes: a ship that never had the mod's entry gets the defaults.
+# mod's OMS tab, the base mass and each mineral's extra mass on top of it. They live where the game keeps that HUD's
+# Geologist tab settings, its mineralConfig (Hud.gd _ready: the ship's config "hud.config"), under the mod's id from
+# Mod.manifest, and are changed in place, as Hud.gd setMinValue changes the Minimum value. So they are saved, loaded
+# and carried with the ship exactly as the game's own are. Reading never writes: a ship that never had the mod's entry
+# gets the defaults.
 
 # The switch: on, the masses below decide which identified chunks keep their full info box, in place of the Geologist
 # tab's Minimum value. The default is declared here only.
@@ -13,10 +14,11 @@ const ENABLED = {
 	"default": false,
 }
 
-# One slider per mineral: the least mass of it, in kg as the geologist estimates it, for an identified chunk to keep
-# its full info box. One description for every mineral's slider; each value is declared here only.
-const MIN_MASS = {
-	"label": "GEOLOGYBYMASS_MIN_MASS",
+# The base slider: the least mass of every mineral, in kg as the geologist estimates it, for an identified chunk to
+# keep its full info box; each mineral's extra mass is added to it. `label` names its row, and `label` + "_DESC" is its
+# tooltip. Each value is declared here only.
+const BASE_MASS = {
+	"label": "GEOLOGYBYMASS_BASE_MASS",
 	"default": 0,
 	"min": 0,
 	"max": 5000,
@@ -24,8 +26,20 @@ const MIN_MASS = {
 	"unit": "kg",
 }
 
-# The layout of the saved entry. Renaming a saved key without a migration is a major version.
-const FORMAT_VERSION = 1
+# One slider per mineral: the mass of it needed on top of the base, in kg. `label` is its tooltip. One description for
+# every mineral's slider; each value is declared here only.
+const EXTRA_MASS = {
+	"label": "GEOLOGYBYMASS_EXTRA_MASS",
+	"default": 0,
+	"min": 0,
+	"max": 5000,
+	"step": 50,
+	"unit": "kg",
+}
+
+# The layout of the saved entry. Renaming a saved key without a migration is a major version. Format 1 (1.0.0) had no
+# base and kept each mineral's least mass in "minMass", which reads as its extra mass.
+const FORMAT_VERSION = 2
 
 var _hud # the HUD whose settings these are
 var _manifest = null
@@ -59,18 +73,28 @@ func setEnabled(how):
 		return
 	_entry().enabled = how
 
-# Any mineral, also one without a slider: the default unless the entry holds a value for it.
+# The least mass of `mineral` for a chunk to keep its full info box: the base plus the mineral's extra mass.
 func getMinMass(mineral) -> float:
-	var masses = _saved().get("minMass", {})
-	if not masses is Dictionary:
-		return _clampedMass(null)
-	return _clampedMass(masses.get(mineral))
+	return getBaseMass() + getExtraMass(mineral)
 
-func setMinMass(mineral, kg):
-	kg = _clampedMass(kg)
-	if not available() or kg == getMinMass(mineral):
+func getBaseMass() -> float:
+	return _clamped(_saved().get("baseMass"), BASE_MASS)
+
+func setBaseMass(kg):
+	kg = _clamped(kg, BASE_MASS)
+	if not available() or kg == getBaseMass():
 		return
-	_entry().minMass[mineral] = kg
+	_entry().baseMass = kg
+
+# Any mineral, also one without a slider: the default unless the entry holds a value for it.
+func getExtraMass(mineral) -> float:
+	return _clamped(_savedExtra().get(mineral), EXTRA_MASS)
+
+func setExtraMass(mineral, kg):
+	kg = _clamped(kg, EXTRA_MASS)
+	if not available() or kg == getExtraMass(mineral):
+		return
+	_entry().extraMass[mineral] = kg
 
 func modId() -> String:
 	return str(_manifestValue("mod_information", "id", _folder().get_file()))
@@ -91,29 +115,35 @@ func _saved() -> Dictionary:
 	var saved = _hud.mineralConfig.get(modId())
 	return saved if saved is Dictionary else {}
 
+# The saved extra masses by mineral; format 1's "minMass" where the entry has no "extraMass".
+func _savedExtra() -> Dictionary:
+	var saved = _saved()
+	var masses = saved.get("extraMass", saved.get("minMass"))
+	return masses if masses is Dictionary else {}
+
 # The entry to write to: every value as it reads now, stamped with this format and the mod's version, stored in
 # mineralConfig in place of the old one.
 func _entry() -> Dictionary:
 	var masses = {}
-	var saved = _saved().get("minMass", {})
-	if saved is Dictionary:
-		for mineral in saved:
-			masses[mineral] = _clampedMass(saved[mineral])
+	var saved = _savedExtra()
+	for mineral in saved:
+		masses[mineral] = _clamped(saved[mineral], EXTRA_MASS)
 	var entry = {
 		"formatVersion": FORMAT_VERSION,
 		"modVersion": modVersion(),
 		"enabled": isEnabled(),
-		"minMass": masses,
+		"baseMass": getBaseMass(),
+		"extraMass": masses,
 	}
 	_hud.mineralConfig[modId()] = entry
 	return entry
 
-# A saved or given mass on a step of the slider and inside its range; anything that is not a number gives the default
-# (a save edited by hand can't break the code). The save is JSON, so numbers come back as floats.
-func _clampedMass(value) -> float:
+# A saved or given mass on a step of its slider (`desc`) and inside its range; anything that is not a number gives the
+# default (a save edited by hand can't break the code). The save is JSON, so numbers come back as floats.
+func _clamped(value, desc) -> float:
 	if not (value is int or value is float):
-		value = MIN_MASS.default
-	return float(clamp(stepify(value, MIN_MASS.step), MIN_MASS.min, MIN_MASS.max))
+		value = desc.default
+	return float(clamp(stepify(value, desc.step), desc.min, desc.max))
 
 func _manifestValue(section, key, default):
 	if _manifest == null:

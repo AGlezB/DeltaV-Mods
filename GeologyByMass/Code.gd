@@ -10,8 +10,9 @@ extends "res://hud/Hud.gd"
 # is at least the Minimum value, and it holds a mineral switched on in that tab. Nothing else asks this HUD, so the
 # mod changes only the boxes: the drones and the salvage arm ask the ship with their own settings.
 #
-# With the switch on, for the player's ship, an identified chunk keeps its full box when it holds at least the
-# slider's mass of some mineral switched on in the Geologist tab; its value and the Minimum value no longer count.
+# With the switch on, for the player's ship, an identified chunk keeps its full box when it holds, of some mineral
+# switched on in the Geologist tab, at least the base mass plus that mineral's extra mass (Settings.gd getMinMass); its
+# value and the Minimum value no longer count.
 # The masses are the box's own (MineralMark.gd scanParent, with the geologist's error), which the box stores in the
 # ship's identifiedObjects (identifyMinerals / identifyValue -> ship-ctrl.gd addIdentifiedObject). A chunk not yet
 # identified, the switch off, or another ship's HUD: the game decides.

@@ -297,25 +297,28 @@ HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology` loads GeologyByMass
   game's rule; the OMS is built on the ship's `instance` signal, as the game builds it. The mod's settings
   descriptions come from its `Settings.gd`. Checks that the tab comes right after the Geologist tab, titled by its
   key, once however often the OMS is built, and that opening it stores nothing; its switch, with its label at the
-  mod's spacing (once laid out), then one row per mineral the HUD can switch on, with the Geologist tab's parts, the
-  mod's range, step, unit, tooltip and bar width (also once laid out), and the stored values; the switch and the
-  sliders store what they show, and the switch dims the rows; choosing the tab focuses the switch. The rule: off, the
-  game decides; on, below, at and above a mineral's mass, a mineral switched off in the Geologist tab, one of two
-  minerals enough, the value and Minimum value ignored both ways; the game decides a chunk not yet identified,
-  another ship's HUD and a HUD without mineral targeting. The settings model: defaults for a ship without the entry;
-  reading and unchanged sets store nothing; the mineral list with and without `onlyMinerals`; clamping and snapping
-  of what is set or hand-edited; the entry in the HUD's `mineralConfig` (the ship's `hud.config`) under the
-  manifest's id, with the format and mod versions, the game's keys untouched; a JSON round trip. A preheated ship
-  (its HUD builds the OMS before loading `mineralConfig`) gets the tab with its stored values. And the texts of
-  `i18n/en.po`, also in a language without them. The control checks (the OMS keeps its four tabs; the game decides)
-  run on the game's own script.
+  mod's spacing (once laid out); a grid of three columns: the base row first (its name, its slider, an empty cell),
+  then one row per mineral the HUD can switch on (name, extra mass slider, total), with the Geologist tab's parts,
+  the mod's range, step, unit, format, tooltip and bar width (also once laid out), and the stored values; the switch
+  and the sliders store what they show, every total follows the base and its own slider, and the switch dims the
+  rows; choosing the tab focuses the switch. The rule: off, the game decides; on, below, at and above a mineral's base
+  plus extra mass, a mineral switched off in the Geologist tab, one of two minerals enough, the value and Minimum
+  value ignored both ways, each mineral's own extra, the base alone with no extras, the base moving every threshold;
+  the game decides a chunk not yet identified, another ship's HUD and a HUD without mineral targeting. The settings
+  model: defaults for a ship without the entry; reading and unchanged sets store nothing; the mineral list with and
+  without `onlyMinerals`; clamping and snapping of what is set or hand-edited, base and extras; the entry in the HUD's
+  `mineralConfig` (the ship's `hud.config`) under the manifest's id, with the format and mod versions, the game's keys
+  untouched; a JSON round trip; a format-1 entry (`minMass`, read as the extras) and its rewrite on the first change.
+  A preheated ship (its HUD builds the OMS before loading `mineralConfig`) gets the tab with its stored values. And
+  the texts of `i18n/en.po`, also in a language without them. The control checks (the OMS keeps its four tabs; the
+  game decides) run on the game's own script.
 - `_tests\harness\rig.gd` builds the arm's node tree as the game nests it, with the values in
   `_tests\harness\vp_data.gd`; each cites its scene file and line, so re-check them after a game update. The ship
   is a stub moved by hand (it takes the arm's impulses and torque; inertia from the hull); the rotors don't collide.
 - **Baseline** (both arm load orders give the same results): `units` 114 checks with both arm mods (64 with
   PullBehavior alone, 61 with TargetSelection alone), `still` 9, `moving` 16, `dive` 8, `boot` 5 (3 control checks
   with `-Mods @()`), `lidar` 40 (3 control checks with `-Mods @()`), `hud` 13 (3 control checks with `-Mods @()`),
-  `crew` 97 (98 with CrewPerfectSort too, in both load orders; 3 control checks with `-Mods @()`), `geology` 50 (3
+  `crew` 97 (98 with CrewPerfectSort too, in both load orders; 3 control checks with `-Mods @()`), `geology` 60 (3
   control checks with `-Mods @()`), all passing; `-Matrix` gives 16 of 16 in every combination.
   Feeding, a chunk beside the hull is in after 4.4–4.8 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.4.0 (the claude.ai results,
