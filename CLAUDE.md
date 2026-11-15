@@ -11,6 +11,88 @@ versions released before that exist only as release zips.
 
 Later changes are in the git history and, from 1.0.0 on, in each mod's `CHANGES.md`.
 
+## Glossary
+
+The game's terms as requests use them: a term listed here means what it says, with no further
+explanation. The key after a term is its translation key in the game's `i18n/en.po` (what a Label's `text` holds
+before translation, and what mods match on); check a term's English text there, not from memory. When a request
+uses a game term that isn't here, find it in the decompiled game and add it; an entry explains every game term it
+uses, or that term has its own entry.
+
+- **Adrenaline**: the game's bullet time. A level from 0 to 1 (`adrenaline` in `BulletTimer.gd`, changed through
+  `CurrentGame.adrenaline(delta)`) that slows game time (`CurrentGame.targetTimeScale` → `Engine.time_scale`),
+  blurs the view around the ship and muffles the sound, and drains by itself. Three things raise it: the Adrenaline
+  Booster; the smart camera (a display setting, `Settings.cfg.display.smartCamera`; `ships/camera.gd`) when
+  objects close in fast; and the pilot, when their Course anticipation (`CREW_STATS_PILOT_ANTICIPATION`) foresees
+  a collision (`ship-ctrl.gd` `handlePilotAdrenaline`). How slow time gets at full adrenaline is the pilot's
+  Adrenal slowdown (`CREW_STATS_PILOT_ADRENALINE`, `CurrentGame.getAdrenalSlowdown`), set by their talent.
+- **Adrenaline Booster** (`SYSTEM_ADRENALINE_BOOSTER`, `ships/CabinLight.gd`): equipment the player fires with
+  the `bullet_time` action (`CONTROLS_GAMEPAD_ADRENALINE`) for a burst of adrenaline, followed by a cooldown
+  (`adrenalineBoost`, `adrenalineCooldown`); fired again during the cooldown, it cuts the burst short. Switched off
+  in the OMS's Mechanic tab, it pushes adrenaline down every frame instead, which also damps bullet time from the
+  other sources. DiveDisableAdrenalineBooster starts the player's booster switched off at every dive.
+- **Arm**: the AR-1500 Manipulator (`SYSTEM_SALVAGE_ARM`, `ships/modules/DockingArm.gd`), the ship's arm that grabs
+  chunks and brings them to the intake (see *Salvage arm facts*).
+- **Astrogator**: the crew occupation for navigation, and the OMS tab with the map: points of interest, distances,
+  plotting a course (`HUD_PLOT_COURSE`).
+- **Chunk** (mineral chunk, ore chunk): a loose piece of ore floating in the rings; what the arm grabs, the MPU
+  processes and the HUD's mineral targeting marks. A `RigidBody2D` with `asteroids/mineral.gd`, one scene per
+  mineral and size (`asteroids/mineral-<mineral>-<n>.tscn`); `mineral` names its mineral, `composition` its
+  content. Weight: see *Salvage arm facts*.
+- **Crew** (`ENCELADUS_CREW`): the people hired at the station, each with an occupation (`CurrentGame.occupations`:
+  Pilot, Mechanic, Geologist, Astrogator, keys `CREW_OCCUPATION_*`) and a salary; the player is the captain. The
+  dive crew are those aboard. Passengers (`CREW_OCCUPATION_PASSENGER`, no salary) are listed with the crew.
+- **Dealer** (`ENCELADUS_SHIP_MARKET`, `enceladus/Dealer.tscn`): the station's ship market. Its entries are
+  `enceladus/SystemBuyUI.gd` (the ship-list mods change them); its Examine tab can launch the simulator. **Fleet**
+  (`ENCELADUS_OWNED_SHIPS`): the ships the player owns.
+- **Depth** (`HUD_DEPTH`): how far into the rings the ship is.
+- **Dive** (ring dive): one trip from the station into Saturn's rings to mine, until the ship is back. Started with
+  Launch Ring Dive (`ENCELADUS_RETURN_TO_RING`), at the dive entry point picked before launch
+  (`ENCELADUS_DIVE_TARGET`, `enceladus/DiveTarget.tscn`); fees, licences, insurance and consumables are paid per
+  dive, and on return the dive's output is stored or sold.
+- **E$**: the game's currency.
+- **Enceladus**, **the station**: Enceladus Prime station (`ENCELADUS_*`, `enceladus/`), the home base at Saturn's
+  moon Enceladus. Its menu (`enceladus/EnceladusMenu.gd`) opens the station's screens on its right (the children of
+  `enceladus/HidingMarginContainer.gd`).
+- **Equipment**: the parts fitted to a ship (engine, reactor, LIDAR, MPU, arm, Adrenaline Booster, …), and the
+  station screen where they are bought and fitted to its hardpoints (`ENCELADUS_SHIP_UPGRADES`,
+  `enceladus/Upgrades.tscn`; also called the Upgrades screen, after its key and scene). The code calls one piece a
+  system: each has a `SYSTEM_*` key, which its script holds in `systemName` (`SYSTEM_SALVAGE_ARM`); a few texts say
+  "system" too (the OMS's on/off switch, the trade-in tip).
+- **Geologist**: the crew occupation for mining, and the OMS tab with the cargo's composition and the mineral
+  targeting: which minerals the HUD marks, and their Minimum value (`HUD_MIN_PRICE`), kept in the HUD's
+  `mineralConfig`.
+- **Hardpoint**: a ship's mount for a piece of equipment: high-stress, low-stress or spinal. Only high-stress ones
+  take the arm.
+- **HUD**: the ship's flight display (`hud/Hud.gd`), laid out per ship model in `hud/Display-<model>.tscn`.
+- **Intake**: where the arm feeds chunks into the ship: a grinder, an excavator or a side bay (see *Salvage arm
+  facts*).
+- **LIDAR** (`HUD_LIDAR`, "Doppler LIDAR"; `hud/LIDAR.gd`): the HUD's scanner of nearby objects. Its sweep plays a
+  ping (the `Bleep` node) for each strong return, pitched and set in volume by the distance; a Tuning switch
+  (`doBleep`) turns the pings off.
+- **Mechanic**: the crew occupation for repairs, and the OMS tab listing the ship's equipment, to switch each piece
+  on and off and fix it.
+- **Mineral**: what a chunk is made of, named in code by its element symbol (`mineral = "PT"`). Processed ore
+  (`HUD_CARGO_LIST_PROCESSED`) is what the MPU has extracted; it is sold or stored at the **Mineral Market**
+  (`ENCELADUS_MINERAL_MARKET`).
+- **MPU** (`SYSTEM_CARGO_MPU*`, `ships/modules/MineralProcessingUnit.gd`): the Mineral Processing Unit, which turns
+  the chunks taken in into processed ore and, in most models, their water into remass.
+- **OMS** (`HUD_OMS`, `hud/OMS.gd`, `hud/OMS.tscn`): the Onboard Maintenance System, the console opened with `J` in
+  flight. Its tabs are named by the crew occupation keys: Mechanic, Astrogator, Geologist, Pilot.
+- **Remass**: reaction mass, the ship's propellant (`HUD_FUEL`, shown as "propellant").
+- **Roid**: an asteroid (`asteroids/asteroid.gd`, a `RigidBody2D`), the rocks that fill the rings; the game's own
+  texts say "roids" too.
+- **Ship models**: Eagle-Prospector-VP (the VP), EIME, OCP-209, K37 TNTRL, the Cothon series, the Kitsune, …: names
+  of ships as the Dealer shows them.
+- **Simulator** (MVFS; `ENCELADUS_LAUNCH_VR`, `enceladus/Simulator/`): the Minding Virtual Flight Service, the
+  station's flight simulator for trying a ship as fitted; launched from the Tuning and Equipment screens and the
+  Dealer's Examine tab. A Premium subscription (`SERVICE_SIMULATOR`) adds a simulated ring scenario.
+- **Transit**: the trip back to the station at the end of a dive (`HUD_RETURN_*`); the transit reserve is the
+  propellant kept for it.
+- **Tuning** (`ENCELADUS_SHIP_TUNING`, `enceladus/Tuning.tscn`): the station screen with the settings of each piece
+  of the current ship's equipment, registered by its script with `registerSubsystem` and saved with the game (see
+  *Conventions*).
+
 ## Local paths
 
 | What | Path |
