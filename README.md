@@ -36,7 +36,8 @@ short.
   an excavator.
 - [DiveDisableAdrenalineBooster](DiveDisableAdrenalineBooster/README.md#warning): the Adrenaline Booster starts every
   dive switched off, which also damps the bullet time from the pilot and the smart camera.
-- [GeologyByMass](GeologyByMass/README.md#warning): with its switch on, which chunks keep a full info box.
+- [GeologyByMass](GeologyByMass/README.md#warning): with its switch on, which chunks keep a full info box depends
+  on ore mass instead of value.
 
 Before reporting a bug in those parts of the game to the game's developers, check that it also happens without these
 mods.
