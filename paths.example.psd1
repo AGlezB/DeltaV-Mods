@@ -1,5 +1,6 @@
 # The folders outside the repo, which differ per machine. Copy this file to paths.local.psd1 (git-ignored) and set
-# them there: _tests\run.ps1 reads it, and CLAUDE.md imports it and names these folders by their keys.
+# them there: _tests\run.ps1 and package.ps1 read it, MODDING.md names these folders by their keys, and CLAUDE.md
+# imports it.
 @{
 	# The game's folder: Delta-V.exe and mods\.
 	GameDir = 'C:\path\to\dV Rings of Saturn'

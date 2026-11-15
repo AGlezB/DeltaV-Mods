@@ -7,13 +7,16 @@ extends "res://enceladus/SystemBuyUI.gd"
 # The Fleet screen (enceladus/Owned.tscn, an instance of Dealer.tscn) lists the owned ships as entries of this script;
 # the ship market uses the same script for the ships for sale (`owned` false), which the mod leaves alone.
 #
-# - Copy, on every Fleet entry but the current ship's (the only one Paste can change): that ship becomes the template.
+# - One button per Fleet entry, in the same spot right before Use, so the entries' buttons line up: Copy on the other
+#   ships' entries, Paste on the current ship's (the only one Paste can change), never a button that can't be used.
+#   Each is enabled only where it applies, and its tooltip says why when it isn't.
+# - Copy, enabled on a ship of the current ship's model (the ship configs' `model`): that ship becomes the template.
 #   Its transponder is kept as metadata of the Fleet screen node, and dropped when the screen closes (Dealer.gd hide():
 #   its `hide` animation ends with the node invisible). Nothing is saved.
-# - Paste, on the current ship's entry only, when the template is another owned ship of the same model (the ship
-#   configs' `model`). It opens a copy of the entry's Buy confirmation (ConfirmationCenter/BuyPanel, which a Fleet entry
-#   never uses) with the price, the repair time and what can't be fitted, shown and hidden by copies of the entry's
-#   BuyShow / BuyHide animations, retargeted to the copy and to the Paste button.
+# - Paste, enabled on the current ship's entry once the template is another owned ship of its model. It opens a
+#   confirmation dialog, a ConfirmationDialog as the game's own (the station's pause menu,
+#   enceladus/PauseLayerEnceladus.tscn: no title, popup_centered, Cancel focused), in the entry's menu theme: what will
+#   be copied and what won't, as two bulleted lists, and the price and the repair time.
 # - Equipment: for every slot of the Equipment screen (enceladus/Upgrades.gd getItems(), each item's `slot`) where the
 #   two ships' values differ, the item with the template's value is bought as Upgrades.gd buy() buys it: its
 #   getNetPrice() (the price times the slots, minus the trade-in of the piece it replaces), its actualReplacementTime
@@ -27,12 +30,13 @@ extends "res://enceladus/SystemBuyUI.gd"
 #   portraits through `employmentChanged`. The game keeps a ship's `preferredCrew` only once its crew changed while it
 #   was flown (hireCrewmember, fireCrewmember, setMemberActive); a ship without one has whoever was aboard when the
 #   player switched to it. A template without one: its crew is unknown, the current ship's is left as it is, and the
-#   confirmation says so.
+#   dialog says so.
 # - Then, as Dealer.gd use() does after a switch: the Fleet screen's `shipChanged` (enceladus/Enceladus.gd shipChanged
 #   rebuilds the docked ship from CurrentGame.state.ship, which emits playerShipChanged) and addShips().
 #
 # Stacking: the parent's _ready is never called (Godot runs every level by itself); checkCurrentAndOwned falls through
-# to the parent with `.checkCurrentAndOwned()`; new members start with `_`.
+# to the parent with `.checkCurrentAndOwned()`; _input is the extension's own (the game's script has none); new
+# members start with `_`.
 
 # The Equipment screen: the node of that name next to the Fleet screen among the station's screens
 # (enceladus/Enceladus.tscn).
@@ -43,51 +47,63 @@ const _SHIP_COPY_PASTE_TEMPLATE = "shipCopyPasteTemplate"
 # ship's property holding it.
 const _SHIP_COPY_PASTE_LIDAR_SLOT = "lidar.type"
 const _SHIP_COPY_PASTE_LIDAR_DEFAULT = "defaultLidar"
-# The entry's nodes the mod copies (enceladus/SystemBuyUI.tscn): the Use button, the Buy button the Buy confirmation's
-# animations show and hide, the Buy confirmation, its label and buttons, and its animations.
+# The entry's nodes the mod reads (enceladus/SystemBuyUI.tscn): the Use button it copies for Copy and Paste; the label
+# whose colour marks the template's Copy button (the game's own mark for an owned ship); the node in the Fleet screen's
+# prose theme (enceladus/Subwindow.theme, as the ship's description), whose Label font the dialog's lists take.
 const _SHIP_COPY_PASTE_USE = "HBox/Use"
-const _SHIP_COPY_PASTE_BUY = "HBox/Buy"
-const _SHIP_COPY_PASTE_BUY_PANEL = "ConfirmationCenter/BuyPanel"
-const _SHIP_COPY_PASTE_PANEL_TEXT = "MarginContainer/VBoxContainer/BuyPrice"
-const _SHIP_COPY_PASTE_PANEL_OK = "MarginContainer/VBoxContainer/HBoxContainer/BuyConfirm"
-const _SHIP_COPY_PASTE_PANEL_CANCEL = "MarginContainer/VBoxContainer/HBoxContainer/BuyCancel"
-const _SHIP_COPY_PASTE_PLAYER = "ConfirmationPlayer"
-const _SHIP_COPY_PASTE_BUY_SHOW = "BuyShow"
-const _SHIP_COPY_PASTE_BUY_HIDE = "BuyHide"
-# The label whose colour marks the template's Copy button: the game's own mark for an owned ship.
 const _SHIP_COPY_PASTE_MARK = "HBox/V/Owned"
-# The label whose font the confirmation's text takes: the entry's registration, in its small font.
-const _SHIP_COPY_PASTE_SMALL_TEXT = "HBox/V/Registration"
-# The share of the entry's width the confirmation's text may take; it wraps there, and the confirmation (right-aligned
-# in the entry, as the game places it) never grows wider than the entry.
-const _SHIP_COPY_PASTE_TEXT_SHARE = 0.5
-# The mod's nodes and animations.
+const _SHIP_COPY_PASTE_PROSE = "HBox/Margin"
+# The game's keys for the confirmation's buttons (the entry's Buy confirmation, BuyConfirm and BuyCancel).
+const _SHIP_COPY_PASTE_OK = "OK"
+const _SHIP_COPY_PASTE_CANCEL = "CANCEL"
+# The width of each of the dialog's two lists, as a share of the screen's width; their lines wrap there.
+const _SHIP_COPY_PASTE_COLUMN_SHARE = 0.25
+# The mod's nodes.
 const _SHIP_COPY_PASTE_COPY_NODE = "ShipCopyPasteCopy"
 const _SHIP_COPY_PASTE_PASTE_NODE = "ShipCopyPastePaste"
-const _SHIP_COPY_PASTE_PANEL_NODE = "ShipCopyPastePanel"
-const _SHIP_COPY_PASTE_SHOW = "ShipCopyPasteShow"
-const _SHIP_COPY_PASTE_HIDE = "ShipCopyPasteHide"
+const _SHIP_COPY_PASTE_DIALOG_NODE = "ShipCopyPasteDialog"
 # The icons' size when the Use button has no icon to read it from.
 const _SHIP_COPY_PASTE_ICON_FALLBACK = Vector2(48, 48)
 # The texts (i18n/en.po).
 const _SHIP_COPY_PASTE_TIP_COPY = "SHIPCOPYPASTE_COPY"
 const _SHIP_COPY_PASTE_TIP_TEMPLATE = "SHIPCOPYPASTE_TEMPLATE"
+const _SHIP_COPY_PASTE_TIP_COPY_MODEL = "SHIPCOPYPASTE_COPY_MODEL"
 const _SHIP_COPY_PASTE_TIP_PASTE = "SHIPCOPYPASTE_PASTE"
+const _SHIP_COPY_PASTE_TIP_PASTE_NOTHING = "SHIPCOPYPASTE_PASTE_NOTHING"
 const _SHIP_COPY_PASTE_TEXT_CONFIRM = "SHIPCOPYPASTE_CONFIRM"
+const _SHIP_COPY_PASTE_TEXT_COPIED = "SHIPCOPYPASTE_COPIED"
+const _SHIP_COPY_PASTE_TEXT_NOT_COPIED = "SHIPCOPYPASTE_NOT_COPIED"
+const _SHIP_COPY_PASTE_TEXT_BULLET = "SHIPCOPYPASTE_BULLET"
+const _SHIP_COPY_PASTE_TEXT_ITEM_PRICE = "SHIPCOPYPASTE_ITEM_PRICE"
+const _SHIP_COPY_PASTE_TEXT_ITEM_REFUND = "SHIPCOPYPASTE_ITEM_REFUND"
+const _SHIP_COPY_PASTE_TEXT_TUNING = "SHIPCOPYPASTE_TUNING"
+const _SHIP_COPY_PASTE_TEXT_TARGETING = "SHIPCOPYPASTE_TARGETING"
+const _SHIP_COPY_PASTE_TEXT_FILTERS = "SHIPCOPYPASTE_FILTERS"
+const _SHIP_COPY_PASTE_TEXT_CREW = "SHIPCOPYPASTE_CREW"
+const _SHIP_COPY_PASTE_TEXT_CREW_NOBODY = "SHIPCOPYPASTE_CREW_NOBODY"
+const _SHIP_COPY_PASTE_TEXT_UNFIT = "SHIPCOPYPASTE_UNFIT"
+const _SHIP_COPY_PASTE_TEXT_CREW_UNKNOWN = "SHIPCOPYPASTE_CREW_UNKNOWN"
+const _SHIP_COPY_PASTE_TEXT_NOT_COPIED_ALWAYS = [
+	"SHIPCOPYPASTE_NAME",
+	"SHIPCOPYPASTE_DAMAGE",
+	"SHIPCOPYPASTE_MAINTENANCE",
+	"SHIPCOPYPASTE_CARGO",
+	"SHIPCOPYPASTE_CONSUMABLES",
+]
 const _SHIP_COPY_PASTE_TEXT_PRICE = "SHIPCOPYPASTE_PRICE"
 const _SHIP_COPY_PASTE_TEXT_REFUND = "SHIPCOPYPASTE_REFUND"
 const _SHIP_COPY_PASTE_TEXT_SAME = "SHIPCOPYPASTE_SAME"
 const _SHIP_COPY_PASTE_TEXT_REPAIRS = "SHIPCOPYPASTE_REPAIRS"
-const _SHIP_COPY_PASTE_TEXT_UNFIT = "SHIPCOPYPASTE_UNFIT"
-const _SHIP_COPY_PASTE_TEXT_CREW_UNKNOWN = "SHIPCOPYPASTE_CREW_UNKNOWN"
 const _SHIP_COPY_PASTE_TEXT_NO_MONEY = "SHIPCOPYPASTE_NO_MONEY"
 
 var _shipCopyPasteCopy = null # the Copy button
 var _shipCopyPastePaste = null # the Paste button
-var _shipCopyPastePanel = null # the confirmation: a copy of the Buy confirmation
-var _shipCopyPasteText = null # its label
-var _shipCopyPasteOk = null # its OK button
-var _shipCopyPasteShown = "" # the text it shows: OK pastes only a plan that still reads the same
+var _shipCopyPasteDialog = null # the confirmation dialog, made on the first Paste
+var _shipCopyPasteTitle = null # its question
+var _shipCopyPasteLists = [] # its two lists: copied, not copied
+var _shipCopyPasteSummary = null # its price, repair time and money
+var _shipCopyPasteShown = "" # what it shows: OK pastes only a plan that still reads the same
+var _shipCopyPasteClosedFrame = -1 # the frame in which Esc closed it
 
 func _ready():
 	if not owned:
@@ -103,45 +119,44 @@ func checkCurrentAndOwned():
 	.checkCurrentAndOwned()
 	_shipCopyPasteRefresh()
 
-# Copy and Paste right before Use, as copies of it; the confirmation, a copy of the Buy confirmation.
+# Esc (or the pause button) while the dialog shows closes the dialog only. Children get _input before their parents, so
+# the Fleet screen (Dealer.gd _input, which closes on these) doesn't see it. Dealer.gd asks the action, not the event,
+# and an action stays just pressed for its whole frame: every later event of that frame (the key's release, a mouse
+# move) is marked handled too.
+func _input(_event):
+	if not _shipCopyPasteCancelAction():
+		return
+	if is_instance_valid(_shipCopyPasteDialog) and _shipCopyPasteDialog.visible:
+		_shipCopyPasteDialog.hide()
+		_shipCopyPasteClosedFrame = Engine.get_idle_frames()
+		get_tree().set_input_as_handled()
+	elif _shipCopyPasteClosedFrame == Engine.get_idle_frames():
+		get_tree().set_input_as_handled()
+
+func _shipCopyPasteCancelAction() -> bool:
+	for action in ["ui_cancel", "pause"]:
+		if InputMap.has_action(action) and Input.is_action_just_pressed(action):
+			return true
+	return false
+
+# Copy and Paste right before Use, as copies of it.
 func _shipCopyPasteBuild():
 	var use = get_node_or_null(_SHIP_COPY_PASTE_USE)
-	var source = get_node_or_null(_SHIP_COPY_PASTE_BUY_PANEL)
-	var player = get_node_or_null(_SHIP_COPY_PASTE_PLAYER)
-	if not use is Button or not source is Control or not player is AnimationPlayer or use.get_parent().has_node(_SHIP_COPY_PASTE_COPY_NODE):
+	if not use is Button or use.get_parent().has_node(_SHIP_COPY_PASTE_COPY_NODE):
 		return
-	_shipCopyPasteCopy = _shipCopyPasteButton(use, _SHIP_COPY_PASTE_COPY_NODE, _shipCopyPasteIcon(use.icon, false), "_shipCopyPasteCopyPressed")
+	var copyIcon = _shipCopyPasteIcon(use.icon, false)
+	_shipCopyPasteCopy = _shipCopyPasteButton(use, _SHIP_COPY_PASTE_COPY_NODE, copyIcon, "_shipCopyPasteCopyPressed")
 	_shipCopyPasteCopy.toggle_mode = true
-	_shipCopyPastePaste = _shipCopyPasteButton(use, _SHIP_COPY_PASTE_PASTE_NODE, _shipCopyPasteIcon(use.icon, true), "_shipCopyPastePastePressed")
-	_shipCopyPastePaste.hint_tooltip = _SHIP_COPY_PASTE_TIP_PASTE
-	# Without the scene's connections, which call the entry's Buy handlers.
-	_shipCopyPastePanel = source.duplicate(DUPLICATE_GROUPS | DUPLICATE_SCRIPTS | DUPLICATE_USE_INSTANCING)
-	_shipCopyPastePanel.name = _SHIP_COPY_PASTE_PANEL_NODE
-	_shipCopyPastePanel.visible = false
-	source.get_parent().add_child(_shipCopyPastePanel)
-	_shipCopyPasteText = _shipCopyPastePanel.get_node_or_null(_SHIP_COPY_PASTE_PANEL_TEXT)
-	if _shipCopyPasteText is Label:
-		# The game's label holds one short price in the menu font; this one holds several lines.
-		_shipCopyPasteText.autowrap = true
-		_shipCopyPasteText.align = Label.ALIGN_LEFT
-		_shipCopyPasteText.valign = Label.VALIGN_CENTER
-		var small = get_node_or_null(_SHIP_COPY_PASTE_SMALL_TEXT)
-		if small is Control:
-			_shipCopyPasteText.add_font_override("font", small.get_font("font"))
-	_shipCopyPasteOk = _shipCopyPastePanel.get_node_or_null(_SHIP_COPY_PASTE_PANEL_OK)
-	var cancel = _shipCopyPastePanel.get_node_or_null(_SHIP_COPY_PASTE_PANEL_CANCEL)
-	if _shipCopyPasteOk is BaseButton:
-		_shipCopyPasteOk.connect("pressed", self, "_shipCopyPasteConfirmPressed")
-	if cancel is BaseButton:
-		cancel.connect("pressed", self, "_shipCopyPasteCancelPressed")
-	_shipCopyPasteAnimations(player, source)
+	var pasteIcon = _shipCopyPasteIcon(use.icon, true)
+	_shipCopyPastePaste = _shipCopyPasteButton(use, _SHIP_COPY_PASTE_PASTE_NODE, pasteIcon, "_shipCopyPastePastePressed")
 
-# A copy of the Use button (its look, size, icon size and smooth scrolling), without its connections.
+# A copy of the Use button (its look, size, icon size and smooth scrolling, its icon dimmed when disabled), without its
+# connections. Hidden and disabled until _shipCopyPasteRefresh decides.
 func _shipCopyPasteButton(model: Button, nodeName: String, icon: Texture, method: String) -> Button:
 	var button = model.duplicate(DUPLICATE_GROUPS | DUPLICATE_SCRIPTS | DUPLICATE_USE_INSTANCING)
 	button.name = nodeName
 	button.icon = icon
-	button.disabled = false
+	button.disabled = true
 	button.visible = false
 	var box = model.get_parent()
 	box.add_child(button)
@@ -150,27 +165,51 @@ func _shipCopyPasteButton(model: Button, nodeName: String, icon: Texture, method
 	button.connect("focus_entered", self, "_on_Use_focus_entered")
 	return button
 
-# The Buy confirmation's animations, retargeted to the copy and to the Paste button: shown, the Paste button hides as
-# the Buy button does; hidden, it comes back and takes the focus.
-func _shipCopyPasteAnimations(player: AnimationPlayer, source: Node):
-	var panel = String(get_path_to(source))
-	var pairs = [[_SHIP_COPY_PASTE_BUY_SHOW, _SHIP_COPY_PASTE_SHOW], [_SHIP_COPY_PASTE_BUY_HIDE, _SHIP_COPY_PASTE_HIDE]]
-	for pair in pairs:
-		if not player.has_animation(pair[0]) or player.has_animation(pair[1]):
-			continue
-		var animation = player.get_animation(pair[0]).duplicate()
-		for i in animation.get_track_count():
-			var path = String(animation.track_get_path(i))
-			path = _shipCopyPasteRetarget(path, panel, String(get_path_to(_shipCopyPastePanel)))
-			path = _shipCopyPasteRetarget(path, _SHIP_COPY_PASTE_BUY, String(get_path_to(_shipCopyPastePaste)))
-			animation.track_set_path(i, NodePath(path))
-		player.add_animation(pair[1], animation)
-
-# `path` with the node `from` (or a node below it, or a property of it) moved to `to`.
-func _shipCopyPasteRetarget(path: String, from: String, to: String) -> String:
-	if path == from or path.begins_with(from + "/") or path.begins_with(from + ":"):
-		return to + path.substr(from.length())
-	return path
+# The confirmation dialog: the question in the menu font (the entry's theme, as the game's own dialogs), the two lists
+# side by side under their headings, the summary, and the dialog's OK and Cancel. A Popup draws on top of everything and
+# isn't laid out by the entry, so it neither widens nor clips the list.
+func _shipCopyPasteDialogBuild():
+	if is_instance_valid(_shipCopyPasteDialog):
+		return
+	var dialog = ConfirmationDialog.new()
+	dialog.name = _SHIP_COPY_PASTE_DIALOG_NODE
+	dialog.window_title = ""
+	dialog.dialog_hide_on_ok = false
+	dialog.get_ok().text = _SHIP_COPY_PASTE_OK
+	dialog.get_cancel().text = _SHIP_COPY_PASTE_CANCEL
+	var prose = get_node_or_null(_SHIP_COPY_PASTE_PROSE)
+	var proseFont = prose.get_font("font", "Label") if prose is Control else null
+	var box = VBoxContainer.new()
+	_shipCopyPasteTitle = Label.new()
+	_shipCopyPasteTitle.autowrap = true
+	_shipCopyPasteTitle.align = Label.ALIGN_CENTER
+	box.add_child(_shipCopyPasteTitle)
+	var columns = HBoxContainer.new()
+	_shipCopyPasteLists = []
+	for heading in [_SHIP_COPY_PASTE_TEXT_COPIED, _SHIP_COPY_PASTE_TEXT_NOT_COPIED]:
+		var column = VBoxContainer.new()
+		var title = Label.new()
+		title.text = heading
+		column.add_child(title)
+		var list = Label.new()
+		list.autowrap = true
+		if proseFont != null:
+			list.add_font_override("font", proseFont)
+		column.add_child(list)
+		columns.add_child(column)
+		_shipCopyPasteLists.append(list)
+	box.add_child(columns)
+	_shipCopyPasteSummary = Label.new()
+	_shipCopyPasteSummary.autowrap = true
+	_shipCopyPasteSummary.align = Label.ALIGN_CENTER
+	if proseFont != null:
+		_shipCopyPasteSummary.add_font_override("font", proseFont)
+	box.add_child(_shipCopyPasteSummary)
+	dialog.add_child(box)
+	add_child(dialog)
+	dialog.connect("confirmed", self, "_shipCopyPasteConfirmPressed")
+	dialog.connect("popup_hide", self, "_shipCopyPasteDialogHidden")
+	_shipCopyPasteDialog = dialog
 
 # The Copy (two sheets) and Paste (a clipboard) icons, drawn as the Use button's icon (enceladus/Upgrades/switch.png)
 # is: at its size and with its flags, light strokes with a dark edge, in its colours.
@@ -193,12 +232,16 @@ func _shipCopyPasteIcon(model, paste: bool) -> Texture:
 	for i in mask.size():
 		mask[i] = false
 	# Paste: a clipboard (a board with a clip on its top edge) with a sheet laid on it; Copy: a sheet on another.
-	var parts = [[Rect2(w * 0.14, h * 0.16, w * 0.56, h * 0.76)], [Rect2(w * 0.28, h * 0.08, w * 0.28, h * 0.16)], [Rect2(w * 0.44, h * 0.42, w * 0.46, h * 0.52)]]
+	var parts = [
+		Rect2(w * 0.14, h * 0.16, w * 0.56, h * 0.76),
+		Rect2(w * 0.28, h * 0.08, w * 0.28, h * 0.16),
+		Rect2(w * 0.44, h * 0.42, w * 0.46, h * 0.52),
+	]
 	if not paste:
-		parts = [[Rect2(w * 0.1, h * 0.08, w * 0.5, h * 0.6)], [Rect2(w * 0.4, h * 0.34, w * 0.5, h * 0.6)]]
+		parts = [Rect2(w * 0.1, h * 0.08, w * 0.5, h * 0.6), Rect2(w * 0.4, h * 0.34, w * 0.5, h * 0.6)]
 	for part in parts:
-		_shipCopyPasteMark(mask, w, h, part[0].grow(edge + 1), false)
-		_shipCopyPasteFrame(mask, w, h, part[0], stroke)
+		_shipCopyPasteMark(mask, w, h, part.grow(edge + 1), false)
+		_shipCopyPasteFrame(mask, w, h, part, stroke)
 	var image = Image.new()
 	image.create(w, h, false, Image.FORMAT_RGBA8)
 	image.fill(Color(inks[0].r, inks[0].g, inks[0].b, 0.0))
@@ -313,27 +356,44 @@ func _shipCopyPasteSource():
 		return null
 	var source = _shipCopyPasteGarage(template)
 	var mine = CurrentGame.state.ship
-	if source == null or template == mine.get("transponder") or source.get("model") != mine.get("model") or not source.get("config") is Dictionary:
+	if source == null or template == mine.get("transponder"):
+		return null
+	if source.get("model") != mine.get("model") or not source.get("config") is Dictionary:
 		return null
 	return source
 
-# Shows Copy (marked on the template) on the other ships' entries and, where it can paste, Paste.
+# Copy on the other ships' entries, enabled where the ship can be the template (marked when it is); Paste on the current
+# ship's, enabled once it can paste; the tooltips say why not otherwise.
 func _shipCopyPasteRefresh():
 	if not is_instance_valid(_shipCopyPasteCopy) or not is_instance_valid(ship):
 		return
 	var template = _shipCopyPasteTemplate()
 	var isTemplate = template != "" and template == ship.transponder
+	var copiable = _shipCopyPasteCopiable()
 	_shipCopyPasteCopy.visible = not current
+	_shipCopyPasteCopy.disabled = not copiable
 	_shipCopyPasteCopy.pressed = isTemplate
-	_shipCopyPasteCopy.hint_tooltip = _SHIP_COPY_PASTE_TIP_TEMPLATE if isTemplate else _SHIP_COPY_PASTE_TIP_COPY
+	if isTemplate:
+		_shipCopyPasteCopy.hint_tooltip = _SHIP_COPY_PASTE_TIP_TEMPLATE
+	elif copiable:
+		_shipCopyPasteCopy.hint_tooltip = _SHIP_COPY_PASTE_TIP_COPY
+	else:
+		_shipCopyPasteCopy.hint_tooltip = _SHIP_COPY_PASTE_TIP_COPY_MODEL
 	var mark = get_node_or_null(_SHIP_COPY_PASTE_MARK)
 	_shipCopyPasteCopy.modulate = mark.modulate if isTemplate and mark is CanvasItem else Color.white
 	var can = _shipCopyPasteSource() != null and _shipCopyPasteEquipment() != null
-	if _shipCopyPastePanel.visible:
-		if not can:
-			_shipCopyPasteClose()
-	else:
-		_shipCopyPastePaste.visible = can
+	_shipCopyPastePaste.visible = current
+	_shipCopyPastePaste.disabled = not can
+	_shipCopyPastePaste.hint_tooltip = _SHIP_COPY_PASTE_TIP_PASTE if can else _SHIP_COPY_PASTE_TIP_PASTE_NOTHING
+	if not can:
+		_shipCopyPasteClose()
+
+# Whether this entry's ship can be the template: another owned ship of the current ship's model.
+func _shipCopyPasteCopiable() -> bool:
+	if not owned or current or not is_instance_valid(ship):
+		return false
+	var mine = CurrentGame.state.ship
+	return ship.transponder != mine.get("transponder") and ship.model == mine.get("model")
 
 # Every entry of the list, after the template changed.
 func _shipCopyPasteRefreshAll():
@@ -351,7 +411,7 @@ func _shipCopyPasteCopyPressed():
 		return
 	if _shipCopyPasteTemplate() == ship.transponder:
 		_shipCopyPasteForget(fleet)
-	else:
+	elif _shipCopyPasteCopiable():
 		fleet.set_meta(_SHIP_COPY_PASTE_TEMPLATE, ship.transponder)
 	_shipCopyPasteRefreshAll()
 
@@ -370,62 +430,89 @@ func _shipCopyPastePastePressed():
 	if plan == null:
 		_shipCopyPasteRefreshAll()
 		return
+	_shipCopyPasteDialogBuild()
 	_shipCopyPasteShow(plan)
-	get_node(_SHIP_COPY_PASTE_PLAYER).queue(_SHIP_COPY_PASTE_SHOW)
+	_shipCopyPasteDialog.get_cancel().grab_focus()
 
+# Fills the dialog with the plan, sized to the screen and centered on it, OK disabled when the player can't pay.
 func _shipCopyPasteShow(plan: Dictionary):
-	_shipCopyPasteShown = _shipCopyPasteDescribe(plan)
-	if _shipCopyPasteText is Label:
-		_shipCopyPasteText.text = _shipCopyPasteShown
-		_shipCopyPasteFit()
-	if _shipCopyPasteOk is BaseButton:
-		_shipCopyPasteOk.disabled = not plan.affordable
+	var texts = _shipCopyPasteDescribe(plan)
+	_shipCopyPasteShown = JSON.print(texts)
+	var column = get_viewport_rect().size.x * _SHIP_COPY_PASTE_COLUMN_SHARE
+	var separation = _shipCopyPasteLists[0].get_parent().get_parent().get_constant("separation")
+	var contents = [texts.title, PoolStringArray(texts.summary).join("\n")]
+	var labels = [_shipCopyPasteTitle, _shipCopyPasteSummary]
+	for i in 2:
+		var lines = []
+		for line in texts.lists[i]:
+			lines.append(tr(_SHIP_COPY_PASTE_TEXT_BULLET) % line)
+		contents.append(PoolStringArray(lines).join("\n"))
+		labels.append(_shipCopyPasteLists[i])
+	# Each label's width first, so it wraps its text at that width at once: the lists one column each, the question
+	# and the summary both.
+	for i in labels.size():
+		var width = column if i >= 2 else column * 2 + separation
+		labels[i].rect_min_size.x = width
+		labels[i].rect_size.x = width
+		labels[i].text = contents[i]
+	_shipCopyPasteDialog.get_ok().disabled = not plan.affordable
+	_shipCopyPasteDialogFit()
+	if not _shipCopyPasteDialog.visible:
+		_shipCopyPasteDialog.popup_centered()
+	_shipCopyPasteDialogFitLater()
 
-# The text's width: _SHIP_COPY_PASTE_TEXT_SHARE of the entry, and never so wide that the confirmation (the text, the
-# buttons, the margins) passes the entry's width, which would widen every entry of the list.
-func _shipCopyPasteFit():
-	_shipCopyPasteText.rect_min_size.x = 0
-	var width = rect_size.x - get_constant("margin_left") - get_constant("margin_right")
-	var rest = _shipCopyPastePanel.get_combined_minimum_size().x
-	_shipCopyPasteText.rect_min_size.x = max(0.0, min(width * _SHIP_COPY_PASTE_TEXT_SHARE, width - rest))
+# The dialog at its least size, centered on the screen.
+func _shipCopyPasteDialogFit():
+	if not is_instance_valid(_shipCopyPasteDialog):
+		return
+	var dialog = _shipCopyPasteDialog
+	dialog.rect_size = Vector2.ZERO
+	dialog.rect_global_position = ((get_viewport_rect().size - dialog.rect_size) / 2).floor()
 
-func _shipCopyPasteCancelPressed():
-	get_node(_SHIP_COPY_PASTE_PLAYER).queue(_SHIP_COPY_PASTE_HIDE)
+# Again once the containers have laid the labels out, which settles their wrapped heights.
+func _shipCopyPasteDialogFitLater():
+	for i in 2:
+		yield(get_tree(), "idle_frame")
+	if is_instance_valid(_shipCopyPasteDialog) and _shipCopyPasteDialog.visible:
+		_shipCopyPasteDialogFit()
+
+# Closed by Cancel, OK, Esc or a click outside: the focus goes back to Paste.
+func _shipCopyPasteDialogHidden():
+	var paste = _shipCopyPastePaste
+	if is_instance_valid(paste) and paste.is_visible_in_tree() and not paste.disabled:
+		paste.grab_focus()
 
 # Pastes the plan as it is now, if it still reads as shown; otherwise shows the new one.
 func _shipCopyPasteConfirmPressed():
-	if not _shipCopyPasteOk is BaseButton or _shipCopyPasteOk.disabled:
+	var ok = _shipCopyPasteDialog.get_ok()
+	if ok.disabled:
 		return
-	_shipCopyPasteOk.disabled = true
+	ok.disabled = true
 	var plan = _shipCopyPastePlanNow()
 	if plan is GDScriptFunctionState:
 		plan = yield(plan, "completed")
 	if plan == null:
-		_shipCopyPasteCancelPressed()
+		_shipCopyPasteClose()
 		return
-	if _shipCopyPasteDescribe(plan) != _shipCopyPasteShown or not plan.affordable:
+	if JSON.print(_shipCopyPasteDescribe(plan)) != _shipCopyPasteShown or not plan.affordable:
 		_shipCopyPasteShow(plan)
 		return
 	var target = CurrentGame.getPlayerShip()
 	if not Tool.claim(target):
-		_shipCopyPasteCancelPressed()
+		_shipCopyPasteClose()
 		return
 	_shipCopyPasteApply(plan, target)
 	Tool.release(target)
-	_shipCopyPasteCancelPressed()
+	_shipCopyPasteClose()
 	var fleet = _shipCopyPasteFleet()
 	if fleet != null:
 		fleet.emit_signal("shipChanged")
 		fleet.addShips()
 
-# Hides the confirmation at once (the Fleet screen closed, or Paste no longer applies).
+# Hides the dialog (the Fleet screen closed, Paste no longer applies, or the paste is done).
 func _shipCopyPasteClose():
-	if not is_instance_valid(_shipCopyPastePanel):
-		return
-	var player = get_node_or_null(_SHIP_COPY_PASTE_PLAYER)
-	if player is AnimationPlayer and player.is_playing() and player.current_animation in [_SHIP_COPY_PASTE_SHOW, _SHIP_COPY_PASTE_HIDE]:
-		player.stop()
-	_shipCopyPastePanel.visible = false
+	if is_instance_valid(_shipCopyPasteDialog) and _shipCopyPasteDialog.visible:
+		_shipCopyPasteDialog.hide()
 
 # The plan for the current ship, with the Equipment screen's prices brought up to date first (as it does when it
 # shows); null when this entry can't paste. A coroutine only while the player's ship isn't set up.
@@ -448,8 +535,9 @@ func _shipCopyPastePlanNow():
 # - buy: the items to buy, and prices: what each costs (negative: a refund);
 # - kept: the slots left as they are, with the target's value;
 # - unfit: the names of what can't be fitted;
+# - filters: whether any weapon slot's mineral filters are copied;
 # - crew: the crew to put aboard, null when the template's is unknown;
-# - price, time (s), affordable; source; name: the template's.
+# - price, time (s), affordable; source; name: the template's; target: the current ship's name.
 func _shipCopyPastePlan(source: Dictionary, target, items: Array) -> Dictionary:
 	var groups = {}
 	var order = []
@@ -458,7 +546,17 @@ func _shipCopyPastePlan(source: Dictionary, target, items: Array) -> Dictionary:
 			groups[item.slot] = []
 			order.append(item.slot)
 		groups[item.slot].append(item)
-	var plan = {"buy": [], "prices": [], "kept": {}, "unfit": [], "price": 0.0, "time": 0.0, "source": source, "name": CurrentGame.getShipNameByTransponder(source.get("transponder", ""))}
+	var plan = {
+		"buy": [],
+		"prices": [],
+		"kept": {},
+		"unfit": [],
+		"price": 0.0,
+		"time": 0.0,
+		"source": source,
+		"name": CurrentGame.getShipNameByTransponder(source.get("transponder", "")),
+		"target": CurrentGame.getShipNameByTransponder(CurrentGame.state.ship.get("transponder", "")),
+	}
 	for slot in order:
 		if slot == "":
 			continue
@@ -484,9 +582,21 @@ func _shipCopyPastePlan(source: Dictionary, target, items: Array) -> Dictionary:
 			plan.prices.append(price)
 			plan.price += price
 			plan.time += max(0.0, pick.actualReplacementTime)
+	plan.filters = _shipCopyPasteFilters(source.config, target.shipConfig, plan.kept)
 	plan.crew = _shipCopyPasteCrew(source)
 	plan.affordable = plan.price <= 0 or plan.price <= CurrentGame.getMoney()
 	return plan
+
+# Whether either ship has mineral filters in a weapon slot the paste doesn't keep.
+func _shipCopyPasteFilters(from: Dictionary, to: Dictionary, kept: Dictionary) -> bool:
+	for config in [from, to]:
+		var slots = config.weaponSlot if config.get("weaponSlot") is Dictionary else {}
+		for slotName in slots:
+			if kept.has("weaponSlot.%s.type" % slotName):
+				continue
+			if slots[slotName] is Dictionary and slots[slotName].has("config"):
+				return true
+	return false
 
 # The template's crew: its crew list; null when it has none (unknown).
 func _shipCopyPasteCrew(source: Dictionary):
@@ -512,8 +622,8 @@ func _shipCopyPasteSame(a, b) -> bool:
 	var tb = TYPE_REAL if typeof(b) == TYPE_INT else typeof(b)
 	return ta == tb and a == b
 
-# What the confirmation calls a piece it can't fit: a system's name, or the slot's group title (UpgradeGroup.gd
-# openButton) with the number.
+# What the dialog calls a piece it can't fit: a system's name, or the slot's group title (UpgradeGroup.gd openButton)
+# with the number.
 func _shipCopyPasteName(item, value) -> String:
 	if value is String:
 		return tr(value)
@@ -529,23 +639,48 @@ func _shipCopyPasteName(item, value) -> String:
 		return title
 	return "%s %s" % [title, CurrentGame.formatThousands(value)]
 
-func _shipCopyPasteDescribe(plan: Dictionary) -> String:
-	var lines = [tr(_SHIP_COPY_PASTE_TEXT_CONFIRM) % plan.name]
-	if plan.buy.empty():
-		lines.append(tr(_SHIP_COPY_PASTE_TEXT_SAME))
-	elif plan.price >= 0:
-		lines.append(tr(_SHIP_COPY_PASTE_TEXT_PRICE) % CurrentGame.formatThousands(plan.price))
+# The dialog's texts for a plan, translated: the question; the copied and not copied lists, one entry per line (each
+# piece bought as the Equipment screen names it, with its price); the summary lines.
+func _shipCopyPasteDescribe(plan: Dictionary) -> Dictionary:
+	var copied = []
+	for i in plan.buy.size():
+		var price = plan.prices[i]
+		var piece = tr(plan.buy[i].getName())
+		if price >= 0:
+			copied.append(tr(_SHIP_COPY_PASTE_TEXT_ITEM_PRICE) % [piece, CurrentGame.formatThousands(price)])
+		else:
+			copied.append(tr(_SHIP_COPY_PASTE_TEXT_ITEM_REFUND) % [piece, CurrentGame.formatThousands(-price)])
+	copied.append(tr(_SHIP_COPY_PASTE_TEXT_TUNING))
+	copied.append(tr(_SHIP_COPY_PASTE_TEXT_TARGETING))
+	if plan.filters:
+		copied.append(tr(_SHIP_COPY_PASTE_TEXT_FILTERS))
+	var notCopied = []
+	for piece in plan.unfit:
+		notCopied.append(tr(_SHIP_COPY_PASTE_TEXT_UNFIT) % piece)
+	if plan.crew is Array and plan.crew.empty():
+		copied.append(tr(_SHIP_COPY_PASTE_TEXT_CREW_NOBODY))
+	elif plan.crew is Array:
+		copied.append(tr(_SHIP_COPY_PASTE_TEXT_CREW) % PoolStringArray(plan.crew).join(", "))
 	else:
-		lines.append(tr(_SHIP_COPY_PASTE_TEXT_REFUND) % CurrentGame.formatThousands(-plan.price))
+		notCopied.append(tr(_SHIP_COPY_PASTE_TEXT_CREW_UNKNOWN) % plan.name)
+	for key in _SHIP_COPY_PASTE_TEXT_NOT_COPIED_ALWAYS:
+		notCopied.append(tr(key))
+	var summary = []
+	if plan.buy.empty():
+		summary.append(tr(_SHIP_COPY_PASTE_TEXT_SAME))
+	elif plan.price >= 0:
+		summary.append(tr(_SHIP_COPY_PASTE_TEXT_PRICE) % CurrentGame.formatThousands(plan.price))
+	else:
+		summary.append(tr(_SHIP_COPY_PASTE_TEXT_REFUND) % CurrentGame.formatThousands(-plan.price))
 	if plan.time > 0:
-		lines.append(tr(_SHIP_COPY_PASTE_TEXT_REPAIRS) % Tool.readableTimeSpan(plan.time))
-	if not plan.unfit.empty():
-		lines.append(tr(_SHIP_COPY_PASTE_TEXT_UNFIT) % PoolStringArray(plan.unfit).join(", "))
-	if plan.crew == null:
-		lines.append(tr(_SHIP_COPY_PASTE_TEXT_CREW_UNKNOWN) % plan.name)
+		summary.append(tr(_SHIP_COPY_PASTE_TEXT_REPAIRS) % Tool.readableTimeSpan(plan.time))
 	if not plan.affordable:
-		lines.append(tr(_SHIP_COPY_PASTE_TEXT_NO_MONEY))
-	return PoolStringArray(lines).join("\n")
+		summary.append(tr(_SHIP_COPY_PASTE_TEXT_NO_MONEY))
+	return {
+		"title": tr(_SHIP_COPY_PASTE_TEXT_CONFIRM) % [plan.target, plan.name],
+		"lists": [copied, notCopied],
+		"summary": summary,
+	}
 
 # Applies the plan to `target`, the player's ship, whose shipConfig is CurrentGame.state.ship's config: each item as
 # Upgrades.gd buy() fits it, then the settings and the crew, then the money, the log and the repair time, and puts the

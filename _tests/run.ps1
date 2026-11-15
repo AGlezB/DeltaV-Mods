@@ -160,7 +160,35 @@ foreach ($dir in $project, $build, $logs)
 }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'project.godot'), (Join-Path $PSScriptRoot 'main.tscn') -Destination $project
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'harness'), (Join-Path $PSScriptRoot 'suites') -Destination $project -Recurse
-foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningItems.gd', 'hud\Hud.gd', 'hud\OMS.gd', 'menu\TabsWithGamepadControl.gd', 'hud\components\PriceLabel.gd', 'hud\components\RepeatingHSlider.gd', 'hud\components\MineralLabel.gd', 'hud\components\MineralSystemToggle.gd', 'enceladus\HireableCrew.gd', 'enceladus\CrewBio.gd', 'enceladus\CurrentCrewManagement.gd', 'menu\sfx\PlaySoundsOnTheseButtons.gd', 'enceladus\SystemBuyUI.gd', 'enceladus\SystemShipUpgradeUI.gd', 'enceladus\Shower.tscn', 'menu\MenuFontAudiowide.tres', 'hud\Audiowide-Regular.ttf', 'hud\FontNoto.tres', 'hud\NotoMono-Regular.ttf', 'menu\PanelWithHugeShadow.tres', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres')
+foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningItems.gd', 'hud\Hud.gd', 'hud\OMS.gd', 'menu\TabsWithGamepadControl.gd', 'hud\components\PriceLabel.gd', 'hud\components\RepeatingHSlider.gd', 'hud\components\MineralLabel.gd', 'hud\components\MineralSystemToggle.gd', 'enceladus\HireableCrew.gd', 'enceladus\CrewBio.gd', 'enceladus\CurrentCrewManagement.gd', 'menu\sfx\PlaySoundsOnTheseButtons.gd', 'enceladus\SystemBuyUI.gd', 'enceladus\SystemShipUpgradeUI.gd', 'enceladus\Shower.tscn', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres')
+{
+	$target = Join-Path $project $file
+	New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
+	Copy-Item -LiteralPath (Join-Path $GameSource $file) -Destination $target
+}
+# The themes of a Fleet entry (enceladus\SystemBuyUI.tscn: menu\MenuTheme.tres for the entry, hud\TNTRL-theme.tres for
+# its labels' grid) and everything they load (fonts, styleboxes, images), found by following their res:// paths, so the
+# entry's sizes and looks are the game's. Images go through the import step below.
+$themeFiles = [Collections.Generic.List[string]]::new()
+$pending = [Collections.Generic.Queue[string]]::new()
+foreach ($t in 'menu\MenuTheme.tres', 'hud\TNTRL-theme.tres') { $pending.Enqueue($t) }
+# The entry's thumbnail margin has the Fleet screen's prose theme, a binary resource whose dependencies (a font,
+# styleboxes and images) are all MenuTheme.tres's too.
+$themeFiles.Add('enceladus\Subwindow.theme')
+while ($pending.Count -gt 0)
+{
+	$file = $pending.Dequeue()
+	if ($themeFiles.Contains($file)) { continue }
+	$themeFiles.Add($file)
+	if ($file -match '\.(tres|stylebox|theme)$')
+	{
+		foreach ($m in [regex]::Matches((Get-Content -LiteralPath (Join-Path $GameSource $file) -Raw), 'path="res://([^"]+)"'))
+		{
+			$pending.Enqueue($m.Groups[1].Value.Replace('/', '\'))
+		}
+	}
+}
+foreach ($file in $themeFiles | Where-Object { $_ -notmatch '\.png$' })
 {
 	$target = Join-Path $project $file
 	New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
@@ -171,6 +199,7 @@ foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\
 # ShipCopyPaste's icons take, and the Buy confirmation's OK shows buy.png.
 $imports = @(Get-ChildItem -LiteralPath (Join-Path $GameSource 'enceladus\Crew') -Filter 'skill-*.png.import' | ForEach-Object { 'enceladus\Crew\' + $_.Name })
 $imports += 'enceladus\Upgrades\switch.png.import', 'enceladus\Upgrades\buy.png.import'
+$imports += @($themeFiles | Where-Object { $_ -match '\.png$' } | ForEach-Object { $_ + '.import' })
 foreach ($import in $imports)
 {
 	$texture = [regex]::Match((Get-Content -LiteralPath (Join-Path $GameSource $import) -Raw), '(?m)^path="res://([^"]+)"')
@@ -498,10 +527,10 @@ mouse_filter = 2
 '@
 # A Fleet entry (enceladus\SystemBuyUI.tscn, as enceladus\Dealer.gd instances it): the game's node paths, script, values
 # and connections, the Use and OK icons, the confirmation's frame and margins, and the confirmation animations read from
-# the game's scene (ShipCopyPaste copies BuyShow and BuyHide); for its fonts, themes holding the default fonts of the
-# game's (menu\MenuTheme.tres for the entry, hud\TNTRL-theme.tres for its labels' grid), so sizes are the game's;
-# without the rest of the themes, the other textures, the lights and environment of the ship's view, the smooth
-# scrolling (a bare node in its place under Use), the sounds and the flicker (harness\fleet_flicker.gd).
+# the game's scene (ShipCopyPaste copies BuyShow and BuyHide), and the game's themes (menu\MenuTheme.tres for the entry,
+# hud\TNTRL-theme.tres for its labels' grid), so sizes and looks are the game's; without the other textures, the lights
+# and environment of the ship's view, the smooth scrolling (a bare node in its place under Use), the sounds and the
+# flicker (harness\fleet_flicker.gd).
 $buyUi = (Get-Content -LiteralPath (Join-Path $GameSource 'enceladus\SystemBuyUI.tscn') -Raw) -replace "`r`n", "`n"
 $animations = [regex]::Matches($buyUi, '(?ms)^\[sub_resource type="Animation" id=\d+\]\n.*?(?=^\[)')
 $anims = [regex]::Matches($buyUi, '(?m)^anims/\w+ = SubResource\( \d+ \)$')
@@ -512,23 +541,18 @@ $entry = @'
 [ext_resource path="res://enceladus/SystemBuyUI.gd" type="Script" id=1]
 [ext_resource path="res://enceladus/Upgrades/switch.png" type="Texture" id=2]
 [ext_resource path="res://harness/fleet_flicker.gd" type="Script" id=3]
-[ext_resource path="res://menu/MenuFontAudiowide.tres" type="DynamicFont" id=4]
-[ext_resource path="res://hud/FontNoto.tres" type="DynamicFont" id=5]
+[ext_resource path="res://menu/MenuTheme.tres" type="Theme" id=4]
+[ext_resource path="res://hud/TNTRL-theme.tres" type="Theme" id=5]
 [ext_resource path="res://menu/PanelWithHugeShadow.tres" type="StyleBox" id=6]
 [ext_resource path="res://enceladus/Upgrades/buy.png" type="Texture" id=7]
-
-[sub_resource type="Theme" id=101]
-default_font = ExtResource( 4 )
-
-[sub_resource type="Theme" id=102]
-default_font = ExtResource( 5 )
+[ext_resource path="res://enceladus/Subwindow.theme" type="Theme" id=8]
 
 @@ANIMATIONS@@
 [node name="SystemBuyUi" type="MarginContainer"]
 anchor_right = 1.0
 anchor_bottom = 1.0
 size_flags_horizontal = 3
-theme = SubResource( 101 )
+theme = ExtResource( 4 )
 custom_constants/margin_right = 16
 script = ExtResource( 1 )
 
@@ -552,6 +576,7 @@ gui_disable_input = true
 [node name="Margin" type="MarginContainer" parent="HBox"]
 rect_min_size = Vector2( 192, 64 )
 rect_clip_content = true
+theme = ExtResource( 8 )
 
 [node name="Sprite" type="Sprite" parent="HBox/Margin"]
 
@@ -572,7 +597,7 @@ align = 0
 
 [node name="V" type="GridContainer" parent="HBox"]
 size_flags_horizontal = 0
-theme = SubResource( 102 )
+theme = ExtResource( 5 )
 
 [node name="StickerPrice" type="Label" parent="HBox/V"]
 visible = false
@@ -698,7 +723,7 @@ supress = true
 [connection signal="pressed" from="ConfirmationCenter/SellPanel/MarginContainer/VBoxContainer/HBoxContainer/SellConfirm" to="." method="_on_SellConfirm_pressed"]
 [connection signal="pressed" from="ConfirmationCenter/SellPanel/MarginContainer/VBoxContainer/HBoxContainer/SellCancel" to="." method="_on_SellCancel_pressed"]
 '@
-$entry = $entry.Replace('@@STEPS@@', [string](10 + $animations.Count)).Replace('@@ANIMATIONS@@', (($animations | ForEach-Object { $_.Value.TrimEnd() + "`n" }) -join "`n")).Replace('@@ANIMS@@', (($anims | ForEach-Object { $_.Value }) -join "`n"))
+$entry = $entry.Replace('@@STEPS@@', [string](9 + $animations.Count)).Replace('@@ANIMATIONS@@', (($animations | ForEach-Object { $_.Value.TrimEnd() + "`n" }) -join "`n")).Replace('@@ANIMS@@', (($anims | ForEach-Object { $_.Value }) -join "`n"))
 Write-Utf8Lf (Join-Path $project 'enceladus\SystemBuyUI.tscn') $entry
 # An Equipment item (enceladus\SystemShipUpgradeUI.tscn, as enceladus\Upgrades.tscn instances it): the game's node
 # paths, script, labels and connections; without the theme, the icons, the system name's script, the smooth scrolling,

@@ -4,10 +4,11 @@ On the Fleet screen, copies one ship's setup onto the current ship when both are
 at the Equipment screen's prices, the tuning, the mineral targeting and the crew aboard.
 
 ## What it does and why
-- **What:** every ship on the Fleet screen but the one you fly gets a *Copy* button (two sheets), right before *Switch
-  ship*. *Copy* makes that ship the template: its button lights up in the colour of the *Owned* label. The ship you fly
-  then gets a *Paste* button (a clipboard) when the template is of the exact same model. *Paste* asks for
-  confirmation, then makes the ship you fly like the template.
+- **What:** on the Fleet screen, right before *Switch ship*, every other ship gets a *Copy* button (two sheets), and
+  the ship you fly a *Paste* button (a clipboard). *Copy* is enabled on the ships of the exact same model as the one you
+  fly; it makes that ship the template, and its button lights up in the colour of the *Owned* label. *Paste* is
+  enabled once a template is copied; it opens a confirmation dialog, then makes the ship you fly like the template. A
+  disabled button's tooltip says why.
 - **Why:** repairs take hours. With two identical ships you can switch to the spare and dive while the other one is
   repaired, but each ship keeps its own equipment, tuning, mineral targeting and crew list, and the game has no way to
   carry them from one ship to another.
@@ -15,17 +16,21 @@ at the Equipment screen's prices, the tuning, the mineral targeting and the crew
   the number of slots, for pieces that fill several), minus the trade-in of the piece it replaces; a refund when the
   template's piece is the cheaper one. Replacing a damaged piece adds its repair time, as on the Equipment screen.
   Pieces already the same are not touched, and keep their damage. A piece the Equipment screen doesn't sell (one found
-  on a salvaged ship, or one the story hasn't unlocked yet) is left as it is, and the confirmation lists it.
+  on a salvaged ship, or one the story hasn't unlocked yet) is left as it is, and the dialog lists it.
 - **Settings and crew:** then the ship gets the template's tuning, the Geologist tab's mineral targeting (other mods'
   settings kept there too, such as GeologyByMass's), the mineral filters of the arm and the drone plants, and the same
   crew aboard, at once: the portraits at the station change with it. The crew belongs to you, not to a ship: a ship
   only remembers who goes aboard once you have hired, fired or changed who dives while flying it. A template that
-  never had such a change has no crew list: the crew is then left as it is, and the confirmation says so.
+  never had such a change has no crew list: the crew is then left as it is, and the dialog says so.
 - **Not copied:** the ship's name and registration, its age, its own repair time, the damage of the pieces it keeps,
   its cargo, and its propellant, ammunition and drone parts, which are topped up at launch as always.
-- **The confirmation** names the template and shows the price (or the refund), the repair time it adds, what can't be
-  fitted, and whether the crew is left as it is. *OK* is disabled when you don't have the money. If anything changed
-  while it was open, *OK* shows the new figures first and pastes on the next press.
+- **The confirmation dialog**, in the game's own dialog style, asks to make the ship you fly like the template, and
+  lists side by side what will be copied (each piece bought, with its price; the tuning, the mineral targeting, the
+  mineral filters if a ship has any; the crew aboard, by name) and what won't (pieces not sold here; the crew if the
+  template has no crew list; then what Paste never copies). Under the lists: the equipment's price or refund, the repair
+  time it adds, and whether you lack the money, in which case *OK* is disabled. If anything changed while it was open,
+  *OK* shows the new figures first and pastes on the next press. *Cancel*, Esc or the pause button close it, and only
+  it: the Fleet screen stays open.
 - **The template lasts while the Fleet screen is open**, through switching ships. Closing the screen forgets it, and
   nothing is saved.
 - **Typical use:** *Switch ship* to the spare, *Copy* on the ship going into repair, *Paste* on the spare, dive.
@@ -39,8 +44,12 @@ at the Equipment screen's prices, the tuning, the mineral targeting and the crew
   connections, so they keep its look, size and smooth scrolling. Their icons are drawn in code from `Use`'s icon
   (`enceladus/Upgrades/switch.png`): its size and flags, light strokes in the mean colour of its light pixels, edged in
   the mean colour of its dark ones. `_SHIP_COPY_PASTE_ICON_FALLBACK` is the size used only when `Use` has no icon.
-  `checkCurrentAndOwned()`, which the game calls when `current` is set and once the ship is set up, calls the parent's,
-  then shows the buttons: *Copy* on every entry but the current ship's, *Paste* only on the current ship's.
+  Both start hidden; `checkCurrentAndOwned()`, which the game calls when `current` is set and once the ship is set up,
+  calls the parent's, then shows only the one that can be used there: *Copy* on the other ships' entries, *Paste* on
+  the current ship's. Being the same size in the same place, the shown one keeps the entries' buttons lined up (an
+  `HBoxContainer` gives no space to a hidden child). *Copy* is enabled when the ship's `model` is the current ship's
+  (`CurrentGame.state.ship`), *Paste* once there is a valid template; a disabled one gets a tooltip saying why (another
+  model; nothing copied). The menu theme dims a disabled button's icon.
 - **The template:** its transponder is kept as metadata (`shipCopyPasteTemplate`) of the Fleet screen node, the
   entry's first ancestor with `addShips()` (`Dealer.gd`). Each entry connects to that node's `visibility_changed`: when
   it goes invisible (the end of `Dealer.gd` `hide()`'s `hide` animation), the template is removed. Nothing is written
@@ -50,17 +59,22 @@ at the Equipment screen's prices, the tuning, the mineral targeting and the crew
   set up (and on every new day); without one, the crew aboard stays as it was. A template with a `preferredCrew` gives
   it, and Paste calls `CurrentGame.validateEmployment()` right after writing it, so the crew goes aboard at once and
   the station's portraits (`enceladus/CurrentCrew.gd`, on `employmentChanged`) follow. A template without one: its crew
-  is unknown, the current ship's `preferredCrew` is left as it is, and the confirmation says so.
-- **Paste** shows on the current entry when the template is in `CurrentGame.state.garage` with the same `model` as
-  `CurrentGame.state.ship`; a template no longer owned (sold) is forgotten.
-- **The confirmation:** a copy of the entry's `ConfirmationCenter/BuyPanel` without its connections (a Fleet entry
-  never uses the Buy confirmation), shown and hidden by `ShipCopyPasteShow` and `ShipCopyPasteHide`: copies of the
-  entry's `BuyShow` and `BuyHide` animations, retargeted to the copy and to *Paste*. The game's `BuyHide` would show
-  the entry's Buy button on a Fleet entry. The game's label there holds one short price in the menu font; the copy's
-  holds several lines, so it wraps, in the small font of the entry's registration label (`HBox/V/Registration`), at
-  `_SHIP_COPY_PASTE_TEXT_SHARE` of the entry's width, and never so wide that the confirmation passes the entry's width:
-  the game right-aligns it in the entry (`ConfirmationCenter`, shrink to the end), and a wider one would widen every
-  entry of the list.
+  is unknown, the current ship's `preferredCrew` is left as it is, and the dialog says so.
+- **Paste** is enabled on the current entry when the template is in `CurrentGame.state.garage` with the same `model`
+  as `CurrentGame.state.ship`; a template no longer owned (sold) is forgotten.
+- **The confirmation dialog**, made on the first *Paste* as a child of the entry: a `ConfirmationDialog`, as the game's
+  own (the station's pause menu, `enceladus/PauseLayerEnceladus.tscn`: no title, `popup_centered()`, *Cancel*
+  focused), with the game's button keys `OK` and `CANCEL` (the entry's Buy confirmation's). It inherits the entry's menu
+  theme (`menu/MenuTheme.tres`: the window frame, the buttons, the big menu font for the question and the headings);
+  the lists and the summary take the Fleet screen's prose font, the Label font of the entry's `HBox/Margin`
+  (`enceladus/Subwindow.theme`, as the ship's description). Each list wraps at `_SHIP_COPY_PASTE_COLUMN_SHARE` of the
+  screen's width; the labels get their width before their text, so they wrap at once, and the dialog takes its least
+  size, centered, again two frames later, once laid out. A Popup draws on top and isn't laid out by the entry, so it
+  neither widens nor clips the list. `dialog_hide_on_ok` is off, so *OK* can show a changed plan instead of pasting.
+  Closing it gives the focus back to *Paste*. Esc and `pause` while it shows close it alone: the extension's `_input`
+  marks them handled, and children get `_input` before their parents, so `Dealer.gd` `_input` (which closes the Fleet
+  screen on them) doesn't see them; as `Dealer.gd` checks `Input.is_action_just_pressed`, which stays true for the
+  whole frame, every later event of that frame is marked handled too.
 - **The plan:** the Equipment screen is the node `Upgrades` next to the Fleet screen (`enceladus/Enceladus.tscn`). On
   *Paste* and on *OK*, the mod calls its `updatePricesAndAvailability()` (as it does when it shows), then goes through
   `getItems()` by `slot`. A slot's value is read from each ship's config as that function reads the player's: a missing
@@ -79,11 +93,12 @@ at the Equipment screen's prices, the tuning, the mineral targeting and the crew
   `config`, but for the slots kept, removed where the template has none; the crew, as `preferredCrew`, put aboard with
   `validateEmployment()`. Then, as `Dealer.gd` `use()` does after a switch, the Fleet screen emits `shipChanged`
   (`Enceladus.gd` `shipChanged` rebuilds the docked ship, which emits `playerShipChanged`) and calls `addShips()`.
-- `_ready` (only for Fleet entries; the parent's runs by itself) and `checkCurrentAndOwned()`, an ordinary function
-  that calls the parent's with `.checkCurrentAndOwned()`.
+- `_ready` (only for Fleet entries; the parent's runs by itself), `_input` (the game's script has none) and
+  `checkCurrentAndOwned()`, an ordinary function that calls the parent's with `.checkCurrentAndOwned()`.
 - Members of the extension: the constants `_SHIP_COPY_PASTE_*`, the variables `_shipCopyPasteCopy`,
-  `_shipCopyPastePaste`, `_shipCopyPastePanel`, `_shipCopyPasteText`, `_shipCopyPasteOk` and `_shipCopyPasteShown`, and
-  the functions `_shipCopyPaste*` (the buttons, icons, template, plan, confirmation and applying).
+  `_shipCopyPastePaste`, `_shipCopyPasteDialog`, `_shipCopyPasteTitle`, `_shipCopyPasteLists`, `_shipCopyPasteSummary`,
+  `_shipCopyPasteShown` and `_shipCopyPasteClosedFrame`, and the functions `_shipCopyPaste*` (the buttons, icons,
+  template, plan, dialog and applying).
 - ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice find the entries by their script's path, which the extension
   keeps (`take_over_path`); tested together.
 - Tested only outside the game, in a headless Godot 3.6 with the game's `SystemBuyUI.gd` and `SystemShipUpgradeUI.gd`

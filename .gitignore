@@ -1,8 +1,12 @@
-# Release zips (<ModName>-<version>.zip): none belongs in the repo
+# Release zips: package.ps1 builds <ModName>-<version>.zip in the temp folder (TempDir in paths.local.psd1); none
+# belongs in the repo
 *.zip
 
 # The folders outside the repo on this machine (template: paths.example.psd1)
 paths.local.psd1
+
+# Personal instructions for Claude Code in this repo
+CLAUDE.local.md
 
 # Earlier release zips, moved here out of the game's mods folder
 _backup/

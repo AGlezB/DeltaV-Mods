@@ -1,4 +1,4 @@
-# ShipCopyPaste: the texts of its Fleet screen buttons and confirmation, in English. Godot shows English for any
+# ShipCopyPaste: the texts of its Fleet screen buttons and confirmation dialog, in English. Godot shows English for any
 # language without its own file (its fallback locale), so another language only needs a copy of this file with its
 # Language and msgstr lines translated, loaded in ModMain.gd.
 msgid ""
@@ -7,16 +7,73 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 
 msgid "SHIPCOPYPASTE_COPY"
-msgstr "Copy this ship's setup, to paste it onto another ship of the same model"
+msgstr "Copy this ship's setup, to paste it onto the ship you fly"
 
 msgid "SHIPCOPYPASTE_TEMPLATE"
-msgstr "This ship's setup is copied: paste it onto the current ship. Press again to forget it"
+msgstr "This ship's setup is copied: paste it onto the ship you fly. Press again to forget it"
+
+msgid "SHIPCOPYPASTE_COPY_MODEL"
+msgstr "Not the same model as the ship you fly, so it can't be copied onto it"
 
 msgid "SHIPCOPYPASTE_PASTE"
 msgstr "Paste the copied ship's setup onto this ship: equipment, tuning, mineral targeting and crew"
 
+msgid "SHIPCOPYPASTE_PASTE_NOTHING"
+msgstr "Copy another ship of this model first"
+
 msgid "SHIPCOPYPASTE_CONFIRM"
-msgstr "Make this ship like %s?"
+msgstr "Make %s like %s?"
+
+msgid "SHIPCOPYPASTE_COPIED"
+msgstr "Copied"
+
+msgid "SHIPCOPYPASTE_NOT_COPIED"
+msgstr "Not copied"
+
+msgid "SHIPCOPYPASTE_BULLET"
+msgstr "• %s"
+
+msgid "SHIPCOPYPASTE_ITEM_PRICE"
+msgstr "%s: %s E$"
+
+msgid "SHIPCOPYPASTE_ITEM_REFUND"
+msgstr "%s: %s E$ refund"
+
+msgid "SHIPCOPYPASTE_TUNING"
+msgstr "Tuning"
+
+msgid "SHIPCOPYPASTE_TARGETING"
+msgstr "Mineral targeting of the Geologist tab"
+
+msgid "SHIPCOPYPASTE_FILTERS"
+msgstr "Mineral filters of the arm and the drone plants"
+
+msgid "SHIPCOPYPASTE_CREW"
+msgstr "Crew aboard: %s"
+
+msgid "SHIPCOPYPASTE_CREW_NOBODY"
+msgstr "Crew aboard: nobody"
+
+msgid "SHIPCOPYPASTE_UNFIT"
+msgstr "%s: not sold here"
+
+msgid "SHIPCOPYPASTE_CREW_UNKNOWN"
+msgstr "Crew aboard: %s has no crew list yet (it gets one when you change its crew while flying it)"
+
+msgid "SHIPCOPYPASTE_NAME"
+msgstr "Name and registration"
+
+msgid "SHIPCOPYPASTE_DAMAGE"
+msgstr "Damage of the pieces it keeps"
+
+msgid "SHIPCOPYPASTE_MAINTENANCE"
+msgstr "Repairs under way"
+
+msgid "SHIPCOPYPASTE_CARGO"
+msgstr "Cargo"
+
+msgid "SHIPCOPYPASTE_CONSUMABLES"
+msgstr "Propellant, ammunition and drone parts"
 
 msgid "SHIPCOPYPASTE_PRICE"
 msgstr "Equipment: %s E$"
@@ -25,16 +82,10 @@ msgid "SHIPCOPYPASTE_REFUND"
 msgstr "Equipment refund: %s E$"
 
 msgid "SHIPCOPYPASTE_SAME"
-msgstr "Same equipment: tuning, mineral targeting and crew only"
+msgstr "Equipment: nothing to buy"
 
 msgid "SHIPCOPYPASTE_REPAIRS"
 msgstr "Repairs: %s"
-
-msgid "SHIPCOPYPASTE_UNFIT"
-msgstr "Not sold here, left as it is: %s"
-
-msgid "SHIPCOPYPASTE_CREW_UNKNOWN"
-msgstr "Crew left as it is: %s has no crew list yet (it gets one when you change its crew while flying it)"
 
 msgid "SHIPCOPYPASTE_NO_MONEY"
 msgstr "Not enough money"

@@ -1,5 +1,7 @@
 # ΔV: Rings of Saturn - mods by AGlezB
 
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+
 Mods for ΔV: Rings of Saturn. Each folder is one independent mod and ships as one zip. Its README says what it does,
 how to set it up and how to install it.
 
@@ -47,6 +49,11 @@ mods.
 
 Mods are unofficial and can break after game updates. Keep a backup of your save.
 
+## For modders
+
+How the code is laid out, how the game loads a mod and how these mods hook in, the conventions they follow and the
+game's terms are in [MODDING.md](MODDING.md); the test harness is in [`_tests/README.md`](_tests/README.md).
+
 ## About
 Made with the help of AI (Claude, by Anthropic).
-Licensed under the GNU General Public License v3.0 (GNU GPLv3).
+Licensed under the [GNU General Public License v3.0](LICENSE) (GNU GPLv3).

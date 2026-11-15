@@ -16,9 +16,7 @@ const GAME_BOX = ["ViewportContainer", "Margin", "ShipName", "V", "Use", "Buy", 
 const MODEL = "PROSPECTOR-VP"
 const OTHER_MODEL = "EIME"
 const NOW = 5000 # the in-game time
-const ANIMATION_FRAMES = 75 # frames to let a confirmation animation (1 s) finish
 const LIST_WIDTH = 1280 # the Fleet list's width: an entry's design width (SystemBuyUI.tscn, HBox margin_right + the root's margin)
-const NARROW_WIDTH = 800 # a narrower list, as in a smaller window
 
 # The Equipment screen's items: slot, system, price, and numVal, story flag and its minimum where given.
 const ITEMS = [
@@ -259,6 +257,38 @@ func fitsRow(entry, width: float, nodes: Array) -> bool:
 		ok = ok and r.position.x >= row.position.x - 0.5 and r.end.x <= row.end.x + 0.5
 	return ok
 
+# The dialog's list of `lines`, each with the mod's bullet.
+func bullets(entry, lines: Array) -> String:
+	var out = []
+	for line in lines:
+		out.append(tr(entry._SHIP_COPY_PASTE_TEXT_BULLET) % line)
+	return PoolStringArray(out).join("\n")
+
+# A piece bought, as the dialog lists it: its name (the Equipment item's, here its system key) and price.
+func itemLine(entry, system: String, price) -> String:
+	return tr(entry._SHIP_COPY_PASTE_TEXT_ITEM_PRICE) % [tr(system), CurrentGame.formatThousands(price)]
+
+# The game's bindings (its project.godot): ui_cancel is Esc, B (button 1) and Start (button 11); pause is Esc and Start.
+func bindGameKeys():
+	if not InputMap.has_action("pause"):
+		InputMap.add_action("pause")
+	for binding in [["ui_cancel", escKey()], ["pause", escKey()]]:
+		if not InputMap.action_has_event(binding[0], binding[1]):
+			InputMap.action_add_event(binding[0], binding[1])
+
+# A press and release of a key, as Input delivers a player's, in the idle part of a frame (where the game takes input).
+func tap(event):
+	yield(get_tree(), "idle_frame")
+	for pressed in [true, false]:
+		var e = event.duplicate()
+		e.pressed = pressed
+		Input.parse_input_event(e)
+
+func escKey():
+	var event = InputEventKey.new()
+	event.scancode = KEY_ESCAPE
+	return event
+
 func pixels(icon: Texture) -> PoolByteArray:
 	return icon.get_data().get_data()
 
@@ -285,13 +315,13 @@ func run():
 	if not mod:
 		check("control: Fleet entries get no Copy or Paste", names(spare.get_node("HBox")) == GAME_BOX and names(template.get_node("HBox")) == GAME_BOX, names(spare.get_node("HBox")))
 		check("control: nor does the market's entry", names(sale.get_node("HBox")) == GAME_BOX)
-		check("control: the entry's confirmation has only the game's panels", names(spare.get_node("ConfirmationCenter")) == ["BuyPanel", "SellPanel"])
+		check("control: the entry's confirmation has only the game's panels, and the entry no dialog", names(spare.get_node("ConfirmationCenter")) == ["BuyPanel", "SellPanel"] and spare.get_child_count() == load(ENTRY).instance().get_child_count())
 		_free()
 		return
 
 	var copyName = spare._SHIP_COPY_PASTE_COPY_NODE
 	var pasteName = spare._SHIP_COPY_PASTE_PASTE_NODE
-	var panelName = spare._SHIP_COPY_PASTE_PANEL_NODE
+	var dialogName = spare._SHIP_COPY_PASTE_DIALOG_NODE
 	var meta = spare._SHIP_COPY_PASTE_TEMPLATE
 	var entries = [spare, template, other]
 	var copy = {}
@@ -313,10 +343,17 @@ func run():
 	var likeUse = true
 	for e in entries:
 		for b in [copy[e], paste[e]]:
-			likeUse = likeUse and b is Button and b.flat == use.flat and b.shortcut_in_tooltip == use.shortcut_in_tooltip and b.has_node("SmoothScrollTo") and not b.disabled
-	check("they are copies of Use (flat, its smooth scrolling), enabled", likeUse)
-	check("Copy shows on the other ships' entries, with its tooltip, not on the current ship's (the only one Paste can change); with no template, Paste shows nowhere", not copy[spare].visible and copy[template].visible and copy[other].visible and copy[template].hint_tooltip == spare._SHIP_COPY_PASTE_TIP_COPY and not paste[spare].visible and not paste[template].visible and not paste[other].visible)
-	check("Paste has its tooltip", paste[spare].hint_tooltip == spare._SHIP_COPY_PASTE_TIP_PASTE)
+			likeUse = likeUse and b is Button and b.flat == use.flat and b.shortcut_in_tooltip == use.shortcut_in_tooltip and b.has_node("SmoothScrollTo")
+	check("they are copies of Use (flat, its smooth scrolling)", likeUse)
+	check("one button per entry, never one that can't be used: Copy on the other ships' entries, Paste on the current ship's", copy[template].visible and copy[other].visible and not copy[spare].visible and paste[spare].visible and not paste[template].visible and not paste[other].visible)
+	var columns = []
+	for e in entries:
+		var shownButton = paste[e] if e == spare else copy[e]
+		columns.append([shownButton.get_global_rect().position.x, e.get_node("HBox/Use").get_global_rect().position.x])
+	check("in the same spot on every entry, so the entries' buttons line up", columns[0] == columns[1] and columns[1] == columns[2], columns)
+	check("Copy enabled on the other ship of the current ship's model, with its tooltip", not copy[template].disabled and copy[template].hint_tooltip == spare._SHIP_COPY_PASTE_TIP_COPY)
+	check("disabled on a ship of another model, the tooltip saying so", copy[other].disabled and copy[other].hint_tooltip == spare._SHIP_COPY_PASTE_TIP_COPY_MODEL)
+	check("with nothing copied, Paste is disabled, the tooltip saying to copy a ship of this model first", paste[spare].disabled and paste[spare].hint_tooltip == spare._SHIP_COPY_PASTE_TIP_PASTE_NOTHING)
 	var uses = []
 	template.connect("use", self, "_recordUse", [uses])
 	press(copy[template])
@@ -340,26 +377,27 @@ func run():
 	check("Copy makes the ship the template, held by the Fleet screen", fleet.get_meta(meta) == "SE1-0001" if fleet.has_meta(meta) else false)
 	var mark = template.get_node("HBox/V/Owned").modulate
 	check("the template's Copy shows pressed, in the Owned label's colour, with the template's tooltip", copy[template].pressed and copy[template].modulate == mark and copy[template].hint_tooltip == spare._SHIP_COPY_PASTE_TIP_TEMPLATE)
-	check("the other entry's Copy doesn't", not copy[other].pressed and copy[other].modulate == Color.white and copy[other].hint_tooltip == spare._SHIP_COPY_PASTE_TIP_COPY)
-	check("Paste shows on the current ship's entry only", paste[spare].visible and not paste[template].visible and not paste[other].visible)
+	check("the other entry's Copy doesn't", not copy[other].pressed and copy[other].modulate == Color.white)
+	check("Paste is enabled, with its tooltip", not paste[spare].disabled and paste[spare].hint_tooltip == spare._SHIP_COPY_PASTE_TIP_PASTE)
 	press(copy[other])
-	check("a template of another model: no Paste", fleet.get_meta(meta) == "SE1-0003" and not paste[spare].visible and copy[other].pressed and not copy[template].pressed)
-	press(copy[other])
-	check("pressing the template's Copy again forgets it", not fleet.has_meta(meta) and not copy[other].pressed and not paste[spare].visible)
+	press(copy[spare])
+	check("pressing a disabled or hidden Copy (another model, the current ship) changes nothing", fleet.get_meta(meta) == "SE1-0001" and copy[template].pressed and not copy[other].pressed and not copy[spare].pressed and not paste[spare].disabled)
+	press(copy[template])
+	check("pressing the template's Copy again forgets it, and Paste is disabled again", not fleet.has_meta(meta) and not copy[template].pressed and paste[spare].disabled and paste[spare].hint_tooltip == spare._SHIP_COPY_PASTE_TIP_PASTE_NOTHING)
 	press(copy[template])
 	fleet.visible = false
 	check("closing the Fleet screen forgets the template", not fleet.has_meta(meta))
 	fleet.visible = true
 	yield(idle(), "completed")
-	check("reopened, there is no template, and no Paste", not copy[template].pressed and not paste[spare].visible)
+	check("reopened, there is no template, and Paste is disabled", not copy[template].pressed and paste[spare].disabled)
 	check("Copy, forgetting and closing wrote nothing to the game's state", JSON.print(CurrentGame.state) == before)
 
 	# The template survives switches while the screen stays open
 	press(copy[template])
 	switchTo(template, spare)
-	check("switched to the template itself: it is still the template, its entry has no Copy, the old current ship's has, and there is no Paste", fleet.get_meta(meta) == "SE1-0001" and not copy[template].visible and copy[spare].visible and not paste[template].visible and not paste[spare].visible)
+	check("switched to the template itself: it is still the template; its entry shows Paste, disabled (nothing else of the model is copied), the old current ship's shows Copy, enabled", fleet.get_meta(meta) == "SE1-0001" and paste[template].visible and paste[template].disabled and not copy[template].visible and copy[spare].visible and not copy[spare].disabled and not paste[spare].visible)
 	switchTo(spare, template)
-	check("switched back to the spare: the template is back on Copy, and the spare has Paste", fleet.get_meta(meta) == "SE1-0001" and copy[template].visible and copy[template].pressed and not copy[spare].visible and paste[spare].visible)
+	check("switched back to the spare: the template's entry shows Copy again, enabled and pressed, and the spare's Paste, enabled", fleet.get_meta(meta) == "SE1-0001" and copy[template].visible and not copy[template].disabled and copy[template].pressed and not paste[template].visible and paste[spare].visible and not paste[spare].disabled and not copy[spare].visible)
 	press(copy[template])
 
 	# A template that was sold
@@ -367,7 +405,7 @@ func run():
 	var sold = garageConfig("SE1-0001")
 	CurrentGame.state.garage.erase(sold)
 	spare.checkCurrentAndOwned()
-	check("a template no longer owned (sold) is forgotten, and Paste hides", not fleet.has_meta(meta) and not paste[spare].visible)
+	check("a template no longer owned (sold) is forgotten, and Paste is disabled", not fleet.has_meta(meta) and paste[spare].disabled)
 	CurrentGame.state.garage.insert(0, sold)
 
 	# The prices, as the Equipment screen sets them for the current ship (Upgrades.gd updatePricesAndAvailability):
@@ -383,83 +421,86 @@ func run():
 	var engine = (8000 - 3000) * 2
 	var fuel = (4000 - 1000) * 1
 	var total = arm + engine + fuel
-	var unfit = PoolStringArray([tr("SYSTEM_TWIST"), "reactor.power %s" % CurrentGame.formatThousands(12.0)]).join(", ")
-	var header = tr(spare._SHIP_COPY_PASTE_TEXT_CONFIRM) % "Tortoise"
-	var priceLine = tr(spare._SHIP_COPY_PASTE_TEXT_PRICE)
+	var unfit = [tr("SYSTEM_TWIST"), "reactor.power %s" % CurrentGame.formatThousands(12.0)]
+	var notCopiedAlways = []
+	for key in spare._SHIP_COPY_PASTE_TEXT_NOT_COPIED_ALWAYS:
+		notCopiedAlways.append(tr(key))
+	var unfitLines = []
+	for piece in unfit:
+		unfitLines.append(tr(spare._SHIP_COPY_PASTE_TEXT_UNFIT) % piece)
+	var settingsLines = [tr(spare._SHIP_COPY_PASTE_TEXT_TUNING), tr(spare._SHIP_COPY_PASTE_TEXT_TARGETING), tr(spare._SHIP_COPY_PASTE_TEXT_FILTERS)]
+	var crewLine = tr(spare._SHIP_COPY_PASTE_TEXT_CREW) % "Ann, Bob"
+	var question = tr(spare._SHIP_COPY_PASTE_TEXT_CONFIRM) % ["Hare", "Tortoise"]
 	var repairsLine = tr(spare._SHIP_COPY_PASTE_TEXT_REPAIRS) % Tool.readableTimeSpan(7200)
-	var unfitLine = tr(spare._SHIP_COPY_PASTE_TEXT_UNFIT) % unfit
 
-	# The confirmation
-	var panel = spare.get_node_or_null("ConfirmationCenter/" + panelName)
-	var label = panel.get_node("MarginContainer/VBoxContainer/BuyPrice") if panel != null else null
-	var ok = panel.get_node("MarginContainer/VBoxContainer/HBoxContainer/BuyConfirm") if panel != null else null
-	var cancel = panel.get_node("MarginContainer/VBoxContainer/HBoxContainer/BuyCancel") if panel != null else null
-	var buy = spare.get_node("HBox/Buy")
-	var player0 = spare.get_node("ConfirmationPlayer")
-	check("the entry has a hidden copy of the Buy confirmation", panel is PanelContainer and not panel.visible and label is Label and ok is Button and cancel is Button)
-	var retargeted = player0.has_animation(spare._SHIP_COPY_PASTE_SHOW) and player0.has_animation(spare._SHIP_COPY_PASTE_HIDE)
-	for animationName in [spare._SHIP_COPY_PASTE_SHOW, spare._SHIP_COPY_PASTE_HIDE]:
-		if player0.has_animation(animationName):
-			var animation = player0.get_animation(animationName)
-			var paths = []
-			for i in animation.get_track_count():
-				paths.append(String(animation.track_get_path(i)))
-			var source = player0.get_animation("BuyShow" if animationName == spare._SHIP_COPY_PASTE_SHOW else "BuyHide")
-			retargeted = retargeted and animation != source and animation.get_track_count() == source.get_track_count() and animation.length == source.length
-			for p in paths:
-				retargeted = retargeted and not ("BuyPanel" in p) and not p.begins_with("HBox/Buy") and (panelName in p or pasteName in p)
-	check("with copies of the Buy confirmation's animations, retargeted to it and to Paste", retargeted)
-
+	# The confirmation dialog
 	press(copy[template])
 	var stateBefore = JSON.print(CurrentGame.state)
 	var templateBefore = JSON.print(garageConfig("SE1-0001"))
+	check("no dialog before the first Paste", spare.get_node_or_null(dialogName) == null)
 	press(paste[spare])
-	yield(idle(ANIMATION_FRAMES), "completed")
+	yield(idle(3), "completed")
+	var dialog = spare.get_node_or_null(dialogName)
 	check("Paste first brings the Equipment screen's prices up to date", equipment.repriced == 1, equipment.repriced)
-	check("then shows the confirmation, not the game's Buy confirmation", panel.visible and panel.modulate.a == 1.0 and not spare.get_node("ConfirmationCenter/BuyPanel").visible)
-	var text = PoolStringArray([header, priceLine % CurrentGame.formatThousands(total), repairsLine, unfitLine]).join("\n")
-	check("it names the template, gives the equipment's price and the repair time, and lists what isn't sold (the lidar the template lacks reads as the ship's default, the ammo it lacks as none)", label.text == text, label.text)
-	check("while it shows, Paste hides as Buy does, and the entry's Buy button stays hidden", not paste[spare].visible and not buy.visible)
-	var registration = spare.get_node("HBox/V/Registration")
-	var inner = LIST_WIDTH - spare.get_constant("margin_left") - spare.get_constant("margin_right")
-	check("its text wraps, in the small font of the entry's registration, not the game's menu font", label.autowrap and label.get_font("font") == registration.get_font("font") and label.get_font("font") != spare.get_font("font"))
-	check("at no more than the entry's share for it (TEXT_SHARE)", label.rect_size.x <= inner * spare._SHIP_COPY_PASTE_TEXT_SHARE + 0.5 and label.get_line_count() >= 4, [label.rect_size.x, label.get_line_count()])
-	check("the entry keeps the list's width (the list doesn't scroll sideways), and the confirmation, OK and Cancel lie within it", fitsRow(spare, LIST_WIDTH, [panel, ok, cancel]), [spare.rect_size.x, panel.get_global_rect(), cancel.get_global_rect()])
+	check("then opens a confirmation dialog as the game's own (a ConfirmationDialog without a title), the entry's Buy confirmation untouched", dialog is ConfirmationDialog and dialog.visible and dialog.window_title == "" and not spare.get_node("ConfirmationCenter/BuyPanel").visible and names(spare.get_node("ConfirmationCenter")) == ["BuyPanel", "SellPanel"])
+	if not dialog is ConfirmationDialog:
+		_free()
+		return
+	var ok = dialog.get_ok()
+	var cancel = dialog.get_cancel()
+	var title = spare._shipCopyPasteTitle
+	var lists = spare._shipCopyPasteLists
+	var summary = spare._shipCopyPasteSummary
+	var prose = spare.get_node("HBox/Margin").get_font("font", "Label")
+	check("in the entry's menu theme (the game's window frame), with the game's OK and CANCEL, Cancel focused", dialog.get_stylebox("panel", "WindowDialog") == load("res://menu/MenuTheme.tres").get_stylebox("panel", "WindowDialog") and ok.text == spare._SHIP_COPY_PASTE_OK and cancel.text == spare._SHIP_COPY_PASTE_CANCEL and dialog.get_focus_owner() == cancel, dialog.get_focus_owner())
+	check("its question names the ship flown and the template, in the menu font", title.text == question and title.get_font("font") == spare.get_font("font"), title.text)
+	var copied = [itemLine(spare, "SYSTEM_ARM", arm), itemLine(spare, "SYSTEM_ENGINE_B", engine), itemLine(spare, "SYSTEM_FUEL_50", fuel)] + settingsLines + [crewLine]
+	check("Copied: each piece bought, as the Equipment screen names it, with its price; the tuning, the mineral targeting, the slots' mineral filters; the crew aboard", lists[0].text == bullets(spare, copied), lists[0].text)
+	check("Not copied: what isn't sold here (the lidar the template lacks reads as the ship's default, the ammo it lacks as none), then what Paste never copies", lists[1].text == bullets(spare, unfitLines + notCopiedAlways), lists[1].text)
+	var headings = [lists[0].get_parent().get_child(0).text, lists[1].get_parent().get_child(0).text]
+	check("under their headings, side by side, in the Fleet screen's prose font (the entry's thumbnail margin's)", headings == [spare._SHIP_COPY_PASTE_TEXT_COPIED, spare._SHIP_COPY_PASTE_TEXT_NOT_COPIED] and lists[0].get_font("font") == prose and lists[1].get_font("font") == prose and prose != spare.get_font("font") and lists[0].get_global_rect().position.y == lists[1].get_global_rect().position.y and lists[0].get_global_rect().end.x <= lists[1].get_global_rect().position.x, headings)
+	check("the summary: the equipment's price and the repair time, in the prose font", summary.text == PoolStringArray([tr(spare._SHIP_COPY_PASTE_TEXT_PRICE) % CurrentGame.formatThousands(total), repairsLine]).join("\n") and summary.get_font("font") == prose, summary.text)
+	var screen = dialog.get_viewport_rect()
+	var box = dialog.get_global_rect()
+	check("each list as wide as its share of the screen (COLUMN_SHARE); the dialog on the screen, centered", abs(lists[0].rect_size.x - screen.size.x * spare._SHIP_COPY_PASTE_COLUMN_SHARE) < 1 and abs(lists[1].rect_size.x - lists[0].rect_size.x) < 1 and screen.encloses(box) and (box.position + box.size / 2 - screen.size / 2).length() <= 1, [lists[0].rect_size.x, box, screen])
+	check("and at its least size: as tall as its content", abs(box.size.y - dialog.get_combined_minimum_size().y) < 1, [box.size, dialog.get_combined_minimum_size()])
+	check("the entry keeps the list's width", fitsRow(spare, LIST_WIDTH, []), spare.rect_size.x)
 	press(cancel)
-	yield(idle(ANIMATION_FRAMES), "completed")
-	check("Cancel hides it, Paste comes back with the focus, Buy stays hidden", not panel.visible and paste[spare].visible and spare.get_focus_owner() == paste[spare] and not buy.visible)
+	yield(idle(), "completed")
+	check("Cancel closes it, the focus back on Paste", not dialog.visible and paste[spare].has_focus())
 	check("and nothing changed", JSON.print(CurrentGame.state) == stateBefore)
-	fleet.get_node("Items").rect_size = Vector2(NARROW_WIDTH, 0)
-	yield(idle(), "completed")
+	bindGameKeys()
 	press(paste[spare])
-	yield(idle(ANIMATION_FRAMES), "completed")
-	check("in a narrower list too, the entry keeps its width and the confirmation fits in it", fitsRow(spare, NARROW_WIDTH, [panel, ok, cancel]), [spare.rect_size.x, panel.get_global_rect(), cancel.get_global_rect()])
-	press(cancel)
-	yield(idle(ANIMATION_FRAMES), "completed")
-	fleet.get_node("Items").rect_size = Vector2(LIST_WIDTH, 0)
+	yield(idle(3), "completed")
+	var cancels = fleet.cancels
+	yield(tap(escKey()), "completed")
 	yield(idle(), "completed")
+	check("Esc closes the dialog only: the Fleet screen doesn't get it (Dealer.gd _input would close the screen)", not dialog.visible and fleet.cancels == cancels and JSON.print(CurrentGame.state) == stateBefore, fleet.cancels - cancels)
+	yield(tap(escKey()), "completed")
+	yield(idle(), "completed")
+	check("(with the dialog closed, Esc reaches the Fleet screen)", fleet.cancels == cancels + 1)
 
 	# Not enough money
 	CurrentGame.money = total - 1
 	press(paste[spare])
-	yield(idle(ANIMATION_FRAMES), "completed")
-	check("above the player's money, OK is disabled and the confirmation says so", ok.disabled and label.text == text + "\n" + tr(spare._SHIP_COPY_PASTE_TEXT_NO_MONEY), label.text)
+	yield(idle(3), "completed")
+	check("above the player's money, OK is disabled and the summary says so", ok.disabled and summary.text.ends_with("\n" + tr(spare._SHIP_COPY_PASTE_TEXT_NO_MONEY)), summary.text)
 	press(ok)
-	check("and pressing it changes nothing", JSON.print(CurrentGame.state) == stateBefore and CurrentGame.money == total - 1)
+	check("and pressing it changes nothing", dialog.visible and JSON.print(CurrentGame.state) == stateBefore and CurrentGame.money == total - 1)
 	press(cancel)
-	yield(idle(ANIMATION_FRAMES), "completed")
+	yield(idle(), "completed")
 	CurrentGame.money = 1000000
 
-	# A plan that changed while the confirmation showed
+	# A plan that changed while the dialog showed
 	press(paste[spare])
-	yield(idle(ANIMATION_FRAMES), "completed")
+	yield(idle(3), "completed")
 	for s in ["SYSTEM_FUEL_20", "SYSTEM_FUEL_50"]:
 		items[s + "@fuel.capacity"].setValuesDiscount(2000)
 	fuel = (4000 - 2000) * 1
 	total = arm + engine + fuel
-	text = PoolStringArray([header, priceLine % CurrentGame.formatThousands(total), repairsLine, unfitLine]).join("\n")
+	copied[2] = itemLine(spare, "SYSTEM_FUEL_50", fuel)
 	press(ok)
-	check("a price changed since it showed: OK shows the new plan and pastes nothing", panel.visible and label.text == text and not ok.disabled and JSON.print(CurrentGame.state) == stateBefore, label.text)
+	check("a price changed since it showed: OK shows the new plan and pastes nothing", dialog.visible and lists[0].text == bullets(spare, copied) and summary.text.begins_with(tr(spare._SHIP_COPY_PASTE_TEXT_PRICE) % CurrentGame.formatThousands(total)) and not ok.disabled and JSON.print(CurrentGame.state) == stateBefore, summary.text)
 
 	# Paste
 	var config = CurrentGame.state.ship.config
@@ -469,7 +510,7 @@ func run():
 	var templateConfig = templateShip().config
 	var validatedBefore = CurrentGame.validated.size()
 	press(ok)
-	yield(idle(ANIMATION_FRAMES), "completed")
+	yield(idle(), "completed")
 	check("OK buys the differing pieces at the shown total", CurrentGame.money == moneyBefore - total, [CurrentGame.money, moneyBefore - total])
 	check("each fitted as the Equipment screen fits it: the slot's damage cleared, its value set", player.cleared == ["weaponSlot.main.type", "propulsion.main", "fuel.capacity"] and config.weaponSlot.main.type == "SYSTEM_ARM" and config.propulsion.main == "SYSTEM_ENGINE_B" and same(config.fuel.capacity, 50000.0), player.cleared)
 	check("pieces already the same, and pieces not sold, left as they are", config.propulsion.rcs == "SYSTEM_RCS_A" and config.weaponSlot.left.type == "SYSTEM_GUN" and same(config.reactor.power, 8.0) and config.lidar.type == "SYSTEM_LIDAR_DOPPLER" and same(config.ammo.capacity, 0.0) and config.hud.type == "SYSTEM_HUD_A")
@@ -490,7 +531,7 @@ func run():
 	check("(changing the pasted mineral targeting leaves the template's)", garageConfig("SE1-0001").config.hud.config.minValue == 3000)
 	config.hud.config.minValue = templateConfig.hud.config.minValue
 	check("then, as after a switch, the Fleet screen's shipChanged and addShips", fleet.changed == 1 and fleet.added == 1, [fleet.changed, fleet.added])
-	check("the confirmation closes, Paste comes back, Buy stays hidden", not panel.visible and paste[spare].visible and not buy.visible)
+	check("the dialog closes, the focus back on Paste", not dialog.visible and paste[spare].has_focus())
 
 	# A refund: the template's piece is cheaper than the one fitted
 	garageConfig("SE1-0001").config.propulsion.main = "SYSTEM_ENGINE_A"
@@ -500,15 +541,14 @@ func run():
 	moneyBefore = CurrentGame.money
 	var maintenance = CurrentGame.state.ship.maintaineceUntil
 	press(paste[spare])
-	yield(idle(ANIMATION_FRAMES), "completed")
-	text = PoolStringArray([header, tr(spare._SHIP_COPY_PASTE_TEXT_REFUND) % CurrentGame.formatThousands(refund), unfitLine]).join("\n")
-	check("a cheaper piece: the confirmation shows the refund, and no repair time when the piece replaced isn't damaged", label.text == text, label.text)
+	yield(idle(3), "completed")
+	check("a cheaper piece: listed with its refund, the summary shows the refund, and no repair time when the piece replaced isn't damaged", lists[0].text == bullets(spare, [tr(spare._SHIP_COPY_PASTE_TEXT_ITEM_REFUND) % ["SYSTEM_ENGINE_A", CurrentGame.formatThousands(refund)]] + settingsLines + [crewLine]) and summary.text == tr(spare._SHIP_COPY_PASTE_TEXT_REFUND) % CurrentGame.formatThousands(refund), [lists[0].text, summary.text])
 	press(ok)
-	yield(idle(ANIMATION_FRAMES), "completed")
+	yield(idle(), "completed")
 	check("OK pays the refund, and the repair time stays", CurrentGame.money == moneyBefore + refund and config.propulsion.main == "SYSTEM_ENGINE_A" and CurrentGame.state.ship.maintaineceUntil == maintenance, [CurrentGame.money, moneyBefore + refund])
 
-	# The same equipment: settings and crew only. The template, copied from the garage, has no crew list (the game keeps
-	# one only once the crew changed while the ship was flown): its crew is unknown.
+	# The same equipment: settings and crew only. The template has no crew list (the game keeps one only once the crew
+	# changed while the ship was flown): its crew is unknown.
 	garageConfig("SE1-0001").config.tuning.Hud.TUNE_MAX_VELOCITY = 60
 	garageConfig("SE1-0001").config.erase("preferredCrew")
 	moneyBefore = CurrentGame.money
@@ -516,25 +556,26 @@ func run():
 	var cleared = player.cleared.size()
 	validatedBefore = CurrentGame.validated.size()
 	press(paste[spare])
-	yield(idle(ANIMATION_FRAMES), "completed")
+	yield(idle(3), "completed")
 	var crewUnknown = tr(spare._SHIP_COPY_PASTE_TEXT_CREW_UNKNOWN) % "Tortoise"
-	text = PoolStringArray([header, tr(spare._SHIP_COPY_PASTE_TEXT_SAME), unfitLine, crewUnknown]).join("\n")
-	check("the same equipment: the confirmation says only settings and crew are copied, and that the template's crew is unknown", label.text == text and not ok.disabled, label.text)
+	check("the same equipment: only the settings copied, the template's unknown crew among what isn't, and nothing to buy", lists[0].text == bullets(spare, settingsLines) and lists[1].text == bullets(spare, unfitLines + [crewUnknown] + notCopiedAlways) and summary.text == tr(spare._SHIP_COPY_PASTE_TEXT_SAME) and not ok.disabled, [lists[0].text, lists[1].text, summary.text])
 	press(ok)
-	yield(idle(ANIMATION_FRAMES), "completed")
+	yield(idle(), "completed")
 	check("OK buys nothing, logs nothing, adds no repair time", CurrentGame.money == moneyBefore and CurrentGame.logs.size() == logsBefore and player.cleared.size() == cleared and CurrentGame.state.ship.maintaineceUntil == maintenance)
 	check("and copies the settings; with the template's crew unknown, the spare's crew list is left as it is, and nothing is put aboard", config.tuning.Hud.TUNE_MAX_VELOCITY == 60 and same(config.get("preferredCrew"), templateConfig.preferredCrew) and CurrentGame.validated.size() == validatedBefore, config.get("preferredCrew"))
-
-	# Closing the Fleet screen with the confirmation open
+	garageConfig("SE1-0001").config.preferredCrew = []
 	press(paste[spare])
-	yield(idle(ANIMATION_FRAMES), "completed")
+	yield(idle(3), "completed")
+	check("a template whose crew list is empty: nobody aboard", lists[0].text == bullets(spare, settingsLines + [tr(spare._SHIP_COPY_PASTE_TEXT_CREW_NOBODY)]), lists[0].text)
+
+	# Closing the Fleet screen with the dialog open
 	fleet.visible = false
-	check("closing the Fleet screen hides the confirmation at once, and forgets the template", not panel.visible and not fleet.has_meta(meta))
+	check("closing the Fleet screen closes the dialog, and forgets the template", not dialog.visible and not fleet.has_meta(meta))
 	fleet.visible = true
 	yield(idle(), "completed")
 
 	# The texts (i18n/en.po), also in a language without them (Godot's fallback, en)
-	var keys = [spare._SHIP_COPY_PASTE_TIP_COPY, spare._SHIP_COPY_PASTE_TIP_TEMPLATE, spare._SHIP_COPY_PASTE_TIP_PASTE, spare._SHIP_COPY_PASTE_TEXT_CONFIRM, spare._SHIP_COPY_PASTE_TEXT_PRICE, spare._SHIP_COPY_PASTE_TEXT_REFUND, spare._SHIP_COPY_PASTE_TEXT_SAME, spare._SHIP_COPY_PASTE_TEXT_REPAIRS, spare._SHIP_COPY_PASTE_TEXT_UNFIT, spare._SHIP_COPY_PASTE_TEXT_CREW_UNKNOWN, spare._SHIP_COPY_PASTE_TEXT_NO_MONEY]
+	var keys = [spare._SHIP_COPY_PASTE_TIP_COPY, spare._SHIP_COPY_PASTE_TIP_TEMPLATE, spare._SHIP_COPY_PASTE_TIP_COPY_MODEL, spare._SHIP_COPY_PASTE_TIP_PASTE, spare._SHIP_COPY_PASTE_TIP_PASTE_NOTHING,spare._SHIP_COPY_PASTE_TEXT_CONFIRM, spare._SHIP_COPY_PASTE_TEXT_COPIED, spare._SHIP_COPY_PASTE_TEXT_NOT_COPIED, spare._SHIP_COPY_PASTE_TEXT_BULLET, spare._SHIP_COPY_PASTE_TEXT_ITEM_PRICE, spare._SHIP_COPY_PASTE_TEXT_ITEM_REFUND, spare._SHIP_COPY_PASTE_TEXT_TUNING, spare._SHIP_COPY_PASTE_TEXT_TARGETING, spare._SHIP_COPY_PASTE_TEXT_FILTERS, spare._SHIP_COPY_PASTE_TEXT_CREW, spare._SHIP_COPY_PASTE_TEXT_CREW_NOBODY, spare._SHIP_COPY_PASTE_TEXT_UNFIT, spare._SHIP_COPY_PASTE_TEXT_CREW_UNKNOWN, spare._SHIP_COPY_PASTE_TEXT_PRICE, spare._SHIP_COPY_PASTE_TEXT_REFUND, spare._SHIP_COPY_PASTE_TEXT_SAME, spare._SHIP_COPY_PASTE_TEXT_REPAIRS, spare._SHIP_COPY_PASTE_TEXT_NO_MONEY] + Array(spare._SHIP_COPY_PASTE_TEXT_NOT_COPIED_ALWAYS)
 	var translated = true
 	for key in keys:
 		translated = translated and tr(key) != key
