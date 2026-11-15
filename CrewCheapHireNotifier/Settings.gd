@@ -1,7 +1,7 @@
 extends Reference
 
-# CrewCheapHireNotifier's settings model, shared by Code.gd and SettingsUI.gd: one instance (shared()) holds the
-# current values. They are kept per save game, in the game's UI store (CurrentGame.state.ui, which
+# CrewCheapHireNotifier's settings model, shared by Code.gd, HireScreen.gd and SettingsUI.gd: one instance (shared())
+# holds the current values, and the rule they define (isCheapHire). They are kept per save game, in the game's UI store (CurrentGame.state.ui, which
 # CurrentGame.saveToFile writes with the rest of the state), under the mod's id from Mod.manifest.
 
 signal settingsChanged()
@@ -21,7 +21,7 @@ const SETTINGS = {
 	"salaryTolerance": {
 		"label": "Salary tolerance",
 		"default": 0.10,
-		"min": 0.0,
+		"min": -0.5,
 		"max": 1.0,
 		"step": 0.05,
 		"unit": "%",
@@ -63,6 +63,25 @@ func toShown(key, value):
 
 func fromShown(key, shown):
 	return shown / float(SETTINGS[key].shown)
+
+# The rule the settings define, shared by the station menu and the Hire screen: the most a hire with `occupation` may
+# earn and still count. The higher of the salary threshold and the salary of your best-paid crew member with that job
+# (everyone hired: active, benched or on leave) changed by the salary tolerance: up when positive, down when negative.
+# The tolerance never touches the threshold, a floor of its own whatever crew is hired. The factor stays positive, so
+# the best-paid member's salary times it is the highest of them.
+func limitFor(occupation) -> float:
+	var limit = float(getValue("salaryThreshold"))
+	var factor = 1.0 + getValue("salaryTolerance")
+	for memberName in CurrentGame.state.crew:
+		var member = CurrentGame.state.crew[memberName]
+		if member.occupation == occupation:
+			limit = max(limit, member.salary * factor)
+	return limit
+
+# Whether a hire counts (equal counts): a member of CurrentGame.getAvailableCrew() or a Hire screen entry
+# (enceladus/CrewBio.gd); both have `occupation` and `salary`.
+func isCheapHire(member) -> bool:
+	return member.salary <= limitFor(member.occupation)
 
 # The defaults, overlaid by what this save game holds. A save made before the mod, or a new game, has nothing.
 func loadFromState():

@@ -7,9 +7,11 @@
 	Assembles a Godot project in <WorkDir>\project from this folder's sources, the game's own scripts (copied from
 	the decompiled game: DockingArm.gd, Arm.gd, CabinLight.gd, Boot.gd, LIDAR.gd, PitchAdjustedAudio.gd,
 	HardwareLabel.gd, EnceladusMenu.gd, HidingMarginContainer.gd, AnalogControlSlider.gd, TuningFloatValue.gd,
-	TuningItems.gd, Tool.gd, gdunzip.gd), the game's Shower.tscn and audio buses (default_bus_layout.tres), a stub
-	mineral scene carrying the chunk radius read from the game's, stubs of the two scenes LIDAR.gd preloads and of the
-	Tuning parts CrewCheapHireNotifier's settings screen is built from. Packages each mod into <WorkDir>\build\<Mod>.zip
+	TuningItems.gd, HireableCrew.gd, CrewBio.gd, CurrentCrewManagement.gd, PlaySoundsOnTheseButtons.gd, Tool.gd,
+	gdunzip.gd), the game's Shower.tscn, audio buses (default_bus_layout.tres) and the skill icons CrewBio.gd preloads,
+	a stub mineral scene carrying the chunk radius read from the game's, stubs of the two scenes LIDAR.gd preloads, of
+	the Tuning parts CrewCheapHireNotifier's settings screen is built from and of a Hire screen entry (CrewBio.tscn).
+	Packages each mod into <WorkDir>\build\<Mod>.zip
 	(as a release zip), and runs every suite with its mods loaded from those zips, the way the game loads them:
 	by an autoload, before the engine loads the main scene. Logs: <WorkDir>\logs. Nothing in the repo, the game folder
 	or the decompiled game is changed.
@@ -136,11 +138,24 @@ foreach ($dir in $project, $build, $logs)
 }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'project.godot'), (Join-Path $PSScriptRoot 'main.tscn') -Destination $project
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'harness'), (Join-Path $PSScriptRoot 'suites') -Destination $project -Recurse
-foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningItems.gd', 'enceladus\Shower.tscn', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres')
+foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningItems.gd', 'enceladus\HireableCrew.gd', 'enceladus\CrewBio.gd', 'enceladus\CurrentCrewManagement.gd', 'menu\sfx\PlaySoundsOnTheseButtons.gd', 'enceladus\Shower.tscn', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres')
 {
 	$target = Join-Path $project $file
 	New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
 	Copy-Item -LiteralPath (Join-Path $GameSource $file) -Destination $target
+}
+# CrewBio.gd preloads the skill icons: their import files and the imported textures they point to, as the game ships
+# them, so they load without an import step.
+foreach ($import in Get-ChildItem -LiteralPath (Join-Path $GameSource 'enceladus\Crew') -Filter 'skill-*.png.import')
+{
+	$texture = [regex]::Match((Get-Content -LiteralPath $import.FullName -Raw), '(?m)^path="res://([^"]+)"')
+	if (-not $texture.Success) { throw "No imported texture in $($import.FullName)" }
+	foreach ($file in ('enceladus\Crew\' + $import.Name), $texture.Groups[1].Value.Replace('/', '\'))
+	{
+		$target = Join-Path $project $file
+		New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
+		Copy-Item -LiteralPath (Join-Path $GameSource $file) -Destination $target
+	}
 }
 $mineral = Get-Content -LiteralPath (Join-Path $GameSource 'asteroids\mineral-fe-1.tscn') -Raw
 $circle = [regex]::Match($mineral, '\[sub_resource type="CircleShape2D" id=(\d+)\]\s*\r?\nradius = ([0-9.eE+-]+)')
@@ -238,6 +253,139 @@ size_flags_vertical = 0
 text = "PUT_HEADER_HERE"
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
+'@
+# A Hire screen entry (enceladus\CrewBio.tscn, as enceladus\HireableCrew.gd instances it): the game's node paths,
+# script, values and connection, a stub of the portrait (faces\VideoComms.tscn), the hire animation's player without
+# its animations, and the game's tooltip node (menu\sfx\PlaySoundsOnTheseButtons.tscn: its script, paths and nodes,
+# without the sounds and theme); without the theme, the stat buttons' icons and smooth scrolling and the flicker.
+Write-Utf8Lf (Join-Path $project 'enceladus\CrewBio.tscn') @'
+[gd_scene load_steps=4 format=2]
+
+[ext_resource path="res://enceladus/CrewBio.gd" type="Script" id=1]
+[ext_resource path="res://harness/crew_video.gd" type="Script" id=2]
+[ext_resource path="res://menu/sfx/PlaySoundsOnTheseButtons.gd" type="Script" id=3]
+
+[node name="CrewBio" type="MarginContainer"]
+anchor_right = 1.0
+rect_clip_content = true
+custom_constants/margin_right = 8
+custom_constants/margin_top = 0
+custom_constants/margin_left = 8
+custom_constants/margin_bottom = 8
+script = ExtResource( 1 )
+showStats = true
+
+[node name="Margin" type="MarginContainer" parent="."]
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Margin"]
+size_flags_horizontal = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Margin/HBoxContainer"]
+size_flags_horizontal = 3
+size_flags_vertical = 8
+custom_constants/separation = 10
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Margin/HBoxContainer/VBoxContainer"]
+
+[node name="StatGrid" type="GridContainer" parent="Margin/HBoxContainer/VBoxContainer/HBoxContainer"]
+size_flags_horizontal = 3
+size_flags_vertical = 8
+
+[node name="Stat1" type="Button" parent="Margin/HBoxContainer/VBoxContainer/HBoxContainer/StatGrid"]
+size_flags_horizontal = 3
+text = "STAT_1_HERE"
+flat = true
+align = 0
+
+[node name="Stat2" type="Button" parent="Margin/HBoxContainer/VBoxContainer/HBoxContainer/StatGrid"]
+size_flags_horizontal = 3
+text = "STAT_2_HERE"
+flat = true
+align = 0
+
+[node name="GridContainer" type="GridContainer" parent="Margin/HBoxContainer/VBoxContainer/HBoxContainer"]
+size_flags_horizontal = 3
+columns = 2
+
+[node name="FullNameLabel" type="Label" parent="Margin/HBoxContainer/VBoxContainer/HBoxContainer/GridContainer"]
+text = "CREW_FULLNAME"
+
+[node name="FullName" type="Label" parent="Margin/HBoxContainer/VBoxContainer/HBoxContainer/GridContainer"]
+size_flags_horizontal = 3
+text = "%s, %s"
+align = 2
+
+[node name="OccupationLabel" type="Label" parent="Margin/HBoxContainer/VBoxContainer/HBoxContainer/GridContainer"]
+text = "CREW_OCCUPATION"
+
+[node name="Occupation" type="Label" parent="Margin/HBoxContainer/VBoxContainer/HBoxContainer/GridContainer"]
+size_flags_horizontal = 3
+text = "OCCUPATION_HERE"
+align = 2
+
+[node name="EducationLabel" type="Label" parent="Margin/HBoxContainer/VBoxContainer/HBoxContainer/GridContainer"]
+text = "CREW_EDUCATION"
+
+[node name="Education" type="Label" parent="Margin/HBoxContainer/VBoxContainer/HBoxContainer/GridContainer"]
+size_flags_horizontal = 3
+text = "EDUCATION"
+align = 2
+
+[node name="ExperienceLabel" type="Label" parent="Margin/HBoxContainer/VBoxContainer/HBoxContainer/GridContainer"]
+text = "CREW_EXPERIENCE"
+
+[node name="Experience" type="Label" parent="Margin/HBoxContainer/VBoxContainer/HBoxContainer/GridContainer"]
+size_flags_horizontal = 3
+text = "EXPERIENCE"
+align = 2
+
+[node name="SalaryLabel" type="Label" parent="Margin/HBoxContainer/VBoxContainer/HBoxContainer/GridContainer"]
+text = "CREW_SALARY"
+
+[node name="Salary" type="Label" parent="Margin/HBoxContainer/VBoxContainer/HBoxContainer/GridContainer"]
+size_flags_horizontal = 3
+text = "%f"
+align = 2
+
+[node name="Hire" type="Button" parent="Margin/HBoxContainer/VBoxContainer"]
+rect_min_size = Vector2( 320, 0 )
+size_flags_horizontal = 3
+disabled = true
+text = "CREW_HIRE"
+
+[node name="VideoComms" type="Control" parent="Margin/HBoxContainer"]
+rect_min_size = Vector2( 216, 216 )
+script = ExtResource( 2 )
+
+[node name="HirePlayer" type="AnimationPlayer" parent="."]
+
+[node name="PlaySoundsOnTheseButtons" type="Node" parent="."]
+pause_mode = 2
+script = ExtResource( 3 )
+tooltipLabelPath = NodePath("Separation/Tooltip/MarginContainer/PanelContainer/TooltipLabel")
+tooltipContainerPath = NodePath("Separation/Tooltip/MarginContainer")
+tooltipPositionPath = NodePath("Separation/Tooltip")
+
+[node name="focus" type="AudioStreamPlayer" parent="PlaySoundsOnTheseButtons"]
+
+[node name="hover" type="AudioStreamPlayer" parent="PlaySoundsOnTheseButtons"]
+
+[node name="select" type="AudioStreamPlayer" parent="PlaySoundsOnTheseButtons"]
+
+[node name="Separation" type="Node" parent="PlaySoundsOnTheseButtons"]
+
+[node name="Tooltip" type="Node2D" parent="PlaySoundsOnTheseButtons/Separation"]
+visible = false
+
+[node name="MarginContainer" type="MarginContainer" parent="PlaySoundsOnTheseButtons/Separation/Tooltip"]
+mouse_filter = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="PlaySoundsOnTheseButtons/Separation/Tooltip/MarginContainer"]
+mouse_filter = 2
+
+[node name="TooltipLabel" type="Label" parent="PlaySoundsOnTheseButtons/Separation/Tooltip/MarginContainer/PanelContainer"]
+
+[connection signal="pressed" from="Margin/HBoxContainer/VBoxContainer/Hire" to="." method="_on_Hire_pressed"]
 '@
 
 # 2. The mods: each suite's own (or -Mods), packaged once each, or the release zip given for it.

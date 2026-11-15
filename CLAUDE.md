@@ -41,7 +41,9 @@ uses, or that term has its own entry.
   content. Weight: see *Salvage arm facts*.
 - **Crew** (`ENCELADUS_CREW`): the people hired at the station, each with an occupation (`CurrentGame.occupations`:
   Pilot, Mechanic, Geologist, Astrogator, keys `CREW_OCCUPATION_*`) and a salary; the player is the captain. The
-  dive crew are those aboard. Passengers (`CREW_OCCUPATION_PASSENGER`, no salary) are listed with the crew.
+  dive crew are those aboard. Passengers (`CREW_OCCUPATION_PASSENGER`, no salary) are listed with the crew. The
+  **Crew screen** (`enceladus/Crew.tscn`), opened by the station menu's Crew entry, has two tabs: Your Crew
+  (`ENCELADUS_CREW_CURRENT`, `enceladus/CurrentCrewManagement.gd`) and the Hire screen.
 - **Dealer** (`ENCELADUS_SHIP_MARKET`, `enceladus/Dealer.tscn`): the station's ship market. Its entries are
   `enceladus/SystemBuyUI.gd` (the ship-list mods change them); its Examine tab can launch the simulator. **Fleet**
   (`ENCELADUS_OWNED_SHIPS`): the ships the player owns.
@@ -64,6 +66,12 @@ uses, or that term has its own entry.
   `mineralConfig`.
 - **Hardpoint**: a ship's mount for a piece of equipment: high-stress, low-stress or spinal. Only high-stress ones
   take the arm.
+- **Hire screen** (`ENCELADUS_CREW_HIRE`, "Hire"; also the Hire list): the Crew screen's tab of the people for hire
+  that day, the `HireableCrew` node of `enceladus/Crew.tscn` (`enceladus/HireableCrew.gd`), filled from
+  `CurrentGame.getAvailableCrew()` on the first show and every in-game day. One entry per person
+  (`enceladus/CrewBio.tscn`, `CrewBio.gd`): their skills compared with the crew's, name, occupation, education,
+  experience, salary, portrait, and a Hire button (`CREW_HIRE`, the entry's `hireButton`), disabled while the
+  player can't pay the salary.
 - **HUD**: the ship's flight display (`hud/Hud.gd`), laid out per ship model in `hud/Display-<model>.tscn`.
 - **Intake**: where the arm feeds chunks into the ship: a grinder, an excavator or a side bay (see *Salvage arm
   facts*).
@@ -139,15 +147,17 @@ cites and update that constant.
 `_tests\run.ps1` (PowerShell 7) tests the mods listed below in a headless Godot 3.6, in a few seconds. It assembles
 a Godot project in `<TempDir>\tests\project` from `_tests\`; the game's own `DockingArm.gd`, `Arm.gd`,
 `CabinLight.gd`, `Boot.gd`, `LIDAR.gd`, `PitchAdjustedAudio.gd`, `HardwareLabel.gd`, `EnceladusMenu.gd`,
-`HidingMarginContainer.gd`, `AnalogControlSlider.gd`, `TuningFloatValue.gd`, `TuningItems.gd`, `Tool.gd`,
-`gdunzip.gd`, `Shower.tscn` and audio buses (`default_bus_layout.tres`), copied from the decompiled source on every
-run and never committed, since they are the game's code; a stub mineral scene with the chunk radius read from the
-game's; bare stubs of the two scenes `LIDAR.gd` preloads; and stubs of the Tuning scenes (`TuningFloatValue.tscn`,
-`TuningItems.tscn`, `TuningBoolValue.tscn`, `HeaderWithMoney.tscn`) with the game's node paths and scripts but no
-theme, textures or sounds. It packages each mod as a
-release zip and loads the zips as `ModLoader.gd` does, at the same moment (`_tests\harness\loader.gd` is the
-`ModLoader` autoload, and loads in its `_init`; the autoloads keep the game's order), so the zip layout is tested
-too. Logs: `<TempDir>\tests\logs`.
+`HidingMarginContainer.gd`, `AnalogControlSlider.gd`, `TuningFloatValue.gd`, `TuningItems.gd`, `HireableCrew.gd`,
+`CrewBio.gd`, `CurrentCrewManagement.gd`, `PlaySoundsOnTheseButtons.gd`, `Tool.gd`, `gdunzip.gd`, `Shower.tscn`,
+audio buses (`default_bus_layout.tres`) and the skill icons `CrewBio.gd` preloads (their `.png.import` and imported
+`.stex`, so they load without an import step), copied from the decompiled source on every run and never committed,
+since they are the game's; a stub mineral scene with the chunk radius read from the game's; bare stubs of the two
+scenes `LIDAR.gd` preloads; and stubs of the Tuning scenes (`TuningFloatValue.tscn`, `TuningItems.tscn`,
+`TuningBoolValue.tscn`, `HeaderWithMoney.tscn`) and of a Hire screen entry (`CrewBio.tscn`, with a portrait stub,
+`harness/crew_video.gd`, and the game's tooltip node, `PlaySoundsOnTheseButtons`) with the game's node paths and
+scripts but no theme, textures or sounds. It packages each mod as a release zip and loads the zips as
+`ModLoader.gd` does, at the same moment (`_tests\harness\loader.gd` is the `ModLoader` autoload, and loads in its
+`_init`; the autoloads keep the game's order), so the zip layout is tested too. Logs: `<TempDir>\tests\logs`.
 
 ```powershell
 .\_tests\run.ps1                                               # every suite, its own mods, the game's order
@@ -211,14 +221,29 @@ HudHideLabels, `crew` loads CrewCheapHireNotifier.
   `enceladus/EnceladusMenu.tscn` nests them (a `Crew` and a `Logs` Button), with the hire list and the crew set in the
   `CurrentGame` stub and a test translation in two languages. Salaries and slider values are built from the
   descriptions in the mod's `Settings.gd` (`SETTINGS`). Checks that the Crew entry is marked from the first frame; the
-  rule's edges (at the threshold, within the tolerance above it, at and above its end; the same for the best-paid
-  member in that job; another job; the threshold above a cheap crew); that `dayPassed` and `employmentChanged`
-  refresh it both ways and an unmarked entry gets its key back; that a marked entry follows a language change; and
+  rule's edges (at and above the threshold, which the tolerance never moves either way, also within the tolerance
+  above it; at, within the tolerance of, at the end of and above the best-paid member's salary in that job; the
+  threshold above a best-paid below it even after the tolerance; the tolerance clamped to its minimum, and there a
+  hire at the best-paid salary times it, above it and, when negative, at the best-paid salary itself; another job);
+  that `dayPassed` and `employmentChanged` refresh it both ways and an unmarked entry gets its key back; that a marked entry follows a language change; and
   that the other entries, a menu without `Crew` and the game's `disable()` are untouched. The settings model: one
   shared instance; defaults for a save without the mod's entry; clamping of what is loaded or set; saving into
   `CurrentGame.state.ui` under the manifest's id, with the format and mod versions, and a signal only on a change; the
-  % conversion. Then a station built as `enceladus/Enceladus.tscn` nests it (the menu, and the game's
-  `HidingMarginContainer.gd` with stubs of the Crew and Tuning screens, `harness/crew_screen.gd`), clicked through the
+  % conversion. The Hire screen: the Hire tab built as `enceladus/Crew.tscn` nests it, around the game's
+  `HireableCrew.gd` and `CrewBio.gd`, with a theme holding a Button font color and a flat frame with an overbright
+  border, and the menu beside it. Each qualifying person's entry, at and below the limit, has a visible badge:
+  above the details grid's values, right-aligned with them, one grid row gap above, at its minimum size and inside
+  the entry; the capitals of the manifest's name in the Hire button's font color times `colorBetter`; a copy of the
+  Hire button's frame with a `colorBetter` border, the theme's frame unchanged; letting the mouse through; a mouse
+  moved onto it through the scene tree's input (after `NOTIFICATION_WM_MOUSE_ENTER`: without it, a window-less Godot
+  3.6 sends no control the mouse's enter) shows the limit for the job in the game's tooltip (the entry's
+  `PlaySoundsOnTheseButtons`), which took over its `hint_tooltip`, and moving away hides it; the Hire button untouched
+  and the entry's height unchanged. Above the limit, no badge; the menu is marked exactly when an entry has one. A new
+  day judges kept entries again, one badge each; firing (`employmentChanged`) hides it; hiring there gives another
+  pilot one with the new limit; a setting shows and hides it; the tooltip follows a language change. A new entry is
+  hovered a frame after it is made, once its containers have laid it out. With CrewPerfectSort loaded too (`-Mods
+  CrewCheapHireNotifier,CrewPerfectSort`), the list is sorted and the badges stay. Then a station built as
+  `enceladus/Enceladus.tscn` nests it (the menu, and the game's `HidingMarginContainer.gd` with stubs of the Crew and Tuning screens, `harness/crew_screen.gd`), clicked through the
   scene tree's input: the tooltip; Shift+Click opens the settings and not the Crew screen, a plain click the Crew
   screen, a disabled entry nothing; the screen copies Tuning's frame and place and lists one row per setting with
   its range, step and value; moving a slider flips the mark at once and stores the value; reset; Esc (handled, so
@@ -226,15 +251,16 @@ HudHideLabels, `crew` loads CrewCheapHireNotifier.
   focusing another entry close it; after a JSON round trip of the state a new station has the saved value; and
   without a Tuning screen there is no tooltip and Shift+Click is a plain click. Keys and buttons are sent as real
   input events in the idle part of a frame, with the game's bindings: a bare `InputEventAction`, or one sent during
-  physics, doesn't make `Input.is_action_just_pressed` true. The control checks (the entry keeps its key) run on the
-  game's own script.
+  physics, doesn't make `Input.is_action_just_pressed` true. The control checks (the entry keeps its key; a Hire
+  screen entry gets no badge) run on the game's own scripts.
 - `_tests\harness\rig.gd` builds the arm's node tree as the game nests it, with the values in
   `_tests\harness\vp_data.gd`; each cites its scene file and line, so re-check them after a game update. The ship
   is a stub moved by hand (it takes the arm's impulses and torque; inertia from the hull); the rotors don't collide.
 - **Baseline** (both arm load orders give the same results): `units` 114 checks with both arm mods (64 with
   PullBehavior alone, 61 with TargetSelection alone), `still` 9, `moving` 16, `dive` 8, `boot` 5 (3 control checks
   with `-Mods @()`), `lidar` 40 (3 control checks with `-Mods @()`), `hud` 13 (3 control checks with `-Mods @()`),
-  `crew` 67 (2 control checks with `-Mods @()`), all passing; `-Matrix` gives 16 of 16 in every combination.
+  `crew` 97 (98 with CrewPerfectSort too, in both load orders; 3 control checks with `-Mods @()`), all passing;
+  `-Matrix` gives 16 of 16 in every combination.
   Feeding, a chunk beside the hull is in after 4.4–4.8 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.4.0 (the claude.ai results,
   case for case) took 5.9–6.3 s there, fails the 8 time limits, and `-Matrix` gave 16, 15, 16, 16 (feeding while
@@ -242,7 +268,8 @@ HudHideLabels, `crew` loads CrewCheapHireNotifier.
   1.3.1, which broke in the game, gives 0, 0, 12, 4 of 16. This ship also takes the arm's torque reaction, as the
   game's does (the claude.ai stub dropped it), which shifts some numbers in the third decimal.
 
-The harness doesn't replace the game, and the other crew mods and the ship-list mods have no tests at all. The real
+The harness doesn't replace the game. CrewHighlightJobAndSalary and the ship-list mods have no tests at all, and
+CrewPerfectSort has none of its own: only its Hire screen sort runs, beside CrewCheapHireNotifier in `crew`. The real
 check is playing the game with the mods.
 
 ## How the game loads a mod (`res://ModLoader.gd`, an autoload)
@@ -277,10 +304,11 @@ check is playing the game with the mods.
    DiveDisableAdrenalineBooster (`ships/CabinLight.gd`), BootSkipLogos (`Boot.gd`), LidarLouderPing (`hud/LIDAR.gd`),
    CrewPerfectSort (`enceladus/HireableCrew.gd`, `enceladus/CurrentCrewManagement.gd`), CrewCheapHireNotifier
    (`enceladus/EnceladusMenu.gd`; it also adds its settings screen to the station's right-hand screens, the children
-   of `enceladus/HidingMarginContainer.gd`, copying the Tuning screen's frame and behaving like the game's screens).
-   `ModMain.gd` only calls `installScriptExtension("res://<ModName>/Code.gd")` (CrewPerfectSort: once for each of its
-   two extension files); `Code.gd` `extends "res://<game script>"`. Rules that let mods stack on the same script
-   (header of `ArmAltTargetSelection/Code.gd`):
+   of `enceladus/HidingMarginContainer.gd`, copying the Tuning screen's frame and behaving like the game's screens;
+   and `enceladus/HireableCrew.gd`, the Hire screen). `ModMain.gd` only calls
+   `installScriptExtension("res://<ModName>/Code.gd")` (CrewPerfectSort: once for each of its two extension files;
+   CrewCheapHireNotifier: `Code.gd`, then `HireScreen.gd`); `Code.gd` `extends "res://<game script>"`. Rules that let
+   mods stack on the same script (header of `ArmAltTargetSelection/Code.gd`):
    - Never call the parent's `_ready`, `_process`, `_physics_process` or `_notification`. Godot 3 runs them at every
      level of the script chain by itself: `_ready` base first (so `ship` etc. are set), `_process`,
      `_physics_process` and `_notification` child first. LidarLouderPing overrides `onSetup` (an ordinary function)
@@ -309,6 +337,10 @@ check is playing the game with the mods.
   rotors / excavator claws via `ship.hasSystem`): change `_entry` and `_intakePosition` together.
 - CrewPerfectSort replaces `CrewSortByJobAndSalary` (the first mod, not in this folder) and must not be installed
   with it: both sort the same lists.
+- CrewCheapHireNotifier (`HireScreen.gd`) and CrewPerfectSort (`HireableCrewSorted.gd`) both extend `HireableCrew.gd`
+  and both override `fillCrew`, each calling the parent's first: by path the chain is game ← CrewCheapHireNotifier ←
+  CrewPerfectSort, and CrewPerfectSort only reorders the entries, so the marks stay (both orders tested in `crew`).
+  Their member names must stay distinct.
 
 ## Working rules
 
@@ -344,6 +376,9 @@ check is playing the game with the mods.
     script extension calls `installScriptExtension("res://<ModName>/Code.gd")`, an observer adds a node with
     `Code.gd` (see *The two ways these mods hook in*).
   - `Code.gd` is the mod's main code.
+  - A second script extension next to `Code.gd` is named for the screen it changes: CrewCheapHireNotifier's
+    `HireScreen.gd` (the Hire screen, `enceladus/HireableCrew.gd`). Code both use goes in `Settings.gd`, which they
+    already share (the rule's `limitFor` / `isCheapHire`).
   - `SettingsUI.gd` is the mod's settings UI, when it has one.
   - `Settings.gd`, only in a mod with a settings UI, is the settings model `Code.gd` and `SettingsUI.gd` share, built
     like the game's own `Settings` autoload (`res://Settings.gd`: a `cfg` dict of defaults, a `ConfigFile` in

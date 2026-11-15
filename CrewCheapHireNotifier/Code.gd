@@ -51,15 +51,10 @@ func _updateCheapHire():
 	else:
 		_crewButton.text = _crewKey
 
+# The rule is the settings model's (isCheapHire), so the Hire screen (HireScreen.gd) marks the same people.
 func _cheapHireAvailable() -> bool:
-	var threshold = _settings.getValue("salaryThreshold")
-	var tolerance = _settings.getValue("salaryTolerance")
-	var highest = {}
-	for memberName in CurrentGame.state.crew:
-		var member = CurrentGame.state.crew[memberName]
-		highest[member.occupation] = max(highest.get(member.occupation, 0), member.salary)
 	for member in CurrentGame.getAvailableCrew():
-		if member.salary <= max(threshold, highest.get(member.occupation, 0)) * (1.0 + tolerance):
+		if _settings.isCheapHire(member):
 			return true
 	return false
 

@@ -2,13 +2,13 @@
 
 name="CrewCheapHireNotifier"
 id="aglezb.CrewCheapHireNotifier"
-description="Marks the station menu's Crew entry while someone cheap is for hire."
+description="Marks the station menu's Crew entry while someone cheap is for hire, and who it is on the Hire screen."
 author="aglezb"
 
 [version]
 
 version_major=1
-version_minor=0
+version_minor=3
 version_bugfix=0
 
 [tags]
