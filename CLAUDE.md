@@ -103,10 +103,10 @@ HudHideLabels, `crew` loads CrewCheapHireNotifier.
 - `_tests\harness\rig.gd` builds the arm's node tree as the game nests it, with the values in
   `_tests\harness\vp_data.gd`; each cites its scene file and line, so re-check them after a game update. The ship
   is a stub moved by hand (it takes the arm's impulses and torque; inertia from the hull); the rotors don't collide.
-- **Baseline** (PullBehavior 1.5.1, TargetSelection 1.2.2; both load orders give the same results): `units` 114
+- **Baseline** (PullBehavior 1.5.0, TargetSelection 1.2.1; both load orders give the same results): `units` 114
   checks with both mods (64 with PullBehavior alone, 61 with TargetSelection alone), `still` 9, `moving` 16, `dive` 8
-  (DiveDisableAdrenalineBooster 1.0.1), `boot` 5 (BootSkipLogos 1.0.1; 3 control checks with `-Mods @()`), `lidar`
-  18 (LidarLouderPing 1.0.1; 3 control checks with `-Mods @()`), `hud` 13 (HudHideLabels 1.0.1; 3 control checks
+  (DiveDisableAdrenalineBooster 1.0.0), `boot` 5 (BootSkipLogos 1.0.0; 3 control checks with `-Mods @()`), `lidar`
+  18 (LidarLouderPing 1.0.0; 3 control checks with `-Mods @()`), `hud` 13 (HudHideLabels 1.0.0; 3 control checks
   with `-Mods @()`), `crew` 24 (CrewCheapHireNotifier 0.1.1; 2 control checks with `-Mods @()`), all passing; `-Matrix` gives 16 of 16 in every combination. Feeding, a chunk beside the hull is in after 4.4–4.8 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.4.0 (the claude.ai results,
   case for case) took 5.9–6.3 s there, fails the 8 time limits, and `-Matrix` gave 16, 15, 16, 16 (feeding while
@@ -238,12 +238,33 @@ the game with the mods.
   text and figures too.
 - Game behaviour a mod relies on is cited with the game file and function it comes from (`Game.gd`
   `_respawn_ship`, `hud/SystemList.gd`). Check it in the decompiled source, not from memory.
-- **A version bump touches three places**: `[version]` in `Mod.manifest`, the `Version X.Y.Z.` line of the README,
-  and the zip name in the README's *Install* step.
+- **The version lives only in `[version]` of `Mod.manifest` and in `CHANGES.md`**. It never
+  appears anywhere else in the mod: not in the README (whose *Install* step says "the mod's zip" and names neither
+  the mod nor the zip), the code, comments or images. Godot's and the game's own versions may be mentioned. The
+  version is bumped only at release.
+- **`CHANGES.md`**: a mod at 1.0.0 or later gets one in its folder (so it ships in the zip) with its
+  first change after 1.0.0. Changes not yet released accumulate in a `## NEXT` section at the top: every
+  change to the mod adds its bullets there, while the manifest keeps the released version. At release the section is
+  renamed to the new version, so below it there is one section per released version above 1.0.0,
+  newest on top. 1.0.0 is the baseline and gets no section, nor do the versions before it: only changes from 1.0.0
+  on matter. Entries are short bullets on what changed for a player or a modder (behaviour, fixes, files, constants
+  and members renamed or added, README changes); like everywhere else, they name a constant and never repeat its
+  value.
+
+  ```markdown
+  # <ModName> - Changes
+
+  ## NEXT
+  - …
+
+  ## 1.2.1
+  - …
+  ```
 - `Mod.manifest`: `id = "aglezb.<ModName>"`, `author = "aglezb"`, a one-line `description` that only says what the
   mod does (the details go in the README), the `group` tag naming the game script the mod touches,
   `manifest_version = 2.2`.
-- README layout: `# <ModName> - ΔV: Rings of Saturn`; version line and summary; *What it does and why* (What / Why
+- README layout: `# <ModName> - ΔV: Rings of Saturn`; the summary (no version); *What it does and why* (What / Why
   bullets); *For modders* for script extensions (what is extended, overrides, new members, constants, how it was
-  tested); *Install* (three steps, `--enable-mods`); the "Mods are unofficial … Keep a backup of your save." line;
-  *About* (made with the help of Claude; GPLv3).
+  tested); *Install* (three steps; the second, the same in every README, is "Put the mod's zip in it, and remove any
+  other version of the mod from there: they would all load. Do not unzip it."; the third, `--enable-mods`); the
+  "Mods are unofficial … Keep a backup of your save." line; *About* (made with the help of Claude; GPLv3).

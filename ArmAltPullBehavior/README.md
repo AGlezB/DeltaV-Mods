@@ -1,6 +1,6 @@
 # ArmAltPullBehavior - ΔV: Rings of Saturn
 
-Version 1.5.1. Changes how the AR-1500 salvage arm (`SYSTEM_SALVAGE_ARM` on a ship) brings a target in.
+Changes how the AR-1500 salvage arm (`SYSTEM_SALVAGE_ARM` on a ship) brings a target in.
 Station dock arms are left alone. Works together with `ArmAltTargetSelection`, but does not need it
 (the two do not touch each other's code).
 
@@ -129,13 +129,12 @@ On an excavator (the EIME) the opening is the gap between the claw tips.*
   arm's real placement and values, the real rotor positions and hull (and the turning inertia Godot works out from
   it), a 109 t and a 330 t ship, 2.8 t and 5 t chunks, feeding and not feeding, with the ship standing still,
   cruising at 10 to 40 m/s and turning: the rotors are not touched in any case, turning included. There, a chunk
-  beside the hull is in about 4.4 to 4.8 s after the grab while feeding, against 5.9 to 6.3 s with 1.4.0.
-  Version 1.3.0 was tried in the game and broke; 1.4.0 worked in the game but brought chunks in slowly while
-  feeding; 1.5.0 has not been checked in the game yet.
+  beside the hull is in about 4.4 to 4.8 s after the grab while feeding. This behaviour has not been checked in the
+  game yet.
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.
-2. Put `ArmAltPullBehavior-1.5.1.zip` in it. Do not unzip it.
+2. Put the mod's zip in it, and remove any other version of the mod from there: they would all load. Do not unzip it.
 3. Launch the game with `--enable-mods`.
 
 Mods are unofficial and can break after game updates. Keep a backup of your save.

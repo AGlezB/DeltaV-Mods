@@ -1,6 +1,6 @@
 # ArmAltTargetSelection - ΔV: Rings of Saturn
 
-Version 1.2.2. Changes how the AR-1500 salvage arm (`SYSTEM_SALVAGE_ARM` on a ship) chooses its
+Changes how the AR-1500 salvage arm (`SYSTEM_SALVAGE_ARM` on a ship) chooses its
 target. Station dock arms are left alone. Works together with `ArmAltPullBehavior`, but does not
 need it (the two do not touch each other's code).
 
@@ -86,7 +86,7 @@ else. Dashed rectangle: the game's own area.*
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.
-2. Put `ArmAltTargetSelection-1.2.2.zip` in it. Do not unzip it.
+2. Put the mod's zip in it, and remove any other version of the mod from there: they would all load. Do not unzip it.
 3. Launch the game with `--enable-mods`.
 
 Mods are unofficial and can break after game updates. Keep a backup of your save.

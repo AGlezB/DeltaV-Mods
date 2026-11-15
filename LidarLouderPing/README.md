@@ -1,6 +1,6 @@
 # LidarLouderPing - ΔV: Rings of Saturn
 
-Version 1.0.1. The lidar's ping for sensor contacts plays louder.
+The lidar's ping for sensor contacts plays louder.
 
 ## What it does and why
 - **What:** the ping the lidar plays for each contact it finds is louder, by `LOUDER_PING_DB` decibels. This is the
@@ -45,7 +45,7 @@ Version 1.0.1. The lidar's ping for sensor contacts plays louder.
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.
-2. Put `LidarLouderPing-1.0.1.zip` in it. Do not unzip it.
+2. Put the mod's zip in it, and remove any other version of the mod from there: they would all load. Do not unzip it.
 3. Launch the game with `--enable-mods`.
 
 Mods are unofficial and can break after game updates. Keep a backup of your save.

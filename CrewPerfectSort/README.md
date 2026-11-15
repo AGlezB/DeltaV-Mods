@@ -1,6 +1,6 @@
 # CrewPerfectSort - ΔV: Rings of Saturn
 
-Version 1.1.1. Sorts the crew lists at Enceladus Prime:
+Sorts the crew lists at Enceladus Prime:
 
 - **Hire** screen: by **salary** (cheapest first), then by **occupation**
   (plain string order, so Astrogator, Geologist, Mechanic, Pilot).
@@ -12,11 +12,10 @@ sorted list.
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.
-2. Put `CrewPerfectSort-1.1.1.zip` in it. Do not unzip it.
+2. Put the mod's zip in it, and remove any other version of the mod from there: they would all load. Do not unzip it.
 3. Launch the game with `--enable-mods`.
 
-Do not install it together with `CrewSortByJobAndSalary` or an older
-`CrewPerfectSort`, which sort the same lists.
+Do not install it together with `CrewSortByJobAndSalary`, which sorts the same lists.
 
 ## How it works
 The game's mod loader can extend a game script. This mod extends
