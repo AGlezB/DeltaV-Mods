@@ -1,5 +1,8 @@
 # CrewPerfectSort - Changes
 
+## 1.2.1
+- The mod's id is now `AGlezB.CrewPerfectSort` and its author `AGlezB` (were lowercase).
+
 ## 1.2.0
 - The Your crew screen sorts each occupation by salary lowest first (was highest first); the README says so.
 - Adds this CHANGES.md.

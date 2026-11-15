@@ -1,6 +1,6 @@
 # DiveDisableAdrenalineBooster - Changes
 
-## NEXT
+## 1.0.1
 - The script extension is now `DiveDisableAdrenalineBooster/Code.gd` (was `CabinLightDisabled.gd`). No change in
   behaviour.
 - Adds this CHANGES.md.
@@ -8,3 +8,4 @@
   any other version of the mod from the `mods` folder.
 - The README starts with a *Warning*: what the mod changes compared to vanilla, and to check a bug without the mod
   before reporting it to the game's developers.
+- The mod's id is now `AGlezB.DiveDisableAdrenalineBooster` and its author `AGlezB` (were lowercase).

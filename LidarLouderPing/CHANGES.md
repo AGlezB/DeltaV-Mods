@@ -1,5 +1,8 @@
 # LidarLouderPing - Changes
 
+## 1.2.1
+- The mod's id is now `AGlezB.LidarLouderPing` and its author `AGlezB` (were lowercase).
+
 ## 1.2.0
 - The slider goes higher (`LOUDER_PING_DB_MAX`), and its default is larger (`LOUDER_PING_DB_DEFAULT`). The default
   applies to ships whose slider was never selected (the game stores a Tuning value once its row gets the focus) and

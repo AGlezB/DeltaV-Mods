@@ -1,5 +1,9 @@
 # GeologyByMass - Changes
 
+## 1.1.1
+- The mod's id is now `AGlezB.GeologyByMass` and its author `AGlezB` (were lowercase). Settings saved under the
+  old id are not read: they start from the defaults.
+
 ## 1.1.0
 - New *Base* slider at the top of the mod's OMS tab: the least mass for every mineral. Each mineral's slider is now
   its extra mass on top of the base (shown with a `+`), and a new column shows each mineral's total, the least mass

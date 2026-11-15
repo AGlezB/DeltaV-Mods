@@ -1,15 +1,15 @@
 [mod_information]
 
 name="CrewHighlightJobAndSalary"
-id="aglezb.CrewHighlightJobAndSalary"
+id="AGlezB.CrewHighlightJobAndSalary"
 description="Highlights the job and salary of every crew entry and dims the rest."
-author="aglezb"
+author="AGlezB"
 
 [version]
 
 version_major=1
 version_minor=0
-version_bugfix=1
+version_bugfix=2
 
 [tags]
 

@@ -1,15 +1,15 @@
 [mod_information]
 
 name="ShipHighlightTypeAndPrice"
-id="aglezb.ShipHighlightTypeAndPrice"
+id="AGlezB.ShipHighlightTypeAndPrice"
 description="Highlights the type and price in the dealer and fleet ship lists."
-author="aglezb"
+author="AGlezB"
 
 [version]
 
 version_major=1
 version_minor=0
-version_bugfix=2
+version_bugfix=3
 
 [tags]
 

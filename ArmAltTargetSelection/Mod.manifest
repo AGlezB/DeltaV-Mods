@@ -1,15 +1,15 @@
 [mod_information]
 
 name="ArmAltTargetSelection"
-id="aglezb.ArmAltTargetSelection"
+id="AGlezB.ArmAltTargetSelection"
 description="Salvage arm target selection: the arm targets only what it can reach, and prefers targets lined up with its intake."
-author="aglezb"
+author="AGlezB"
 
 [version]
 
 version_major=1
 version_minor=2
-version_bugfix=1
+version_bugfix=2
 
 [tags]
 

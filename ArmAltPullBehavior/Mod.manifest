@@ -1,15 +1,15 @@
 [mod_information]
 
 name="ArmAltPullBehavior"
-id="aglezb.ArmAltPullBehavior"
+id="AGlezB.ArmAltPullBehavior"
 description="Salvage arm pull behavior: brings the target in through the opening of the grinder or excavator, clear of the rotors, claws and hull."
-author="aglezb"
+author="AGlezB"
 
 [version]
 
 version_major=1
 version_minor=5
-version_bugfix=0
+version_bugfix=1
 
 [tags]
 

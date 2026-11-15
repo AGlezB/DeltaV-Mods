@@ -1,6 +1,6 @@
 # ArmAltTargetSelection - Changes
 
-## NEXT
+## 1.2.2
 - The script extension is now `ArmAltTargetSelection/Code.gd` (was `DockingArmTargetSelection.gd`): edit the
   constants there. No change in behaviour.
 - Adds this CHANGES.md.
@@ -8,6 +8,7 @@
   any other version of the mod from the `mods` folder.
 - The README starts with a *Warning*: what the mod changes compared to vanilla, and to check a bug without the mod
   before reporting it to the game's developers.
+- The mod's id is now `AGlezB.ArmAltTargetSelection` and its author `AGlezB` (were lowercase).
 
 ## 1.2.1
 - When the arm is switched off, the mod drops the target itself again, as up to 1.1.2. Keeping the queue empty

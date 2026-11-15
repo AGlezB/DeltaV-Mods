@@ -549,7 +549,7 @@ check is playing the game with the mods.
   ## 1.2.1
   - …
   ```
-- `Mod.manifest`: `id = "aglezb.<ModName>"`, `author = "aglezb"`, a one-line `description` that only says what the
+- `Mod.manifest`: `id = "AGlezB.<ModName>"`, `author = "AGlezB"`, a one-line `description` that only says what the
   mod does (the details go in the README), the `group` tag naming the game script or the part of the game the mod
   touches (`DockingArm`, `Hud`), `manifest_version = 2.2`.
 - README layout: `# <ModName> - ΔV: Rings of Saturn`; the summary (no version), with its images, if any; for a mod

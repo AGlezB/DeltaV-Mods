@@ -1,15 +1,15 @@
 [mod_information]
 
 name="CrewCheapHireNotifier"
-id="aglezb.CrewCheapHireNotifier"
+id="AGlezB.CrewCheapHireNotifier"
 description="Marks the station menu's Crew entry while someone cheap is for hire, and who it is on the Hire screen."
-author="aglezb"
+author="AGlezB"
 
 [version]
 
 version_major=1
 version_minor=6
-version_bugfix=0
+version_bugfix=1
 
 [tags]
 

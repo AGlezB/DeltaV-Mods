@@ -1,5 +1,9 @@
 # CrewCheapHireNotifier - Changes
 
+## 1.6.1
+- The mod's id is now `AGlezB.CrewCheapHireNotifier` and its author `AGlezB` (were lowercase). Settings saved
+  under the old id are not read: they start from the defaults.
+
 ## 1.6.0
 - The Hire screen badge's tooltip has a second line: how many crew members with that job you have hired (active,
   benched or on leave) out of its crew limit.

@@ -1,15 +1,15 @@
 [mod_information]
 
 name="DiveDisableAdrenalineBooster"
-id="aglezb.DiveDisableAdrenalineBooster"
+id="AGlezB.DiveDisableAdrenalineBooster"
 description="The Adrenaline Booster of the player's ship starts every dive switched off."
-author="aglezb"
+author="AGlezB"
 
 [version]
 
 version_major=1
 version_minor=0
-version_bugfix=0
+version_bugfix=1
 
 [tags]
 

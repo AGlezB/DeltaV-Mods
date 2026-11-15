@@ -1,15 +1,15 @@
 [mod_information]
 
 name="BootSkipLogos"
-id="aglezb.BootSkipLogos"
+id="AGlezB.BootSkipLogos"
 description="The game starts on the title screen without the logo sequence first."
-author="aglezb"
+author="AGlezB"
 
 [version]
 
 version_major=1
 version_minor=0
-version_bugfix=0
+version_bugfix=1
 
 [tags]
 

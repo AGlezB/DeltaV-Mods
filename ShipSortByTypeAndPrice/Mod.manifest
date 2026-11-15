@@ -1,15 +1,15 @@
 [mod_information]
 
 name="ShipSortByTypeAndPrice"
-id="aglezb.ShipSortByTypeAndPrice"
+id="AGlezB.ShipSortByTypeAndPrice"
 description="Sorts the dealer ship list by type, then price."
-author="aglezb"
+author="AGlezB"
 
 [version]
 
 version_major=1
 version_minor=0
-version_bugfix=2
+version_bugfix=3
 
 [tags]
 

@@ -1,4 +1,4 @@
-# ΔV: Rings of Saturn - mods by aglezb
+# ΔV: Rings of Saturn - mods by AGlezB
 
 Mods for ΔV: Rings of Saturn. Each folder is one independent mod and ships as one zip. Its README says what it does,
 how to set it up and how to install it.
