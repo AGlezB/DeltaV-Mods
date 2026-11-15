@@ -6,8 +6,10 @@
 .DESCRIPTION
 	Assembles a Godot project in <WorkDir>\project from this folder's sources, the game's own scripts (copied from
 	the decompiled game: DockingArm.gd, Arm.gd, CabinLight.gd, Boot.gd, LIDAR.gd, PitchAdjustedAudio.gd,
-	HardwareLabel.gd, EnceladusMenu.gd, Tool.gd, gdunzip.gd), the game's audio buses (default_bus_layout.tres), a stub mineral scene carrying the chunk radius read
-	from the game's and stubs of the two scenes LIDAR.gd preloads. Packages each mod into <WorkDir>\build\<Mod>.zip
+	HardwareLabel.gd, EnceladusMenu.gd, HidingMarginContainer.gd, AnalogControlSlider.gd, TuningFloatValue.gd,
+	TuningItems.gd, Tool.gd, gdunzip.gd), the game's Shower.tscn and audio buses (default_bus_layout.tres), a stub
+	mineral scene carrying the chunk radius read from the game's, stubs of the two scenes LIDAR.gd preloads and of the
+	Tuning parts CrewCheapHireNotifier's settings screen is built from. Packages each mod into <WorkDir>\build\<Mod>.zip
 	(as a release zip), and runs every suite with its mods loaded from those zips, the way the game loads them:
 	by an autoload, before the engine loads the main scene. Logs: <WorkDir>\logs. Nothing in the repo, the game folder
 	or the decompiled game is changed.
@@ -134,7 +136,7 @@ foreach ($dir in $project, $build, $logs)
 }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'project.godot'), (Join-Path $PSScriptRoot 'main.tscn') -Destination $project
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'harness'), (Join-Path $PSScriptRoot 'suites') -Destination $project -Recurse
-foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres')
+foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningItems.gd', 'enceladus\Shower.tscn', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres')
 {
 	$target = Join-Path $project $file
 	New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
@@ -169,6 +171,74 @@ foreach ($scene in 'LidarRangeMarker', 'LidarShipMarker')
 [node name="$scene" type="Node2D"]
 "@
 }
+# The Tuning parts CrewCheapHireNotifier's settings screen is built from: the game's node paths and scripts
+# (enceladus\Tuning\TuningFloatValue.tscn, TuningItems.tscn, enceladus\HeaderWithMoney.tscn), without the theme,
+# textures, sounds and money display. TuningItems.gd preloads TuningBoolValue.tscn too, which the mod doesn't use.
+Write-Utf8Lf (Join-Path $project 'enceladus\Tuning\TuningFloatValue.tscn') @'
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://enceladus/Tuning/TuningFloatValue.gd" type="Script" id=1]
+[ext_resource path="res://enceladus/AnalogControlSlider.gd" type="Script" id=2]
+
+[node name="TuningFloatValue" type="VBoxContainer"]
+size_flags_horizontal = 3
+script = ExtResource( 1 )
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+
+[node name="Name" type="Button" parent="HBoxContainer"]
+focus_mode = 1
+size_flags_horizontal = 3
+text = "SYSTEM_NAME"
+flat = true
+clip_text = true
+
+[node name="Value" type="Label" parent="HBoxContainer"]
+text = "0"
+
+[node name="Unit" type="Label" parent="HBoxContainer"]
+text = "m/s"
+
+[node name="Reset" type="Button" parent="HBoxContainer"]
+flat = true
+
+[node name="HSlider" type="HSlider" parent="."]
+scrollable = false
+script = ExtResource( 2 )
+
+[connection signal="pressed" from="HBoxContainer/Reset" to="." method="_on_Button_pressed"]
+'@
+Write-Utf8Lf (Join-Path $project 'enceladus\Tuning\TuningBoolValue.tscn') @'
+[gd_scene format=2]
+
+[node name="TuningBoolValue" type="VBoxContainer"]
+'@
+Write-Utf8Lf (Join-Path $project 'enceladus\Tuning\TuningItems.tscn') @'
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://enceladus/Tuning/TuningItems.gd" type="Script" id=1]
+
+[node name="TuningItems" type="VBoxContainer"]
+size_flags_horizontal = 3
+script = ExtResource( 1 )
+
+[node name="Label" type="Label" parent="."]
+text = "SYSTEM_LABEL"
+align = 1
+'@
+Write-Utf8Lf (Join-Path $project 'enceladus\HeaderWithMoney.tscn') @'
+[gd_scene format=2]
+
+[node name="HeaderWithMoney" type="HBoxContainer"]
+alignment = 1
+
+[node name="MarketLabel" type="Label" parent="."]
+size_flags_horizontal = 3
+size_flags_vertical = 0
+text = "PUT_HEADER_HERE"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+'@
 
 # 2. The mods: each suite's own (or -Mods), packaged once each, or the release zip given for it.
 $suiteMods = @{

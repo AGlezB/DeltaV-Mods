@@ -1,7 +1,7 @@
 extends Node
 
-# Stub of the game's Settings autoload: what Arm.gd (cfg.display.lights, settingsChanged), Tool.gd (getFps) and
-# Boot.gd (firstBoot) read.
+# Stub of the game's Settings autoload: what Arm.gd (cfg.display.lights, settingsChanged), Tool.gd (getFps),
+# Boot.gd (firstBoot) and AnalogControlSlider.gd (getControlDeviceNr, while a slider has the focus) read.
 
 signal settingsChanged
 
@@ -15,3 +15,6 @@ func _ready():
 
 func getFps() -> int:
 	return Engine.iterations_per_second
+
+func getControlDeviceNr():
+	return 0

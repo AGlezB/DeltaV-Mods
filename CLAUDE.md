@@ -35,10 +35,13 @@ cites and update that constant.
 
 `_tests\run.ps1` (PowerShell 7) tests the mods listed below in a headless Godot 3.6, in a few seconds. It assembles
 a Godot project in `<TempDir>\tests\project` from `_tests\`; the game's own `DockingArm.gd`, `Arm.gd`,
-`CabinLight.gd`, `Boot.gd`, `LIDAR.gd`, `PitchAdjustedAudio.gd`, `HardwareLabel.gd`, `EnceladusMenu.gd`, `Tool.gd`,
-`gdunzip.gd` and audio buses (`default_bus_layout.tres`), copied from the decompiled source on every run and never
-committed, since they are the game's code; a stub mineral scene with the chunk radius read from the game's; and bare
-stubs of the two scenes `LIDAR.gd` preloads. It packages each mod as a
+`CabinLight.gd`, `Boot.gd`, `LIDAR.gd`, `PitchAdjustedAudio.gd`, `HardwareLabel.gd`, `EnceladusMenu.gd`,
+`HidingMarginContainer.gd`, `AnalogControlSlider.gd`, `TuningFloatValue.gd`, `TuningItems.gd`, `Tool.gd`,
+`gdunzip.gd`, `Shower.tscn` and audio buses (`default_bus_layout.tres`), copied from the decompiled source on every
+run and never committed, since they are the game's code; a stub mineral scene with the chunk radius read from the
+game's; bare stubs of the two scenes `LIDAR.gd` preloads; and stubs of the Tuning scenes (`TuningFloatValue.tscn`,
+`TuningItems.tscn`, `TuningBoolValue.tscn`, `HeaderWithMoney.tscn`) with the game's node paths and scripts but no
+theme, textures or sounds. It packages each mod as a
 release zip and loads the zips as `ModLoader.gd` does, at the same moment (`_tests\harness\loader.gd` is the
 `ModLoader` autoload, and loads in its `_init`; the autoloads keep the game's order), so the zip layout is tested
 too. Logs: `<TempDir>\tests\logs`.
@@ -98,20 +101,32 @@ HudHideLabels, `crew` loads CrewCheapHireNotifier.
   `HIDDEN_KEYS` too. The control checks (with `-Mods @()`): every title is drawn.
 - `crew` (`suites/crew.gd`): station menus built in code around the game's `EnceladusMenu.gd`, nested as
   `enceladus/EnceladusMenu.tscn` nests them (a `Crew` and a `Logs` Button), with the hire list and the crew set in the
-  `CurrentGame` stub and a test translation in two languages. Salaries are built from the mod's `SALARY_THRESHOLD`
-  and `SALARY_TOLERANCE`. Checks that the Crew entry is marked from the first frame; the rule's edges (at the
-  threshold, within the tolerance above it, at and above its end; the same for the best-paid member in that job;
-  another job; the threshold above a cheap crew); that `dayPassed` and `employmentChanged` refresh it both ways and
-  an unmarked entry gets its key back; that a marked entry follows a language change; and that the other entries, a
-  menu without `Crew` and the game's `disable()` are untouched. The control checks (the entry keeps its key) run on
-  the game's own script.
+  `CurrentGame` stub and a test translation in two languages. Salaries and slider values are built from the
+  descriptions in the mod's `Settings.gd` (`SETTINGS`). Checks that the Crew entry is marked from the first frame; the
+  rule's edges (at the threshold, within the tolerance above it, at and above its end; the same for the best-paid
+  member in that job; another job; the threshold above a cheap crew); that `dayPassed` and `employmentChanged`
+  refresh it both ways and an unmarked entry gets its key back; that a marked entry follows a language change; and
+  that the other entries, a menu without `Crew` and the game's `disable()` are untouched. The settings model: one
+  shared instance; defaults for a save without the mod's entry; clamping of what is loaded or set; saving into
+  `CurrentGame.state.ui` under the manifest's id, with the format and mod versions, and a signal only on a change; the
+  % conversion. Then a station built as `enceladus/Enceladus.tscn` nests it (the menu, and the game's
+  `HidingMarginContainer.gd` with stubs of the Crew and Tuning screens, `harness/crew_screen.gd`), clicked through the
+  scene tree's input: the tooltip; Shift+Click opens the settings and not the Crew screen, a plain click the Crew
+  screen, a disabled entry nothing; the screen copies Tuning's frame and place and lists one row per setting with
+  its range, step and value; moving a slider flips the mark at once and stores the value; reset; Esc (handled, so
+  `harness/unhandled_probe.gd`, standing in for the pause menu, doesn't get it), the controller's B and Start, and
+  focusing another entry close it; after a JSON round trip of the state a new station has the saved value; and
+  without a Tuning screen there is no tooltip and Shift+Click is a plain click. Keys and buttons are sent as real
+  input events in the idle part of a frame, with the game's bindings: a bare `InputEventAction`, or one sent during
+  physics, doesn't make `Input.is_action_just_pressed` true. The control checks (the entry keeps its key) run on the
+  game's own script.
 - `_tests\harness\rig.gd` builds the arm's node tree as the game nests it, with the values in
   `_tests\harness\vp_data.gd`; each cites its scene file and line, so re-check them after a game update. The ship
   is a stub moved by hand (it takes the arm's impulses and torque; inertia from the hull); the rotors don't collide.
 - **Baseline** (both arm load orders give the same results): `units` 114 checks with both arm mods (64 with
   PullBehavior alone, 61 with TargetSelection alone), `still` 9, `moving` 16, `dive` 8, `boot` 5 (3 control checks
   with `-Mods @()`), `lidar` 18 (3 control checks with `-Mods @()`), `hud` 13 (3 control checks with `-Mods @()`),
-  `crew` 24 (2 control checks with `-Mods @()`), all passing; `-Matrix` gives 16 of 16 in every combination.
+  `crew` 67 (2 control checks with `-Mods @()`), all passing; `-Matrix` gives 16 of 16 in every combination.
   Feeding, a chunk beside the hull is in after 4.4–4.8 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.4.0 (the claude.ai results,
   case for case) took 5.9–6.3 s there, fails the 8 time limits, and `-Matrix` gave 16, 15, 16, 16 (feeding while
@@ -148,7 +163,8 @@ check is playing the game with the mods.
 1. **Script extension**: ArmAltTargetSelection and ArmAltPullBehavior (`ships/modules/DockingArm.gd`),
    DiveDisableAdrenalineBooster (`ships/CabinLight.gd`), BootSkipLogos (`Boot.gd`), LidarLouderPing (`hud/LIDAR.gd`),
    CrewPerfectSort (`enceladus/HireableCrew.gd`, `enceladus/CurrentCrewManagement.gd`), CrewCheapHireNotifier
-   (`enceladus/EnceladusMenu.gd`).
+   (`enceladus/EnceladusMenu.gd`; it also adds its settings screen to the station's right-hand screens, the children
+   of `enceladus/HidingMarginContainer.gd`, copying the Tuning screen's frame and behaving like the game's screens).
    `ModMain.gd` only calls `installScriptExtension("res://<ModName>/Code.gd")` (CrewPerfectSort: once for each of its
    two extension files); `Code.gd` `extends "res://<game script>"`. Rules that let mods stack on the same script
    (header of `ArmAltTargetSelection/Code.gd`):
@@ -231,6 +247,26 @@ check is playing the game with the mods.
     constant named for the mod, never `Settings`, which would hide the game's autoload (and stacked extensions break
     on same-named constants). Constants that aren't settings (game paths, fallbacks) stay in `Code.gd`. The first
     mod with settings settles the API.
+
+    The API, as settled by CrewCheapHireNotifier (`extends Reference`):
+    - `static func shared()`: the one instance, kept as metadata of the script (`load()` of its own path), which every
+      script that preloads the file gets as the same cached resource.
+    - `const SETTINGS`: one description per setting, in display order: `label`, `default`, `min`, `max`, `step`,
+      `unit`, and `shown`, the factor from the stored value to the one shown (a fraction shown as %). `var cfg`: the
+      current values by key, set to the defaults in `_init`. `const FORMAT_VERSION`.
+    - `getValue(key)`; `setValue(key, value)` clamps, and only on a change stores (`saveToState()`) and emits
+      `settingsChanged`; `toShown(key, value)` / `fromShown(key, shown)`.
+    - `loadFromState()` / `saveToState()`: settings kept per save game (CrewCheapHireNotifier's)
+      live in `CurrentGame.state.ui` (the game's per-save UI store, `setUiValue` / `getUiValue`, written with the save
+      as JSON, so numbers come back as floats) under the mod's id from `Mod.manifest`, so other authors' mods can't
+      collide; the entry holds `formatVersion`, `modVersion` and one value per setting. Loading starts from the
+      defaults and clamps each saved value. A mod whose settings are game-wide uses the `user://` `ConfigFile` above
+      instead, with `loadFromFile` / `saveToFile`.
+    - `modId()`, `modName()`, `modVersion()`: read from `Mod.manifest` (path: the script's folder) with `ConfigFile`.
+
+    `SettingsUI.gd` builds the screen from `SETTINGS` through `toShown`, with the game's own UI parts, and writes back
+    with `setValue(key, fromShown(key, shown))`; `Code.gd` loads the save's values when its scene is built (the
+    station is rebuilt after every load and new game) and listens to `settingsChanged`.
   - A mod without a settings UI has no `Settings.gd`, and no constants file either: that would only add a prefix to
     every use.
   - CrewPerfectSort, with two extensions and no single main file, keeps its file names for now.
