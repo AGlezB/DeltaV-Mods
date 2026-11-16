@@ -69,13 +69,14 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
    of `enceladus/HidingMarginContainer.gd`, copying the Tuning screen's frame and behaving like the game's screens;
    and `enceladus/HireableCrew.gd`, the Hire screen), GeologyByMass (`hud/Hud.gd`; it also adds its tab to the OMS,
    right after the Geologist tab, from `instance()`), ShipCopyPaste (`enceladus/SystemBuyUI.gd`, the Fleet screen's
-   entries; it prices through the Equipment screen's items), DiveSkipTransit (`Game.gd`, the ring scene's arrival and
-   exit cutscenes; `enceladus/Enceladus.gd`, the station's launch sequence; and `enceladus/EnceladusMenu.gd`, where
-   Shift+Click on the dive entry opens its settings screen, as CrewCheapHireNotifier's Crew entry does). `ModMain.gd`
-   only calls `installScriptExtension("res://<ModName>/Code.gd")` (CrewPerfectSort: once for each of its two extension
-   files; CrewCheapHireNotifier: `Code.gd`, then `HireScreen.gd`; DiveSkipTransit: `Code.gd`, `Station.gd`, then
-   `StationMenu.gd`); `Code.gd` `extends "res://<game script>"`. Rules that let mods stack on the same script (header of
-   `ArmAltTargetSelection/Code.gd`):
+   entries; it prices through the Equipment screen's items), DiveSkipTransit (`Game.gd`, the ring scene's cutscenes;
+   `ships/ship-ctrl.gd`, astrogation; `enceladus/Enceladus.gd`, the station's fade-in and launch sequence; and
+   `enceladus/EnceladusMenu.gd`, where Shift+Click on the dive entry opens its settings screen, as
+   CrewCheapHireNotifier's Crew entry does). `ModMain.gd` only calls
+   `installScriptExtension("res://<ModName>/Code.gd")` (CrewPerfectSort: once for each of its two extension files;
+   CrewCheapHireNotifier: `Code.gd`, then `HireScreen.gd`; DiveSkipTransit: `Code.gd`, `Station.gd`,
+   `StationMenu.gd`, then `Ship.gd`); `Code.gd` `extends "res://<game script>"`. Rules that let mods stack on the same
+   script (header of `ArmAltTargetSelection/Code.gd`):
    - Never call the parent's `_ready`, `_process`, `_physics_process` or `_notification`. Godot 3 runs them at every
      level of the script chain by itself: `_ready` base first (so `ship` etc. are set), `_process`,
      `_physics_process` and `_notification` child first. LidarLouderPing overrides `onSetup` (an ordinary function)
@@ -162,9 +163,10 @@ with the mods.
   - `Code.gd` is the mod's main code.
   - A second script extension next to `Code.gd` is named for the screen it changes: CrewCheapHireNotifier's
     `HireScreen.gd` (the Hire screen, `enceladus/HireableCrew.gd`), DiveSkipTransit's `Station.gd` (the station,
-    `enceladus/Enceladus.gd`) and `StationMenu.gd` (the station menu, `enceladus/EnceladusMenu.gd`). In
-    CrewCheapHireNotifier, code both use goes in `Settings.gd`, which they already share (the rule's `limitFor` /
-    `isCheapHire`).
+    `enceladus/Enceladus.gd`), `StationMenu.gd` (the station menu, `enceladus/EnceladusMenu.gd`) and `Ship.gd` (every
+    ship, `ships/ship-ctrl.gd`). Code more than one of them uses goes in `Settings.gd`, which they already share:
+    CrewCheapHireNotifier's rule (`limitFor` / `isCheapHire`), DiveSkipTransit's static helpers (`playThrough`,
+    `chargeDv`, `chargeSeconds`).
   - `SettingsUI.gd` is the mod's settings UI, when it has one.
   - `Settings.gd`, only in a mod with a settings UI, is the settings model `Code.gd` and `SettingsUI.gd` share, built
     like the game's own `Settings` autoload (`res://Settings.gd`: a `cfg` dict of defaults, a `ConfigFile` in
@@ -370,8 +372,9 @@ English text there.
   while `Engine.time_scale` is above 1 and post-processing is on (`FastForward.gd`). In the arrival, the ship comes in
   fast towards the dive entry point and brakes to a crawl, turned to face into the rings (`Game.gd` `_ready` and
   `_process`: `initialSpeed` from `desiredAcceleration` and `initialCutsceneTime`, braking for `totalCutsceneTime`;
-  `Game.tscn` sets the two times). The arrival and the exit really fly the ship: its thrusters and its reactor's turbine
-  burn remass, and in-game time passes. DiveSkipTransit skips both, each by its own setting, and charges those.
+  `Game.tscn` sets the two times). The arrival, astrogation and the exit really fly the ship: its thrusters and its
+  reactor's turbine burn remass, and in-game time passes. DiveSkipTransit skips each of the five, each by its own
+  setting, and charges what it would have cost.
 - **Dealer** (`ENCELADUS_SHIP_MARKET`, `enceladus/Dealer.tscn`): the station's ship market. Its entries are
   `enceladus/SystemBuyUI.gd` (the ship-list mods change them); its Examine tab can launch the simulator. **Fleet**
   (`ENCELADUS_OWNED_SHIPS`): the ships the player owns, and the station screen listing them (`enceladus/Owned.tscn`,
@@ -389,7 +392,9 @@ English text there.
 - **E$**: the game's currency.
 - **Enceladus**, **the station**: Enceladus Prime station (`ENCELADUS_*`, `enceladus/`), the home base at Saturn's
   moon Enceladus. Its menu (`enceladus/EnceladusMenu.gd`) opens the station's screens on its right (the children of
-  `enceladus/HidingMarginContainer.gd`).
+  `enceladus/HidingMarginContainer.gd`). On every arrival the station fades in (`Enceladus.tscn`'s `AnimationPlayer`,
+  `FadeInCRT`), and its menu stays disabled until the animation calls `disable(false)` on it, a few seconds in;
+  DiveSkipTransit skips the fade-in.
 - **Equipment**: the parts fitted to a ship (engine, reactor, LIDAR, MPU, arm, Adrenaline Booster, …), and the
   station screen where they are bought and fitted to its hardpoints (`ENCELADUS_SHIP_UPGRADES`,
   `enceladus/Upgrades.tscn`; also called the Upgrades screen, after its key and scene). The code calls one piece a
@@ -488,6 +493,12 @@ English text there.
   only when the piece replaced was damaged (`ship-ctrl.gd` `getSlotTime`). A ship in maintenance can't dive
   (`Enceladus.gd` `shipPassesInspection`; the pre-flight inspection offers a hotel stay until it is done) or be sold,
   but the player can switch to another ship of the fleet, while the first one's maintenance runs on.
+- **Rescue**: how a dive ends when the player's ship is helpless: out of remass (or with no capacitor,
+  `ship-ctrl.gd` `isHelpless`) for longer than `helplessTimeLimit`, outside a cutscene (`Game.gd` `_process`). The game
+  switches the reactor off, claims the cargo and plays the `helpless` cutscene: `sendHelp` advances the clock by a
+  random stranded time (up to `strandedTIme`, two weeks) and spawns a MAD-CERF of the `helper` faction near the ship
+  (it has no arm and can't act on the ship), and `goToEnceladus` ends the dive at the station. The transit back isn't
+  charged. DiveSkipTransit skips the cutscene, charging only its in-game time.
 - **Ring scene**: the scene of a dive in the rings (`Game.tscn`, `Game.gd`), loaded from the station by `goToRing()`
   and left for the station by `goToEnceladus()`, or for the title screen after a game over. It holds the player's
   ship, the asteroid field (`AsteroidField.tscn`, whose `AsteroidSpawner.gd` also moves the in-game time on every

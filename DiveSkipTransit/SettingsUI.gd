@@ -12,15 +12,18 @@ const DiveSkipTransit = preload("res://DiveSkipTransit/Settings.gd")
 const GAME_SHOWER = "res://enceladus/Shower.tscn"
 const GAME_HEADER = "res://enceladus/HeaderWithMoney.tscn"
 const GAME_TUNING_ITEMS = "res://enceladus/Tuning/TuningItems.tscn"
-# The title of the group of switches: a translation key of i18n/en.po.
+# The title of the group of switches, and the note under it: translation keys of i18n/en.po. The note's %s is the mark.
 const GROUP_LABEL = "DIVESKIPTRANSIT_GROUP"
+const REMASS_NOTE = "DIVESKIPTRANSIT_REMASS_NOTE"
+# Ends the name of each switch whose skip charges remass (a `remass` setting), and starts the note that explains it.
+const REMASS_MARK = "*"
 
 var lastFocus
 var _settings = DiveSkipTransit.shared()
 var _scroll = null
 var _items = null
-var _rows = {} # each row's description by the row's label: the same dictionary the row holds as its `tune`
-var _keys = {} # the setting key of each row, by the row's label
+var _rows = {} # each row's description by the row's name: the same dictionary the row holds as its `tune`
+var _keys = {} # the setting key of each row, by the row's name
 
 # `tuning` is the station's Tuning screen, `title` the translation key of the header.
 func setup(tuning: Control, title: String):
@@ -78,7 +81,9 @@ func unfocus():
 		lastFocus = null
 
 # One Tuning group as Tuning.gd fillTuneableSystems builds it, in an Items box as Tuning.tscn has: titled GROUP_LABEL,
-# with a switch (TuningBoolValue) per setting, named by its label. The game's Labels translate the title and the names.
+# with a switch (TuningBoolValue) per setting, named by its label in the game's language and, where skipping charges
+# remass, REMASS_MARK; then the note that explains the mark. The screen is filled each time it opens, so the names
+# follow a language change.
 func _fill():
 	if _items != null:
 		_scroll.remove_child(_items)
@@ -91,19 +96,28 @@ func _fill():
 	_keys = {}
 	for key in DiveSkipTransit.SETTINGS:
 		var setting = DiveSkipTransit.SETTINGS[key]
-		_rows[setting.label] = {
+		var rowName = tr(setting.label)
+		if setting.get("remass", false):
+			rowName += " " + REMASS_MARK
+		_rows[rowName] = {
 			"type": setting.type,
 			"default": setting.default,
 			"current": _settings.getValue(key),
 			"testProtocol": "",
 		}
-		_keys[setting.label] = key
+		_keys[rowName] = key
 	var group = load(GAME_TUNING_ITEMS).instance()
 	group.system = GROUP_LABEL
 	group.key = null
 	group.tuning = _rows
 	_items.add_child(group)
 	group.connect("tuningChanged", self, "_onTuningChanged")
+	var note = Label.new()
+	note.name = "RemassNote"
+	note.autowrap = true
+	note.size_flags_horizontal = SIZE_EXPAND_FILL
+	note.text = tr(REMASS_NOTE) % REMASS_MARK
+	_items.add_child(note)
 	Tool.deferCallWhenIdle(group, "focus")
 
 # A switch emits this when it is toggled, and also when it gets the focus, with the `current` of its description

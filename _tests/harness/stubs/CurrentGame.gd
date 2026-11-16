@@ -76,6 +76,15 @@ func setGlobalOffset(offset):
 func globalCoords(localPosition):
 	return localPosition + globalOffset
 
+# As the game's: the shorter way from `to` to `from` in the ring, which wraps around across it.
+func getInRingVectorTowards(from: Vector2, to: Vector2) -> Vector2:
+	var m = from - to
+	for adj in [Vector2(0, - 30000000.0), Vector2(0, 0), Vector2(0, 30000000.0)]:
+		var t = m + adj
+		if m.length() > t.length():
+			m = t
+	return m
+
 # As the game's, without the light lag and the hour, day and some-time signals: state.time moves on.
 func advanceTimeBySeconds(seconds):
 	advanced.append(seconds)

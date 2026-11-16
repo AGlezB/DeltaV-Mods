@@ -9,14 +9,15 @@
 	HardwareLabel.gd, EnceladusMenu.gd, HidingMarginContainer.gd, AnalogControlSlider.gd, TuningFloatValue.gd,
 	TuningBoolValue.gd, TuningItems.gd, Hud.gd, OMS.gd, TabsWithGamepadControl.gd, PriceLabel.gd, RepeatingHSlider.gd, MineralLabel.gd,
 	MineralSystemToggle.gd, HireableCrew.gd, CrewBio.gd, CurrentCrewManagement.gd, PlaySoundsOnTheseButtons.gd,
-	SystemBuyUI.gd, SystemShipUpgradeUI.gd, Game.gd, Enceladus.gd, TransponderOnIntro.gd, Reactor.gd,
+	SystemBuyUI.gd, SystemShipUpgradeUI.gd, Game.gd, Enceladus.gd, TransponderOnIntro.gd, ship-ctrl.gd, Reactor.gd,
 	FusionReactor.gd, Tool.gd, gdunzip.gd), the game's Shower.tscn, audio buses
 	(default_bus_layout.tres), the skill icons CrewBio.gd preloads and the Fleet entry's Use icon, a stub mineral scene
 	carrying the chunk radius read from the game's, stubs of the two scenes LIDAR.gd preloads, of the Tuning parts
 	CrewCheapHireNotifier's settings screen is built from, of a Hire screen entry (CrewBio.tscn), of the Geologist
 	tab's parts GeologyByMass's OMS tab is built from, and of a Fleet entry (SystemBuyUI.tscn, with the game's
-	confirmation animations), an Equipment item (SystemShipUpgradeUI.tscn) and the ring scene (Game.tscn, with the
-	game's root values and title card). Packages each mod into <WorkDir>\build\<Mod>.zip
+	confirmation animations), an Equipment item (SystemShipUpgradeUI.tscn), the ring scene (Game.tscn, with the
+	game's root values and title cards), the two scenes ship-ctrl.gd preloads, and the station's fade-in
+	(harness\station_fadein.tres). Packages each mod into <WorkDir>\build\<Mod>.zip
 	(as a release zip), and runs every suite with its mods loaded from those zips, the way the game loads them:
 	by an autoload, before the engine loads the main scene. Logs: <WorkDir>\logs. Nothing in the repo, the game folder
 	or the decompiled game is changed. Godot, the decompiled game and <WorkDir> default to folders under the ones set in
@@ -163,7 +164,7 @@ foreach ($dir in $project, $build, $logs)
 }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'project.godot'), (Join-Path $PSScriptRoot 'main.tscn') -Destination $project
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'harness'), (Join-Path $PSScriptRoot 'suites') -Destination $project -Recurse
-foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningBoolValue.gd', 'enceladus\Tuning\TuningItems.gd', 'hud\Hud.gd', 'hud\OMS.gd', 'menu\TabsWithGamepadControl.gd', 'hud\components\PriceLabel.gd', 'hud\components\RepeatingHSlider.gd', 'hud\components\MineralLabel.gd', 'hud\components\MineralSystemToggle.gd', 'enceladus\HireableCrew.gd', 'enceladus\CrewBio.gd', 'enceladus\CurrentCrewManagement.gd', 'menu\sfx\PlaySoundsOnTheseButtons.gd', 'enceladus\SystemBuyUI.gd', 'enceladus\SystemShipUpgradeUI.gd', 'enceladus\Shower.tscn', 'Game.gd', 'enceladus\Enceladus.gd', 'TransponderOnIntro.gd', 'ships\Reactor.gd', 'ships\modules\FusionReactor.gd', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres')
+foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningBoolValue.gd', 'enceladus\Tuning\TuningItems.gd', 'hud\Hud.gd', 'hud\OMS.gd', 'menu\TabsWithGamepadControl.gd', 'hud\components\PriceLabel.gd', 'hud\components\RepeatingHSlider.gd', 'hud\components\MineralLabel.gd', 'hud\components\MineralSystemToggle.gd', 'enceladus\HireableCrew.gd', 'enceladus\CrewBio.gd', 'enceladus\CurrentCrewManagement.gd', 'menu\sfx\PlaySoundsOnTheseButtons.gd', 'enceladus\SystemBuyUI.gd', 'enceladus\SystemShipUpgradeUI.gd', 'enceladus\Shower.tscn', 'Game.gd', 'enceladus\Enceladus.gd', 'TransponderOnIntro.gd', 'ships\ship-ctrl.gd', 'ships\Reactor.gd', 'ships\modules\FusionReactor.gd', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres')
 {
 	$target = Join-Path $project $file
 	New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
@@ -241,6 +242,18 @@ foreach ($scene in 'LidarRangeMarker', 'LidarShipMarker')
 [gd_scene format=2]
 
 [node name="$scene" type="Node2D"]
+"@
+}
+# ship-ctrl.gd preloads these two (the sparks of an energy hit, an EVA's sprite); the skip suite's ship never makes
+# either, so bare nodes do.
+foreach ($scene in 'sfx\WeldingSparks', 'ships\modules\EVAflight')
+{
+	$target = Join-Path $project "$scene.tscn"
+	New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
+	Write-Utf8Lf $target @"
+[gd_scene format=2]
+
+[node name="$(Split-Path $scene -Leaf)" type="Node2D"]
 "@
 }
 # The Tuning parts CrewCheapHireNotifier's and DiveSkipTransit's settings screens are built from: the game's node paths,
@@ -807,16 +820,17 @@ script = ExtResource( 2 )
 '@
 # The ring scene (Game.tscn, as enceladus\Enceladus.gd loads it): the game's root node with its script and values
 # (totalCutsceneTime, initialCutsceneTime), the title card player with the game's autoplay, process mode and the
-# "intro" and "exit" animations, a node at every path those drive (the game's node type where the scene declares one;
-# the Transponder label with its script, TransponderOnIntro.gd, whose copyTransponder "intro" calls), and the asteroid
-# field the ship is added to, a stub that records the despawnAllAsteroids "exit" calls (harness\skip_field.gd); without
-# the asteroids, the HUD layers, the music and the other cutscenes. The method keys on the root call Game.gd's own.
+# "intro", "exit", "helpless", "gameover" and "fasttravel" animations, a node at every path those drive (the game's node
+# type where the scene declares one; the Transponder label with its script, TransponderOnIntro.gd, whose
+# copyTransponder "intro" calls), and the asteroid field the ship is added to, a stub that records the
+# despawnAllAsteroids "exit" calls and the rescue ship's spawn (harness\skip_field.gd); without the asteroids, the HUD
+# layers, the music and the demo's ending. The method keys on the root call Game.gd's own.
 $gameScene = (Get-Content -LiteralPath (Join-Path $GameSource 'Game.tscn') -Raw) -replace "`r`n", "`n"
 $rootBlock = [regex]::Match($gameScene, '(?ms)^\[node name="Game" type="Node"\]\n(.*?)(?=^\[)')
 $titleBlock = [regex]::Match($gameScene, '(?ms)^\[node name="TitleAnimPlayer" type="AnimationPlayer" parent="\."\]\n(.*?)(?=^\[)')
 if (-not $rootBlock.Success -or -not $titleBlock.Success) { throw 'Cannot read the ring scene from Game.tscn' }
 $cardAnims = [ordered]@{}
-foreach ($animName in 'intro', 'exit')
+foreach ($animName in 'intro', 'exit', 'helpless', 'gameover', 'fasttravel')
 {
 	$animId = [regex]::Match($titleBlock.Groups[1].Value, '(?m)^anims/' + $animName + ' = SubResource\( (\d+) \)$')
 	$anim = [regex]::Match($gameScene, '(?ms)^\[sub_resource type="Animation" id=' + $animId.Groups[1].Value + '\]\n(.*?)(?=^\[)')
@@ -912,6 +926,14 @@ $($nodeText -join "`n")
 script = ExtResource( 3 )
 "@
 Write-Utf8Lf (Join-Path $project 'Game.tscn') $ringScene
+# The station's fade-in on arrival (enceladus\Enceladus.tscn: the root AnimationPlayer's "FadeInCRT"), as an Animation
+# resource of its own; the skip suite drops the tracks whose nodes its station doesn't have.
+$stationScene = (Get-Content -LiteralPath (Join-Path $GameSource 'enceladus\Enceladus.tscn') -Raw) -replace "`r`n", "`n"
+$stationPlayer = [regex]::Match($stationScene, '(?ms)^\[node name="AnimationPlayer" type="AnimationPlayer" parent="\."\]\n(.*?)(?=^\[)')
+$fadeId = [regex]::Match($stationPlayer.Groups[1].Value, '(?m)^anims/FadeInCRT = SubResource\( (\d+) \)$')
+$fade = [regex]::Match($stationScene, '(?ms)^\[sub_resource type="Animation" id=' + $fadeId.Groups[1].Value + '\]\n(.*?)(?=^\[)')
+if (-not $stationPlayer.Success -or -not $fadeId.Success -or -not $fade.Success) { throw 'Cannot read the "FadeInCRT" animation from enceladus\Enceladus.tscn' }
+Write-Utf8Lf (Join-Path $project 'harness\station_fadein.tres') ("[gd_resource type=`"Animation`" format=2]`n`n[resource]`n" + $fade.Groups[1].Value.TrimEnd() + "`n")
 
 # 2. The mods: each suite's own (or -Mods), packaged once each, or the release zip given for it.
 $suiteMods = @{

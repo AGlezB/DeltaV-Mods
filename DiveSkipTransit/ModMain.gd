@@ -8,4 +8,5 @@ func _init(modLoader = null):
 		modLoader.installScriptExtension("res://DiveSkipTransit/Code.gd")
 		modLoader.installScriptExtension("res://DiveSkipTransit/Station.gd")
 		modLoader.installScriptExtension("res://DiveSkipTransit/StationMenu.gd")
+		modLoader.installScriptExtension("res://DiveSkipTransit/Ship.gd")
 		TranslationServer.add_translation(load("res://DiveSkipTransit/i18n/en.po"))

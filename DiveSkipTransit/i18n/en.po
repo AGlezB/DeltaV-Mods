@@ -20,5 +20,21 @@ msgstr "Launch sequence"
 msgid "DIVESKIPTRANSIT_SKIP_ARRIVAL"
 msgstr "Arrival in the ring"
 
+msgid "DIVESKIPTRANSIT_SKIP_ASTROGATION"
+msgstr "Astrogation"
+
 msgid "DIVESKIPTRANSIT_SKIP_EXIT"
 msgstr "Return to the station"
+
+msgid "DIVESKIPTRANSIT_SKIP_RESCUE"
+msgstr "Rescue"
+
+msgid "DIVESKIPTRANSIT_SKIP_GAME_OVER"
+msgstr "Game over"
+
+msgid "DIVESKIPTRANSIT_SKIP_STATION_FADE_IN"
+msgstr "Arrival at the station"
+
+# The note under the switches; %s is the mark that ends the name of each switch it is about.
+msgid "DIVESKIPTRANSIT_REMASS_NOTE"
+msgstr "%s Affects remass: what the skipped cutscene would burn is charged, worked out from the game's formulas."

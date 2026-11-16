@@ -35,9 +35,19 @@ var interlunarTime = 0.0 # what getInterlunarTransitTime returns; Game.gd _ready
 var transitRemass = 0.0 # the remass the transit back needs (getTransitRemassToEnceladus takes what is left of it)
 var transitTime = 0.0 # what getTimeRequiredToBurnToEnceladus returns
 var events = [] # what happened, in order; the suite shares it with the asteroid field
+var ai = false # the rescue ship's (Game.gd sendHelp sets it)
+var helpless = false # what isHelpless returns: out of remass, as the game's when reactiveMass is 0
 
 func getSystems():
 	return {}
+
+# As the game's: the reactors follow the ship's reactor state.
+func setReactorState(state):
+	for reactor in reactors:
+		reactor.enabled = state
+
+func claimCargo(_claimFor = null):
+	events.append("claimCargo")
 
 func getTimeRequiredToBurnToEnceladus() -> float:
 	return transitTime
@@ -57,7 +67,7 @@ func getShipName():
 	return "Skip stub"
 
 func isHelpless():
-	return false
+	return helpless
 
 func temporaryCargoMass():
 	return 0.0

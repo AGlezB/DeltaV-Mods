@@ -30,6 +30,9 @@ var settings = null # the mod's shared settings, with the mod loaded
 func _record(what):
 	recorded.append(what)
 
+func _recordCutscene(how):
+	recorded.append(["cutscene", how])
+
 func run():
 	var mod = hasMod("DiveSkipTransit")
 	bindGameKeys()
@@ -39,12 +42,11 @@ func run():
 		removeSettingsFile()
 		settings.loadFromFile()
 	launch(mod)
-	var state = arrival(mod)
-	if state is GDScriptFunctionState:
-		yield(state, "completed")
-	state = exits(mod)
-	if state is GDScriptFunctionState:
-		yield(state, "completed")
+	var state = null
+	for section in ["arrival", "exits", "rescue", "gameOver", "astrogation", "fadeIn"]:
+		state = call(section, mod)
+		if state is GDScriptFunctionState:
+			yield(state, "completed")
 	if not mod:
 		return
 	model()
@@ -260,9 +262,7 @@ func arrival(mod):
 	check("arrival: the game's _process ends the cutscene on its first frame", not ship.cutscene and not scene.cutscene and ship.fastTravelDirection == 0)
 	check("arrival: the ship already faces where the game turns it", is_equal_approx(ship.rotation, ship.autopilotDesiredRotation), [ship.rotation, ship.autopilotDesiredRotation])
 	var before = ship.reactiveMass
-	# The extension's constants, from the installed script (it took over Game.gd's path; loading its own path again
-	# would compile a second copy that extends the first).
-	var dv = braking.length() * seconds / script.get_script_constant_map()["_DST_UNITS_PER_METRE"]
+	var dv = braking.length() * seconds / load("res://DiveSkipTransit/Settings.gd").UNITS_PER_METRE
 	var expected = ship.interlunarRemass + ship.getRemassRequiredForDv(dv) + turbinesPerSecond(ship) * seconds
 	ship.emit_signal("setup")
 	check("arrival: after setup, the transit, the braking and the running or still-hot fission turbines are charged", abs(before - ship.reactiveMass - expected) < TOLERANCE, [before - ship.reactiveMass, expected])
@@ -272,16 +272,20 @@ func arrival(mod):
 
 # ---- The exit ----
 
-# The method keys of the scene's "exit" animation, in time order: [time, method].
-func exitKeys(scene) -> Array:
-	var exit = scene.get_node("TitleAnimPlayer").get_animation("exit")
+# The method keys of the scene's title card `animName`, in time order: [time, method].
+func cardKeys(scene, animName = "exit") -> Array:
+	var card = scene.get_node("TitleAnimPlayer").get_animation(animName)
 	var keys = []
-	for track in exit.get_track_count():
-		if exit.track_get_type(track) == Animation.TYPE_METHOD:
-			for key in exit.track_get_key_count(track):
-				keys.append([exit.track_get_key_time(track, key), exit.method_track_get_name(track, key)])
+	for track in card.get_track_count():
+		if card.track_get_type(track) == Animation.TYPE_METHOD:
+			for key in card.track_get_key_count(track):
+				keys.append([card.track_get_key_time(track, key), card.method_track_get_name(track, key)])
 	keys.sort_custom(self, "_earlier")
 	return keys
+
+# Whether the scene's title card shows its last frame, black.
+func cardBlack(scene) -> bool:
+	return is_equal_approx(scene.get_node("TitleAnimPlayer/SubtitleLayer/IntroContainer/CoverOfDark").color.a, 1.0)
 
 func _earlier(a, b):
 	return a[0] < b[0]
@@ -367,7 +371,7 @@ func exits(mod):
 		var ring = yield(state, "completed")
 		var scene = ring[0]
 		var ship = ring[1]
-		var keys = exitKeys(scene)
+		var keys = cardKeys(scene)
 		var last = keys[keys.size() - 1][0]
 		var expected = expectedExit(ship, keys)
 		ship.emit_signal("exitingRing")
@@ -381,9 +385,280 @@ func exits(mod):
 		check("exit, %s: the departure, the turbines and the transit are charged" % case[0], abs(ship.reactiveMass - expected[1]) < TOLERANCE, [ship.reactiveMass, expected[1]])
 		check("exit, %s: %s" % [case[0], "the burn stops at the escape speed, short of full throttle all along" if case[3] else "the burn lasts the whole cutscene"], (expected[2] < expected[3] - 1.0) == case[3], [expected[2], expected[3]])
 		check("exit, %s: the cutscene's in-game time and the transit's are charged" % case[0], is_equal_approx(CurrentGame.state.time, ring[3] + last + ship.transitTime), [CurrentGame.state.time - ring[3]])
-		check("exit, %s: the title card is at its last frame, black" % case[0], is_equal_approx(scene.get_node("TitleAnimPlayer/SubtitleLayer/IntroContainer/CoverOfDark").color.a, 1.0))
+		check("exit, %s: the title card is at its last frame, black" % case[0], cardBlack(scene))
 		freeRing(ring)
 		yield(frames(1), "completed")
+
+# ---- The rescue ----
+
+# A ring whose arrival is over and its ship set up, then out of remass: one frame short of the game's rescue (Game.gd
+# _process plays "helpless" once the ship has been helpless for longer than helplessTimeLimit). The game's own
+# arrival is ended early too, so the control ring gets there.
+func strand(script):
+	var ring = makeRing(script)
+	ring[0].eclapsedTime = ring[0].totalCutsceneTime
+	yield(frames(2), "completed")
+	ring[1].emit_signal("setup")
+	yield(frames(1), "completed")
+	ring[1].events.clear()
+	Loader.calls.clear()
+	CurrentGame.saves = 0
+	CurrentGame.advanced.clear()
+	Shipyard.created.clear()
+	ring[1].helpless = true
+	ring[0].helplessTime = ring[0].helplessTimeLimit
+	return ring
+
+func rescue(mod):
+	var script = load("res://Game.gd")
+	var game = script.get_base_script() if mod else null
+	var state = strand(game)
+	var control = yield(state, "completed")
+	yield(frames(3), "completed")
+	check("control: the game alone plays the rescue cutscene", control[0].get_node("TitleAnimPlayer").current_animation == "helpless" and control[1].cutscene)
+	check("control: the game alone calls no rescue ship yet and stays in the ring", Shipyard.created.empty() and Loader.calls.empty(), [Shipyard.created, Loader.calls])
+	freeRing(control)
+	yield(frames(1), "completed")
+	if not mod:
+		return
+	state = strand(null)
+	var ring = yield(state, "completed")
+	yield(frames(3), "completed")
+	var keys = cardKeys(ring[0], "helpless")
+	var first = keys[0][0]
+	var last = keys[keys.size() - 1][0]
+	check("rescue: the game sets it up as it does (the cutscene on, the reactor off, the cargo claimed)", ring[1].cutscene and not ring[1].reactors[0].enabled and ring[1].events.has("claimCargo"), ring[1].events)
+	check("rescue: the rescue ship is called and the game goes to the station at once", Shipyard.created == [["MADCERF", "helper"]] and ring[1].events.has("spawnByBlueprint") and Loader.calls.count("go " + STATION_SCENE) == 1 and CurrentGame.saves == 1, [Shipyard.created, ring[1].events, Loader.calls])
+	var advanced = CurrentGame.advanced
+	check("rescue: its in-game time is charged stretch by stretch, around the game's stranded time", advanced.size() == 3 and is_equal_approx(advanced[0], first) and is_equal_approx(advanced[2], last - first) and advanced[1] >= 0 and advanced[1] <= ring[0].strandedTIme, advanced)
+	check("rescue: the title card is at its last frame, black", cardBlack(ring[0]))
+	freeRing(ring)
+	yield(frames(1), "completed")
+	settings.setValue("skipRescue", false)
+	state = strand(null)
+	ring = yield(state, "completed")
+	yield(frames(3), "completed")
+	check("rescue switch off: the rescue cutscene plays and nothing is called yet", ring[0].get_node("TitleAnimPlayer").current_animation == "helpless" and Shipyard.created.empty() and Loader.calls.empty())
+	freeRing(ring)
+	yield(frames(1), "completed")
+	settings.setValue("skipRescue", true)
+
+# ---- The game over ----
+
+# Where Game.gd gameOverScreen goes: its `title` (Loader.prepare returns the path).
+const TITLE_SCENE = "res://TitleScreen.tscn"
+
+# A ring two frames in, its game over just signalled (CurrentGame.gameOver, as a meltdown signals it).
+func meltDown(script):
+	var ring = makeRing(script)
+	yield(frames(2), "completed")
+	Loader.calls.clear()
+	CurrentGame.emit_signal("gameOver")
+	return ring
+
+func gameOver(mod):
+	var script = load("res://Game.gd")
+	var game = script.get_base_script() if mod else null
+	var state = meltDown(game)
+	var control = yield(state, "completed")
+	check("control: the game alone plays the game over cutscene and stays in the ring", control[0].get_node("TitleAnimPlayer").current_animation == "gameover" and not ("go " + TITLE_SCENE) in Loader.calls, Loader.calls)
+	freeRing(control)
+	yield(frames(1), "completed")
+	if not mod:
+		return
+	state = meltDown(null)
+	var ring = yield(state, "completed")
+	check("game over: the title screen at once", Loader.calls.count("go " + TITLE_SCENE) == 1 and cardBlack(ring[0]), Loader.calls)
+	CurrentGame.emit_signal("gameOver")
+	check("game over: a second game over changes nothing", Loader.calls.count("go " + TITLE_SCENE) == 1, Loader.calls)
+	freeRing(ring)
+	yield(frames(1), "completed")
+	settings.setValue("skipGameOver", false)
+	state = meltDown(null)
+	ring = yield(state, "completed")
+	check("game over switch off: the cutscene plays", ring[0].get_node("TitleAnimPlayer").current_animation == "gameover" and not ("go " + TITLE_SCENE) in Loader.calls, Loader.calls)
+	freeRing(ring)
+	yield(frames(1), "completed")
+	settings.setValue("skipGameOver", true)
+
+# ---- Astrogation ----
+
+# A ship of `script` (the game's ships/ship-ctrl.gd: with the mod loaded, the extension), given once it is in the tree,
+# so neither its _ready nor its processing runs, and static, so physics leaves it alone. It holds what fastTravelTo and
+# the charges read: a running fission reactor, one thruster ahead, its mass, remass and speed. A body beside it shows
+# space folding. [the field, the ship, the body].
+func makeAstrogator(script, player = true):
+	CurrentGame.globalOffset = Vector2(0, 0)
+	CurrentGame.state["time"] = 0.0
+	CurrentGame.advanced.clear()
+	var field = Node2D.new()
+	add_child(field)
+	var ship = RigidBody2D.new()
+	ship.mode = RigidBody2D.MODE_STATIC
+	ship.gravity_scale = 0
+	ship.position = Vector2(1000, 2000)
+	field.add_child(ship)
+	var body = RigidBody2D.new()
+	body.mode = RigidBody2D.MODE_STATIC
+	body.position = Vector2(3000, -500)
+	field.add_child(body)
+	ship.set_script(script)
+	ship.playerControlled = player
+	ship.reactors = [reactor(FISSION, 0.25, true)]
+	var thruster = THRUSTER.new()
+	thruster.thrust = 90000.0
+	thruster.specificImpulse = 30.0
+	ship.add_child(thruster)
+	ship.thrusters = {"Main": {"node": thruster, "vector": Vector2(0, -1)}}
+	ship.currentMass = 150.0
+	ship.reactiveMass = 40000.0
+	ship.linear_velocity = Vector2(300, 100)
+	ship.connect("fastTraveling", self, "_record", ["fastTraveling"])
+	ship.connect("cutscene", self, "_recordCutscene")
+	return [field, ship, body]
+
+func freeAstrogator(a):
+	for r in a[1].reactors:
+		r.free()
+	a[0].queue_free()
+
+# A plotted course, as the Astrogator tab makes it (Game.gd initiateFastTravel): a destination in the ring.
+func course():
+	return {"name": "SKIP_TEST_DESTINATION", "vector": Vector2(150000, 80000), "init": Vector2(0, 0)}
+
+func astrogation(mod):
+	var shipScript = load("res://ships/ship-ctrl.gd")
+	var game = shipScript.get_base_script() if mod else shipScript
+	var control = makeAstrogator(game)
+	recorded.clear()
+	var waiting = control[1].fastTravelTo(course())
+	check("control: the game's astrogation waits (fastTravelTo yields) and hasn't jumped yet", waiting is GDScriptFunctionState and CurrentGame.globalOffset == Vector2(0, 0) and recorded.has("fastTraveling"), recorded)
+	yield(frames(2), "completed")
+	freeAstrogator(control)
+	yield(frames(1), "completed")
+	if not mod:
+		return
+
+	var a = makeAstrogator(shipScript)
+	var ship = a[1]
+	var target = course()
+	var start = CurrentGame.globalCoords(ship.global_position)
+	var dvec = CurrentGame.getInRingVectorTowards(target.vector, start)
+	var velocity = dvec.normalized() * ship.astrogationVelocity
+	# The extension's constants, from the installed script (it took over ship-ctrl.gd's path).
+	var consts = shipScript.get_script_constant_map()
+	var waits = consts._DST_ASTROGATION_BEFORE_JUMP + consts._DST_ASTROGATION_AFTER_JUMP
+	var arrival = target.vector - velocity.normalized() * min(ship.astrogationMinDistance, velocity.length() * 10) + velocity * consts._DST_ASTROGATION_AFTER_JUMP
+	var remass = ship.reactiveMass
+	var expected = ship.getRemassRequiredForDv((velocity - ship.linear_velocity).length() / 10.0) + ship.reactors[0].turbineConsumption * waits
+	var bodyBefore = a[2].position
+	recorded.clear()
+	var result = ship.fastTravelTo(target)
+	check("astrogation: the trip is made at once (fastTravelTo doesn't yield)", not result is GDScriptFunctionState)
+	check("astrogation: the ship lands where the game's would when the cutscene ends", CurrentGame.globalCoords(ship.global_position).distance_to(arrival) < TOLERANCE, [CurrentGame.globalCoords(ship.global_position), arrival])
+	check("astrogation: space folds as the game folds it: the world moves, not the ship", a[2].position.distance_to(bodyBefore - (arrival - start)) < TOLERANCE and ship.position == Vector2(1000, 2000), [a[2].position, bodyBefore - (arrival - start)])
+	check("astrogation: the game's end state (travel velocity, the autopilot stopped, the course done)", ship.linear_velocity.distance_to(velocity) < TOLERANCE and ship.autopilotDesiredVelocity == Vector2(0, 0) and ship.fastTravelDirection == -1 and ship.trajectoryTarget == null and ship.trajectoryProgress == null)
+	check("astrogation: fastTraveling is signalled, and the cutscene flag never is", recorded == ["fastTraveling"], recorded)
+	check("astrogation: the travel time and the waits are charged", is_equal_approx(CurrentGame.state.time, dvec.length() / ship.astrogationVelocity + waits), CurrentGame.advanced)
+	check("astrogation: the turbine over the waits and the speed change are charged", abs(remass - ship.reactiveMass - expected) < TOLERANCE, [remass - ship.reactiveMass, expected])
+	freeAstrogator(a)
+	yield(frames(1), "completed")
+
+	a = makeAstrogator(shipScript, false)
+	recorded.clear()
+	check("astrogation: another ship's is the game's", a[1].fastTravelTo(course()) is GDScriptFunctionState)
+	yield(frames(2), "completed")
+	freeAstrogator(a)
+	yield(frames(1), "completed")
+
+	var ring = makeRing()
+	yield(frames(2), "completed")
+	ring[1].emit_signal("fastTraveling")
+	check("astrogation: the ring's title card is jumped to its end", introHidden(ring[0]))
+	freeRing(ring)
+	yield(frames(1), "completed")
+
+	settings.setValue("skipAstrogation", false)
+	a = makeAstrogator(shipScript)
+	check("astrogation switch off: the game's trip, with its waits", a[1].fastTravelTo(course()) is GDScriptFunctionState and CurrentGame.globalOffset == Vector2(0, 0))
+	yield(frames(2), "completed")
+	freeAstrogator(a)
+	yield(frames(1), "completed")
+	ring = makeRing()
+	yield(frames(2), "completed")
+	ring[1].emit_signal("fastTraveling")
+	yield(frames(1), "completed")
+	check("astrogation switch off: the ring's title card plays", not introHidden(ring[0]) and ring[0].get_node("TitleAnimPlayer").current_animation == "fasttravel")
+	freeRing(ring)
+	yield(frames(1), "completed")
+	settings.setValue("skipAstrogation", true)
+
+# ---- The station's fade-in ----
+
+# A station with `script` (the game's Enceladus.gd), given once in the tree: the menu where Enceladus.tscn nests it
+# (the game's EnceladusMenu.gd, its entries disabled as the scene has them), and the AnimationPlayer playing the game's
+# "FadeInCRT", without the tracks whose nodes this station doesn't have.
+func fadeInStation(script):
+	var station = Node.new()
+	station.name = "Enceladus"
+	var parent = station
+	for nodeName in ["EnceladusMenu", "MenuContainer", "MarginContainer", "HBoxContainer"]:
+		var node = Control.new()
+		node.name = nodeName
+		parent.add_child(node)
+		parent = node
+	var menu = VBoxContainer.new()
+	menu.name = "Options"
+	menu.set_script(load("res://enceladus/EnceladusMenu.gd"))
+	for entry in ["RingDive", "Logs"]:
+		var button = Button.new()
+		button.name = entry
+		button.disabled = true
+		menu.add_child(button)
+	parent.add_child(menu)
+	var player = AnimationPlayer.new()
+	player.name = "AnimationPlayer"
+	station.add_child(player)
+	var fade = load("res://harness/station_fadein.tres").duplicate()
+	for track in range(fade.get_track_count() - 1, -1, -1):
+		if station.get_node_or_null(NodePath(String(fade.track_get_path(track)).split(":")[0])) == null:
+			fade.remove_track(track)
+	player.add_animation("FadeInCRT", fade)
+	add_child(station)
+	player.play("FadeInCRT")
+	station.set_script(script)
+	return station
+
+func menuDisabled(station) -> bool:
+	var menu = station.get_node("EnceladusMenu/MenuContainer/MarginContainer/HBoxContainer/Options")
+	return menu.get_node("RingDive").disabled and menu.get_node("Logs").disabled
+
+func fadeIn(mod):
+	var script = load("res://enceladus/Enceladus.gd")
+	var game = script.get_base_script() if mod else script
+	var control = fadeInStation(game)
+	yield(frames(2), "completed")
+	check("control: the game alone keeps the station's menu disabled while it fades in", menuDisabled(control) and control.get_node("AnimationPlayer").current_animation == "FadeInCRT")
+	control.queue_free()
+	yield(frames(1), "completed")
+	if not mod:
+		return
+	var station = fadeInStation(script)
+	# The extension's _ready, as the engine calls it after the base's (which needs the whole station).
+	station._ready()
+	var player = station.get_node("AnimationPlayer")
+	check("fade-in: the menu is usable at once", not station.get_node("EnceladusMenu/MenuContainer/MarginContainer/HBoxContainer/Options/RingDive").disabled and not station.get_node("EnceladusMenu/MenuContainer/MarginContainer/HBoxContainer/Options/Logs").disabled)
+	check("fade-in: the fade-in is at its last frame", is_equal_approx(player.current_animation_position, player.current_animation_length))
+	station.queue_free()
+	yield(frames(1), "completed")
+	settings.setValue("skipStationFadeIn", false)
+	station = fadeInStation(script)
+	station._ready()
+	yield(frames(1), "completed")
+	check("fade-in switch off: the menu stays disabled while it fades in", menuDisabled(station))
+	station.queue_free()
+	yield(frames(1), "completed")
+	settings.setValue("skipStationFadeIn", true)
 
 # ---- The settings ----
 
@@ -393,7 +668,7 @@ func model():
 	var defaults = true
 	for key in keys:
 		defaults = defaults and settings.getValue(key) == script.SETTINGS[key].default
-	check("settings: every skip starts at its default", defaults and keys == ["skipLaunch", "skipArrival", "skipExit"], keys)
+	check("settings: every skip starts at its default, in a dive's order", defaults and keys == ["skipLaunch", "skipArrival", "skipAstrogation", "skipExit", "skipRescue", "skipGameOver", "skipStationFadeIn"], keys)
 	recorded.clear()
 	settings.connect("settingsChanged", self, "_record", ["changed"])
 	settings.setValue("skipExit", not script.SETTINGS.skipExit.default)
@@ -572,21 +847,29 @@ func settingsScreen():
 		names.append(rows[i].tuningItem)
 		var key = script.SETTINGS.keys()[i] if i < script.SETTINGS.size() else ""
 		shown = shown and rows[i].get_node("HBoxContainer/Value").pressed == settings.getValue(key)
+	var ui = load("res://DiveSkipTransit/SettingsUI.gd").get_script_constant_map()
 	var labels = []
+	var marked = 0
 	for key in script.SETTINGS:
-		labels.append(script.SETTINGS[key].label)
-	var groupLabel = load("res://DiveSkipTransit/SettingsUI.gd").get_script_constant_map()["GROUP_LABEL"]
-	check("screen: one group, titled by the mod's group key, with one switch per setting named by its label, in order", groups.size() == 1 and groups[0].system == groupLabel and names == labels, [groups.size(), names])
+		var remass = script.SETTINGS[key].get("remass", false)
+		labels.append(tr(script.SETTINGS[key].label) + (" " + ui.REMASS_MARK if remass else ""))
+		if remass:
+			marked += 1
+	check("screen: one group, titled by the mod's group key, with one switch per setting named by its label in the game's language, in order", groups.size() == 1 and groups[0].system == ui.GROUP_LABEL and names.size() == labels.size(), [groups.size(), names])
+	check("screen: the switches whose skip charges remass (SETTINGS' remass), and only those, end with the mark", names == labels and marked > 0, [names, marked])
+	var note = screen.get_node_or_null("VB/ScrollContainer/Items/RemassNote")
+	check("screen: a note under the switches explains the mark", note != null and note.get_index() > groups[0].get_index() and note.text == tr(ui.REMASS_NOTE) % ui.REMASS_MARK and note.text.begins_with(ui.REMASS_MARK) and note.autowrap, note.text if note != null else null)
 	check("screen: each switch shows its setting", shown)
 	check("screen: its header is the dive entry's text", screen.get_node("VB/HeaderWithMoney/MarketLabel").text == DIVE_KEY)
-	var exitSwitch = rows[2].get_node("HBoxContainer/Value")
+	var exitRow = rows[script.SETTINGS.keys().find("skipExit")]
+	var exitSwitch = exitRow.get_node("HBoxContainer/Value")
 	exitSwitch.pressed = false
 	check("screen: switching one off stores it at once", settings.getValue("skipExit") == false and ConfigFile.new().load(SETTINGS_FILE) == OK)
 	rows[0].get_node("HBoxContainer/Value").grab_focus()
 	exitSwitch.grab_focus()
 	yield(frames(1), "completed")
 	check("screen: focusing it again doesn't switch it back", settings.getValue("skipExit") == false and not exitSwitch.pressed)
-	rows[2].get_node("HBoxContainer/Reset").emit_signal("pressed")
+	exitRow.get_node("HBoxContainer/Reset").emit_signal("pressed")
 	check("screen: its reset button puts it back to the default", settings.getValue("skipExit") == script.SETTINGS.skipExit.default and exitSwitch.pressed == script.SETTINGS.skipExit.default)
 	yield(tap(escKey()), "completed")
 	yield(frames(40), "completed")
