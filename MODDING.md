@@ -414,9 +414,9 @@ English text there.
     `story/FlightForRescue.gd`, on a rescue ship's path). A derelict can't be hailed. It opens its conversation
     (`comms/conversation/DerelictConversation.tscn`) by itself, once, when the player's ship comes within its
     `aiCuriosityDisance` (150 m; `ship-ctrl.gd` `AI.examine`). Unless a rescue ship (faction `helper`) is in sight
-    (then it's taken), a random crew member reports it (`DIALOG_DERELICT_RANDOM.tscn`), and the player can send
-    them over to restart it (`DIALOG_DERELICT_GO_AND_BRING_IT`). On board, they may get it running, and it joins
-    the player's fleet (`getThisShip`). Or they come back with nothing, or injured (leave days,
+    (then it's taken: see *Salvage claim*), a random crew member reports it (`DIALOG_DERELICT_RANDOM.tscn`), and
+    the player can send them over to restart it (`DIALOG_DERELICT_GO_AND_BRING_IT`). On board, they may get it
+    running, and it joins the player's fleet (`getThisShip`). Or they come back with nothing, or injured (leave days,
     `addAgendaLeaveTime`). What they find varies (the `DIALOG_DERELICT_*` subtrees: brick, junk, solo dead, hole,
     ghost ship).
   - **Crew agendas**: an agenda is a crew member's personal story (`AGENDA_*`, followed in
@@ -497,14 +497,35 @@ English text there.
   `ship-ctrl.gd` `isHelpless`) for longer than `helplessTimeLimit`, outside a cutscene (`Game.gd` `_process`). The game
   switches the reactor off, claims the cargo and plays the `helpless` cutscene: `sendHelp` advances the clock by a
   random stranded time (up to `strandedTIme`, two weeks) and spawns a MAD-CERF of the `helper` faction near the ship
-  (it has no arm and can't act on the ship), and `goToEnceladus` ends the dive at the station. The transit back isn't
-  charged. DiveSkipTransit skips the cutscene, charging only its in-game time.
+  (the ship counts as `helpless`, so the MAD-CERF goes for it as it does for a derelict, see *Salvage claim*; this
+  changes nothing), and `goToEnceladus` ends the dive at the station. The transit back isn't charged. DiveSkipTransit
+  skips the cutscene, charging only its in-game time.
 - **Ring scene**: the scene of a dive in the rings (`Game.tscn`, `Game.gd`), loaded from the station by `goToRing()`
   and left for the station by `goToEnceladus()`, or for the title screen after a game over. It holds the player's
   ship, the asteroid field (`AsteroidField.tscn`, whose `AsteroidSpawner.gd` also moves the in-game time on every
   frame) and the title cards of its cutscenes.
 - **Roid**: an asteroid (`asteroids/asteroid.gd`, a `RigidBody2D`), the rocks that fill the rings; the game's own
   texts say "roids" too.
+- **Salvage claim**: a phrase from one derelict line, "…with that rescue ship on our back, they'll file for a salvage
+  claim anyway." (`DIALOG_DERELICT_TAKEN_4`), not a mechanic: the game records no claim on a derelict (see *EVA*).
+  What decides who gets one:
+  - **The rescue ship**: a MAD-CERF of the `helper` faction, spawned with the derelict (`story/RescueOperation.gd`) or
+    before it, the derelict then appearing on its path after `time` (`story/FlightForRescue.gd`). It goes for
+    `helpless` ships. A powerless one (`powerBalance` at or below 0, as a derelict is with its reactor off and no
+    remass) it docks with its clamps (`SYSTEM_DOCKING_CLAMPS`; `ship-ctrl.gd` `AI.dock`), and after
+    `aiDockingSecureTime` it leaves (`AI.exit`). Nothing passes to it: the derelict doesn't become its cargo.
+  - **The derelict's conversation**: if the derelict sees a rescue ship when the conversation opens
+    (`mustSeeFaction = "helper"`, tested on the derelict's `getObjectsAIisAwareOf`), a random crew member says one of
+    the four `DIALOG_DERELICT_TAKEN_*` lines and the conversation ends, without the offer to send them over. Every
+    other branch needs no rescue ship in sight (`cantSeeFaction`). A derelict talks once, so for that one the chance
+    is gone.
+  - **The arm**: a ship the arm holds (`addTemporaryCargo`, which sets its `docked`) counts as taken for the AI
+    (`aiIsTaken`), so a rescue ship no longer goes for it. If the arm still holds it when the dive ends at the
+    station, it joins the fleet for free when `CurrentGame.isShipSalvageable` says so: abandoned (every derelict),
+    of the `pirate` faction, or without a transponder (`ship-ctrl.gd` `handleExitToEnceladus`,
+    `CurrentGame.addShip`; the arm's manual says so too, `SYSTEM_SALVAGE_ARM_MANUAL`). A rescue ship nearby doesn't
+    prevent it. A `helpless` ship that isn't salvageable pays 10 % of its value instead (`getShipValue`). Nothing
+    held is taken when the player's own ship ends the dive helpless (see *Rescue*).
 - **Ship models**: Eagle-Prospector-VP (the VP), EIME, OCP-209, K37 TNTRL, the Cothon series, the Kitsune, …: names
   of ships as the Dealer shows them.
 - **Simulator** (MVFS; `ENCELADUS_LAUNCH_VR`, `enceladus/Simulator/`): the Minding Virtual Flight Service, the
