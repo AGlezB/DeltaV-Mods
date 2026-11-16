@@ -315,6 +315,19 @@ English text there.
   dive crew are those aboard. Passengers (`CREW_OCCUPATION_PASSENGER`, no salary) are listed with the crew. The
   **Crew screen** (`enceladus/Crew.tscn`), opened by the station menu's Crew entry, has two tabs: Your Crew
   (`ENCELADUS_CREW_CURRENT`, `enceladus/CurrentCrewManagement.gd`) and the Hire screen.
+- **Cutscene**: a stretch where the game flies the ship and the player has no control, while the ship's `cutscene`
+  flag is on (`ship-ctrl.gd` `_setCutscene`, which emits `cutscene`). The ring scene has five: the arrival at the start
+  of a dive, the exit (`ship-ctrl.gd` `escapeTheRing`, then the `exit` animation), the rescue of a helpless ship (out
+  of remass or power: `helpless`), fast travel inside the ring (`ship-ctrl.gd` `fastTravelTo`, `fasttravel`) and the
+  game over (`gameover`). Each plays a title card on `Game.tscn`'s `TitleAnimPlayer`; the arrival's, `intro`, shows
+  `CUTSCENE_RINGS_OF_SATURN`, the transponder, the date and the transit tip (`codex/TransitTip.gd`). Holding
+  `cutscene_ff` (Space, the left mouse button, gamepad buttons 0 and 1; no text of its own in `en.po`) runs a cutscene
+  at up to 3x speed (`Game.gd` `_process`, through `CurrentGame.targetTimeScale`), with VHS stripes over the screen
+  while `Engine.time_scale` is above 1 and post-processing is on (`FastForward.gd`). In the arrival, the ship comes in
+  fast towards the dive entry point and brakes to a crawl, turned to face into the rings (`Game.gd` `_ready` and
+  `_process`: `initialSpeed` from `desiredAcceleration` and `initialCutsceneTime`, braking for `totalCutsceneTime`;
+  `Game.tscn` sets the two times). It really
+  flies: its thrusters and its reactor's turbine burn remass, and in-game time passes.
 - **Dealer** (`ENCELADUS_SHIP_MARKET`, `enceladus/Dealer.tscn`): the station's ship market. Its entries are
   `enceladus/SystemBuyUI.gd` (the ship-list mods change them); its Examine tab can launch the simulator. **Fleet**
   (`ENCELADUS_OWNED_SHIPS`): the ships the player owns, and the station screen listing them (`enceladus/Owned.tscn`,
@@ -426,6 +439,10 @@ English text there.
   only when the piece replaced was damaged (`ship-ctrl.gd` `getSlotTime`). A ship in maintenance can't dive
   (`Enceladus.gd` `shipPassesInspection`; the pre-flight inspection offers a hotel stay until it is done) or be sold,
   but the player can switch to another ship of the fleet, while the first one's maintenance runs on.
+- **Ring scene**: the scene of a dive in the rings (`Game.tscn`, `Game.gd`), loaded from the station by `goToRing()`
+  and left for the station by `goToEnceladus()`, or for the title screen after a game over. It holds the player's
+  ship, the asteroid field (`AsteroidField.tscn`, whose `AsteroidSpawner.gd` also moves the in-game time on every
+  frame) and the title cards of its cutscenes.
 - **Roid**: an asteroid (`asteroids/asteroid.gd`, a `RigidBody2D`), the rocks that fill the rings; the game's own
   texts say "roids" too.
 - **Ship models**: Eagle-Prospector-VP (the VP), EIME, OCP-209, K37 TNTRL, the Cothon series, the Kitsune, …: names
@@ -433,8 +450,29 @@ English text there.
 - **Simulator** (MVFS; `ENCELADUS_LAUNCH_VR`, `enceladus/Simulator/`): the Minding Virtual Flight Service, the
   station's flight simulator for trying a ship as fitted; launched from the Tuning and Equipment screens and the
   Dealer's Examine tab. A Premium subscription (`SERVICE_SIMULATOR`) adds a simulated ring scenario.
-- **Transit**: the trip back to the station at the end of a dive (`HUD_RETURN_*`); the transit reserve is the
-  propellant kept for it.
+- **Transit**: the interlunar trip between the station and the rings, which costs remass and in-game time each way and
+  isn't flown. Each way covers the ΔV for trajectory (`MAP_DV`) of the dive entry point picked (`DiveTarget.gd`
+  `getPrices`, kept in `CurrentGame.dvToEnceladus`). The main drives, the ship's thrusters, cover it in
+  `CurrentGame.timeDistanceToEnceladus` (12 h), burning the remass the rocket equation gives for the ship's whole mass
+  and its best thruster's exhaust velocity (`ship-ctrl.gd` `getRemassRequiredForDv`, `getBestThrusterVe`); the xenon
+  drive covers it in `xenonBurnToEnceladus` (96 h) and burns none.
+  - Out, at the start of a dive: charged once the ship is set up (`Game.gd` `_ready`: `getInterlunarTransitRemass`,
+    `getInterlunarTransitTime`), then the arrival cutscene plays. The xenon drive's Tuning setting splits the ΔV
+    between the two drives, and the time between their two times, in the same shares; the remass doesn't follow the
+    shares, because the rocket equation isn't linear. The dive entry point screen shows that remass as Interlunar
+    propellant usage (`HUD_RETURN_FUEL_XENON`) and won't launch without it (`HUD_WARN_PROPELLANT`).
+  - Back, at the end: charged during the exit cutscene (`Game.gd` `interlunarToEnceladus`), whatever the setting. The
+    main drives burn all the remass aboard, up to the Transit reserve (`HUD_RETURN_FUEL`: the remass for the whole ΔV
+    at the ship's mass then, cargo included), and the xenon drive does the rest. The time is split between the two
+    drives' times by the share of the reserve burned (`getTimeRequiredToBurnToEnceladus`, the HUD's Transit time,
+    `HUD_RETURN_TIME`), so a ship out of remass comes back in the xenon drive's time, never stranded.
+  - The K37 TNTRL's HUD also shows Estimated interlunar transit time and Interlunar propellant usage
+    (`HUD_RETURN_*_XENON`, `hud/trtl/ShipParams.tscn`): the outbound figures at the ship's current mass, not the trip
+    back.
 - **Tuning** (`ENCELADUS_SHIP_TUNING`, `enceladus/Tuning.tscn`): the station screen with the settings of each piece
   of the current ship's equipment, registered by its script with `registerSubsystem` and saved with the game (see
   *Conventions*).
+- **Xenon drive**: the low-thrust, economical drive every ship has for transit, which burns no remass (the game keeps
+  no stock of xenon). Its Tuning setting, Interplanetary Xenon transit drive usage (`TUNE_XENON_BURN`, a HUD built-in:
+  `hud/Hud.gd` `getTuneables`; 0–100 %, default 100 %, kept per ship), is the share of the outbound ΔV it covers
+  (`ship-ctrl.gd` `getXenonBurnRatio`); the main drives cover the rest. The trip back ignores it (see *Transit*).
