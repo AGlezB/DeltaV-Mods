@@ -23,7 +23,7 @@ Never write their values into a committed file.
 | Key or path | What |
 |---|---|
 | `GameDir` | The game (`Delta-V.exe`, `mods\`) |
-| `TempDir\gdre\Delta-V-<version>\` | The decompiled game, one folder per game version (1.91.61 so far) |
+| `TempDir\gdre\Delta-V-<version>\` | The decompiled game, one folder per game version (1.91.61 and 1.92.5 so far) |
 | `GodotDir` | Godot 3.6 (the game's engine) and GDRE Tools 2.7.4 |
 | `TempDir` | Generated and temporary files: zips being packaged, test runs, scratch scripts; never the repo |
 
