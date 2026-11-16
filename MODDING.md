@@ -307,8 +307,25 @@ English text there.
   other sources. DiveDisableAdrenalineBooster starts the player's booster switched off at every dive.
 - **Arm**: the AR-1500 Manipulator (`SYSTEM_SALVAGE_ARM`, `ships/modules/DockingArm.gd`), the ship's arm that grabs
   chunks and brings them to the intake (see *Salvage arm facts*).
-- **Astrogator**: the crew occupation for navigation, and the OMS tab with the map: points of interest, distances,
-  plotting a course (`HUD_PLOT_COURSE`).
+- **Astrogation** (fast travel): travel inside the ring to a known destination, picked in the Astrogator tab and
+  started with PLOT A COURSE (`HUD_PLOT_COURSE`; `hud/AstrogatorPanel.gd`, `CurrentGame.fastTravelTo`).
+  - The trip: the ship first speeds up to the tab's travel velocity (`HUD_VELOCITY`), flown by the autopilot while Use
+    autopilot (`HUD_ASTROGATION_AUTOPILOT_MATCH`) is on (`Game.gd` `initiateFastTravel`). Then it jumps to the
+    destination, in-game time advances by the distance divided by that velocity, and the autopilot brakes the ship
+    (`ship-ctrl.gd` `fastTravelTo`). A faster trip takes less time and more remass, for speeding up and braking. A
+    destination too close can't be picked (`HINT_POI_TOO_CLOSE`). Enceladus (`DESTINATION_ENCELADUS`) is always
+    listed: picking it leaves the ring, through the exit cutscene and the transit back.
+  - Destinations: kept per save in `CurrentGame.state.astrogation`, each with a deadline (`time`). A trackable one
+    stays usable until the crew's Coordinate tracking time (see *Crew stats*) after its deadline
+    (`getTimeLeftForDestination`, shown next to its name). Entering its spot again moves the deadline to that moment,
+    plus the spot's own extra days (`story/Discovery.gd`, `discoverPoi`).
+  - Past that time a destination is lost: listed only with Show lost destinations (`HUD_ASTROGATION_SHOW_EXPIRED`),
+    and a trip to it lands off target, by an error that grows to `expiredAstrogationPeakError` (18 km) over one more
+    tracking time (`getDestinationUncertinty`). Destinations that aren't trackable (timed events) drop off the list
+    at their deadline. Every in-game hour counts against them: transit, the dive itself, astrogation and the hours
+    spent at the station.
+- **Astrogator**: the crew occupation for navigation, and the OMS tab with the map: points of interest (see
+  *Astrogation*), distances, plotting a course (`HUD_PLOT_COURSE`).
 - **Chunk** (mineral chunk, ore chunk): a loose piece of ore floating in the rings; what the arm grabs, the MPU
   processes and the HUD's mineral targeting marks. A `RigidBody2D` with `asteroids/mineral.gd`, one scene per
   mineral and size (`asteroids/mineral-<mineral>-<n>.tscn`); `mineral` names its mineral, `composition` its
@@ -318,6 +335,18 @@ English text there.
   dive crew are those aboard. Passengers (`CREW_OCCUPATION_PASSENGER`, no salary) are listed with the crew. The
   **Crew screen** (`enceladus/Crew.tscn`), opened by the station menu's Crew entry, has two tabs: Your Crew
   (`ENCELADUS_CREW_CURRENT`, `enceladus/CurrentCrewManagement.gd`) and the Hire screen.
+- **Crew stats**: what the crew is good at, per occupation. Each member has a talent, shown as Education
+  (`CREW_EDUCATION`), and an experience (`CREW_EXPERIENCE`), both from 0 to 1 in their own occupation and shown on
+  their entry as levels (`CurrentGame.talentLevels`, `experienceLevels`; `enceladus/CrewBio.gd`).
+  - The crew's value for an occupation is the best among the dive crew in it, not counting those on leave, raised by
+    that member's good morale and lowered by bad (`morale`, which has no text in `en.po`; `CurrentGame.getCrewStats`).
+  - Each occupation's talent and experience give one stat each, shown on Your Crew (`deriveStats`, `skillMatrix`):
+    Pilot, Adrenal slowdown and Course anticipation; Mechanic, Jury-rig efficiency and Repair limit; Geologist, Price
+    prediction accuracy and Mineral discovery range; Astrogator, Tactical awareness range and Coordinate tracking time
+    (`CREW_STATS_ASTROGATOR_TIME`: how long trackable destinations stay usable, see *Astrogation*; the longer of 12 h
+    and 90 days × experience).
+  - Both grow through `giveXp`, which events call (an astrogator revisiting a destination, among others); a member's
+    growth is pulled towards the best member of their occupation (`mentorXpGain`).
 - **Cutscene**: a stretch where the game flies the ship and the player has no control, while the ship's `cutscene`
   flag is on (`ship-ctrl.gd` `_setCutscene`, which emits `cutscene`). The ring scene has five: the arrival at the start
   of a dive, the exit (`ship-ctrl.gd` `escapeTheRing`, then the `exit` animation), the rescue of a helpless ship (out
