@@ -69,11 +69,12 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
    of `enceladus/HidingMarginContainer.gd`, copying the Tuning screen's frame and behaving like the game's screens;
    and `enceladus/HireableCrew.gd`, the Hire screen), GeologyByMass (`hud/Hud.gd`; it also adds its tab to the OMS,
    right after the Geologist tab, from `instance()`), ShipCopyPaste (`enceladus/SystemBuyUI.gd`, the Fleet screen's
-   entries; it prices through the Equipment screen's items), DiveSkipTransit (`Game.gd`, the ring scene's arrival
-   cutscene; and `enceladus/Enceladus.gd`, the station's launch sequence). `ModMain.gd` only calls
-   `installScriptExtension("res://<ModName>/Code.gd")` (CrewPerfectSort: once for each of its two extension files;
-   CrewCheapHireNotifier: `Code.gd`, then `HireScreen.gd`; DiveSkipTransit: `Code.gd`, then `Station.gd`); `Code.gd`
-   `extends "res://<game script>"`. Rules that let mods stack on the same script (header of
+   entries; it prices through the Equipment screen's items), DiveSkipTransit (`Game.gd`, the ring scene's arrival and
+   exit cutscenes; `enceladus/Enceladus.gd`, the station's launch sequence; and `enceladus/EnceladusMenu.gd`, where
+   Shift+Click on the dive entry opens its settings screen, as CrewCheapHireNotifier's Crew entry does). `ModMain.gd`
+   only calls `installScriptExtension("res://<ModName>/Code.gd")` (CrewPerfectSort: once for each of its two extension
+   files; CrewCheapHireNotifier: `Code.gd`, then `HireScreen.gd`; DiveSkipTransit: `Code.gd`, `Station.gd`, then
+   `StationMenu.gd`); `Code.gd` `extends "res://<game script>"`. Rules that let mods stack on the same script (header of
    `ArmAltTargetSelection/Code.gd`):
    - Never call the parent's `_ready`, `_process`, `_physics_process` or `_notification`. Godot 3 runs them at every
      level of the script chain by itself: `_ready` base first (so `ship` etc. are set), `_process`,
@@ -107,6 +108,11 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
   and both override `fillCrew`, each calling the parent's first: by path the chain is game ← CrewCheapHireNotifier ←
   CrewPerfectSort, and CrewPerfectSort only reorders the entries, so the marks stay (both orders tested in `crew`).
   Their member names must stay distinct.
+- CrewCheapHireNotifier (`Code.gd`) and DiveSkipTransit (`StationMenu.gd`) both extend `EnceladusMenu.gd`, each
+  hooking Shift+Click on its own menu entry (Crew, Launch Ring Dive) to open its settings screen among the station's
+  right-hand screens. By path the chain is game ← CrewCheapHireNotifier ← DiveSkipTransit; both override `_ready` and
+  `_notification` (the game's script has neither) without calling the parent's. Their member names must stay
+  distinct; opening one screen hides the other (`hidefoka`). Loaded together in `skip`.
 - ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice find the ship entries by `node.get_script().resource_path`;
   ShipCopyPaste extends that script, and `take_over_path` keeps the path, so they still find them (loaded together in
   `fleet`).
@@ -156,8 +162,9 @@ with the mods.
   - `Code.gd` is the mod's main code.
   - A second script extension next to `Code.gd` is named for the screen it changes: CrewCheapHireNotifier's
     `HireScreen.gd` (the Hire screen, `enceladus/HireableCrew.gd`), DiveSkipTransit's `Station.gd` (the station,
-    `enceladus/Enceladus.gd`). In CrewCheapHireNotifier, code both use goes in `Settings.gd`, which they already share
-    (the rule's `limitFor` / `isCheapHire`).
+    `enceladus/Enceladus.gd`) and `StationMenu.gd` (the station menu, `enceladus/EnceladusMenu.gd`). In
+    CrewCheapHireNotifier, code both use goes in `Settings.gd`, which they already share (the rule's `limitFor` /
+    `isCheapHire`).
   - `SettingsUI.gd` is the mod's settings UI, when it has one.
   - `Settings.gd`, only in a mod with a settings UI, is the settings model `Code.gd` and `SettingsUI.gd` share, built
     like the game's own `Settings` autoload (`res://Settings.gd`: a `cfg` dict of defaults, a `ConfigFile` in
@@ -182,8 +189,10 @@ with the mods.
     - `const SETTINGS`: one description per setting, in display order: `label`, `default`, `min`, `max`, `step`,
       `unit`, `shown`, the factor from the stored value to the one shown (a fraction shown as %), and `perJob` where
       the setting holds one value per job (CrewCheapHireNotifier's crew limit), all sharing its default, range and
-      step. `label` is a translation key of the mod's `i18n/en.po`. `var cfg`: the current values by key (a dictionary
-      by job key for a per-job setting), set to the defaults in `_init`. `const FORMAT_VERSION`.
+      step. `label` is a translation key of the mod's `i18n/en.po`. A switch (DiveSkipTransit's skips) has
+      `type: "bool"` and only `label` and `default` besides: no range, unit or conversion, and anything that isn't a
+      bool gives its default; the screen shows it with the game's Tuning switch. `var cfg`: the current values by key
+      (a dictionary by job key for a per-job setting), set to the defaults in `_init`. `const FORMAT_VERSION`.
     - `jobs()`: the jobs a per-job setting has values for, the game's `CurrentGame.occupations`; `isPerJob(key)`.
     - `getValue(key, job = null)`; `setValue(key, value, job = null)` clamps and snaps to the step, and only on a change stores
       (`saveToState()`) and emits `settingsChanged`; `job` is only for a per-job setting. `toShown(key, value)` /
@@ -192,8 +201,11 @@ with the mods.
       `CurrentGame.state.ui` (the game's per-save UI store, `setUiValue` / `getUiValue`, written with the save
       as JSON, so numbers come back as floats) under the mod's id from `Mod.manifest`, so other authors' mods can't
       collide; the entry holds `formatVersion`, `modVersion` and one value per setting (a copy of the dictionary for
-      a per-job setting). Loading starts from the defaults and clamps and snaps each saved value. A mod whose settings are game-wide uses the `user://` `ConfigFile` above
-      instead, with `loadFromFile` / `saveToFile`.
+      a per-job setting). Loading starts from the defaults and clamps and snaps each saved value. A mod whose settings
+      are game-wide (DiveSkipTransit's) uses the `user://` `ConfigFile` above instead, with `loadFromFile` /
+      `saveToFile`: a file of its own, `user://<the mod's id>.cfg` (in `filePath`, so a test can point it elsewhere),
+      holding one section named by the mod's id with the same entry, written at every change; `shared()` loads it when
+      it makes the instance.
     - `modId()`, `modName()`, `modVersion()`: read from `Mod.manifest` (path: the script's folder) with `ConfigFile`.
 
     `SettingsUI.gd` builds the screen from `SETTINGS` through `toShown`, with the game's own UI parts, and writes back
@@ -358,9 +370,8 @@ English text there.
   while `Engine.time_scale` is above 1 and post-processing is on (`FastForward.gd`). In the arrival, the ship comes in
   fast towards the dive entry point and brakes to a crawl, turned to face into the rings (`Game.gd` `_ready` and
   `_process`: `initialSpeed` from `desiredAcceleration` and `initialCutsceneTime`, braking for `totalCutsceneTime`;
-  `Game.tscn` sets the two times). It really
-  flies: its thrusters and its reactor's turbine burn remass, and in-game time passes. DiveSkipTransit skips it and
-  charges those.
+  `Game.tscn` sets the two times). The arrival and the exit really fly the ship: its thrusters and its reactor's turbine
+  burn remass, and in-game time passes. DiveSkipTransit skips both, each by its own setting, and charges those.
 - **Dealer** (`ENCELADUS_SHIP_MARKET`, `enceladus/Dealer.tscn`): the station's ship market. Its entries are
   `enceladus/SystemBuyUI.gd` (the ship-list mods change them); its Examine tab can launch the simulator. **Fleet**
   (`ENCELADUS_OWNED_SHIPS`): the ships the player owns, and the station screen listing them (`enceladus/Owned.tscn`,

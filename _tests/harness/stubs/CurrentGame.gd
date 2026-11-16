@@ -12,6 +12,7 @@ signal playerShipChanged()
 signal hourPassed()
 signal gameOver()
 signal plotCourseTo(to, vector)
+signal pointOfNoReturn()
 
 # The game's crew occupations and level keys (CurrentGame.gd), for the Hire screen's entries.
 var occupations = ["CREW_OCCUPATION_PILOT", "CREW_OCCUPATION_MECHANIC", "CREW_OCCUPATION_GEOLOGIST", "CREW_OCCUPATION_ASTROGATOR"]
@@ -49,6 +50,19 @@ var richnessAdjust = 0 # Game.gd _ready resets it
 var diveTarget = Vector2(0, 0) # the dive entry point, which Game.gd _ready makes the global offset
 var globalOffset = Vector2(0, 0) # setGlobalOffset(); globalCoords() adds it
 var targetTimeScale = 1.0 # Game.gd _process sets it during cutscenes (BulletTimer.gd eases Engine.time_scale to it)
+var inventoryMode = false # Game.gd interlunarToEnceladus resets it
+var saves = 0 # how many times saveToFile() was called
+var playtime = {} # what addPlaytime() added, by name
+
+func isDemo():
+	return false
+
+# The game's writes the state to the save file; this one counts the calls.
+func saveToFile():
+	saves += 1
+
+func addPlaytime(what, seconds):
+	playtime[what] = playtime.get(what, 0) + seconds
 
 func recreatePlayerShip():
 	return nextShip

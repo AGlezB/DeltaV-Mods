@@ -2,13 +2,13 @@
 
 name="DiveSkipTransit"
 id="AGlezB.DiveSkipTransit"
-description="Every dive starts in the ring at once, with the player in control: no launch sequence and no arrival cutscene."
+description="Skips the launch sequence, the arrival cutscene and the exit cutscene of a dive, each by a setting opened with Shift+Click on Launch Ring Dive."
 author="AGlezB"
 
 [version]
 
 version_major=0
-version_minor=1
+version_minor=2
 version_bugfix=0
 
 [tags]

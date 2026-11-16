@@ -1,0 +1,24 @@
+# DiveSkipTransit: its texts, in English. Godot shows English for any language without its own file (its fallback
+# locale), so another language only needs a copy of this file with its Language and msgstr lines translated, loaded in
+# ModMain.gd. Keep each %s: the code fills them in.
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+# The station menu's dive entry's tooltip; the first %s is the key to hold while clicking, the second the mod's name.
+msgid "DIVESKIPTRANSIT_SETTINGS_TOOLTIP"
+msgstr "Click while pressing %s to open the %s settings."
+
+# The settings screen: the title of its group, then one switch per skip.
+msgid "DIVESKIPTRANSIT_GROUP"
+msgstr "Skip"
+
+msgid "DIVESKIPTRANSIT_SKIP_LAUNCH"
+msgstr "Launch sequence"
+
+msgid "DIVESKIPTRANSIT_SKIP_ARRIVAL"
+msgstr "Arrival in the ring"
+
+msgid "DIVESKIPTRANSIT_SKIP_EXIT"
+msgstr "Return to the station"
