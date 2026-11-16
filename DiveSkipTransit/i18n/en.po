@@ -10,21 +10,26 @@ msgstr ""
 msgid "DIVESKIPTRANSIT_SETTINGS_TOOLTIP"
 msgstr "Click while pressing %s to open the %s settings."
 
-# The settings screen: the title of its group, then one switch per skip.
+# The settings screen: the transit group (the arrival in the ring and the return to the station), with its switch and
+# the speed it plays at when not skipped.
+msgid "DIVESKIPTRANSIT_GROUP_TRANSIT"
+msgstr "Transit"
+
+msgid "DIVESKIPTRANSIT_SKIP_TRANSIT"
+msgstr "Skip both ways"
+
+msgid "DIVESKIPTRANSIT_TRANSIT_SPEED"
+msgstr "Speed when played"
+
+# The settings screen: the group of the other skips, with one switch each.
 msgid "DIVESKIPTRANSIT_GROUP"
 msgstr "Skip"
 
 msgid "DIVESKIPTRANSIT_SKIP_LAUNCH"
 msgstr "Launch sequence"
 
-msgid "DIVESKIPTRANSIT_SKIP_ARRIVAL"
-msgstr "Arrival in the ring"
-
 msgid "DIVESKIPTRANSIT_SKIP_ASTROGATION"
 msgstr "Astrogation"
-
-msgid "DIVESKIPTRANSIT_SKIP_EXIT"
-msgstr "Return to the station"
 
 msgid "DIVESKIPTRANSIT_SKIP_RESCUE"
 msgstr "Rescue"
@@ -35,6 +40,6 @@ msgstr "Game over"
 msgid "DIVESKIPTRANSIT_SKIP_STATION_FADE_IN"
 msgstr "Arrival at the station"
 
-# The note under the switches; %s is the mark that ends the name of each switch it is about.
+# The note under the groups; %s is the mark that ends the name of each switch it is about.
 msgid "DIVESKIPTRANSIT_REMASS_NOTE"
 msgstr "%s Affects remass: what the skipped cutscene would burn is charged, worked out from the game's formulas."

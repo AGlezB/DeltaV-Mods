@@ -30,6 +30,7 @@ var exhaustVelocity = 30.0 # the best thruster's specificImpulse, which getBestT
 var reactors = []
 var thrusters = {}
 var shipName = "Skip stub"
+var transponder = "SKIP-0" # the arrival's title card shows it (TransponderOnIntro.gd)
 var interlunarRemass = 0.0 # what getInterlunarTransitRemass returns; Game.gd _ready charges it after setup
 var interlunarTime = 0.0 # what getInterlunarTransitTime returns; Game.gd _ready charges it after setup
 var transitRemass = 0.0 # the remass the transit back needs (getTransitRemassToEnceladus takes what is left of it)

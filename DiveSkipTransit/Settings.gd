@@ -1,29 +1,49 @@
 extends Reference
 
 # DiveSkipTransit's settings model, shared by StationMenu.gd, SettingsUI.gd, Station.gd, Ship.gd and Code.gd: one
-# instance (shared()) holds whether each skip is on. They are game-wide, a player's choice for every save, kept in a
-# ConfigFile in user:// as the game keeps its own settings (Settings.gd loadFromFile / saveToFile), and written at
-# every change. Below them, the code the skips share (static): playing a cutscene through at once, and charging what
-# its seconds would have cost.
+# instance (shared()) holds whether each skip is on, and the transit's speed while it isn't skipped. They are
+# game-wide, a player's choice for every save, kept in a ConfigFile in user:// as the game keeps its own settings
+# (Settings.gd loadFromFile / saveToFile), and written at every change. Below them, the code the skips share (static):
+# playing a cutscene through at once, and charging what its seconds would have cost.
 
 signal settingsChanged()
 
-# One description per setting, in the order the settings screen lists them (a dive's). Each default is declared here
-# only. `label` is a translation key of i18n/en.po. `type` "bool" is a switch: no range, unit or conversion. `remass`:
-# skipping charges remass the cutscene would burn (the screen marks it).
+# One description per setting, in the order the settings screen lists them within their group, a dive's. Each default
+# is declared here only. `label` is a translation key of i18n/en.po. `group`: the screen's group it is in
+# (SettingsUI.gd GROUPS). `type` "bool" is a switch: no range, unit or conversion; "float" a slider, with its `min`,
+# `max`, `step`, `unit` and `format` (for the value shown). `remass`: skipping charges remass the cutscene would burn
+# (the screen marks it). `dimmedWhen`: the switch while which the setting doesn't apply (the screen dims it).
 const SETTINGS = {
+	# The transit both ways, the two cutscenes the game speeds up while Space is held: the arrival in the ring and the
+	# return to the station, diving back or at overspeed (Code.gd); the braking, the burn away and the turbines.
+	"skipTransit": {
+		"label": "DIVESKIPTRANSIT_SKIP_TRANSIT",
+		"default": true,
+		"type": "bool",
+		"remass": true,
+		"group": "transit",
+	},
+	# The transit's speed while it isn't skipped, without holding Space (Code.gd); above the game's Space speed it plays
+	# muted. The most is the game's Space speed times the physics steps Godot 3 runs in one frame (8), so that every
+	# step keeps the size the game's own fast-forward gives it.
+	"transitSpeed": {
+		"label": "DIVESKIPTRANSIT_TRANSIT_SPEED",
+		"default": 1.0,
+		"type": "float",
+		"min": 1.0,
+		"max": 24.0,
+		"step": 0.5,
+		"unit": "x",
+		"format": "%.1f",
+		"group": "transit",
+		"dimmedWhen": "skipTransit",
+	},
 	# The station's launch sequence (Station.gd).
 	"skipLaunch": {
 		"label": "DIVESKIPTRANSIT_SKIP_LAUNCH",
 		"default": true,
 		"type": "bool",
-	},
-	# The arrival cutscene in the ring (Code.gd): the braking and the turbines.
-	"skipArrival": {
-		"label": "DIVESKIPTRANSIT_SKIP_ARRIVAL",
-		"default": true,
-		"type": "bool",
-		"remass": true,
+		"group": "skip",
 	},
 	# Astrogation inside the ring (Ship.gd, and its title card in Code.gd): the turbines, and the speed change.
 	"skipAstrogation": {
@@ -31,38 +51,35 @@ const SETTINGS = {
 		"default": true,
 		"type": "bool",
 		"remass": true,
-	},
-	# The exit cutscene, diving back or at overspeed: the departure and the trip to the station (Code.gd); the burn and
-	# the turbines.
-	"skipExit": {
-		"label": "DIVESKIPTRANSIT_SKIP_EXIT",
-		"default": true,
-		"type": "bool",
-		"remass": true,
+		"group": "skip",
 	},
 	# The rescue cutscene, out of remass (Code.gd).
 	"skipRescue": {
 		"label": "DIVESKIPTRANSIT_SKIP_RESCUE",
 		"default": true,
 		"type": "bool",
+		"group": "skip",
 	},
 	# The game over cutscene after a meltdown (Code.gd).
 	"skipGameOver": {
 		"label": "DIVESKIPTRANSIT_SKIP_GAME_OVER",
 		"default": true,
 		"type": "bool",
+		"group": "skip",
 	},
 	# The station's fade-in on arrival, which keeps the menu disabled (Station.gd).
 	"skipStationFadeIn": {
 		"label": "DIVESKIPTRANSIT_SKIP_STATION_FADE_IN",
 		"default": true,
 		"type": "bool",
+		"group": "skip",
 	},
 }
 
 # The layout of the saved section. Renaming a saved key without a migration is a major version.
-# 1: launch, arrival, exit. 2: as 1, plus astrogation, rescue, game over and station fade-in.
-const FORMAT_VERSION = 2
+# 1: launch, arrival, exit. 2: as 1, plus astrogation, rescue, game over and station fade-in. 3: the arrival and the
+# exit became the transit (loadFromFile migrates them), plus the transit's speed.
+const FORMAT_VERSION = 3
 
 # The fission reactor, whose turbine burns remass every physics frame (ships/Reactor.gd _physics_process). The fusion
 # reactor's (ships/modules/FusionReactor.gd) burns none.
@@ -104,20 +121,31 @@ func setValue(key, value):
 
 # The defaults, overlaid by the settings file, in a section named by the mod's id. Without the file (the mod's first
 # run, or no setting changed yet), or without a value in it (a file from an older version), a setting keeps its
-# default.
+# default, or what an older file held under its old keys (_migrated). The next save writes the current layout.
 func loadFromFile():
 	var file = ConfigFile.new()
 	var loaded = file.load(filePath) == OK
+	var section = modId()
 	var changed = false
 	for key in SETTINGS:
 		var value = SETTINGS[key].default
 		if loaded:
-			value = _valid(key, file.get_value(modId(), key, value))
+			value = _valid(key, file.get_value(section, key, _migrated(file, section, key)))
 		if value != cfg[key]:
 			cfg[key] = value
 			changed = true
 	if changed:
 		emit_signal("settingsChanged")
+
+# A setting an older file holds under other keys, or its default. Format 2 had a switch each for the arrival and the
+# exit: the transit is skipped only if both were.
+func _migrated(file, section, key):
+	var default = SETTINGS[key].default
+	if key == "skipTransit":
+		var arrival = _valid(key, file.get_value(section, "skipArrival", default))
+		var exit = _valid(key, file.get_value(section, "skipExit", default))
+		return arrival and exit
+	return default
 
 func saveToFile():
 	var file = ConfigFile.new()
@@ -191,11 +219,17 @@ static func chargeSeconds(ship, seconds):
 		if reactor.enabled or reactor.temperature >= reactor.coldLimit:
 			ship.drawReactiveMass(reactor.turbineConsumption * seconds)
 
-# A switch's value is a bool: anything else gives the default (a settings file edited by hand can't break the code).
+# A switch's value is a bool; a slider's a number, snapped to its step and kept in its range. Anything else gives the
+# default (a settings file edited by hand can't break the code).
 func _valid(key, value):
+	var setting = SETTINGS[key]
+	if setting.type == "float":
+		if not (value is int or value is float):
+			return setting.default
+		return clamp(stepify(float(value), setting.step), setting.min, setting.max)
 	if value is bool:
 		return value
-	return SETTINGS[key].default
+	return setting.default
 
 func _manifestValue(section, key, default):
 	if _manifest == null:

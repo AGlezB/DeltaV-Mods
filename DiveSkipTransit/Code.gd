@@ -19,7 +19,8 @@ extends "res://Game.gd"
 # - The game over, after a meltdown: _on_gameOver plays "gameover", which ends on the title screen (gameOverScreen).
 # - Astrogation's title card, "fasttravel" (_onFastTravel): the trip itself is skipped by Ship.gd.
 # The mod plays each through at once (DiveSkipTransit.playThrough): the method keys are called in order, each after
-# charging the stretch of the cutscene before it.
+# charging the stretch of the cutscene before it. The arrival and the exit, the transit, share one switch; while it is
+# off, the mod plays them at the transit speed instead, without Space (the pacing, below).
 
 # The settings (which skips are on), shared with the settings screen, and the code the skips share.
 const DiveSkipTransit = preload("res://DiveSkipTransit/Settings.gd")
@@ -29,8 +30,14 @@ const _DST_RING_HEADING = PI / 2
 # (ship-ctrl.gd: Vector2(0, -1).rotated(rotation)), and a thruster's push is its own up (sfx/thruster.gd
 # getLocalThrustVector).
 const _DST_FORWARD = Vector2(0, -1)
+# The game's speed while Space is held in a cutscene (Game.gd _process): above it, the transit plays muted.
+const _DST_SPACE_SPEED = 3.0
+# The master bus, which the game mutes while its window is out of focus (Settings.gd _notification).
+const _DST_MASTER_BUS = 0
 
 var _dstBurn = null # the departure's burn while the exit is played through (_dstEscapeBurn)
+var _dstPace = 0.0 # the speed the mod plays the transit at, or 0 while it doesn't
+var _dstBaseRate = 0 # the physics rate (Engine.iterations_per_second) when the pacing started
 
 # Game.gd's _ready has run first (Godot runs every level's _ready, base first): it has spawned the ship (_respawn_ship
 # adds it to the tree deferred) and waits for the ship's setup. "helpless" is played inside _process, so it is caught
@@ -40,7 +47,7 @@ func _ready():
 	_dstSkipArrival()
 
 func _dstSkipArrival():
-	if not cutscene or si == null or not DiveSkipTransit.shared().getValue("skipArrival"):
+	if not cutscene or si == null or not DiveSkipTransit.shared().getValue("skipTransit"):
 		return
 	var seconds = totalCutsceneTime
 	# Game.gd _process brakes the ship along dvel = initialSpeed - Vector2(1, 0) * desiredAcceleration * eclapsedTime.
@@ -67,7 +74,7 @@ func _dstSkipArrival():
 func _on_exitingRing():
 	._on_exitingRing()
 	var titles = $TitleAnimPlayer
-	if titles.current_animation == "exit" and si != null and DiveSkipTransit.shared().getValue("skipExit"):
+	if titles.current_animation == "exit" and si != null and DiveSkipTransit.shared().getValue("skipTransit"):
 		_dstBurn = _dstEscapeBurn(si)
 		DiveSkipTransit.playThrough(titles, "exit", funcref(self, "_dstChargeExitStretch"))
 
@@ -107,6 +114,72 @@ func _onFastTravel():
 	var titles = $TitleAnimPlayer
 	if titles.current_animation == "fasttravel" and DiveSkipTransit.shared().getValue("skipAstrogation"):
 		DiveSkipTransit.playThrough(titles, "fasttravel")
+
+# The pacing: while the transit skip is off, the arrival and the exit play at the transit speed, without Space. During
+# a cutscene, Game.gd _process sets CurrentGame.targetTimeScale every frame (the Space speed while it is held, else
+# 1), and BulletTimer.gd _physics_process eases Engine.time_scale towards it at timeSlowPerSecond, then sets it back
+# to 1. The mod sets both the target and the time scale itself, in its _physics_process: that runs after the previous
+# frame's Game.gd _process and before BulletTimer's (Game's child), which then finds nothing to ease. Physics steps by
+# time_scale / iterations_per_second, so the mod raises the physics rate with the speed above the Space speed: every
+# step keeps the size the game's own fast-forward gives it, and the frame takes more of them (Godot 3 takes at most 8
+# a frame, so a slower machine just goes less fast). Above the Space speed the master bus is muted.
+func _physics_process(_delta):
+	var pace = _dstTransitPace()
+	if pace > 0:
+		_dstApplyPace(pace)
+	elif _dstPace > 0:
+		_dstStopPace()
+
+# Settings.gd _process puts the physics rate back to the player's once a second; it runs before the scene's, and a
+# frame counts its physics steps from the rate it starts with, so the pace's rate goes back here first.
+func _process(_delta):
+	if _dstPace > 0:
+		_dstApplyPace(_dstPace)
+
+func _exit_tree():
+	if _dstPace > 0:
+		_dstStopPace()
+
+# The speed the transit cutscene running now plays at, or 0: none is running, the transit is skipped, or the speed
+# is the game's own. On the arrival it tapers to 1x by the end, as the game's Space speed does; it is never below what
+# the game asked for (holding Space).
+func _dstTransitPace() -> float:
+	var settings = DiveSkipTransit.shared()
+	if settings.getValue("skipTransit"):
+		return 0.0
+	var speed = settings.getValue("transitSpeed")
+	if cutscene and si != null:
+		speed = lerp(speed, 1.0, clamp(eclapsedTime / totalCutsceneTime, 0.0, 1.0))
+	elif not (has_node("TitleAnimPlayer") and $TitleAnimPlayer.current_animation == "exit"):
+		return 0.0
+	if speed <= 1.0:
+		return 0.0
+	return max(speed, CurrentGame.targetTimeScale)
+
+func _dstApplyPace(pace):
+	if _dstPace <= 0:
+		_dstBaseRate = Engine.iterations_per_second
+	_dstPace = pace
+	CurrentGame.targetTimeScale = pace
+	Engine.time_scale = pace
+	Engine.iterations_per_second = int(ceil(_dstBaseRate * max(1.0, pace / _DST_SPACE_SPEED)))
+	if pace > _DST_SPACE_SPEED:
+		AudioServer.set_bus_mute(_DST_MASTER_BUS, true)
+	else:
+		_dstRestoreMute()
+
+# Back to the game's: its physics rate, its mute, and normal time, which is where the game's own end of a cutscene
+# leaves it (Game.gd _process; goToEnceladus).
+func _dstStopPace():
+	Engine.iterations_per_second = _dstBaseRate
+	Engine.time_scale = 1.0
+	CurrentGame.targetTimeScale = 1.0
+	_dstRestoreMute()
+	_dstPace = 0.0
+
+# The master bus muted as the game mutes it: while the window is out of focus, unless streaming.
+func _dstRestoreMute():
+	AudioServer.set_bus_mute(_DST_MASTER_BUS, not Settings.focused and not Settings.cfg.gameplay.streaming)
 
 # The departure's burn, as "exit" would fly it: from the ship's velocity to the autopilot's desired velocity
 # escapeTheRing set, at full throttle on the thrusters that push along the ship's forward axis. The autopilot fires each

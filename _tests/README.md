@@ -254,19 +254,30 @@ ShipCopyPaste, `skip` loads DiveSkipTransit.
   `fasttravel` card is jumped to its end. The station's fade-in: a station with the menu where `Enceladus.tscn` nests
   it (the game's `EnceladusMenu.gd`, its entries disabled) and the game's `FadeInCRT` (the tracks whose nodes it lacks
   removed), whose extension `_ready` is called as the engine calls it after the base's: the menu enabled at once, the
-  animation at its end. The settings model: defaults, in a dive's order; a change stored and signalled once; the file
-  written at once, its section named by the manifest's id, with the format and mod versions; read back by a new
-  instance; a value that isn't a switch's gives the default, also in a hand-edited file. Each switch off: that
-  sequence plays (the launch; the arrival under its title card, only the transit charged; astrogation with its waits
-  and its card; the exit, the rescue and the game over, nothing called yet; the fade-in, the menu disabled) while the
-  others are still skipped. The screen: a station built as `enceladus/Enceladus.tscn` nests the menu (the game's
+  animation at its end. The settings model: defaults, in a dive's order, the transit's two in a group of their own; a
+  change stored and signalled once; the file written at once, its section named by the manifest's id, with the format
+  and mod versions; read back by a new instance; a value that isn't a switch's gives the default, also in a
+  hand-edited file; the speed snapped to its step, kept in its range, its default for anything not a number; a
+  format-2 file's arrival and exit switches becoming the transit's (skipped only if both were). Each switch off: that
+  sequence plays (the launch; the transit both ways, the arrival under its title card at the game's speed, only the
+  transit to the rings charged, the exit with nothing charged yet; astrogation with its waits and its card; the rescue
+  and the game over, nothing called yet; the fade-in, the menu disabled) while the others are still skipped. The
+  transit's speed, with its switch off: at a speed up to the game's Space speed (`_DST_SPACE_SPEED`, read from the
+  mod), the arrival's time scale follows the speed tapered to 1x, the physics rate stays the game's, the sound on, and
+  holding Space gives the game's own (higher) speed; when the arrival ends (idle frames: at a raised rate several
+  physics frames fit in one), the game's rate, sound and normal time. At the most (`transitSpeed`'s `max`), the rate
+  raised to keep the Space speed's step size, the master bus muted, a reset of the rate (as `Settings.gd`'s) undone
+  before the next frame's physics, the exit at the full speed, and leaving the scene putting everything back. The
+  screen: a station built as `enceladus/Enceladus.tscn` nests the menu (the game's
   `EnceladusMenu.gd`, with a `RingDive` entry whose `pressed` the suite records) and the right-hand screens (the game's
   `HidingMarginContainer.gd` with a Tuning stub), clicked through the scene tree's input: the texts of `i18n/en.po`
   loaded; the entry's tooltip; a plain click launches, Shift+Click on a disabled entry does nothing, Shift+Click opens
-  the screen without launching; one group, titled by `GROUP_LABEL`, with one game's switch per setting named by its
-  label in the game's language, in order, each showing its setting, under the entry's text; the switches of the
-  settings with `remass`, and only those, end with `REMASS_MARK`, and a note under the group explains it
-  (`REMASS_NOTE`); switching one off stores it at once, focusing it again doesn't switch it back, its reset button
+  the screen without launching; a group per `GROUPS` entry, in order, titled by it, with a game's row per setting of
+  that group named by its label in the game's language, each switch showing its setting, under the entry's text; the
+  switches of the settings with `remass`, and only those, end with `REMASS_MARK`, and a note under the groups explains
+  it (`REMASS_NOTE`); the transit's speed is a game's slider with the setting's range, step, unit and format, dimmed
+  (`DIMMED`) while the transit is skipped and not otherwise, storing what it is moved to, its reset button restoring
+  the default; switching a switch off stores it at once, focusing it again doesn't switch it back, its reset button
   restores the default; Esc closes it after the fade. With
   CrewCheapHireNotifier loaded too (`-Mods CrewCheapHireNotifier,DiveSkipTransit`), the menu also has its Crew entry:
   Shift+Click on each opens its own screen and hides the other, and each keeps its own tooltip. The control checks (the
@@ -281,7 +292,7 @@ ShipCopyPaste, `skip` loads DiveSkipTransit.
   with `-Mods @()`), `lidar` 40 (3 control checks with `-Mods @()`), `hud` 13 (3 control checks with `-Mods @()`),
   `crew` 140 (141 with CrewPerfectSort too, in both load orders; 3 control checks with `-Mods @()`), `geology` 60 (3
   control checks with `-Mods @()`), `fleet` 70 (the same with ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice
-  too; 3 control checks with `-Mods @()`), `skip` 87 (90 with CrewCheapHireNotifier too; 13 control checks with
+  too; 3 control checks with `-Mods @()`), `skip` 102 (105 with CrewCheapHireNotifier too; 13 control checks with
   `-Mods @()`), all passing; `-Matrix` gives 16 of 16 in every combination.
   Feeding, a chunk beside the hull is in after 4.4–4.8 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.4.0 (the claude.ai results, case for case)

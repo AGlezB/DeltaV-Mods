@@ -50,12 +50,11 @@ func run():
 	if not mod:
 		return
 	model()
-	state = switchesOff()
-	if state is GDScriptFunctionState:
-		yield(state, "completed")
-	state = settingsScreen()
-	if state is GDScriptFunctionState:
-		yield(state, "completed")
+	for section in ["switchesOff", "pacing", "settingsScreen"]:
+		state = call(section)
+		if state is GDScriptFunctionState:
+			yield(state, "completed")
+	Engine.time_scale = 1.0
 	removeSettingsFile()
 
 # With the mods' zips mounted as resource packs, a Directory opened on res:// sees the packs, read-only: it neither
@@ -668,27 +667,53 @@ func model():
 	var defaults = true
 	for key in keys:
 		defaults = defaults and settings.getValue(key) == script.SETTINGS[key].default
-	check("settings: every skip starts at its default, in a dive's order", defaults and keys == ["skipLaunch", "skipArrival", "skipAstrogation", "skipExit", "skipRescue", "skipGameOver", "skipStationFadeIn"], keys)
+	var transit = []
+	for key in keys:
+		if script.SETTINGS[key].group == "transit":
+			transit.append(key)
+	check("settings: every setting starts at its default, in a dive's order, the transit's in a group of their own", defaults and keys == ["skipTransit", "transitSpeed", "skipLaunch", "skipAstrogation", "skipRescue", "skipGameOver", "skipStationFadeIn"] and transit == ["skipTransit", "transitSpeed"], [keys, transit])
 	recorded.clear()
 	settings.connect("settingsChanged", self, "_record", ["changed"])
-	settings.setValue("skipExit", not script.SETTINGS.skipExit.default)
-	settings.setValue("skipExit", not script.SETTINGS.skipExit.default)
-	check("settings: a change is stored and signalled once", settings.getValue("skipExit") != script.SETTINGS.skipExit.default and recorded == ["changed"], recorded)
+	settings.setValue("skipLaunch", not script.SETTINGS.skipLaunch.default)
+	settings.setValue("skipLaunch", not script.SETTINGS.skipLaunch.default)
+	check("settings: a change is stored and signalled once", settings.getValue("skipLaunch") != script.SETTINGS.skipLaunch.default and recorded == ["changed"], recorded)
 	var file = ConfigFile.new()
 	var loaded = file.load(SETTINGS_FILE) == OK
 	var id = settings.modId()
-	check("settings: written at once, in a section named by the mod's id, with the format and mod versions", loaded and file.get_value(id, "skipExit", null) == settings.getValue("skipExit") and file.get_value(id, "formatVersion", null) == script.FORMAT_VERSION and file.get_value(id, "modVersion", null) == settings.modVersion(), [loaded, id])
+	check("settings: written at once, in a section named by the mod's id, with the format and mod versions", loaded and file.get_value(id, "skipLaunch", null) == settings.getValue("skipLaunch") and file.get_value(id, "formatVersion", null) == script.FORMAT_VERSION and file.get_value(id, "modVersion", null) == settings.modVersion(), [loaded, id])
 	var other = script.new()
 	other.filePath = SETTINGS_FILE
 	other.loadFromFile()
-	check("settings: a new instance reads them back from the file", other.getValue("skipExit") == settings.getValue("skipExit"))
-	settings.setValue("skipExit", "off")
-	check("settings: a value that isn't a switch's gives the default", settings.getValue("skipExit") == script.SETTINGS.skipExit.default)
+	check("settings: a new instance reads them back from the file", other.getValue("skipLaunch") == settings.getValue("skipLaunch"))
+	settings.setValue("skipLaunch", "off")
+	check("settings: a value that isn't a switch's gives the default", settings.getValue("skipLaunch") == script.SETTINGS.skipLaunch.default)
+	var speed = script.SETTINGS.transitSpeed
+	var between = speed.min + speed.step * 2.3
+	settings.setValue("transitSpeed", between)
+	var snapped = settings.getValue("transitSpeed") == clamp(stepify(between, speed.step), speed.min, speed.max)
+	settings.setValue("transitSpeed", speed.max + speed.step * 3)
+	var high = settings.getValue("transitSpeed") == speed.max
+	settings.setValue("transitSpeed", speed.min - speed.step * 3)
+	var low = settings.getValue("transitSpeed") == speed.min
+	settings.setValue("transitSpeed", speed.max)
+	settings.setValue("transitSpeed", "fast")
+	check("settings: the speed is snapped to its step and kept in its range, and anything not a number gives the default", snapped and high and low and settings.getValue("transitSpeed") == speed.default)
 	file.set_value(id, "skipLaunch", 7)
-	file.set_value(id, "skipArrival", false)
+	file.set_value(id, "skipAstrogation", false)
 	file.save(SETTINGS_FILE)
 	other.loadFromFile()
-	check("settings: a hand-edited file loads its switches and keeps the default for anything else", other.getValue("skipLaunch") == script.SETTINGS.skipLaunch.default and other.getValue("skipArrival") == false)
+	check("settings: a hand-edited file loads its switches and keeps the default for anything else", other.getValue("skipLaunch") == script.SETTINGS.skipLaunch.default and other.getValue("skipAstrogation") == false)
+	# A file of format 2: a switch each for the arrival and the exit.
+	var migrated = []
+	for old in [[true, true], [true, false], [false, true]]:
+		var older = ConfigFile.new()
+		older.set_value(id, "formatVersion", 2)
+		older.set_value(id, "skipArrival", old[0])
+		older.set_value(id, "skipExit", old[1])
+		older.save(SETTINGS_FILE)
+		other.loadFromFile()
+		migrated.append(other.getValue("skipTransit"))
+	check("settings: a format-2 file's arrival and exit switches become the transit's, skipped only if both were", migrated == [true, false, false], migrated)
 	settings.disconnect("settingsChanged", self, "_record")
 	removeSettingsFile()
 	settings.loadFromFile()
@@ -699,33 +724,93 @@ func switchesOff():
 	check("launch switch off: the launch sequence plays", not launchesAtOnce(load("res://enceladus/Enceladus.gd")))
 	settings.setValue("skipLaunch", true)
 
-	settings.setValue("skipArrival", false)
-	check("arrival switch off: the launch is still cut", launchesAtOnce(load("res://enceladus/Enceladus.gd")))
+	# The transit switch off, at the speed's default: both ways play as in the game.
+	settings.setValue("skipTransit", false)
+	check("transit switch off: the launch is still cut", launchesAtOnce(load("res://enceladus/Enceladus.gd")))
 	var ring = makeRing()
-	check("arrival switch off: the ship is spawned for the cutscene", ring[1].position == ring[0].initialPosition and ring[1].cutscene)
+	check("transit switch off: the ship is spawned for the arrival cutscene", ring[1].position == ring[0].initialPosition and ring[1].cutscene)
 	yield(frames(3), "completed")
-	check("arrival switch off: the cutscene goes on under the title card", ring[1].cutscene and not introHidden(ring[0]))
+	check("transit switch off: the arrival goes on under the title card, at the game's speed", ring[1].cutscene and not introHidden(ring[0]) and Engine.time_scale == 1.0)
 	var before = ring[1].reactiveMass
 	ring[1].emit_signal("setup")
-	check("arrival switch off: only the transit is charged", is_equal_approx(before - ring[1].reactiveMass, ring[1].interlunarRemass))
+	check("transit switch off: only the transit to the rings is charged", is_equal_approx(before - ring[1].reactiveMass, ring[1].interlunarRemass))
+	ring[0].eclapsedTime = ring[0].totalCutsceneTime
+	yield(frames(2), "completed")
 	ring[1].autopilotDesiredVelocity = ESCAPE_VELOCITY
+	ring[1].cutscene = true
 	ring[1].events.clear()
 	Loader.calls.clear()
+	before = ring[1].reactiveMass
 	ring[1].emit_signal("exitingRing")
-	check("arrival switch off: the exit is still skipped", Loader.calls.count("go " + STATION_SCENE) == 1, Loader.calls)
+	check("transit switch off: the exit cutscene plays and nothing is charged yet", ring[0].get_node("TitleAnimPlayer").current_animation == "exit" and ring[1].events.empty() and Loader.calls.empty() and is_equal_approx(ring[1].reactiveMass, before))
 	freeRing(ring)
 	yield(frames(1), "completed")
-	settings.setValue("skipArrival", true)
+	settings.setValue("skipTransit", true)
 
-	settings.setValue("skipExit", false)
-	var state = leave(null, 1.0, Vector2(0, 0))
-	ring = yield(state, "completed")
-	check("exit switch off: the arrival is still skipped", ring[4])
-	ring[1].emit_signal("exitingRing")
-	check("exit switch off: the exit cutscene plays and nothing is charged yet", ring[0].get_node("TitleAnimPlayer").current_animation == "exit" and ring[1].events.empty() and Loader.calls.empty() and is_equal_approx(ring[1].reactiveMass, ring[2]))
+# ---- The transit's speed, the transit switch off ----
+
+# A ring with the transit played at `speed` (the transit switch off), its arrival under way.
+func pacedRing(speed):
+	settings.setValue("skipTransit", false)
+	settings.setValue("transitSpeed", speed)
+	var ring = makeRing()
+	yield(frames(3), "completed")
+	return ring
+
+# The arrival's speed, tapering to 1x at its end as the game's Space speed does, for the scene's elapsed time.
+func taper(scene, speed):
+	return lerp(speed, 1.0, clamp(scene.eclapsedTime / scene.totalCutsceneTime, 0.0, 1.0))
+
+func muted() -> bool:
+	return AudioServer.is_bus_mute(0)
+
+# Waits `count` (at least 1) idle frames. At a raised physics rate, several physics frames go by in one frame, and what
+# Game.gd's _process does (ending the arrival) needs whole frames.
+func idleFrames(count):
+	for i in max(1, count):
+		yield(get_tree(), "idle_frame")
+
+func pacing():
+	var spec = load("res://DiveSkipTransit/Settings.gd").SETTINGS.transitSpeed
+	var space = load("res://Game.gd").get_script_constant_map()["_DST_SPACE_SPEED"]
+	var base = Engine.iterations_per_second
+	var slow = spec.min + spec.step * 2
+	var state = pacedRing(slow)
+	var ring = yield(state, "completed")
+	check("pacing at %sx (up to the Space speed): the arrival plays at the speed, tapering to 1x, with no Space" % slow, Engine.time_scale > 1.0 and abs(Engine.time_scale - taper(ring[0], slow)) < 0.02, [Engine.time_scale, taper(ring[0], slow)])
+	check("pacing at %sx: the physics rate stays the game's, the sound on" % slow, Engine.iterations_per_second == base and not muted(), Engine.iterations_per_second)
+	Input.action_press("cutscene_ff")
+	yield(frames(3), "completed")
+	check("pacing at %sx: holding Space gives the game's own Space speed, which is higher" % slow, abs(Engine.time_scale - lerp(space, 1.0, ring[0].eclapsedTime / ring[0].totalCutsceneTime)) < 0.02, Engine.time_scale)
+	Input.action_release("cutscene_ff")
+	ring[0].eclapsedTime = ring[0].totalCutsceneTime
+	yield(idleFrames(3), "completed")
+	check("pacing: when the arrival ends, the game's rate, its sound and normal time", not ring[1].cutscene and Engine.time_scale == 1.0 and Engine.iterations_per_second == base and not muted())
 	freeRing(ring)
 	yield(frames(1), "completed")
-	settings.setValue("skipExit", true)
+
+	state = pacedRing(spec.max)
+	ring = yield(state, "completed")
+	var pace = taper(ring[0], spec.max)
+	check("pacing at the most, %sx: the arrival plays at the speed, tapering" % spec.max, abs(Engine.time_scale - pace) < 0.05, [Engine.time_scale, pace])
+	check("pacing at the most: the physics rate rises so each step keeps the Space speed's size, and the sound is muted", Engine.iterations_per_second == int(ceil(base * Engine.time_scale / space)) and muted(), [Engine.iterations_per_second, Engine.time_scale])
+	yield(get_tree(), "idle_frame")
+	Engine.iterations_per_second = base
+	yield(get_tree(), "physics_frame")
+	check("pacing at the most: a reset of the physics rate (as Settings.gd's) is undone before the next frame's physics", Engine.iterations_per_second > base, Engine.iterations_per_second)
+	ring[0].eclapsedTime = ring[0].totalCutsceneTime
+	yield(idleFrames(3), "completed")
+	ring[1].emit_signal("setup")
+	ring[1].autopilotDesiredVelocity = ESCAPE_VELOCITY
+	ring[1].cutscene = true
+	ring[1].emit_signal("exitingRing")
+	yield(frames(3), "completed")
+	check("pacing at the most: the exit plays at the speed, muted, at the raised rate", ring[0].get_node("TitleAnimPlayer").current_animation == "exit" and Engine.time_scale == spec.max and muted() and Engine.iterations_per_second == int(ceil(base * spec.max / space)), [Engine.time_scale, Engine.iterations_per_second])
+	freeRing(ring)
+	yield(frames(1), "completed")
+	check("pacing: leaving the ring scene puts back the game's rate, its sound and normal time", Engine.time_scale == 1.0 and CurrentGame.targetTimeScale == 1.0 and Engine.iterations_per_second == base and not muted(), [Engine.time_scale, Engine.iterations_per_second])
+	settings.setValue("transitSpeed", spec.default)
+	settings.setValue("skipTransit", true)
 
 # The station as enceladus/Enceladus.tscn nests the menu and the right-hand screens (as the crew suite builds it):
 # MarginContainer > HBoxContainer > Options (the menu, the game's EnceladusMenu.gd, with the dive entry and, when
@@ -822,7 +907,7 @@ func settingsScreen():
 	var s = menuStation(withCrew)
 	yield(frames(2), "completed")
 	var tip = tr("DIVESKIPTRANSIT_SETTINGS_TOOLTIP")
-	check("screen: the mod's texts are loaded (i18n/en.po)", tip != "DIVESKIPTRANSIT_SETTINGS_TOOLTIP" and tr("DIVESKIPTRANSIT_SKIP_EXIT") != "DIVESKIPTRANSIT_SKIP_EXIT")
+	check("screen: the mod's texts are loaded (i18n/en.po)", tip != "DIVESKIPTRANSIT_SETTINGS_TOOLTIP" and tr("DIVESKIPTRANSIT_SKIP_TRANSIT") != "DIVESKIPTRANSIT_SKIP_TRANSIT")
 	check("screen: the dive entry's tooltip tells about Shift+Click", s.dive.hint_tooltip == tip % [OS.get_scancode_string(KEY_SHIFT), settings.modName()], s.dive.hint_tooltip)
 	click(s.dive, false)
 	yield(frames(2), "completed")
@@ -839,38 +924,64 @@ func settingsScreen():
 	if screen == null:
 		freeMenuStation(s)
 		return
+	var ui = load("res://DiveSkipTransit/SettingsUI.gd").get_script_constant_map()
 	var groups = screenGroups(screen)
 	var rows = switches(screen)
-	var names = []
-	var shown = true
-	for i in rows.size():
-		names.append(rows[i].tuningItem)
-		var key = script.SETTINGS.keys()[i] if i < script.SETTINGS.size() else ""
-		shown = shown and rows[i].get_node("HBoxContainer/Value").pressed == settings.getValue(key)
-	var ui = load("res://DiveSkipTransit/SettingsUI.gd").get_script_constant_map()
+	# The rows the screen should have, in order: each group of GROUPS, its settings in SETTINGS order.
+	var keys = []
 	var labels = []
 	var marked = 0
-	for key in script.SETTINGS:
-		var remass = script.SETTINGS[key].get("remass", false)
-		labels.append(tr(script.SETTINGS[key].label) + (" " + ui.REMASS_MARK if remass else ""))
-		if remass:
-			marked += 1
-	check("screen: one group, titled by the mod's group key, with one switch per setting named by its label in the game's language, in order", groups.size() == 1 and groups[0].system == ui.GROUP_LABEL and names.size() == labels.size(), [groups.size(), names])
+	var titles = []
+	for entry in ui.GROUPS:
+		titles.append(entry[1])
+		for key in script.SETTINGS:
+			var setting = script.SETTINGS[key]
+			if setting.group != entry[0]:
+				continue
+			keys.append(key)
+			labels.append(tr(setting.label) + (" " + ui.REMASS_MARK if setting.get("remass", false) else ""))
+			if setting.get("remass", false):
+				marked += 1
+	var names = []
+	var shown = true
+	var groupTitles = []
+	for group in groups:
+		groupTitles.append(group.system)
+	for i in rows.size():
+		names.append(rows[i].tuningItem)
+		if i < keys.size() and script.SETTINGS[keys[i]].type == "bool":
+			shown = shown and rows[i].get_node("HBoxContainer/Value").pressed == settings.getValue(keys[i])
+	check("screen: a group per GROUPS entry, in order, titled by it, with a row per setting of that group named by its label in the game's language", groupTitles == titles and names.size() == labels.size() and groups[0].get_child_count() > 0, [groupTitles, names])
 	check("screen: the switches whose skip charges remass (SETTINGS' remass), and only those, end with the mark", names == labels and marked > 0, [names, marked])
 	var note = screen.get_node_or_null("VB/ScrollContainer/Items/RemassNote")
-	check("screen: a note under the switches explains the mark", note != null and note.get_index() > groups[0].get_index() and note.text == tr(ui.REMASS_NOTE) % ui.REMASS_MARK and note.text.begins_with(ui.REMASS_MARK) and note.autowrap, note.text if note != null else null)
+	check("screen: a note under the groups explains the mark", note != null and note.get_index() > groups[groups.size() - 1].get_index() and note.text == tr(ui.REMASS_NOTE) % ui.REMASS_MARK and note.text.begins_with(ui.REMASS_MARK) and note.autowrap, note.text if note != null else null)
 	check("screen: each switch shows its setting", shown)
 	check("screen: its header is the dive entry's text", screen.get_node("VB/HeaderWithMoney/MarketLabel").text == DIVE_KEY)
-	var exitRow = rows[script.SETTINGS.keys().find("skipExit")]
-	var exitSwitch = exitRow.get_node("HBoxContainer/Value")
-	exitSwitch.pressed = false
-	check("screen: switching one off stores it at once", settings.getValue("skipExit") == false and ConfigFile.new().load(SETTINGS_FILE) == OK)
+	# The transit's speed: a slider with the setting's range, step, unit and format, dimmed while the transit is skipped.
+	var spec = script.SETTINGS.transitSpeed
+	var speedRow = rows[keys.find("transitSpeed")]
+	var slider = speedRow.get_node("HSlider")
+	check("screen: the transit's speed is a game's slider with its range, step, unit and format", speedRow.get_script().resource_path.ends_with("TuningFloatValue.gd") and slider.min_value == spec.min and slider.max_value == spec.max and slider.step == spec.step and speedRow.get_node("HBoxContainer/Unit").text == spec.unit and speedRow.get_node("HBoxContainer/Value").text == spec.format % settings.getValue("transitSpeed"))
+	var transitSwitch = rows[keys.find("skipTransit")].get_node("HBoxContainer/Value")
+	check("screen: the slider is dimmed while the transit is skipped", settings.getValue("skipTransit") and is_equal_approx(speedRow.modulate.a, ui.DIMMED))
+	transitSwitch.pressed = false
+	check("screen: switching the transit skip off undims it", settings.getValue("skipTransit") == false and is_equal_approx(speedRow.modulate.a, 1.0))
+	slider.value = spec.max
+	check("screen: moving the slider stores the speed", settings.getValue("transitSpeed") == spec.max and speedRow.get_node("HBoxContainer/Value").text == spec.format % spec.max)
+	transitSwitch.pressed = true
+	check("screen: switching the transit skip on dims it again", is_equal_approx(speedRow.modulate.a, ui.DIMMED))
+	speedRow.get_node("HBoxContainer/Reset").emit_signal("pressed")
+	check("screen: the slider's reset button puts back the default speed", settings.getValue("transitSpeed") == spec.default)
+	var launchRow = rows[keys.find("skipLaunch")]
+	var launchSwitch = launchRow.get_node("HBoxContainer/Value")
+	launchSwitch.pressed = false
+	check("screen: switching one off stores it at once", settings.getValue("skipLaunch") == false and ConfigFile.new().load(SETTINGS_FILE) == OK)
 	rows[0].get_node("HBoxContainer/Value").grab_focus()
-	exitSwitch.grab_focus()
+	launchSwitch.grab_focus()
 	yield(frames(1), "completed")
-	check("screen: focusing it again doesn't switch it back", settings.getValue("skipExit") == false and not exitSwitch.pressed)
-	exitRow.get_node("HBoxContainer/Reset").emit_signal("pressed")
-	check("screen: its reset button puts it back to the default", settings.getValue("skipExit") == script.SETTINGS.skipExit.default and exitSwitch.pressed == script.SETTINGS.skipExit.default)
+	check("screen: focusing it again doesn't switch it back", settings.getValue("skipLaunch") == false and not launchSwitch.pressed)
+	launchRow.get_node("HBoxContainer/Reset").emit_signal("pressed")
+	check("screen: its reset button puts it back to the default", settings.getValue("skipLaunch") == script.SETTINGS.skipLaunch.default and launchSwitch.pressed == script.SETTINGS.skipLaunch.default)
 	yield(tap(escKey()), "completed")
 	yield(frames(40), "completed")
 	check("screen: Esc closes it after the game's fade", not screen.visible)

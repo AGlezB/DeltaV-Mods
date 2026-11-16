@@ -16,7 +16,7 @@ how to set it up and how to install it.
 | [CrewHighlightJobAndSalary](CrewHighlightJobAndSalary/README.md) | Makes the job and the salary of every crew entry (hired and unhired) stand out on the crew screens, and dims the rest. |
 | [CrewPerfectSort](CrewPerfectSort/README.md) | Sorts the crew lists at Enceladus Prime: the Hire screen by salary, then occupation; Your crew by occupation, then salary. |
 | [DiveDisableAdrenalineBooster](DiveDisableAdrenalineBooster/README.md) | The Adrenaline Booster of your ship starts every dive switched off. |
-| [DiveSkipTransit](DiveSkipTransit/README.md) | Skips a dive's cutscenes (launch, arrival, astrogation, return, rescue, game over, the station's fade-in), charging the remass and in-game time they would have cost. Each skip has its own switch (Shift+Click Launch Ring Dive). |
+| [DiveSkipTransit](DiveSkipTransit/README.md) | Skips a dive's cutscenes (the transit both ways, launch, astrogation, rescue, game over, the station's fade-in), charging the remass and in-game time they would have cost, or plays the transit faster without holding Space. Each skip has its own switch (Shift+Click Launch Ring Dive). |
 | [GeologyByMass](GeologyByMass/README.md) | Judges the ore your geologist identifies by the mass of each mineral in it instead of its value, as set on a new tab of the OMS. |
 | [HudHideLabels](HudHideLabels/README.md) | Hides the titles on the screens of the dive HUD. |
 | [LidarLouderPing](LidarLouderPing/README.md) | The lidar's ping for sensor contacts plays louder, by as much as you set in the ship's Tuning. |
@@ -39,7 +39,7 @@ short.
   dive switched off, which also damps the bullet time from the pilot and the smart camera.
 - [DiveSkipTransit](DiveSkipTransit/README.md#warning): a dive's cutscenes are skipped, with their remass and in-game
   time charged from the game's formulas (the switches marked * affect remass); the burn away from the ring is an
-  estimate.
+  estimate. The transit, when played, can run faster than the game's own fast-forward, muted.
 - [GeologyByMass](GeologyByMass/README.md#warning): with its switch on, which chunks keep a full info box depends
   on ore mass instead of value.
 

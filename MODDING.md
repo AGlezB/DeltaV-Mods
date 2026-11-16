@@ -177,7 +177,8 @@ with the mods.
     - the conversion between the units shown and the ones the code uses (10 world units = 1 m, a fraction shown
       as %);
     - clamping of what is loaded, so a settings file edited by hand can't break the code;
-    - saving, with a format version (renaming a saved key without a migration is a major version);
+    - saving, with a format version (renaming a saved key without a migration is a major version; DiveSkipTransit's
+      `loadFromFile` migrates format 2's `skipArrival` and `skipExit` into `skipTransit`);
     - a change signal, so a change applies at once.
 
     The mod's version is read from the zip's `Mod.manifest`, not repeated. Scripts reach the file through a preload
@@ -193,7 +194,10 @@ with the mods.
       the setting holds one value per job (CrewCheapHireNotifier's crew limit), all sharing its default, range and
       step. `label` is a translation key of the mod's `i18n/en.po`. A switch (DiveSkipTransit's skips) has
       `type: "bool"` and only `label` and `default` besides: no range, unit or conversion, and anything that isn't a
-      bool gives its default; the screen shows it with the game's Tuning switch. `var cfg`: the current values by key
+      bool gives its default; the screen shows it with the game's Tuning switch. Where a mod's settings mix switches and
+      sliders (DiveSkipTransit's transit speed), each has a `type` (`"bool"` or `"float"`), and a slider its `min`,
+      `max`, `step`, `unit` and the `format` of the value shown; `group` puts it in one of the screen's groups, and
+      `dimmedWhen` names the switch while which it doesn't apply. `var cfg`: the current values by key
       (a dictionary by job key for a per-job setting), set to the defaults in `_init`. `const FORMAT_VERSION`.
     - `jobs()`: the jobs a per-job setting has values for, the game's `CurrentGame.occupations`; `isPerJob(key)`.
     - `getValue(key, job = null)`; `setValue(key, value, job = null)` clamps and snaps to the step, and only on a change stores
@@ -373,8 +377,9 @@ English text there.
   fast towards the dive entry point and brakes to a crawl, turned to face into the rings (`Game.gd` `_ready` and
   `_process`: `initialSpeed` from `desiredAcceleration` and `initialCutsceneTime`, braking for `totalCutsceneTime`;
   `Game.tscn` sets the two times). The arrival, astrogation and the exit really fly the ship: its thrusters and its
-  reactor's turbine burn remass, and in-game time passes. DiveSkipTransit skips each of the five, each by its own
-  setting, and charges what it would have cost.
+  reactor's turbine burn remass, and in-game time passes. DiveSkipTransit skips each of the five, the arrival and the
+  exit (the transit) under one setting, and charges what it would have cost; with the transit not skipped, it plays
+  both at a speed of its own, without Space.
 - **Dealer** (`ENCELADUS_SHIP_MARKET`, `enceladus/Dealer.tscn`): the station's ship market. Its entries are
   `enceladus/SystemBuyUI.gd` (the ship-list mods change them); its Examine tab can launch the simulator. **Fleet**
   (`ENCELADUS_OWNED_SHIPS`): the ships the player owns, and the station screen listing them (`enceladus/Owned.tscn`,

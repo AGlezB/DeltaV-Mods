@@ -1,38 +1,48 @@
 # DiveSkipTransit - ΔV: Rings of Saturn
 
-Skips the cutscenes of a dive: the launch sequence, the arrival in the ring, astrogation, the return to the station,
-the rescue when you run out of remass, the game over after a meltdown, and the station's fade-in when you're back.
-Whatever a skipped cutscene would have cost in remass and in-game time is charged all the same. Each skip has its own
-switch: Shift+Click Launch Ring Dive.
+Skips the cutscenes of a dive: the transit both ways (the arrival in the ring and the return to the station), the
+launch sequence, astrogation, the rescue when you run out of remass, the game over after a meltdown, and the station's
+fade-in when you're back. Whatever a skipped cutscene would have cost in remass and in-game time is charged all the
+same. Each skip has its own switch, and the transit, when you'd rather watch it, can play faster without holding
+Space: Shift+Click Launch Ring Dive.
 
 ## Warning
 This mod changes how the game plays, though it tries not to. Compared to vanilla:
-- the skips whose cutscene burns remass charge it, worked out from the game's own formulas: the arrival, astrogation
-  and the return (see *Settings* for what each charges). The return's burn is an estimate at full throttle from the
-  first moment: it doesn't count the time a ship needs to turn round first (at overspeed), how its thrust builds up, or
-  the power and heat its thrusters might lack, so it can charge a little more remass than the cutscene would burn. The
-  arrival doesn't charge the remass the ship spends turning, and a ship too weak to brake as fast as the cutscene asks
-  starts as if it had;
+- the skips whose cutscene burns remass charge it, worked out from the game's own formulas: the transit (the arrival
+  and the return) and astrogation (see *Settings* for what each charges). The return's burn is an estimate at full
+  throttle from the first moment: it doesn't count the time a ship needs to turn round first (at overspeed), how its
+  thrust builds up, or the power and heat its thrusters might lack, so it can charge a little more remass than the
+  cutscene would burn. The arrival doesn't charge the remass the ship spends turning, and a ship too weak to brake as
+  fast as the cutscene asks starts as if it had;
 - none of the skips charges what a damaged reactor might vent during the skipped seconds;
 - the launch sequence is cut the way the game cuts it when you press Esc, so the station seconds it would take don't
   pass;
 - you don't see the rescue ship fly in, or your ship explode;
+- the transit played (not skipped) runs at the speed you set without holding Space, as the game's own fast-forward
+  does, and the ship flies it for real, costing what the game makes it cost. Above the game's Space speed it plays
+  muted, and the game's physics runs more steps per frame, each the size the game's own fast-forward uses, so a slower
+  machine reaches less than the speed set;
 - your real-time playtime (the game's statistics) counts only the time you actually play.
 
 Any skip can be switched off (see *Settings*). Before reporting a bug with a dive's cutscenes, or with the remass or
 the in-game time around them, to the game's developers, check that it also happens without the mod.
 
 ## What it does and why
+- **The transit**, both ways, the two cutscenes the game speeds up while you hold Space:
+  - the arrival: in the ring, the arrival cutscene (the ship braking in under the title card and the transit tip)
+    doesn't play: the ship starts where the cutscene leaves it, slowed down and facing into the rings, and you are in
+    control from the first frame;
+  - the return: when you dive back, or leave the ring at overspeed, the exit cutscene (the ship burning away from the
+    ring, then the title card of the trip to Enceladus) doesn't play: the screen goes black at once, and the station
+    loads.
+- **The transit's speed:** with the transit not skipped, both cutscenes play at the speed you set, without holding
+  Space: at 1x as in the game, at the game's own Space speed, or faster. The arrival slows back to 1x by its end, as the
+  game's own fast-forward does, so you take the controls in normal time. Holding Space still gives at least the game's
+  Space speed. Above it the sound is muted (sounds follow the game's speed, and get shrill).
 - **The launch:** after you press Launch Ring Dive and pick the dive target, the game goes straight to the ring.
-- **The arrival:** in the ring, the arrival cutscene (the ship braking in under the title card and the transit tip)
-  doesn't play: the ship starts where the cutscene leaves it, slowed down and facing into the rings, and you are in
-  control from the first frame.
 - **Astrogation:** once a plotted course is complete, the ship is at once where the game's astrogation would leave it,
   short of the destination and still moving at the travel velocity, with the trip's time on the clock, and you are in
   control. The course to Enceladus is the return.
-- **The return:** when you dive back, or leave the ring at overspeed, the exit cutscene (the ship burning away from
-  the ring, then the title card of the trip to Enceladus) doesn't play: the screen goes black at once, and the station
-  loads.
 - **The rescue:** when you run out of remass, the rescue cutscene (the rescue ship flying in) doesn't play: the time
   you spend stranded passes as in the game, and the station loads.
 - **The game over:** after a meltdown, the game goes straight to the title screen.
@@ -46,24 +56,30 @@ the in-game time around them, to the game's developers, check that it also happe
   - **Shift+Click** Launch Ring Dive to open them, as the entry's tooltip says. A plain click still launches a dive.
     The settings open where the Tuning screen does, with the same frame and the game's own Tuning switches, and close
     the way the game's screens do: Esc, the controller's B or Start button, or picking another entry of the menu.
-  - One group, *Skip*, with a switch for each skip. The switches marked * affect remass, as the note under them says:
+  - Two groups. The switches marked * affect remass, as the note under them says; the others don't.
+  - *Transit*:
+    - *Skip both ways* *: the arrival charges the remass to brake (the game's rocket equation, for the cutscene's
+      change of speed), the remass the reactor's turbine burns during the cutscene, and its in-game time. The return
+      charges the remass of the burn away from the ring (estimated), the turbine's, and the cutscene's in-game time,
+      with the transit back charged in between, from what is left, as the cutscene does.
+    - *Speed when played*: a slider for the speed the transit plays at while it isn't skipped. It is dimmed while the
+      transit is skipped, since it doesn't apply then. Its range, step and default are `transitSpeed`'s in `SETTINGS`;
+      the most is the game's Space speed times the physics steps the game's engine runs in one frame.
+  - *Skip*:
     - *Launch sequence*: no remass. The ship flown there is the station's.
-    - *Arrival in the ring* *: the remass to brake (the game's rocket equation, for the cutscene's change of speed), the
-      remass the reactor's turbine burns during the cutscene, and its in-game time.
     - *Astrogation* *: the remass the turbine burns during the cutscene's waits, the remass for any change of speed to
       the travel velocity, and the waits' in-game time, besides the trip's time the game adds.
-    - *Return to the station* *: the remass of the burn away from the ring (estimated), the turbine's, and the
-      cutscene's in-game time, with the transit back charged in between, from what is left, as the cutscene does.
     - *Rescue*: no remass (the tank is empty). The cutscene's in-game time, besides the stranded time the game adds.
     - *Game over*: nothing; the game is over.
     - *Arrival at the station*: nothing; the station's clock runs either way.
-  - Each has a button that resets it to its default. A change applies to the next cutscene of that kind.
+  - Each row has a button that resets it to its default. A change applies to the next cutscene of that kind.
   - They are game-wide, the same for every save, and written at once to a file of the mod's own in the game's user
-    folder. Every skip starts switched on.
+    folder. Every skip starts switched on. Settings from before the transit had one switch carry over: it is skipped if
+    both the arrival and the return were.
   - Opening them needs a mouse and a keyboard; a controller can use and close them.
-  - Each switch's default, and whether it affects remass, is in `SETTINGS` at the top of `DiveSkipTransit/Settings.gd`,
-    inside the zip. The mod's texts (the tooltip, the group's and the switches' names, the note) are in
-    `DiveSkipTransit/i18n/en.po`.
+  - Each setting's default, the speed's range, and whether a switch affects remass are in `SETTINGS` at the top of
+    `DiveSkipTransit/Settings.gd`, inside the zip. The mod's texts (the tooltip, the groups' and the rows' names, the
+    note) are in `DiveSkipTransit/i18n/en.po`.
 
 ## For modders
 - Six scripts: `Code.gd` (the ring scene's script extension: the arrival, the return, the rescue, the game over and
@@ -95,7 +111,7 @@ the in-game time around them, to the game's developers, check that it also happe
   the menu at 3 s; while `skipStationFadeIn` is on, the override plays it through.
 - **The arrival.** `Code.gd` extends `res://Game.gd` and overrides `_ready`, which does not call the parent's: the ship
   (`si`) is already spawned for the cutscene (`_respawn_ship`, which adds it to the tree deferred), and the base waits
-  for its `setup`. While `skipArrival` is on, `_dstSkipArrival`:
+  for its `setup`. While `skipTransit` is on, `_dstSkipArrival`:
   - puts the ship where the cutscene's braking leaves it, worked out from the game's own values: `initialPosition` and
     `initialSpeed`, which `_ready` computes from `desiredAcceleration` and `initialCutsceneTime`, and
     `totalCutsceneTime` (`Game.tscn` sets the two times). `_process` brakes along
@@ -109,7 +125,7 @@ the in-game time around them, to the game's developers, check that it also happe
   `ship-ctrl.gd` `escapeTheRing`: it turns the ship to the escape heading, sets the autopilot's desired velocity far
   out of the rings, with comfort and collisions off, claims the cargo and emits `exitingRing`. `Game.gd`
   `_on_exitingRing` plays `TitleAnimPlayer`'s `exit` and lets every ship take its leave (`handleExitToEnceladus`).
-  `Code.gd` overrides `_on_exitingRing` and calls the parent's; then, while `skipExit` is on, it plays `exit` through
+  `Code.gd` overrides `_on_exitingRing` and calls the parent's; then, while `skipTransit` is on, it plays `exit` through
   (`interlunarToEnceladus`, which charges the transit from the remass left; the asteroid field's `despawnAllAsteroids`;
   `goToEnceladus`, which saves and loads the station), charging each stretch with the burn (`_dstChargeEscape`) and
   `chargeSeconds`. Before the first key, the transit is charged from what the departure leaves, as in the cutscene.
@@ -122,6 +138,28 @@ the in-game time around them, to the game's developers, check that it also happe
     `KG_PER_TONNE`, speeding up 1 world unit/s every second). Each stretch charges the rocket equation's remass for the
     change of speed still needed or what the thrusters reach in that stretch, whichever is smaller, from the mass at
     the start (`currentMass`, which the game recomputes every physics frame) less the remass drawn since.
+- **The transit's speed** (`Code.gd`, the pacing), while `skipTransit` is off and the arrival (`cutscene`) or the exit
+  (`exit` playing) runs:
+  - The game's own fast-forward: during a cutscene, `Game.gd` `_process` sets `CurrentGame.targetTimeScale` every frame
+    (the Space speed, `_DST_SPACE_SPEED`, while `cutscene_ff` is held, tapered on the arrival by `lerp(…, 1.0,
+    eclapsedTime / totalCutsceneTime)`; else 1). `BulletTimer.gd` `_physics_process` eases `Engine.time_scale` towards
+    it at `timeSlowPerSecond` per real second, then sets it back to 1.
+  - The mod's speed (`_dstTransitPace`) is `transitSpeed`, tapered the same way on the arrival, and never below the
+    target the game set, so holding Space still works. `_dstApplyPace` sets both the target and `Engine.time_scale`,
+    from the mod's `_physics_process`: that runs after the previous frame's `Game.gd` `_process` and before
+    BulletTimer's (a child of the scene), which then finds nothing to ease, so the speed holds from the first frame.
+  - Physics steps by `time_scale / iterations_per_second`, so above the Space speed the mod raises
+    `Engine.iterations_per_second` with the speed (from the rate when it started, times the speed over
+    `_DST_SPACE_SPEED`): every step keeps the size the game's own fast-forward gives it, and the frame takes more of
+    them. Godot 3 takes at most 8 physics steps a frame, which is where `transitSpeed`'s maximum comes from; a frame
+    that can't keep up slows the game down instead of taking bigger steps. `Settings.gd` `_process` puts the rate
+    back to the player's once a second, before the scene's `_process`; the mod's `_process` re-applies its own, so a
+    frame never counts its steps from the player's rate at the mod's speed. The rate is otherwise read only for
+    `applyKineticDamage`'s default delta, and a ship takes no collision damage during a cutscene.
+  - Above the Space speed the master bus (`_DST_MASTER_BUS`) is muted. When the pacing stops (the arrival ends, `exit`
+    is over, or the scene leaves the tree), `_dstStopPace` puts back the rate, normal time and the mute as the game
+    sets it (`_dstRestoreMute`: muted while the window is out of focus, unless streaming, `Settings.gd`
+    `_notification`).
 - **The rescue.** `Game.gd` `_process` starts it once the ship has been helpless (out of remass) for
   `helplessTimeLimit`: the ship's cutscene on, its reactor off, its cargo claimed, then `TitleAnimPlayer`'s `helpless`,
   whose method keys are `sendHelp` (the stranded time, and the MAD-CERF rescue ship, which has no arm and can't act on
@@ -162,19 +200,24 @@ the in-game time around them, to the game's developers, check that it also happe
   - **The screen** (`SettingsUI.gd`) is CrewCheapHireNotifier's: one more of the right-hand screens, copying the live
     Tuning screen's theme, frame, size and place, built from the game's parts as `enceladus/Tuning.tscn` nests them
     (`Shower.tscn`, `HeaderWithMoney.tscn` titled with the entry's key, and an `Items` box with one
-    `Tuning/TuningItems.tscn` group, `GROUP_LABEL`), and closed by `ui_cancel`, `pause` or the container's `hidefoka`.
-    The group holds one switch (`"type": "bool"`, `Tuning/TuningBoolValue.tscn`) per setting, named by its `label` in
-    the game's language, with ` ` and `REMASS_MARK` after it for a `remass` setting; a Label under the group,
+    `Tuning/TuningItems.tscn` group per `GROUPS` entry, titled by it), and closed by `ui_cancel`, `pause` or the
+    container's `hidefoka`. A group holds a row per setting of its `group`: a switch (`"type": "bool"`,
+    `Tuning/TuningBoolValue.tscn`) or a slider (`"float"`, `Tuning/TuningFloatValue.tscn`, with the setting's `min`,
+    `max`, `step`, `unit` and `format`), named by its `label` in the game's language, with ` ` and `REMASS_MARK` after
+    it for a `remass` setting; a row whose `dimmedWhen` switch is on is dimmed (`DIMMED`). A Label under the groups,
     `RemassNote`, explains the mark (`tr(REMASS_NOTE)`, whose `%s` is the mark). The screen is filled each time it
     opens, so names and note follow a language change. A switch emits `tuningChanged` when toggled and again when it
     gets the focus, with the `current` of its description (`TuningBoolValue.gd` `_focus`), which it never updates; that
     description is the screen's own dictionary, so the screen sets `current` on every change, or focusing a switch
-    again would turn it back.
+    again would turn it back (a slider keeps its own, `TuningFloatValue.gd` `changed`).
   - **The model** (`Settings.gd`, a `Reference`): `shared()` returns the one instance, kept as metadata of the script,
-    loaded from the file when first made. `SETTINGS` describes each switch (`label`, `default`, `type`, and `remass`
-    where skipping charges remass), in display order. `getValue(key)`; `setValue(key, value)` keeps anything that
-    isn't a bool at the default and, on a change only, saves and emits `settingsChanged`. `loadFromFile()` overlays the
-    defaults with the file's values (a key missing from an older file keeps its default); `saveToFile()` writes them.
+    loaded from the file when first made. `SETTINGS` describes each setting (`label`, `default`, `type`, `group`; for a
+    slider its range, step, unit and format; `remass` where skipping charges remass; `dimmedWhen`), in display order
+    within its group. `getValue(key)`; `setValue(key, value)` keeps a switch's anything-but-a-bool at the default,
+    snaps a slider's number to its step and range (anything else gives the default) and, on a change only, saves and
+    emits `settingsChanged`. `loadFromFile()` overlays the defaults with the file's values (a key missing from an older
+    file keeps its default, or what the file held under the key's old names: format 2's `skipArrival` and `skipExit`
+    give `skipTransit`, on only if both were); `saveToFile()` writes them.
     The file, `filePath` (`user://<the mod's id>.cfg`), holds one section named by the mod's id, with `formatVersion`
     (`FORMAT_VERSION`), `modVersion` and each setting. The skips read the model when their cutscene starts, so a
     change applies to the next one. Scripts reach it through the preload constant `DiveSkipTransit`, never `Settings`,
@@ -182,11 +225,13 @@ the in-game time around them, to the game's developers, check that it also happe
   - **The texts:** `i18n/en.po`, loaded in `ModMain.gd` with `load()` and `TranslationServer.add_translation`, as the
     game loads its own `.po` files. English is Godot's fallback language, so every language shows it until it gets its
     own file.
-- Members of `Code.gd`: `DiveSkipTransit` (preload), `_DST_RING_HEADING`, `_DST_FORWARD`, `_dstBurn`,
-  `_dstSkipArrival()`, `_dstChargeExitStretch()`, `_dstOnTitleCard()`, `_dstSkipRescue()`, `_dstChargeStretch()`,
-  `_dstEscapeBurn()` and `_dstChargeEscape()`; it overrides `_ready`, `_on_exitingRing`, `_on_gameOver` and
-  `_onFastTravel`. Of `Ship.gd`: `DiveSkipTransit` (preload), `_DST_ASTROGATION_BEFORE_JUMP`,
-  `_DST_ASTROGATION_AFTER_JUMP`; it overrides `fastTravelTo`. Of `Station.gd`: `DiveSkipTransit` (preload); it
+- Members of `Code.gd`: `DiveSkipTransit` (preload), `_DST_RING_HEADING`, `_DST_FORWARD`, `_DST_SPACE_SPEED`,
+  `_DST_MASTER_BUS`, `_dstBurn`, `_dstPace`, `_dstBaseRate`, `_dstSkipArrival()`, `_dstChargeExitStretch()`,
+  `_dstOnTitleCard()`, `_dstSkipRescue()`, `_dstChargeStretch()`, `_dstEscapeBurn()`, `_dstChargeEscape()`,
+  `_dstTransitPace()`, `_dstApplyPace()`, `_dstStopPace()` and `_dstRestoreMute()`; it overrides `_ready`,
+  `_on_exitingRing`, `_on_gameOver` and `_onFastTravel`, and adds `_physics_process`, `_process` and `_exit_tree`
+  (`Game.gd`'s own `_process` still runs: Godot runs every level of it). Of `Ship.gd`: `DiveSkipTransit` (preload),
+  `_DST_ASTROGATION_BEFORE_JUMP`, `_DST_ASTROGATION_AFTER_JUMP`; it overrides `fastTravelTo`. Of `Station.gd`: `DiveSkipTransit` (preload); it
   overrides `_ready` and `_on_DiveTarget_launch`. Of `StationMenu.gd`: `DiveSkipTransit` and `_DST_SETTINGS_UI`
   (preloads), `_DST_SETTINGS_TOOLTIP`, `_dstDiveButton`, `_dstDiveKey`, `_dstSettingsScreen`, `_dstScreens`,
   `_dstTuning`, `_dstUpdateTooltip()`, `_dstOnDiveInput()` and `_dstOpenSettings()`. No tunables.

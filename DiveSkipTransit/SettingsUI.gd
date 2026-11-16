@@ -2,21 +2,27 @@ extends PanelContainer
 
 # DiveSkipTransit's settings screen: one more of the station's right-hand screens, opened from the menu's dive entry
 # (StationMenu.gd), built as CrewCheapHireNotifier's is. It copies the Tuning screen's frame and place and is built from
-# the game's own Tuning parts, the way enceladus/Tuning.tscn nests them: the header, then a group of switches. It
-# behaves like the game's screens (enceladus/Tuning.gd, enceladus/Crew.gd): the Shower fades it in and out, Esc or the
-# controller's back button closes it, and so does focusing another entry of the menu (the screens container's
-# `hidefoka`).
+# the game's own Tuning parts, the way enceladus/Tuning.tscn nests them: the header, then groups of switches and
+# sliders. It behaves like the game's screens (enceladus/Tuning.gd, enceladus/Crew.gd): the Shower fades it in and out,
+# Esc or the controller's back button closes it, and so does focusing another entry of the menu (the screens
+# container's `hidefoka`).
 
 const DiveSkipTransit = preload("res://DiveSkipTransit/Settings.gd")
 
 const GAME_SHOWER = "res://enceladus/Shower.tscn"
 const GAME_HEADER = "res://enceladus/HeaderWithMoney.tscn"
 const GAME_TUNING_ITEMS = "res://enceladus/Tuning/TuningItems.tscn"
-# The title of the group of switches, and the note under it: translation keys of i18n/en.po. The note's %s is the mark.
-const GROUP_LABEL = "DIVESKIPTRANSIT_GROUP"
+# The groups, in display order: the `group` of the settings in it, and its title, a translation key of i18n/en.po.
+const GROUPS = [
+	["transit", "DIVESKIPTRANSIT_GROUP_TRANSIT"],
+	["skip", "DIVESKIPTRANSIT_GROUP"],
+]
+# The note under the groups: a translation key of i18n/en.po, whose %s is the mark.
 const REMASS_NOTE = "DIVESKIPTRANSIT_REMASS_NOTE"
 # Ends the name of each switch whose skip charges remass (a `remass` setting), and starts the note that explains it.
 const REMASS_MARK = "*"
+# The opacity of a row while it doesn't apply (a `dimmedWhen` setting whose switch is on).
+const DIMMED = 0.4
 
 var lastFocus
 var _settings = DiveSkipTransit.shared()
@@ -24,6 +30,7 @@ var _scroll = null
 var _items = null
 var _rows = {} # each row's description by the row's name: the same dictionary the row holds as its `tune`
 var _keys = {} # the setting key of each row, by the row's name
+var _rowNodes = {} # each row (the game's TuningBoolValue or TuningFloatValue), by the row's name
 
 # `tuning` is the station's Tuning screen, `title` the translation key of the header.
 func setup(tuning: Control, title: String):
@@ -80,10 +87,11 @@ func unfocus():
 		lastFocus.grab_focus()
 		lastFocus = null
 
-# One Tuning group as Tuning.gd fillTuneableSystems builds it, in an Items box as Tuning.tscn has: titled GROUP_LABEL,
-# with a switch (TuningBoolValue) per setting, named by its label in the game's language and, where skipping charges
-# remass, REMASS_MARK; then the note that explains the mark. The screen is filled each time it opens, so the names
-# follow a language change.
+# Tuning groups as Tuning.gd fillTuneableSystems builds them, in an Items box as Tuning.tscn has: one per GROUPS entry,
+# titled by it, with a row per setting of that group, in SETTINGS order: a switch (TuningBoolValue) or a slider
+# (TuningFloatValue, with the setting's range, step, unit and format), named by its label in the game's language and,
+# where skipping charges remass, REMASS_MARK. Then the note that explains the mark. The screen is filled each time it
+# opens, so the names follow a language change.
 func _fill():
 	if _items != null:
 		_scroll.remove_child(_items)
@@ -94,35 +102,63 @@ func _fill():
 	_scroll.add_child(_items)
 	_rows = {}
 	_keys = {}
-	for key in DiveSkipTransit.SETTINGS:
-		var setting = DiveSkipTransit.SETTINGS[key]
-		var rowName = tr(setting.label)
-		if setting.get("remass", false):
-			rowName += " " + REMASS_MARK
-		_rows[rowName] = {
-			"type": setting.type,
-			"default": setting.default,
-			"current": _settings.getValue(key),
-			"testProtocol": "",
-		}
-		_keys[rowName] = key
-	var group = load(GAME_TUNING_ITEMS).instance()
-	group.system = GROUP_LABEL
-	group.key = null
-	group.tuning = _rows
-	_items.add_child(group)
-	group.connect("tuningChanged", self, "_onTuningChanged")
+	_rowNodes = {}
+	var first = null
+	for entry in GROUPS:
+		var tuning = {}
+		for key in DiveSkipTransit.SETTINGS:
+			var setting = DiveSkipTransit.SETTINGS[key]
+			if setting.group != entry[0]:
+				continue
+			var rowName = tr(setting.label)
+			if setting.get("remass", false):
+				rowName += " " + REMASS_MARK
+			var row = {
+				"type": setting.type,
+				"default": setting.default,
+				"current": _settings.getValue(key),
+				"testProtocol": "",
+			}
+			if setting.type == "float":
+				for field in ["min", "max", "step", "unit", "format"]:
+					row[field] = setting[field]
+			tuning[rowName] = row
+			_rows[rowName] = row
+			_keys[rowName] = key
+		if tuning.empty():
+			continue
+		var group = load(GAME_TUNING_ITEMS).instance()
+		group.system = entry[1]
+		group.key = null
+		group.tuning = tuning
+		_items.add_child(group)
+		group.connect("tuningChanged", self, "_onTuningChanged")
+		for row in group.get_children():
+			if "tuningItem" in row:
+				_rowNodes[row.tuningItem] = row
+		if first == null:
+			first = group
 	var note = Label.new()
 	note.name = "RemassNote"
 	note.autowrap = true
 	note.size_flags_horizontal = SIZE_EXPAND_FILL
 	note.text = tr(REMASS_NOTE) % REMASS_MARK
 	_items.add_child(note)
-	Tool.deferCallWhenIdle(group, "focus")
+	_dimRows()
+	if first != null:
+		Tool.deferCallWhenIdle(first, "focus")
 
-# A switch emits this when it is toggled, and also when it gets the focus, with the `current` of its description
-# (TuningBoolValue.gd _focus), which the row never updates itself. Setting it here keeps a switch from going back when
-# it is focused again; setValue stores nothing when the value is unchanged.
+# A row is dimmed while the switch its setting names in `dimmedWhen` is on: the setting doesn't apply then.
+func _dimRows():
+	for rowName in _rowNodes:
+		var toggle = DiveSkipTransit.SETTINGS[_keys[rowName]].get("dimmedWhen", "")
+		_rowNodes[rowName].modulate.a = DIMMED if toggle != "" and _settings.getValue(toggle) else 1.0
+
+# A row emits this when it changes, and also when it gets the focus. A switch then sends the `current` of its
+# description (TuningBoolValue.gd _focus), which it never updates itself; setting it here keeps a switch from going
+# back when it is focused again (a slider keeps its own, TuningFloatValue.gd changed). setValue stores nothing when the
+# value is unchanged.
 func _onTuningChanged(_group, item, to, _protocol):
 	_rows[item].current = to
 	_settings.setValue(_keys[item], to)
+	_dimRows()
