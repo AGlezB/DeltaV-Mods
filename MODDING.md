@@ -358,13 +358,60 @@ English text there.
   their entry as levels (`CurrentGame.talentLevels`, `experienceLevels`; `enceladus/CrewBio.gd`).
   - The crew's value for an occupation is the best among the dive crew in it, not counting those on leave, raised by
     that member's good morale and lowered by bad (see *Morale*; `CurrentGame.getCrewStats`).
-  - Each occupation's talent and experience give one stat each, shown on Your Crew (`deriveStats`, `skillMatrix`):
-    Pilot, Adrenal slowdown and Course anticipation; Mechanic, Jury-rig efficiency and Repair limit; Geologist, Price
-    prediction accuracy and Mineral discovery range; Astrogator, Tactical awareness range and Coordinate tracking time
-    (`CREW_STATS_ASTROGATOR_TIME`: how long trackable destinations stay usable, see *Astrogation*; the longer of 12 h
-    and 90 days × experience).
-  - Both grow through `giveXp`, which events call (an astrogator revisiting a destination, among others); a member's
-    growth is pulled towards the best member of their occupation (`mentorXpGain`).
+  - Each occupation's talent and experience give one stat each, shown on Your Crew (`deriveStats`, `skillMatrix`).
+    With no one of an occupation in the dive crew, its values are 0, and its stats still apply where 0 gives them a
+    value.
+    - Pilot. Adrenal slowdown (`CREW_STATS_PILOT_ADRENALINE`, from talent; see *Adrenaline*): game time at full
+      adrenaline runs at 0.7 − 0.5 × talent of its normal speed, from 0.7 with no pilot to 0.2 (`getAdrenalSlowdown`,
+      `BulletTimer.gd`); Your Crew shows it as the gain in the pilot's perception of time, 43 % to 400 %. Course
+      anticipation (`CREW_STATS_PILOT_ANTICIPATION`, from experience): how far ahead, 4 s × experience, the pilot
+      checks the ship's course for collisions; one foreseen raises adrenaline (`ship-ctrl.gd`
+      `handlePilotAdrenaline`), so with no pilot only the other sources do.
+    - Mechanic. Jury-rig efficiency (`CREW_STATS_MECHANIC_JURYRIG`, from talent; 25 % + 75 % × talent). Jury-rigging
+      is the OMS Mechanic tab's slider on each kind of damage a piece of equipment can take, from -1 to 1; moving one
+      moves the piece's others the opposite way by as much in total (`ship-ctrl.gd` `setSystemJuryRig`). A slider
+      multiplies that kind's damage capacity by 1 + slider × efficiency, at least 0.1
+      (`getCrewAdjustedJuryRigFactorForSystem`), and the damage counts against that capacity: at full efficiency the
+      same damage counts half at 1 and ten times at -1. Repair limit (`CREW_STATS_MECHANIC_FIX`, from experience;
+      71 % + 29 % × experience, at most 99.5 %; `getRepairLimit`): the Repairs screen offers Fix only for a piece
+      whose condition is below it, and fixes it only up to it; past it, only Replace
+      (`enceladus/SystemShipRepairUI.gd`). It counts the whole crew not on leave, not only the dive crew. How long a
+      Fix takes depends on the number of mechanics, not on their stats (`getMechanicMultiplier`).
+    - Geologist. Price prediction accuracy (`CREW_STATS_GEOLOGIST_PREDICTION`, from talent; 10 % + 80 % × talent). At
+      the Mineral Market (see *Mineral*), the price forecast's error is (time ahead / 40 days)² / accuracy, and at 1
+      the forecast is noise (`getMineralPricePredictionError`, `enceladus/MineralPriceChart.gd`): about 13 days ahead
+      at 10 %, 38 days at 90 %. In a dive, each chunk's info box (`hud/MineralMark.gd`: the box the HUD shows by a
+      chunk, with the mass of each mineral in it and its value) gets one random error within ±(1 − accuracy), from
+      ±90 % to ±10 %, on both the masses and the value, and the ship records the chunk with those figures
+      (`addIdentifiedObject`). Mineral discovery range (`CREW_STATS_GEOLOGIST_RANGE`, from experience;
+      100 m + 1000 m × experience, 0 with no geologist in the dive crew): only chunks within it get an info box
+      (`hud/AutopilotOverlay.gd` `geologistMineralMarkers`). It also sets how many past finds of each mineral the
+      Geologist tab's mineral map keeps (`getMineralHistoryLength`, `hud/components/MineralMap.gd`).
+    - Astrogator. Tactical awareness range (`CREW_STATS_ASTROGATOR_RANGE`, from talent; 500 m + 5000 m × talent, 0
+      with no astrogator in the dive crew): ships, stations and other tactical objects within it that the LIDAR has
+      seen get a marker with their transponder and name, the more likely the closer they are (a chance of
+      (1 − distance / range)² at each check; `hud/AutopilotOverlay.gd` `astrogatorTacticalMarkers`,
+      `hud/ShipMark.gd`). Coordinate tracking time (`CREW_STATS_ASTROGATOR_TIME`, from experience): how long trackable
+      destinations stay usable, see *Astrogation*; the longer of 12 h and 90 days × experience.
+    - Launch fees, on the dive entry point screen (see *Dive*; `DiveTarget.gd` `getPrices`): the dive crew's
+      astrogator talent cuts the Xaser pathway burn fee (`MAP_FEE_DEPTH`), and its geologist experience the
+      Environmental damages fee (`MAP_FEE_ENVIRONMENT`), each by 99 % × the value.
+  - Salary: the occupation's base (`CurrentGame.baseSalary`: Pilot 1700, Mechanic 1500, Geologist 2400, Astrogator
+    2100 E$) × (1 + bias + experience + 3 × talent)², the bias a random -0.5 to 0.5 per person
+    (`getExpectedSalaryFrom`), so talent counts three times as much as experience. It is fixed when the person is
+    offered, rounded up to 100 E$, and doesn't follow their growth; a raise request compares it with this figure
+    (see *Morale*). Each candidate on the Hire screen gets talent and experience as a uniform random number squared
+    (`randomizeAvailableCrewMember`), so most are low.
+  - Growth (`giveXp`): a step of size x first pulls a value towards the best member of the occupation by
+    `mentorXpGain` (0.5 %) × x of the difference, then closes `normalXpGain` (0.25 %) × x of what is left to 1.
+    - Talent: one step per in-game day, wherever the ship is, for the whole crew, aboard, at the station or on leave
+      (`daysPassed` → `grantXpAtStation`, despite its name). Alone, a member's gap to 1 halves in about 277 days.
+    - Experience, from events: everyone aboard, a step of 0.5 about once a minute while the ship flies faster than
+      5 m/s outside a cutscene (`ship-ctrl.gd` `handleExperience`); the pilot, the more the longer the ship has flown
+      on through foreseen collisions without hitting anything (`leafOnTheWind`, reset by every impact); the
+      geologist, for each chunk identified, more for a valuable one (`hud/MineralMark.gd`); the astrogator, for each
+      ship identified (`hud/ShipMark.gd`) and each destination revisited after its deadline, more the later
+      (`discoverPoi`); every mechanic hired, for each repair at the station, by its hours (`SystemShipRepairUI.gd`).
 - **Cutscene**: a stretch where the game flies the ship and the player has no control, while the ship's `cutscene`
   flag is on (`ship-ctrl.gd` `_setCutscene`, which emits `cutscene`). The ring scene has five: the arrival at the start
   of a dive, the exit (`ship-ctrl.gd` `escapeTheRing`, then the `exit` animation), the rescue of a helpless ship (out
