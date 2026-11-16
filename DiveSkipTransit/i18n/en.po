@@ -37,7 +37,7 @@ msgid "DIVESKIPTRANSIT_TRANSIT_SPEED_DESC"
 msgstr ""
 "Sets how fast the transit cutscenes play while they aren't skipped, without holding Space.\n"
 "\n"
-"Faster than holding Space, they play muted."
+"Faster than holding Space, they play without sound."
 
 # The group of the other skips, with one switch each.
 msgid "DIVESKIPTRANSIT_GROUP"

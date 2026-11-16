@@ -20,8 +20,8 @@ This mod changes how the game plays, though it tries not to. Compared to vanilla
 - you don't see the rescue ship fly in, or your ship explode;
 - the transit played (not skipped) runs at the speed you set without holding Space, as the game's own fast-forward
   does, and the ship flies it for real, costing what the game makes it cost. Above the game's Space speed it plays
-  muted, and the game's physics runs more steps per frame, each the size the game's own fast-forward uses, so a slower
-  machine reaches less than the speed set;
+  without sound, and the game's physics runs more steps per frame, each the size the game's own fast-forward uses, so a
+  slower machine reaches less than the speed set;
 - your real-time playtime (the game's statistics) counts only the time you actually play.
 
 Any skip can be switched off (see *Settings*). Before reporting a bug with a dive's cutscenes, or with the remass or
@@ -38,7 +38,7 @@ the in-game time around them, to the game's developers, check that it also happe
 - **The transit's speed:** with the transit not skipped, both cutscenes play at the speed you set, without holding
   Space: at 1x as in the game, at the game's own Space speed, or faster. The arrival slows back to 1x by its end, as the
   game's own fast-forward does, so you take the controls in normal time. Holding Space still gives at least the game's
-  Space speed. Above it the sound is muted (sounds follow the game's speed, and get shrill).
+  Space speed. Above it there is no sound (sounds follow the game's speed, and get shrill).
 - **The launch:** after you press Launch Ring Dive and pick the dive target, the game goes straight to the ring.
 - **Astrogation:** once a plotted course is complete, the ship is at once where the game's astrogation would leave it,
   short of the destination and still moving at the travel velocity, with the trip's time on the clock, and you are in
