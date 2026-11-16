@@ -10,36 +10,78 @@ msgstr ""
 msgid "DIVESKIPTRANSIT_SETTINGS_TOOLTIP"
 msgstr "Click while pressing %s to open the %s settings."
 
-# The settings screen: the transit group (the arrival in the ring and the return to the station), with its switch and
-# the speed it plays at when not skipped.
+# The settings screen. Each setting has its name and, under the same key followed by SettingsUI.gd's
+# DESCRIPTION_SUFFIX, the description the screen shows while it is selected, written as the game's Tuning descriptions
+# are.
+
+# The transit group (the arrival in the ring and the return to the station), with its switch and the speed it plays at
+# when not skipped.
 msgid "DIVESKIPTRANSIT_GROUP_TRANSIT"
 msgstr "Transit"
 
 msgid "DIVESKIPTRANSIT_SKIP_TRANSIT"
 msgstr "Skip both ways"
 
+msgid "DIVESKIPTRANSIT_SKIP_TRANSIT_DESC"
+msgstr ""
+"Skips the transit cutscenes: the arrival in the ring at the start of a dive, and the return to the station at the "
+"end.\n"
+"\n"
+"The remass and in-game time they would have cost are charged, worked out from the game's formulas. The burn away "
+"from the ring is an estimate."
+
 msgid "DIVESKIPTRANSIT_TRANSIT_SPEED"
 msgstr "Speed when played"
 
-# The settings screen: the group of the other skips, with one switch each.
+msgid "DIVESKIPTRANSIT_TRANSIT_SPEED_DESC"
+msgstr ""
+"Sets how fast the transit cutscenes play while they aren't skipped, without holding Space.\n"
+"\n"
+"Faster than holding Space, they play muted."
+
+# The group of the other skips, with one switch each.
 msgid "DIVESKIPTRANSIT_GROUP"
 msgstr "Skip"
 
 msgid "DIVESKIPTRANSIT_SKIP_LAUNCH"
 msgstr "Launch sequence"
 
+msgid "DIVESKIPTRANSIT_SKIP_LAUNCH_DESC"
+msgstr ""
+"Skips the launch sequence after Launch Ring Dive: the dive starts at once.\n"
+"\n"
+"The launch sequence burns no remass, so nothing is charged."
+
 msgid "DIVESKIPTRANSIT_SKIP_ASTROGATION"
 msgstr "Astrogation"
+
+msgid "DIVESKIPTRANSIT_SKIP_ASTROGATION_DESC"
+msgstr ""
+"Skips the astrogation cutscene: the ship arrives at its destination at once, at the travel velocity.\n"
+"\n"
+"The remass and in-game time the cutscene would have cost are charged, besides the trip's time the game adds."
 
 msgid "DIVESKIPTRANSIT_SKIP_RESCUE"
 msgstr "Rescue"
 
+msgid "DIVESKIPTRANSIT_SKIP_RESCUE_DESC"
+msgstr ""
+"Skips the rescue cutscene, when the ship is stranded out of remass.\n"
+"\n"
+"Its in-game time is charged, besides the stranded time the game adds."
+
 msgid "DIVESKIPTRANSIT_SKIP_GAME_OVER"
 msgstr "Game over"
+
+msgid "DIVESKIPTRANSIT_SKIP_GAME_OVER_DESC"
+msgstr "Skips the game over cutscene after a reactor meltdown, straight to the title screen."
 
 msgid "DIVESKIPTRANSIT_SKIP_STATION_FADE_IN"
 msgstr "Arrival at the station"
 
-# The note under the groups; %s is the mark that ends the name of each switch it is about.
+msgid "DIVESKIPTRANSIT_SKIP_STATION_FADE_IN_DESC"
+msgstr "Skips the station's fade-in on every arrival, so its menu can be used at once."
+
+# The note between the description and the groups; %s is the mark that ends the name of each switch it is about.
 msgid "DIVESKIPTRANSIT_REMASS_NOTE"
 msgstr "%s Affects remass: what the skipped cutscene would burn is charged, worked out from the game's formulas."

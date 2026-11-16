@@ -274,11 +274,15 @@ ShipCopyPaste, `skip` loads DiveSkipTransit.
   loaded; the entry's tooltip; a plain click launches, Shift+Click on a disabled entry does nothing, Shift+Click opens
   the screen without launching; a group per `GROUPS` entry, in order, titled by it, with a game's row per setting of
   that group named by its label in the game's language, each switch showing its setting, under the entry's text; the
-  switches of the settings with `remass`, and only those, end with `REMASS_MARK`, and a note under the groups explains
-  it (`REMASS_NOTE`); the transit's speed is a game's slider with the setting's range, step, unit and format, dimmed
-  (`DIMMED`) while the transit is skipped and not otherwise, storing what it is moved to, its reset button restoring
-  the default; switching a switch off stores it at once, focusing it again doesn't switch it back, its reset button
-  restores the default; Esc closes it after the fade. With
+  switches of the settings with `remass`, and only those, end with `REMASS_MARK`; under the header, in this order, the
+  description's window, the note that explains the mark (`REMASS_NOTE`) and the groups; the window copies the Tuning
+  screen's (the stub has one nested as `enceladus/Tuning.tscn` nests it: theme, margins around and inside, panel);
+  every setting has a description in `i18n/en.po` (its label and `DESCRIPTION_SUFFIX`), the window shows the first
+  row's on opening, that of each row focused in turn (switch or slider) and that of a row changed, and keeps its height
+  whatever the description; the transit's speed is a game's slider with the setting's range, step, unit and format,
+  dimmed (`DIMMED`) while the transit is skipped and not otherwise, storing what it is moved to, its reset button
+  restoring the default; switching a switch off stores it at once, focusing it again doesn't switch it back, its reset
+  button restores the default; Esc closes it after the fade. With
   CrewCheapHireNotifier loaded too (`-Mods CrewCheapHireNotifier,DiveSkipTransit`), the menu also has its Crew entry:
   Shift+Click on each opens its own screen and hides the other, and each keeps its own tooltip. The control checks (the
   launch keeps playing and doesn't go to the ring; the ship spawned for the cutscene, which goes on under the title
@@ -292,7 +296,7 @@ ShipCopyPaste, `skip` loads DiveSkipTransit.
   with `-Mods @()`), `lidar` 40 (3 control checks with `-Mods @()`), `hud` 13 (3 control checks with `-Mods @()`),
   `crew` 140 (141 with CrewPerfectSort too, in both load orders; 3 control checks with `-Mods @()`), `geology` 60 (3
   control checks with `-Mods @()`), `fleet` 70 (the same with ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice
-  too; 3 control checks with `-Mods @()`), `skip` 102 (105 with CrewCheapHireNotifier too; 13 control checks with
+  too; 3 control checks with `-Mods @()`), `skip` 109 (112 with CrewCheapHireNotifier too; 13 control checks with
   `-Mods @()`), all passing; `-Matrix` gives 16 of 16 in every combination.
   Feeding, a chunk beside the hull is in after 4.4–4.8 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.4.0 (the claude.ai results, case for case)

@@ -38,8 +38,8 @@ short.
 - [DiveDisableAdrenalineBooster](DiveDisableAdrenalineBooster/README.md#warning): the Adrenaline Booster starts every
   dive switched off, which also damps the bullet time from the pilot and the smart camera.
 - [DiveSkipTransit](DiveSkipTransit/README.md#warning): a dive's cutscenes are skipped, with their remass and in-game
-  time charged from the game's formulas (the switches marked * affect remass); the burn away from the ring is an
-  estimate. The transit, when played, can run faster than the game's own fast-forward, muted.
+  time charged from the game's formulas (the switches marked in its settings affect remass); the burn away from the
+  ring is an estimate. The transit, when played, can run faster than the game's own fast-forward, muted.
 - [GeologyByMass](GeologyByMass/README.md#warning): with its switch on, which chunks keep a full info box depends
   on ore mass instead of value.
 

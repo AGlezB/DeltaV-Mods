@@ -217,6 +217,14 @@ with the mods.
     `SettingsUI.gd` builds the screen from `SETTINGS` through `toShown`, with the game's own UI parts, and writes back
     with `setValue(key, fromShown(key, shown), job)`; `Code.gd` loads the save's values when its scene is built (the
     station is rebuilt after every load and new game) and listens to `settingsChanged`.
+
+    Players don't open the zip, so they never read the README: the screen explains every setting itself, as the game's
+    Tuning screen does. Under the title, a window framed as the Tuning screen's description shows the selected row's
+    description: the key of its `label` followed by `SettingsUI.gd`'s `DESCRIPTION_SUFFIX`, in the mod's
+    `i18n/en.po`. It is set on every `tuningChanged`, which a row emits when it changes and when it gets the focus
+    (`Tuning.gd` `tuningChanged` does the same with `<key>_DESC`). Every setting has one, written as the game's
+    `TUNE_*_DESC` are: what it does, a blank line, then the details. DiveSkipTransit has it; CrewCheapHireNotifier
+    doesn't yet, to add when it next changes.
   - A mod without a settings UI has no `Settings.gd`, and no constants file either: that would only add a prefix to
     every use.
   - Settings that belong to a ship system go in the game's Tuning screen instead (`registerSubsystem` from the

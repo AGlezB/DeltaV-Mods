@@ -56,9 +56,10 @@ the in-game time around them, to the game's developers, check that it also happe
   - **Shift+Click** Launch Ring Dive to open them, as the entry's tooltip says. A plain click still launches a dive.
     The settings open where the Tuning screen does, with the same frame and the game's own Tuning switches, and close
     the way the game's screens do: Esc, the controller's B or Start button, or picking another entry of the menu.
-  - Two groups. The switches marked * affect remass, as the note under them says; the others don't.
+  - At the top, under the title, a window describes the selected setting, as the game's Tuning screen does. Under it,
+    a note says that the switches with a mark after their name affect remass; the others don't. Then two groups.
   - *Transit*:
-    - *Skip both ways* *: the arrival charges the remass to brake (the game's rocket equation, for the cutscene's
+    - *Skip both ways* (marked): the arrival charges the remass to brake (the game's rocket equation, for the cutscene's
       change of speed), the remass the reactor's turbine burns during the cutscene, and its in-game time. The return
       charges the remass of the burn away from the ring (estimated), the turbine's, and the cutscene's in-game time,
       with the transit back charged in between, from what is left, as the cutscene does.
@@ -67,7 +68,7 @@ the in-game time around them, to the game's developers, check that it also happe
       the most is the game's Space speed times the physics steps the game's engine runs in one frame.
   - *Skip*:
     - *Launch sequence*: no remass. The ship flown there is the station's.
-    - *Astrogation* *: the remass the turbine burns during the cutscene's waits, the remass for any change of speed to
+    - *Astrogation* (marked): the remass the turbine burns during the cutscene's waits, the remass for any change of speed to
       the travel velocity, and the waits' in-game time, besides the trip's time the game adds.
     - *Rescue*: no remass (the tank is empty). The cutscene's in-game time, besides the stranded time the game adds.
     - *Game over*: nothing; the game is over.
@@ -79,7 +80,7 @@ the in-game time around them, to the game's developers, check that it also happe
   - Opening them needs a mouse and a keyboard; a controller can use and close them.
   - Each setting's default, the speed's range, and whether a switch affects remass are in `SETTINGS` at the top of
     `DiveSkipTransit/Settings.gd`, inside the zip. The mod's texts (the tooltip, the groups' and the rows' names, the
-    note) are in `DiveSkipTransit/i18n/en.po`.
+    rows' descriptions, the note) are in `DiveSkipTransit/i18n/en.po`.
 
 ## For modders
 - Six scripts: `Code.gd` (the ring scene's script extension: the arrival, the return, the rescue, the game over and
@@ -162,8 +163,8 @@ the in-game time around them, to the game's developers, check that it also happe
     `_notification`).
 - **The rescue.** `Game.gd` `_process` starts it once the ship has been helpless (out of remass) for
   `helplessTimeLimit`: the ship's cutscene on, its reactor off, its cargo claimed, then `TitleAnimPlayer`'s `helpless`,
-  whose method keys are `sendHelp` (the stranded time, and the MAD-CERF rescue ship, which has no arm and can't act on
-  the ship) and `goToEnceladus`. That happens inside `_process`, so `Code.gd` connects the title card player's
+  whose method keys are `sendHelp` (the stranded time, and the MAD-CERF rescue ship, which goes for the helpless ship
+  but changes nothing) and `goToEnceladus`. That happens inside `_process`, so `Code.gd` connects the title card player's
   `animation_started` in `_ready`; on `helpless`, while `skipRescue` is on, it plays it through, deferred so the
   frame's processing ends first, charging `chargeSeconds`.
 - **The game over.** A meltdown emits `CurrentGame.gameOver`; `Game.gd` `_on_gameOver` plays `gameover` the first time
@@ -199,21 +200,31 @@ the in-game time around them, to the game's developers, check that it also happe
     and their member names differ.
   - **The screen** (`SettingsUI.gd`) is CrewCheapHireNotifier's: one more of the right-hand screens, copying the live
     Tuning screen's theme, frame, size and place, built from the game's parts as `enceladus/Tuning.tscn` nests them
-    (`Shower.tscn`, `HeaderWithMoney.tscn` titled with the entry's key, and an `Items` box with one
-    `Tuning/TuningItems.tscn` group per `GROUPS` entry, titled by it), and closed by `ui_cancel`, `pause` or the
-    container's `hidefoka`. A group holds a row per setting of its `group`: a switch (`"type": "bool"`,
+    (`Shower.tscn`; `HeaderWithMoney.tscn` titled with the entry's key; the description's window; and an `Items` box
+    with one `Tuning/TuningItems.tscn` group per `GROUPS` entry, titled by it), and closed by `ui_cancel`, `pause` or
+    the container's `hidefoka`. A group holds a row per setting of its `group`: a switch (`"type": "bool"`,
     `Tuning/TuningBoolValue.tscn`) or a slider (`"float"`, `Tuning/TuningFloatValue.tscn`, with the setting's `min`,
     `max`, `step`, `unit` and `format`), named by its `label` in the game's language, with ` ` and `REMASS_MARK` after
-    it for a `remass` setting; a row whose `dimmedWhen` switch is on is dimmed (`DIMMED`). A Label under the groups,
-    `RemassNote`, explains the mark (`tr(REMASS_NOTE)`, whose `%s` is the mark). The screen is filled each time it
-    opens, so names and note follow a language change. A switch emits `tuningChanged` when toggled and again when it
-    gets the focus, with the `current` of its description (`TuningBoolValue.gd` `_focus`), which it never updates; that
-    description is the screen's own dictionary, so the screen sets `current` on every change, or focusing a switch
-    again would turn it back (a slider keeps its own, `TuningFloatValue.gd` `changed`).
+    it for a `remass` setting; a row whose `dimmedWhen` switch is on is dimmed (`DIMMED`). A row emits `tuningChanged`
+    when it changes and again when it gets the focus (`TuningBoolValue.gd` / `TuningFloatValue.gd` `_focus`).
+  - **The description's window** (`VB/WindowMargin/Window/MarginContainer/Description`, an autowrapping Label) is
+    nested as `Tuning.tscn` nests the game's (`VB/WindowMargin/Window/…/Description`, without the simulator's parts),
+    with the live Tuning screen's theme and margins around it, its panel and the margins inside it, copied when they
+    are there. On every `tuningChanged`, the screen sets its text to the row's `label` followed by
+    `DESCRIPTION_SUFFIX`, a key of `i18n/en.po` the Label translates, as `Tuning.gd` `tuningChanged` does for the
+    game's rows; so it follows the selection, by mouse or controller, and shows the first row's when the screen opens
+    (`Tool.deferCallWhenIdle(first, "focus")`). Its height is kept for `DESCRIPTION_LINES` lines, from its font's
+    height and line spacing, so the groups don't move as it changes.
+  - **The note** (`RemassNote`, a Label between the window and the groups) explains the mark (`tr(REMASS_NOTE)`, whose
+    `%s` is the mark). The screen is filled each time it opens, so names, descriptions and note follow a language
+    change.
+  - **A switch's value**: the switch sends the `current` of its row's dictionary (`tune`) when it gets the focus, and
+    never updates it; that dictionary is the screen's own, so the screen sets `current` on every change, or focusing a
+    switch again would turn it back (a slider keeps its own, `TuningFloatValue.gd` `changed`).
   - **The model** (`Settings.gd`, a `Reference`): `shared()` returns the one instance, kept as metadata of the script,
-    loaded from the file when first made. `SETTINGS` describes each setting (`label`, `default`, `type`, `group`; for a
-    slider its range, step, unit and format; `remass` where skipping charges remass; `dimmedWhen`), in display order
-    within its group. `getValue(key)`; `setValue(key, value)` keeps a switch's anything-but-a-bool at the default,
+    loaded from the file when first made. `SETTINGS` describes each setting (`label`, which with `DESCRIPTION_SUFFIX`
+    also names its description, `default`, `type`, `group`; for a slider its range, step, unit and format; `remass`
+    where skipping charges remass; `dimmedWhen`), in display order within its group. `getValue(key)`; `setValue(key, value)` keeps a switch's anything-but-a-bool at the default,
     snaps a slider's number to its step and range (anything else gives the default) and, on a change only, saves and
     emits `settingsChanged`. `loadFromFile()` overlays the defaults with the file's values (a key missing from an older
     file keeps its default, or what the file held under the key's old names: format 2's `skipArrival` and `skipExit`

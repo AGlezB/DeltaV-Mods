@@ -854,9 +854,24 @@ func menuStation(withCrew):
 	tuning.add_stylebox_override("panel", StyleBoxFlat.new())
 	tuning.rect_min_size = Vector2(600, 0)
 	tuning.size_flags_horizontal = Control.SIZE_SHRINK_END
+	# Its description window, nested as enceladus/Tuning.tscn nests it, with a theme, margins and a panel to copy.
+	var tuningVb = VBoxContainer.new(); tuningVb.name = "VB"
+	tuning.add_child(tuningVb)
+	var windowMargin = MarginContainer.new(); windowMargin.name = "WindowMargin"; windowMargin.theme = Theme.new()
+	tuningVb.add_child(windowMargin)
+	var window = PanelContainer.new(); window.name = "Window"; window.add_stylebox_override("panel", StyleBoxFlat.new())
+	windowMargin.add_child(window)
+	var windowVb = VBoxContainer.new(); windowVb.name = "VBoxContainer"
+	window.add_child(windowVb)
+	var inside = MarginContainer.new(); inside.name = "MarginContainer"
+	windowVb.add_child(inside)
+	var sides = ["left", "top", "right", "bottom"]
+	for i in sides.size():
+		windowMargin.add_constant_override("margin_" + sides[i], 11 + i)
+		inside.add_constant_override("margin_" + sides[i], 5 + i)
 	screens.add_child(tuning)
 	add_child(root)
-	return {"root": root, "menu": menu, "dive": dive, "crew": crew, "logs": logs, "screens": screens}
+	return {"root": root, "menu": menu, "dive": dive, "crew": crew, "logs": logs, "screens": screens, "tuning": tuning}
 
 # A left click on `button` through the scene tree's input, as the mouse makes it: the press, then the release.
 func click(button, shift):
@@ -953,10 +968,46 @@ func settingsScreen():
 			shown = shown and rows[i].get_node("HBoxContainer/Value").pressed == settings.getValue(keys[i])
 	check("screen: a group per GROUPS entry, in order, titled by it, with a row per setting of that group named by its label in the game's language", groupTitles == titles and names.size() == labels.size() and groups[0].get_child_count() > 0, [groupTitles, names])
 	check("screen: the switches whose skip charges remass (SETTINGS' remass), and only those, end with the mark", names == labels and marked > 0, [names, marked])
-	var note = screen.get_node_or_null("VB/ScrollContainer/Items/RemassNote")
-	check("screen: a note under the groups explains the mark", note != null and note.get_index() > groups[groups.size() - 1].get_index() and note.text == tr(ui.REMASS_NOTE) % ui.REMASS_MARK and note.text.begins_with(ui.REMASS_MARK) and note.autowrap, note.text if note != null else null)
 	check("screen: each switch shows its setting", shown)
 	check("screen: its header is the dive entry's text", screen.get_node("VB/HeaderWithMoney/MarketLabel").text == DIVE_KEY)
+	# Under the header: the description of the selected setting in a window framed as the Tuning screen's, the note that
+	# explains the mark, then the groups.
+	var order = []
+	for child in screen.get_node("VB").get_children():
+		order.append(child.name)
+	var windowMargin = screen.get_node_or_null("VB/WindowMargin")
+	var description = screen.get_node_or_null("VB/WindowMargin/Window/MarginContainer/Description")
+	check("screen: under the header, the description's window, then the note, then the groups", order == ["HeaderWithMoney", "WindowMargin", "RemassNote", "ScrollContainer"] and description is Label and description.autowrap, order)
+	if description == null:
+		freeMenuStation(s)
+		return
+	var note = screen.get_node("VB/RemassNote")
+	check("screen: the note explains the mark", note.text == tr(ui.REMASS_NOTE) % ui.REMASS_MARK and note.text.begins_with(ui.REMASS_MARK) and note.autowrap, note.text)
+	var gameMargin = s.tuning.get_node("VB/WindowMargin")
+	var gameInside = s.tuning.get_node("VB/WindowMargin/Window/VBoxContainer/MarginContainer")
+	var inside = description.get_parent()
+	var copied = windowMargin.theme == gameMargin.theme and inside.get_parent().get_stylebox("panel") == s.tuning.get_node("VB/WindowMargin/Window").get_stylebox("panel")
+	for side in ["left", "top", "right", "bottom"]:
+		copied = copied and windowMargin.get_constant("margin_" + side) == gameMargin.get_constant("margin_" + side) and inside.get_constant("margin_" + side) == gameInside.get_constant("margin_" + side)
+	check("screen: the description's window copies the Tuning screen's: theme, margins around and inside, panel", copied)
+	var missing = []
+	for key in script.SETTINGS:
+		var text = script.SETTINGS[key].label + ui.DESCRIPTION_SUFFIX
+		if tr(text) == text:
+			missing.append(text)
+	check("screen: every setting has a description in i18n/en.po (its label and DESCRIPTION_SUFFIX)", missing.empty(), missing)
+	check("screen: on opening, the window shows the first row's description", description.text == script.SETTINGS[keys[0]].label + ui.DESCRIPTION_SUFFIX, description.text)
+	# Each row in turn, as a mouse click or a controller selects it: the switch, or the slider.
+	var described = true
+	var heights = []
+	for i in rows.size():
+		var control = rows[i].get_node("HSlider") if script.SETTINGS[keys[i]].type == "float" else rows[i].get_node("HBoxContainer/Value")
+		control.grab_focus()
+		yield(frames(1), "completed")
+		described = described and description.text == script.SETTINGS[keys[i]].label + ui.DESCRIPTION_SUFFIX
+		heights.append(windowMargin.rect_size.y)
+	check("screen: focusing a row, a switch or the slider, shows its description", described and rows.size() == keys.size())
+	check("screen: the window keeps its height whatever the description (room for DESCRIPTION_LINES lines)", heights.min() == heights.max() and description.rect_min_size.y > 0, heights)
 	# The transit's speed: a slider with the setting's range, step, unit and format, dimmed while the transit is skipped.
 	var spec = script.SETTINGS.transitSpeed
 	var speedRow = rows[keys.find("transitSpeed")]
@@ -966,6 +1017,7 @@ func settingsScreen():
 	check("screen: the slider is dimmed while the transit is skipped", settings.getValue("skipTransit") and is_equal_approx(speedRow.modulate.a, ui.DIMMED))
 	transitSwitch.pressed = false
 	check("screen: switching the transit skip off undims it", settings.getValue("skipTransit") == false and is_equal_approx(speedRow.modulate.a, 1.0))
+	check("screen: changing a row shows its description", description.text == script.SETTINGS.skipTransit.label + ui.DESCRIPTION_SUFFIX, description.text)
 	slider.value = spec.max
 	check("screen: moving the slider stores the speed", settings.getValue("transitSpeed") == spec.max and speedRow.get_node("HBoxContainer/Value").text == spec.format % spec.max)
 	transitSwitch.pressed = true

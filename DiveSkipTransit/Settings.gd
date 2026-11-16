@@ -9,10 +9,11 @@ extends Reference
 signal settingsChanged()
 
 # One description per setting, in the order the settings screen lists them within their group, a dive's. Each default
-# is declared here only. `label` is a translation key of i18n/en.po. `group`: the screen's group it is in
-# (SettingsUI.gd GROUPS). `type` "bool" is a switch: no range, unit or conversion; "float" a slider, with its `min`,
-# `max`, `step`, `unit` and `format` (for the value shown). `remass`: skipping charges remass the cutscene would burn
-# (the screen marks it). `dimmedWhen`: the switch while which the setting doesn't apply (the screen dims it).
+# is declared here only. `label` is a translation key of i18n/en.po, and so is `label` followed by SettingsUI.gd's
+# DESCRIPTION_SUFFIX: the description the screen shows while the setting is selected. `group`: the screen's group it
+# is in (SettingsUI.gd GROUPS). `type` "bool" is a switch: no range, unit or conversion; "float" a slider, with its
+# `min`, `max`, `step`, `unit` and `format` (for the value shown). `remass`: skipping charges remass the cutscene would
+# burn (the screen marks it). `dimmedWhen`: the switch while which the setting doesn't apply (the screen dims it).
 const SETTINGS = {
 	# The transit both ways, the two cutscenes the game speeds up while Space is held: the arrival in the ring and the
 	# return to the station, diving back or at overspeed (Code.gd); the braking, the burn away and the turbines.
