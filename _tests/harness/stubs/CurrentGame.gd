@@ -1,8 +1,8 @@
 extends Node
 
 # Stub of the game's CurrentGame autoload: what DockingArm.gd, CabinLight.gd, Tool.gd, TuningFloatValue.gd,
-# Hud.gd, PriceLabel.gd, HireableCrew.gd, CrewBio.gd, SystemBuyUI.gd, SystemShipUpgradeUI.gd, CrewCheapHireNotifier,
-# GeologyByMass and ShipCopyPaste reach.
+# Hud.gd, PriceLabel.gd, HireableCrew.gd, CrewBio.gd, SystemBuyUI.gd, SystemShipUpgradeUI.gd, Game.gd, Enceladus.gd,
+# TransponderOnIntro.gd, CrewCheapHireNotifier, GeologyByMass, ShipCopyPaste and DiveSkipTransit reach.
 
 signal dayPassed()
 signal employmentChanged()
@@ -10,6 +10,8 @@ signal moneyChanged(money)
 signal broadcast(from, to, msg, replies)
 signal playerShipChanged()
 signal hourPassed()
+signal gameOver()
+signal plotCourseTo(to, vector)
 
 # The game's crew occupations and level keys (CurrentGame.gd), for the Hire screen's entries.
 var occupations = ["CREW_OCCUPATION_PILOT", "CREW_OCCUPATION_MECHANIC", "CREW_OCCUPATION_GEOLOGIST", "CREW_OCCUPATION_ASTROGATOR"]
@@ -41,6 +43,34 @@ var time = 0 # the in-game time (s), getInGameTimestamp()
 var logs = [] # what logEvent() was given: [type, details]
 var validated = [] # the current ship's crew list at each validateEmployment()
 var shipSellMarkdown = 0.9 # the game's, which SystemBuyUI.gd checkPrice reads
+var nextShip = null # what recreatePlayerShip() returns; the skip suite sets it
+var advanced = [] # what advanceTimeBySeconds() was given, in order
+var richnessAdjust = 0 # Game.gd _ready resets it
+var diveTarget = Vector2(0, 0) # the dive entry point, which Game.gd _ready makes the global offset
+var globalOffset = Vector2(0, 0) # setGlobalOffset(); globalCoords() adds it
+var targetTimeScale = 1.0 # Game.gd _process sets it during cutscenes (BulletTimer.gd eases Engine.time_scale to it)
+
+func recreatePlayerShip():
+	return nextShip
+
+func freeShipInstanceCache():
+	pass
+
+func setGlobalOffset(offset):
+	globalOffset = offset
+
+func globalCoords(localPosition):
+	return localPosition + globalOffset
+
+# As the game's, without the light lag and the hour, day and some-time signals: state.time moves on.
+func advanceTimeBySeconds(seconds):
+	advanced.append(seconds)
+	state["time"] = state.get("time", 0.0) + seconds
+	time = state.time
+
+# The current ship's state (the fleet suite sets state.ship), or an empty one.
+func getPlayerShipConfig():
+	return state.get("ship", {"config": {}})
 
 func adrenaline(amount):
 	adrenalineSum += amount

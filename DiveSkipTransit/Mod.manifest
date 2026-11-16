@@ -1,0 +1,23 @@
+[mod_information]
+
+name="DiveSkipTransit"
+id="AGlezB.DiveSkipTransit"
+description="Every dive starts in the ring at once, with the player in control: no launch sequence and no arrival cutscene."
+author="AGlezB"
+
+[version]
+
+version_major=0
+version_minor=1
+version_bugfix=0
+
+[tags]
+
+group={
+"type": "string",
+"value": "Game"
+}
+
+[manifest_definitions]
+
+manifest_version=2.2

@@ -16,6 +16,7 @@ how to set it up and how to install it.
 | [CrewHighlightJobAndSalary](CrewHighlightJobAndSalary/README.md) | Makes the job and the salary of every crew entry (hired and unhired) stand out on the crew screens, and dims the rest. |
 | [CrewPerfectSort](CrewPerfectSort/README.md) | Sorts the crew lists at Enceladus Prime: the Hire screen by salary, then occupation; Your crew by occupation, then salary. |
 | [DiveDisableAdrenalineBooster](DiveDisableAdrenalineBooster/README.md) | The Adrenaline Booster of your ship starts every dive switched off. |
+| [DiveSkipTransit](DiveSkipTransit/README.md) | Every dive starts in the ring at once, with you in control: no launch sequence and no arrival cutscene, whose remass and in-game time are charged all the same. |
 | [GeologyByMass](GeologyByMass/README.md) | Judges the ore your geologist identifies by the mass of each mineral in it instead of its value, as set on a new tab of the OMS. |
 | [HudHideLabels](HudHideLabels/README.md) | Hides the titles on the screens of the dive HUD. |
 | [LidarLouderPing](LidarLouderPing/README.md) | The lidar's ping for sensor contacts plays louder, by as much as you set in the ship's Tuning. |
@@ -36,6 +37,8 @@ short.
   an excavator.
 - [DiveDisableAdrenalineBooster](DiveDisableAdrenalineBooster/README.md#warning): the Adrenaline Booster starts every
   dive switched off, which also damps the bullet time from the pilot and the smart camera.
+- [DiveSkipTransit](DiveSkipTransit/README.md#warning): the dive starts where the arrival cutscene would leave the ship,
+  with its remass and in-game time charged from the game's formulas, but not the remass spent turning.
 - [GeologyByMass](GeologyByMass/README.md#warning): with its switch on, which chunks keep a full info box depends
   on ore mass instead of value.
 

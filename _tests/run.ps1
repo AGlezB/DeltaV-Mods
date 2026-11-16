@@ -9,12 +9,14 @@
 	HardwareLabel.gd, EnceladusMenu.gd, HidingMarginContainer.gd, AnalogControlSlider.gd, TuningFloatValue.gd,
 	TuningItems.gd, Hud.gd, OMS.gd, TabsWithGamepadControl.gd, PriceLabel.gd, RepeatingHSlider.gd, MineralLabel.gd,
 	MineralSystemToggle.gd, HireableCrew.gd, CrewBio.gd, CurrentCrewManagement.gd, PlaySoundsOnTheseButtons.gd,
-	SystemBuyUI.gd, SystemShipUpgradeUI.gd, Tool.gd, gdunzip.gd), the game's Shower.tscn, audio buses
+	SystemBuyUI.gd, SystemShipUpgradeUI.gd, Game.gd, Enceladus.gd, TransponderOnIntro.gd, Reactor.gd,
+	FusionReactor.gd, Tool.gd, gdunzip.gd), the game's Shower.tscn, audio buses
 	(default_bus_layout.tres), the skill icons CrewBio.gd preloads and the Fleet entry's Use icon, a stub mineral scene
 	carrying the chunk radius read from the game's, stubs of the two scenes LIDAR.gd preloads, of the Tuning parts
 	CrewCheapHireNotifier's settings screen is built from, of a Hire screen entry (CrewBio.tscn), of the Geologist
 	tab's parts GeologyByMass's OMS tab is built from, and of a Fleet entry (SystemBuyUI.tscn, with the game's
-	confirmation animations) and an Equipment item (SystemShipUpgradeUI.tscn). Packages each mod into <WorkDir>\build\<Mod>.zip
+	confirmation animations), an Equipment item (SystemShipUpgradeUI.tscn) and the ring scene (Game.tscn, with the
+	game's root values and title card). Packages each mod into <WorkDir>\build\<Mod>.zip
 	(as a release zip), and runs every suite with its mods loaded from those zips, the way the game loads them:
 	by an autoload, before the engine loads the main scene. Logs: <WorkDir>\logs. Nothing in the repo, the game folder
 	or the decompiled game is changed. Godot, the decompiled game and <WorkDir> default to folders under the ones set in
@@ -30,6 +32,7 @@
 	- crew: CrewCheapHireNotifier.
 	- geology: GeologyByMass. Builds a HUD from harness\geology_hud.tscn, which holds the game's Hud.gd.
 	- fleet: ShipCopyPaste.
+	- skip: DiveSkipTransit. Instances the ring scene stub (Game.tscn), whose root has the game's Game.gd.
 
 .EXAMPLE
 	pwsh _tests\run.ps1
@@ -45,8 +48,8 @@
 #>
 [CmdletBinding()]
 param(
-	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet')]
-	[string[]] $Suite = @('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet'),
+	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip')]
+	[string[]] $Suite = @('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip'),
 	# Mod folders to load for every selected suite, in load order (the game's order: by path); @() = none.
 	# Default: each suite's own mods (see the description).
 	[string[]] $Mods,
@@ -160,7 +163,7 @@ foreach ($dir in $project, $build, $logs)
 }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'project.godot'), (Join-Path $PSScriptRoot 'main.tscn') -Destination $project
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'harness'), (Join-Path $PSScriptRoot 'suites') -Destination $project -Recurse
-foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningItems.gd', 'hud\Hud.gd', 'hud\OMS.gd', 'menu\TabsWithGamepadControl.gd', 'hud\components\PriceLabel.gd', 'hud\components\RepeatingHSlider.gd', 'hud\components\MineralLabel.gd', 'hud\components\MineralSystemToggle.gd', 'enceladus\HireableCrew.gd', 'enceladus\CrewBio.gd', 'enceladus\CurrentCrewManagement.gd', 'menu\sfx\PlaySoundsOnTheseButtons.gd', 'enceladus\SystemBuyUI.gd', 'enceladus\SystemShipUpgradeUI.gd', 'enceladus\Shower.tscn', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres')
+foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningItems.gd', 'hud\Hud.gd', 'hud\OMS.gd', 'menu\TabsWithGamepadControl.gd', 'hud\components\PriceLabel.gd', 'hud\components\RepeatingHSlider.gd', 'hud\components\MineralLabel.gd', 'hud\components\MineralSystemToggle.gd', 'enceladus\HireableCrew.gd', 'enceladus\CrewBio.gd', 'enceladus\CurrentCrewManagement.gd', 'menu\sfx\PlaySoundsOnTheseButtons.gd', 'enceladus\SystemBuyUI.gd', 'enceladus\SystemShipUpgradeUI.gd', 'enceladus\Shower.tscn', 'Game.gd', 'enceladus\Enceladus.gd', 'TransponderOnIntro.gd', 'ships\Reactor.gd', 'ships\modules\FusionReactor.gd', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres')
 {
 	$target = Join-Path $project $file
 	New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
@@ -781,6 +784,88 @@ script = ExtResource( 2 )
 [connection signal="focus_entered" from="HBox/Buy" to="." method="_on_Buy_focus_entered"]
 [connection signal="pressed" from="HBox/Buy" to="." method="_on_Buy_pressed"]
 '@
+# The ring scene (Game.tscn, as enceladus\Enceladus.gd loads it): the game's root node with its script and values
+# (totalCutsceneTime, initialCutsceneTime), the title card player with the game's autoplay, process mode and "intro"
+# animation, a node at every path that animation drives (the game's node type where the scene declares one; the
+# Transponder label with its script, TransponderOnIntro.gd, whose copyTransponder the animation calls), and a bare
+# node for the asteroid field the ship is added to; without the asteroids, the HUD layers, the music and the other
+# cutscenes.
+$gameScene = (Get-Content -LiteralPath (Join-Path $GameSource 'Game.tscn') -Raw) -replace "`r`n", "`n"
+$rootBlock = [regex]::Match($gameScene, '(?ms)^\[node name="Game" type="Node"\]\n(.*?)(?=^\[)')
+$titleBlock = [regex]::Match($gameScene, '(?ms)^\[node name="TitleAnimPlayer" type="AnimationPlayer" parent="\."\]\n(.*?)(?=^\[)')
+$introId = [regex]::Match($titleBlock.Groups[1].Value, '(?m)^anims/intro = SubResource\( (\d+) \)$')
+if (-not $rootBlock.Success -or -not $titleBlock.Success -or -not $introId.Success) { throw 'Cannot read the ring scene from Game.tscn' }
+$intro = [regex]::Match($gameScene, '(?ms)^\[sub_resource type="Animation" id=' + $introId.Groups[1].Value + '\]\n(.*?)(?=^\[)')
+if (-not $intro.Success) { throw 'Cannot read the "intro" animation from Game.tscn' }
+$introBody = $intro.Groups[1].Value
+$rootValues = @($rootBlock.Groups[1].Value -split "`n" | Where-Object { $_ -match '^\w+ = ' -and $_ -notmatch '^script = ' })
+$titleValues = @($titleBlock.Groups[1].Value -split "`n" | Where-Object { $_ -match '^(autoplay|playback_process_mode) = ' })
+$gameTypes = @{}
+foreach ($m in [regex]::Matches($gameScene, '(?m)^\[node name="([^"]+)" type="(\w+)" parent="([^"]+)"'))
+{
+	$path = if ($m.Groups[3].Value -eq '.') { $m.Groups[1].Value } else { $m.Groups[3].Value + '/' + $m.Groups[1].Value }
+	$gameTypes[$path] = $m.Groups[2].Value
+}
+$driven = @{}
+$transponder = $null
+foreach ($t in [regex]::Matches($introBody, '(?m)^tracks/(\d+)/type = "(\w+)"$'))
+{
+	$n = $t.Groups[1].Value
+	$nodePath, $property = [regex]::Match($introBody, '(?m)^tracks/' + $n + '/path = NodePath\("([^"]*)"\)$').Groups[1].Value.Split(':', 2)
+	if (-not $nodePath.StartsWith('TitleAnimPlayer/')) { throw "Game.tscn's intro drives $nodePath, outside TitleAnimPlayer: add that node to the stub" }
+	if (-not $driven.ContainsKey($nodePath)) { $driven[$nodePath] = [Collections.Generic.List[string]]::new() }
+	if ($property) { $driven[$nodePath].Add($property) }
+	if ($t.Groups[2].Value -eq 'method')
+	{
+		$keys = [regex]::Match($introBody, '(?ms)^tracks/' + $n + '/keys = \{(.*?)^\}').Groups[1].Value
+		foreach ($k in [regex]::Matches($keys, '"method": "(\w+)"'))
+		{
+			if ($k.Groups[1].Value -ne 'copyTransponder') { throw "Game.tscn's intro calls $($k.Groups[1].Value): give its node a script that has it" }
+			$transponder = $nodePath
+		}
+	}
+}
+# Every node on those paths, parents first (a path sorts before the paths it is a prefix of).
+$introNodes = [Collections.Generic.SortedSet[string]]::new([StringComparer]::Ordinal)
+foreach ($p in $driven.Keys)
+{
+	$parts = $p.Split('/')
+	for ($i = 2; $i -le $parts.Count; $i++) { $null = $introNodes.Add(($parts[0..($i - 1)] -join '/')) }
+}
+$nodeText = foreach ($p in $introNodes)
+{
+	$slash = $p.LastIndexOf('/')
+	$props = if ($driven.ContainsKey($p)) { $driven[$p] } else { @() }
+	if ($p -eq $transponder) { $type = 'Label' }
+	elseif ($gameTypes.ContainsKey($p)) { $type = $gameTypes[$p] }
+	elseif ($props -contains 'color') { $type = 'ColorRect' }
+	elseif ($props -contains 'percent_visible') { $type = 'Label' }
+	else { $type = 'Control' }
+	$line = '[node name="' + $p.Substring($slash + 1) + '" type="' + $type + '" parent="' + $p.Substring(0, $slash) + '"]'
+	if ($p -eq $transponder) { $line += "`nscript = ExtResource( 2 )" }
+	$line + "`n"
+}
+$ringScene = @"
+[gd_scene load_steps=4 format=2]
+
+[ext_resource path="res://Game.gd" type="Script" id=1]
+[ext_resource path="res://TransponderOnIntro.gd" type="Script" id=2]
+
+[sub_resource type="Animation" id=1]
+$($introBody.TrimEnd())
+
+[node name="Game" type="Node"]
+script = ExtResource( 1 )
+$($rootValues -join "`n")
+
+[node name="TitleAnimPlayer" type="AnimationPlayer" parent="."]
+$($titleValues -join "`n")
+anims/intro = SubResource( 1 )
+
+$($nodeText -join "`n")
+[node name="AsteroidField" type="Node2D" parent="."]
+"@
+Write-Utf8Lf (Join-Path $project 'Game.tscn') $ringScene
 
 # 2. The mods: each suite's own (or -Mods), packaged once each, or the release zip given for it.
 $suiteMods = @{
@@ -794,6 +879,7 @@ $suiteMods = @{
 	crew = @('CrewCheapHireNotifier')
 	geology = @('GeologyByMass')
 	fleet = @('ShipCopyPaste')
+	skip = @('DiveSkipTransit')
 }
 $given = @{}
 foreach ($z in $ModZip)

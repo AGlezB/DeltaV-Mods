@@ -69,10 +69,12 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
    of `enceladus/HidingMarginContainer.gd`, copying the Tuning screen's frame and behaving like the game's screens;
    and `enceladus/HireableCrew.gd`, the Hire screen), GeologyByMass (`hud/Hud.gd`; it also adds its tab to the OMS,
    right after the Geologist tab, from `instance()`), ShipCopyPaste (`enceladus/SystemBuyUI.gd`, the Fleet screen's
-   entries; it prices through the Equipment screen's items). `ModMain.gd` only calls
+   entries; it prices through the Equipment screen's items), DiveSkipTransit (`Game.gd`, the ring scene's arrival
+   cutscene; and `enceladus/Enceladus.gd`, the station's launch sequence). `ModMain.gd` only calls
    `installScriptExtension("res://<ModName>/Code.gd")` (CrewPerfectSort: once for each of its two extension files;
-   CrewCheapHireNotifier: `Code.gd`, then `HireScreen.gd`); `Code.gd` `extends "res://<game script>"`. Rules that let
-   mods stack on the same script (header of `ArmAltTargetSelection/Code.gd`):
+   CrewCheapHireNotifier: `Code.gd`, then `HireScreen.gd`; DiveSkipTransit: `Code.gd`, then `Station.gd`); `Code.gd`
+   `extends "res://<game script>"`. Rules that let mods stack on the same script (header of
+   `ArmAltTargetSelection/Code.gd`):
    - Never call the parent's `_ready`, `_process`, `_physics_process` or `_notification`. Godot 3 runs them at every
      level of the script chain by itself: `_ready` base first (so `ship` etc. are set), `_process`,
      `_physics_process` and `_notification` child first. LidarLouderPing overrides `onSetup` (an ordinary function)
@@ -153,8 +155,9 @@ with the mods.
     `Code.gd` (see *The two ways these mods hook in*).
   - `Code.gd` is the mod's main code.
   - A second script extension next to `Code.gd` is named for the screen it changes: CrewCheapHireNotifier's
-    `HireScreen.gd` (the Hire screen, `enceladus/HireableCrew.gd`). Code both use goes in `Settings.gd`, which they
-    already share (the rule's `limitFor` / `isCheapHire`).
+    `HireScreen.gd` (the Hire screen, `enceladus/HireableCrew.gd`), DiveSkipTransit's `Station.gd` (the station,
+    `enceladus/Enceladus.gd`). In CrewCheapHireNotifier, code both use goes in `Settings.gd`, which they already share
+    (the rule's `limitFor` / `isCheapHire`).
   - `SettingsUI.gd` is the mod's settings UI, when it has one.
   - `Settings.gd`, only in a mod with a settings UI, is the settings model `Code.gd` and `SettingsUI.gd` share, built
     like the game's own `Settings` autoload (`res://Settings.gd`: a `cfg` dict of defaults, a `ConfigFile` in
@@ -327,7 +330,8 @@ English text there.
   fast towards the dive entry point and brakes to a crawl, turned to face into the rings (`Game.gd` `_ready` and
   `_process`: `initialSpeed` from `desiredAcceleration` and `initialCutsceneTime`, braking for `totalCutsceneTime`;
   `Game.tscn` sets the two times). It really
-  flies: its thrusters and its reactor's turbine burn remass, and in-game time passes.
+  flies: its thrusters and its reactor's turbine burn remass, and in-game time passes. DiveSkipTransit skips it and
+  charges those.
 - **Dealer** (`ENCELADUS_SHIP_MARKET`, `enceladus/Dealer.tscn`): the station's ship market. Its entries are
   `enceladus/SystemBuyUI.gd` (the ship-list mods change them); its Examine tab can launch the simulator. **Fleet**
   (`ENCELADUS_OWNED_SHIPS`): the ships the player owns, and the station screen listing them (`enceladus/Owned.tscn`,
@@ -397,6 +401,11 @@ English text there.
 - **HUD**: the ship's flight display (`hud/Hud.gd`), laid out per ship model in `hud/Display-<model>.tscn`.
 - **Intake**: where the arm feeds chunks into the ship: a grinder, an excavator or a side bay (see *Salvage arm
   facts*).
+- **Launch sequence**: what the station plays after Launch Ring Dive (`ENCELADUS_RETURN_TO_RING`) and the dive target:
+  the ship powers up and leaves the dock (`enceladus/Enceladus.gd` `_on_DiveTarget_launch`: `ExitPlayer`'s
+  `LaunchSequence`, then, once the ship has power, `Autopilot`'s `GoToRing`, which ends in `goToRing()`, the switch to
+  the ring scene). Esc or `cutscene_ff` cuts it short (`Enceladus.gd` `_physics_process`). The ship flown there is the
+  station's, thrown away with the scene. DiveSkipTransit cuts the sequence as soon as it starts.
 - **LIDAR** (`HUD_LIDAR`, "Doppler LIDAR"; `hud/LIDAR.gd`): the HUD's scanner of nearby objects. Its sweep plays a
   ping (the `Bleep` node) for each strong return, pitched and set in volume by the distance; a Tuning switch
   (`doBleep`) turns the pings off.

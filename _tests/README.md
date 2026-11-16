@@ -9,7 +9,8 @@ a Godot project in `TempDir\tests\project` from `_tests\`; the game's own `Docki
 `HidingMarginContainer.gd`, `AnalogControlSlider.gd`, `TuningFloatValue.gd`, `TuningItems.gd`, `Hud.gd`, `OMS.gd`,
 `TabsWithGamepadControl.gd`, `PriceLabel.gd`, `RepeatingHSlider.gd`, `MineralLabel.gd`, `MineralSystemToggle.gd`,
 `HireableCrew.gd`, `CrewBio.gd`, `CurrentCrewManagement.gd`, `PlaySoundsOnTheseButtons.gd`, `SystemBuyUI.gd`,
-`SystemShipUpgradeUI.gd`, `Tool.gd`, `gdunzip.gd`, `Shower.tscn`, audio buses (`default_bus_layout.tres`), the skill
+`SystemShipUpgradeUI.gd`, `Game.gd`, `Enceladus.gd`, `TransponderOnIntro.gd`, `Reactor.gd`, `FusionReactor.gd`,
+`Tool.gd`, `gdunzip.gd`, `Shower.tscn`, audio buses (`default_bus_layout.tres`), the skill
 icons `CrewBio.gd` preloads and a Fleet entry's Use icon (`enceladus/Upgrades/switch.png`; their `.png.import` and
 imported `.stex`, so they load without an import step), copied from the decompiled source on every run and never
 committed, since they are the game's; a stub mineral scene with the chunk radius read from the game's; bare stubs of
@@ -22,7 +23,12 @@ game's themes for the entry, its labels' grid and its thumbnail margin (`menu/Me
 `enceladus/Subwindow.theme`, and every font, stylebox and image they load, found by following their `res://` paths),
 so its sizes and looks are the game's, and a
 flicker stub, `harness/fleet_flicker.gd`) and of an Equipment item (`SystemShipUpgradeUI.tscn`) with the game's node
-paths and scripts but no theme, textures or sounds (beyond those named). It packages each mod as a release zip is laid out (MODDING.md *Packaging and releasing*,
+paths and scripts but no theme, textures or sounds (beyond those named); and a stub of the ring scene (`Game.tscn`)
+built from the game's: its root node with `Game.gd` and the scene's values, the title card player with the game's
+autoplay, process mode and `intro` animation, a node at every path that animation drives (the game's type where the
+scene declares one, the transponder label with `TransponderOnIntro.gd`) and a bare asteroid field. The game's
+`Shipyard`, `K2RGB` and `Achivements` autoloads are stubs (`harness/stubs/`), in the game's order, so the game's
+scripts that name them compile. It packages each mod as a release zip is laid out (MODDING.md *Packaging and releasing*,
 without the `LICENSE` copy) and loads the zips as
 `ModLoader.gd` does, at the same moment (`_tests\harness\loader.gd` is the `ModLoader` autoload, and loads in its
 `_init`; the autoloads keep the game's order), so the zip layout is tested too. Logs: `TempDir\tests\logs`. Godot and
@@ -41,9 +47,10 @@ Call it from a pwsh prompt or `pwsh -Command`: under `pwsh -File`, list argument
 not parsed as arrays. Exit code 0 = every run passed; a script error fails its run even if every check passed.
 
 The suites are ported from the claude.ai harness (DVModTestHarness 1.0.0; the original was deleted once ported),
-except `boot`, `lidar`, `hud`, `crew`, `geology` and `fleet`. `units`, `still` and `moving` load the two arm mods by
-default, `dive` loads DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos, `lidar` loads LidarLouderPing, `hud`
-loads HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology` loads GeologyByMass, `fleet` loads ShipCopyPaste.
+except `boot`, `lidar`, `hud`, `crew`, `geology`, `fleet` and `skip`. `units`, `still` and `moving` load the two arm
+mods by default, `dive` loads DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos, `lidar` loads LidarLouderPing,
+`hud` loads HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology` loads GeologyByMass, `fleet` loads
+ShipCopyPaste, `skip` loads DiveSkipTransit.
 
 - `units`: the claude.ai unit tests (`arm/main.gd`) nearly verbatim, on synthetic arms around the game's
   `DockingArm.gd`. TargetSelection: area geometry on turned, scaled and offset arms, reach, the strip, the weighted
@@ -197,6 +204,23 @@ loads HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology` loads Geology
   nothing put aboard); an empty crew list (nobody aboard); closing the screen with the dialog open. The texts of
   `i18n/en.po`, also in a language without them; the entries' script keeps the game's path. The control checks (no
   Copy, Paste or dialog) run on the game's own script.
+- `skip` (`suites/skip.gd`): the start of a dive, with the game's bindings for `cutscene_ff` and `pause`. The launch:
+  stations built in code around the game's `Enceladus.gd` (given its script once in the tree, so neither its `_ready`
+  nor its processing runs), with the three players, the ring scene's path and a ship stub; the Loader stub records the
+  calls. Checks that the game's own launch runs first (the ship's `instance` signal, the `launch` signal, the ring
+  scene prepared, the ship's power handler connected), that the station then goes to the ring scene at once, and that
+  both sequences are stopped. The arrival: the ring scene stub instanced as the station loads it, with
+  `harness/skip_ship.gd` as the player's ship (`CurrentGame.recreatePlayerShip`; the game's `drawReactiveMass` and
+  `getRemassRequiredForDv`, a transit to the rings that costs remass and time), holding nodes of the game's reactor
+  scripts: a running fission reactor, one switched off but still at its `coldLimit`, one switched off below it, one
+  exploding and a fusion reactor, each with its own turbine consumption. Checks that the scene gets the extension;
+  that the ship starts at the position and speed the cutscene's braking leaves it (from the scene's own values) and
+  the title card is at its end, hidden; that the game's `_process` ends the cutscene on its first frame, with the ship
+  already facing where the game turns it; and that after the ship's `setup` the remass charged is the transit's plus
+  the braking (`getRemassRequiredForDv`, the mod's `_DST_UNITS_PER_METRE`) plus the turbines of the running and
+  still-hot fission reactors only, and the time charged is the transit's plus `totalCutsceneTime`. The control checks
+  (the launch keeps playing and doesn't go to the ring; the ship spawned for the cutscene, which goes on under the
+  title card; only the transit charged) run on the game's own scripts.
 - `_tests\harness\rig.gd` builds the arm's node tree as the game nests it, with the values in
   `_tests\harness\vp_data.gd`; each cites its scene file and line, so re-check them after a game update. The ship
   is a stub moved by hand (it takes the arm's impulses and torque; inertia from the hull); the rotors don't collide.
@@ -205,7 +229,8 @@ loads HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology` loads Geology
   with `-Mods @()`), `lidar` 40 (3 control checks with `-Mods @()`), `hud` 13 (3 control checks with `-Mods @()`),
   `crew` 140 (141 with CrewPerfectSort too, in both load orders; 3 control checks with `-Mods @()`), `geology` 60 (3
   control checks with `-Mods @()`), `fleet` 70 (the same with ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice
-  too; 3 control checks with `-Mods @()`), all passing; `-Matrix` gives 16 of 16 in every combination.
+  too; 3 control checks with `-Mods @()`), `skip` 18 (6 control checks with `-Mods @()`), all passing; `-Matrix` gives
+  16 of 16 in every combination.
   Feeding, a chunk beside the hull is in after 4.4–4.8 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.4.0 (the claude.ai results, case for case)
   took 5.9–6.3 s there, fails the 8 time limits, and `-Matrix` gave 16, 15, 16, 16 (feeding while turning with a 5 t
