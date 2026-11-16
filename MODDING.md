@@ -357,7 +357,7 @@ English text there.
   (`CREW_EDUCATION`), and an experience (`CREW_EXPERIENCE`), both from 0 to 1 in their own occupation and shown on
   their entry as levels (`CurrentGame.talentLevels`, `experienceLevels`; `enceladus/CrewBio.gd`).
   - The crew's value for an occupation is the best among the dive crew in it, not counting those on leave, raised by
-    that member's good morale and lowered by bad (`morale`, which has no text in `en.po`; `CurrentGame.getCrewStats`).
+    that member's good morale and lowered by bad (see *Morale*; `CurrentGame.getCrewStats`).
   - Each occupation's talent and experience give one stat each, shown on Your Crew (`deriveStats`, `skillMatrix`):
     Pilot, Adrenal slowdown and Course anticipation; Mechanic, Jury-rig efficiency and Repair limit; Geologist, Price
     prediction accuracy and Mineral discovery range; Astrogator, Tactical awareness range and Coordinate tracking time
@@ -464,6 +464,30 @@ English text there.
 - **Mineral**: what a chunk is made of, named in code by its element symbol (`mineral = "PT"`). Processed ore
   (`HUD_CARGO_LIST_PROCESSED`) is what the MPU has extracted; it is sold or stored at the **Mineral Market**
   (`ENCELADUS_MINERAL_MARKET`).
+- **Morale** (crew happiness): each crew member's mood, `morale` in their entry of `CurrentGame.state.crew`, from
+  -0.5 to 0.5 (`changeCrewMorale` clamps it), 0 for a new hire. It has no text in `en.po` and no number on screen.
+  The crew line-up at the station (`enceladus/CrewFaceOnEnceladus.gd`) shows a happy icon above `moraleLimit` (0.3)
+  and a sad one below minus that. The dive HUD's crew faces (`hud/CrewFaceOnDive.tscn`) hide both icons.
+  - Effect: the crew stats use the exponent `1 - morale` on the member's talent and experience (`getCrewStats`). At
+    0.5 a talent of 0.5 counts as about 0.71, and at -0.5 as about 0.35. The Hire screen's comparison leaves morale
+    out (`CrewBio.gd`). Some crew conversations need it inside a range (`maxAgendaMorale` / `minAgendaMorale`,
+    `comms/ConversationPlayer.gd`). A crew member asks for a raise (`DIALOG_NEED_RAISE`) only when their morale is 0
+    or less and their salary is below the market's (`getExpectedSalaryFrom`). If the player refuses and their morale
+    is -0.4 or less, they quit and are fired on the spot (`DIALOG_RAISE_I_QUIT`).
+  - Drift: every in-game day, morale closes 5 % of the gap to a target (`erodeCrewMorale`, `moraleErodePerDay`), so it
+    halves in about two weeks. For the dive crew, from launch to return (transits included), the target is the ship's
+    `crewMoraleBonus`: the Eagle-Prospector-VP -0.3, the Eagle-Prospector-Lux 0.4, the OCP-209 0.3, other ships 0.
+    Everywhere else the target is 0, except during a hotel stay.
+  - Changes: the station's Services screen (`ENCELADUS_SERVICES`, `enceladus/ServiceUI.gd`, `Services.tscn`; paid
+    bars, hotels and other services). A hotel stay sets the target to its `moraleStay` for the hours it lasts. Some
+    services also add their `moraleChange` at the end to the crew not on leave: The Twins (a bar, 4 h, once a day)
+    adds 0.1. Moonview Capsule Hotel (24 h) sets the target to 0.2. The Underside Inn (168 h) sets it to 0.2, then
+    adds 0.1. SkyDome Resort (72 h) sets it to 0.3, then adds 0.15. Conversations also change morale
+    (`adjustGlobalMorale` for the crew aboard, `adjustAgendaMorale` for one member). A round of drinks at a space bar
+    (`DIALOG_SPACE_BAR_ROUND_OF_DRINKS`) gives everyone 0.2. Agenda events (see *EVA*, *Crew agendas*) give or take up
+    to 0.5 from that member, and a refused raise takes 0.2. When the player can't pay a member's wages, which are due
+    every 30 days, that member loses 0.05 every in-game hour at the station (`payWages`, called from `Enceladus.gd`).
+    At 45 days past due (`baseCrewPatience`) they are fired.
 - **MPU** (`SYSTEM_CARGO_MPU*`, `ships/modules/MineralProcessingUnit.gd`): the Mineral Processing Unit, which turns
   the chunks taken in into processed ore and, in most models, their water into remass.
 - **OMS** (`HUD_OMS`, `hud/OMS.gd`, `hud/OMS.tscn`): the Onboard Maintenance System, the console opened with `J` in
