@@ -450,6 +450,29 @@ English text there.
   (`ENCELADUS_DIVE_TARGET`, `enceladus/DiveTarget.tscn`); fees, licences, insurance and consumables are paid per
   dive, and on return the dive's output is stored or sold.
 - **E$**: the game's currency.
+- **EMP**: electromagnetic damage to a ship (`ship-ctrl.gd` `applyEmpDamage`); no key of its own, the word is in
+  Short Circuit's tooltip (`DAMAGE_SHORT_CIRCUIT_TOOLTIP`, "Caused by EMP damage."). Sources: the MWG microwave
+  emitter (`SYSTEM_MWG`, `weapons/emp.gd`; the ONMWG-650 turret, `SYSTEM_PDMWG`, is built on it), whose EMP is its
+  draw × 0.9 × (1 − its Water Resonance tuning, `TUNE_EMP_RESONANCE`), up to about 61 MW; the SPC Gungnir
+  (`SYSTEM_SYNCHRO`, `weapons/synchrotron.gd`), a quarter of its charge in one frame; ring storms
+  (`story/RingStormManager.gd`: arcs that a storm beacon, `story/StormBeacon.tscn`, strikes between two objects, a
+  weak corona for a few seconds, then a discharge of up to 2 s); and, in one go, some conversation lines
+  (`damageEmp`) and the derelicts as they spawn (`extraEmp` in `RescueOperation.gd`, `AgendaSpecificDerelict.gd`).
+  - EMP shielding (in the Dealer's specs, "EMP shielding: 100 MW"; no key of its own): the ship's `empShield`, the
+    larger of its scene's value and its config's `shielding.emp`. It comes with the hull: no equipment changes it.
+    Each hit loses the shielding's MW over that frame (`empShield × 1000 × delta`; 1000 per second is 1 MW, the scale
+    the MWG's Tuning shows), and only the rest gets through, so it stops continuous sources up to that power and
+    barely touches one-frame ones. It applies per hit: two sources at once are each cut by the whole of it. The
+    Runasimi KR37 TNTRL has 200 MW; the Cothon-212, the Cothon-211 "Chonker", the Cothon-217 "Bender" and the
+    Antonoff-Titan K225 (modified) (the derelict of the sibling agenda, see *EVA*) 100 MW; the Cothon-213 "Triplet"
+    and every other ship model none.
+  - What gets through (the `damageEMP` signal): Short Circuit (`DAMAGE_SHORT_CIRCUIT`) on the HUD, which falsifies its
+    readouts and may reboot it on each hit, the likelier the more damaged (`hud/Hud.gd` `_on_emp`); Pump Failure
+    (`DAMAGE_LASER_PUMP`) on the lasers (`weapons/laser.gd`: the CL-150, the CL-600P, the laser turret); and, near a
+    fission reactor, an emergency shutdown (`Reactor.gd` `_on_emp`, with the EMP falling off with the square of the
+    distance from the reactor): the reactor disengages instead of engaging while the EMP lasts, so the ship loses
+    power. The EIME's fusion reactor ignores EMP (`FusionReactor.gd`). The hull's sparks and their crackle (`empLevel`)
+    are only effects.
 - **Enceladus**, **the station**: Enceladus Prime station (`ENCELADUS_*`, `enceladus/`), the home base at Saturn's
   moon Enceladus. Its menu (`enceladus/EnceladusMenu.gd`) opens the station's screens on its right (the children of
   `enceladus/HidingMarginContainer.gd`). On every arrival the station fades in (`Enceladus.tscn`'s `AnimationPlayer`,
