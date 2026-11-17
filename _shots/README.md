@@ -1,8 +1,9 @@
 # Screenshots for the users' wiki
 
 `shots.ps1` (PowerShell 7) takes the users' wiki's "without the mod / with the mod" pictures of the station screens
-by running the real game, in an isolated copy, and saves them in `_wiki\images\` (see MODDING.md *The users' wiki*).
-Pictures taken in a dive (the HUD, the OMS) are taken by hand.
+and of the OMS, which it opens in a dive, by running the real game, in an isolated copy, and saves them in
+`_wiki\images\` (see MODDING.md *The users' wiki*). Pictures of flight, which depend on what is around the ship (the
+HUD, the info boxes), are taken by hand, with bloom off as in the runs.
 
 ```powershell
 .\_shots\shots.ps1                                    # every mod in shots.psd1
@@ -12,8 +13,11 @@ Pictures taken in a dive (the HUD, the OMS) are taken by hand.
                                                       # ad-hoc steps, saved in TempDir\shots\out: to find a view
 ```
 
-Each mod runs twice from the same save, without the mod and with it, about half a minute each. The game's window opens
-on a screen other than the main one, where there is one, and plays without sound.
+Each mod runs twice from the same save, without the mod and with it, about half a minute each, a minute with a dive; a
+run with nothing to shoot (every view only the mod has) is skipped. The game's window opens on a screen other than the
+main one, where there is one, and plays without sound. ShotRenderer is what moves it there, so before each run the copy
+starts once without a window, for a single frame: if a script doesn't load (ShotRenderer's or a mod's), the run stops
+there, before any window opens.
 
 ## Which mods
 
@@ -33,9 +37,9 @@ ShipSortByTypeAndPrice); the arm mods have their diagrams.
   3. ShotRenderer stops the game at once if its user folder is anywhere else;
   4. `shots.ps1` records the names, sizes and times of the files in `%APPDATA%\dV` before and after, and fails if
      anything changed. It refuses to run while the game is running.
-- **The copy's settings** (`appdata\dV-shots\settings.cfg`, written at every run): a 1600x900 window, no tutorial,
-  English, no sound, and the game's streaming mode, without which the game pauses whenever its window loses the focus
-  (`PauseLayer.gd` `_notification`). BootSkipLogos is loaded in every run, to skip the logos.
+- **The copy's settings** (`appdata\dV-shots\settings.cfg`, written at every run): a 1600x900 window, no bloom (the
+  game's default is full bloom), no tutorial, English, no sound, and the game's streaming mode, without which the game
+  pauses whenever its window loses the focus (`PauseLayer.gd` `_notification`). BootSkipLogos is loaded in every run, to skip the logos.
 - **The fixture** (`newgame`, ShotRenderer's `_newGame`): a new game with a fixed seed, money, one hire per job, and
   in the fleet a spare of the same model as the ship flown and two ships of other models. It is built when missing or
   with `-NewFixture`, and saved in the copy's user folder; every run loads it, so a pair of pictures differs only by
@@ -44,11 +48,14 @@ ShipSortByTypeAndPrice); the arm mods have their diagrams.
   `shots.ps1` writes next to the executable (`bin\shotrenderer.cfg`), then quits. Without that file it does nothing.
   Its steps are listed at the top of the script: `load`, `wait`, `press` (a button's `pressed` signal), `click` and
   `clickfind` (a real mouse click, through the game's input), `shiftclick` (Shift+Click, as the mods' settings open),
-  `tab`, `scroll` and `shot`.
+  `tab` (by number or by the tab's node name), `scroll` and `shot`. In a dive: `dive` (from the station into the ring
+  scene, without the dive target screen, which saves, then until the arrival cutscene is over), `action` (an input
+  action, as its key: `jury_rig` is J, the OMS) and `set` (a node's property, or a key of a dictionary in it, to a JSON
+  value: GeologyByMass's example settings). A path starting with `ship:` starts at the player's ship.
 - **`shots.psd1`**: the steps of each mod. `shot|<view>|x,y,w,h` saves that part of the window as
   `<Mod>-<view>-without.png` and `-with.png`; a step starting with `with:` runs only with the mod, and a view shot that
   way is saved once, as `<Mod>-<view>.png`. `{menu}` and `{screens}` stand for the station menu's entries and the
-  screens they open.
+  screens they open, `{oms}` for the OMS's tabs in a dive.
 
 ## Notes
 

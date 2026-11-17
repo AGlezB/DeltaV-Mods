@@ -1,7 +1,8 @@
-# The users' wiki's screenshots of the station screens, by mod: what shots.ps1 runs, once without the mod and once
-# with it, from the same fixture save (_shots\README.md). Only mods with a screen of their own, or that add to or change
-# a game screen, have screenshots; mods that only reorder a list or change how the game plays have none. Steps are ShotRenderer's (_shots\ShotRenderer\ModMain.gd);
-# {menu} is the station menu's entries, {screens} the screens they open. shot|<view>|x,y,w,h saves that part of the
+# The users' wiki's screenshots of the station screens and the OMS, by mod: what shots.ps1 runs, once without the mod
+# and once with it, from the same fixture save (_shots\README.md). Only mods with a screen of their own, or that add to
+# or change a game screen, have screenshots; mods that only reorder a list or change how the game plays have none. Steps
+# are ShotRenderer's (_shots\ShotRenderer\ModMain.gd); {menu} is the station menu's entries, {screens} the screens they
+# open, {oms} the OMS's tabs (in a dive; ship: paths start at the player's ship). shot|<view>|x,y,w,h saves that part of the
 # 1600x900 window as _wiki\images\<Mod>-<view>-without.png and -with.png. A step starting with with: runs only with the
 # mod (its settings, its dialog), and a view shot that way is saved once, as <Mod>-<view>.png.
 # Also: other mods loaded in both runs, when the view needs them.
@@ -32,6 +33,19 @@
 			'load', 'wait|10'
 			'with:shiftclick|{menu}/RingDive', 'wait|2'
 			'with:shot|settings|545,15,1055,735'
+		)
+	}
+	# The Ore mass tab, in a dive (J opens the OMS), with an example set where it is stored (Settings.gd: the HUD's
+	# mineralConfig, under the mod's id): the switch on, a base of 200 kg, and extra masses growing by 200 kg from the
+	# dearest mineral to the cheapest by the game's base prices (CurrentGame.mineralPrices: Be, W, V, Pt, Pd, Fe).
+	GeologyByMass = @{
+		Steps = @(
+			'load', 'wait|10'
+			'dive', 'wait|5'
+			'action|jury_rig', 'wait|2'
+			'with:set|ship:Hud|mineralConfig/AGlezB.GeologyByMass|{"enabled": true, "baseMass": 200, "extraMass": {"Be": 200, "W": 400, "V": 600, "Pt": 800, "Pd": 1000, "Fe": 1200}}'
+			'with:tab|{oms}|GEOLOGYBYMASS_TAB', 'wait|2'
+			'with:shot|settings|320,2,965,372'
 		)
 	}
 	LidarLouderPing = @{

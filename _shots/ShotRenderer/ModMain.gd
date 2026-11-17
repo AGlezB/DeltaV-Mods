@@ -5,21 +5,30 @@ extends Node
 # nothing, so it is harmless anywhere else; and it stops the game at once if the game's user folder (where the saves
 # are) isn't inside the shots folder.
 #
-# Steps, one string each, fields separated by |; node paths are relative to the scene the game's Loader shows:
+# Steps, one string each, fields separated by |; node paths are relative to the scene the game's Loader shows, or, when
+# they start with ship:, to the player's ship (whose node name in the ring scene isn't fixed):
 #   newgame                       the fixture: a new game with money, one hire per job and three more ships; saved
 #   load                          loads the save and goes to the station, then waits until it is there
+#   dive                          from the station, goes to the ring scene, then waits until the player's ship is out of
+#                                 the arrival cutscene; nothing is saved
 #   wait|<seconds>
 #   press|<path>                  presses a button (its pressed signal)
 #   shiftclick|<path>             Shift+Click on a control (its gui_input signal), as the mods' settings open
 #   pressfind|<path>|<name>|<n>   presses the n-th (from 0) visible node named <name> under <path>
 #   click|<path>                  clicks a control with the mouse, as a player does (input events at its centre)
 #   clickfind|<path>|<name>|<n>   clicks the n-th (from 0) visible node named <name> under <path>
-#   tab|<path>|<n>                shows tab n of a TabContainer
+#   action|<action>               presses and releases an input action, as its key does (jury_rig, J, opens the OMS)
+#   set|<path>|<property>[/<key>...]|<json>
+#                                 sets a node's property, or a key of a dictionary it holds (missing ones are made), to
+#                                 a JSON value
+#   tab|<path>|<n or name>        shows tab n, or the tab with that node name, of a TabContainer
 #   scroll|<path>|<pixels>        scrolls the first ScrollContainer under <path> (itself included) down
 #   shot|<file>[|x,y,w,h]         saves the window, or that part of it, as a PNG
 
 const ENCELADUS = "res://enceladus/Enceladus.tscn"
+const GAME = "res://Game.tscn" # the ring scene
 const BOOT = "res://Boot.tscn"
+const SHIP_PREFIX = "ship:"
 const POLL = 0.5 # seconds between checks while waiting for a scene
 const SETTLE = 2.0 # seconds to wait once the title screen is up
 
@@ -66,6 +75,18 @@ func _ready():
 				Loader.go(Loader.prepare(ENCELADUS))
 				while not _scene() or _scene().filename != ENCELADUS:
 					yield(get_tree().create_timer(POLL), "timeout")
+			"dive":
+				# As the station launches a dive (enceladus/Enceladus.gd _on_DiveTarget_launch, goToRing), without the
+				# dive target screen, which saves (DiveTarget.gd). The ring scene makes the player's ship and starts its
+				# arrival cutscene in its _ready (Game.gd).
+				Loader.go(Loader.prepare(GAME, true))
+				CurrentGame.freeShipInstanceCache()
+				while not _scene() or _scene().filename != GAME:
+					yield(get_tree().create_timer(POLL), "timeout")
+				var ship = CurrentGame.getPlayerShip()
+				while not is_instance_valid(ship) or not ship.is_inside_tree() or ship.cutscene:
+					yield(get_tree().create_timer(POLL), "timeout")
+					ship = CurrentGame.getPlayerShip()
 			"wait":
 				yield(get_tree().create_timer(float(parts[1])), "timeout")
 			"press":
@@ -101,10 +122,28 @@ func _ready():
 					yield(_click(targets[int(parts[3])]), "completed")
 				else:
 					printerr("SHOTRENDERER: no node ", parts[2], " number ", parts[3], " under ", parts[1])
+			"action":
+				for down in [true, false]:
+					var press = InputEventAction.new()
+					press.action = parts[1]
+					press.pressed = down
+					Input.parse_input_event(press)
+					yield(get_tree(), "idle_frame")
+			"set":
+				var target = _node(parts[1])
+				var parsed = JSON.parse(parts[3])
+				if parsed.error != OK:
+					printerr("SHOTRENDERER: not JSON: ", parts[3])
+				elif target:
+					_assign(target, parts[2].split("/"), parsed.result)
 			"tab":
 				var tabs = _node(parts[1])
 				if tabs:
-					tabs.current_tab = int(parts[2])
+					var index = _tabIndex(tabs, parts[2])
+					if index < 0:
+						printerr("SHOTRENDERER: no tab ", parts[2], " in ", parts[1])
+					else:
+						tabs.current_tab = index
 			"scroll":
 				var scroller = _scroller(_node(parts[1]))
 				if scroller:
@@ -141,10 +180,47 @@ func _scene():
 	return null
 
 func _node(path):
-	var node = _scene().get_node_or_null(path)
+	var node = null
+	if path.begins_with(SHIP_PREFIX):
+		var ship = CurrentGame.getPlayerShip()
+		if is_instance_valid(ship):
+			node = ship.get_node_or_null(path.substr(SHIP_PREFIX.length()))
+	else:
+		node = _scene().get_node_or_null(path)
 	if node == null:
 		printerr("SHOTRENDERER: no node ", path)
 	return node
+
+# Sets `keys[0]` of a node to `value`, or, with more keys, the last key of the dictionary the others lead to inside that
+# property, making the dictionaries that are missing.
+func _assign(node, keys, value):
+	if keys.size() == 1:
+		node.set(keys[0], value)
+		return
+	var holder = node.get(keys[0])
+	for i in range(1, keys.size() - 1):
+		if not holder is Dictionary:
+			break
+		if not holder.get(keys[i]) is Dictionary:
+			holder[keys[i]] = {}
+		holder = holder[keys[i]]
+	if holder is Dictionary:
+		holder[keys[keys.size() - 1]] = value
+	else:
+		printerr("SHOTRENDERER: not a dictionary on the way to ", keys.join("/"))
+
+# A tab's index in a TabContainer, from its number or its node name; -1 when there is none. Its tabs are its Control
+# children that aren't set as top level, as the TabContainer counts them.
+func _tabIndex(tabs, which):
+	if which.is_valid_integer():
+		return int(which)
+	var index = 0
+	for child in tabs.get_children():
+		if child is Control and not child.is_set_as_toplevel():
+			if child.name == which:
+				return index
+			index += 1
+	return -1
 
 func _find(node, name, found):
 	for child in node.get_children():

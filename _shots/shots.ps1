@@ -48,11 +48,14 @@ $repo = Split-Path $PSScriptRoot -Parent
 $userDirName = 'dV-shots' # the game's user folder in the copy (override.cfg); the game's own is dV
 $windowSize = 'Vector2( 1600, 900 )'
 $imageMaxBytes = 2MB # as wiki.ps1 allows
+$preflightSeconds = 30 # the check without a window before each run takes a few
 $alwaysLoaded = @('BootSkipLogos')
-# Placeholders in the steps: the station menu's entries and the screens they open (enceladus/Enceladus.tscn).
+# Placeholders in the steps: the station menu's entries and the screens they open (enceladus/Enceladus.tscn); in a
+# dive, the OMS's tabs (the ship's Hud, ships/RA-TRTL.tscn; its Inventory, hud/OMS.tscn; that scene's tabsPath).
 $placeholders = [ordered]@{
 	'{menu}' = 'EnceladusMenu/MenuContainer/MarginContainer/HBoxContainer/Options'
 	'{screens}' = 'EnceladusMenu/MenuContainer/MarginContainer/CanvasLayer/MarginContainer'
+	'{oms}' = 'ship:Hud/Inventory/MarginContainer/VBoxContainer/TabHintContainer/TabContainer'
 }
 
 
@@ -98,6 +101,25 @@ function Get-Snapshot
 	}
 }
 
+# Starts the game copy with the mods in bin\mods and the job file, the user folder isolated, and these extra arguments;
+# returns its output lines and whether it was stopped after $Seconds.
+function Start-Copy([string[]] $ExtraArgs, [int] $Seconds)
+{
+	$psi = [Diagnostics.ProcessStartInfo]::new((Join-Path $bin 'Godot.exe'))
+	foreach ($a in @('--main-pack', (Join-Path $bin 'Delta-V.pck'), '--enable-mods') + @($ExtraArgs)) { $psi.ArgumentList.Add($a) }
+	foreach ($k in 'APPDATA', 'LOCALAPPDATA', 'XDG_DATA_HOME', 'XDG_CONFIG_HOME', 'XDG_CACHE_HOME') { $psi.Environment[$k] = $appdata }
+	$psi.WorkingDirectory = $bin
+	$psi.UseShellExecute = $false
+	$psi.RedirectStandardOutput = $true
+	$psi.RedirectStandardError = $true
+	$proc = [Diagnostics.Process]::Start($psi)
+	$stdout = $proc.StandardOutput.ReadToEndAsync()
+	$stderr = $proc.StandardError.ReadToEndAsync()
+	$timedOut = -not $proc.WaitForExit($Seconds * 1000)
+	if ($timedOut) { $proc.Kill() ; $proc.WaitForExit() }
+	return @{ Lines = @($stdout.Result -split "`r?`n") + @($stderr.Result -split "`r?`n"); TimedOut = $timedOut }
+}
+
 # Runs the game copy once with these mods and steps; throws if the run fails.
 function Invoke-Game([string[]] $Mods, [string[]] $JobSteps)
 {
@@ -113,24 +135,22 @@ function Invoke-Game([string[]] $Mods, [string[]] $JobSteps)
 	$list = ($JobSteps | ForEach-Object { '"' + $_.Replace('\', '/').Replace('"', '\"') + '"' }) -join ', '
 	"[job]`n`nsteps=[ $list ]`n" | Set-Content -LiteralPath (Join-Path $bin 'shotrenderer.cfg') -NoNewline
 
-	$psi = [Diagnostics.ProcessStartInfo]::new((Join-Path $bin 'Godot.exe'))
-	foreach ($a in '--main-pack', (Join-Path $bin 'Delta-V.pck'), '--enable-mods') { $psi.ArgumentList.Add($a) }
-	foreach ($k in 'APPDATA', 'LOCALAPPDATA', 'XDG_DATA_HOME', 'XDG_CONFIG_HOME', 'XDG_CACHE_HOME') { $psi.Environment[$k] = $appdata }
-	$psi.WorkingDirectory = $bin
-	$psi.UseShellExecute = $false
-	$psi.RedirectStandardOutput = $true
-	$psi.RedirectStandardError = $true
+	# First without a window, for one frame: the mods are loaded then (ModLoader's _init), so a script that doesn't parse
+	# shows here. Without ShotRenderer nothing would move the window off the main screen or stop the game.
+	$check = Start-Copy @('--no-window', '--quit') $preflightSeconds
+	$broken = @($check.Lines | Where-Object { $_ -match 'SCRIPT ERROR|Parse Error' })
+	$broken | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
+	if ($check.TimedOut) { throw "The check without a window took more than $preflightSeconds s and was stopped" }
+	if ($broken) { throw 'A script of the run does not load (above): nothing was shown' }
+	if (@($check.Lines | Where-Object { $_ -match '^SHOTRENDERER userdir=.*/shots/' }).Count -eq 0) { throw 'ShotRenderer did not start in the check without a window' }
+
 	Write-Host "Run: $(@($Mods) -join ', ')" -ForegroundColor Cyan
-	$proc = [Diagnostics.Process]::Start($psi)
-	$stdout = $proc.StandardOutput.ReadToEndAsync()
-	$stderr = $proc.StandardError.ReadToEndAsync()
-	$timedOut = -not $proc.WaitForExit($TimeoutSeconds * 1000)
-	if ($timedOut) { $proc.Kill() ; $proc.WaitForExit() }
-	$lines = @($stdout.Result -split "`r?`n") + @($stderr.Result -split "`r?`n")
+	$run = Start-Copy @() $TimeoutSeconds
+	$lines = $run.Lines
 	$lines | Where-Object { $_ -match 'SHOTRENDERER' } | ForEach-Object { Write-Host "  $_" }
 	$errors = @($lines | Where-Object { $_ -match '^SHOTRENDERER: |SCRIPT ERROR|Parse Error' })
 	$errors | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
-	if ($timedOut) { throw "The run took more than $TimeoutSeconds s and was stopped" }
+	if ($run.TimedOut) { throw "The run took more than $TimeoutSeconds s and was stopped" }
 	if (@($lines | Where-Object { $_ -match '^SHOTRENDERER userdir=.*/shots/' }).Count -eq 0) { throw 'ShotRenderer never confirmed the isolated user folder' }
 	if (@($errors | Where-Object { $_ -match '^SHOTRENDERER: ' }).Count) { throw 'ShotRenderer could not do every step (above)' }
 }
@@ -152,15 +172,16 @@ New-Item -ItemType Directory -Force $bin, $modsDir, $userDir, $out | Out-Null
 Copy-IfChanged (Join-Path $paths.GodotDir 'Godot_v3.6-stable_win64.exe') (Join-Path $bin 'Godot.exe')
 Copy-IfChanged (Join-Path $paths.GameDir 'Delta-V.pck') (Join-Path $bin 'Delta-V.pck')
 "[application]`n`nconfig/custom_user_dir_name=`"$userDirName`"`n" | Set-Content -LiteralPath (Join-Path $bin 'override.cfg') -NoNewline
-# The copy's settings: a window of a fixed size (ShotRenderer puts it on another screen), no tutorial, English, no
-# sound, and the game's streaming mode, without which it pauses whenever its window loses the focus (PauseLayer.gd
-# _notification).
+# The copy's settings: a window of a fixed size (ShotRenderer puts it on another screen), no bloom (menu/Bloom.gd: 2 is
+# No Bloom; the game's default is full bloom), no tutorial, English, no sound, and the game's streaming mode, without
+# which it pauses whenever its window loses the focus (PauseLayer.gd _notification).
 @"
 [display]
 
 windowed=true
 fullscreen=false
 windowSize=$windowSize
+bloom=2
 
 [gameplay]
 
@@ -203,6 +224,8 @@ try
 					if ($step -notmatch '^with:') { $step }
 					elseif ($variant -eq 'with') { $step.Substring('with:'.Length) }
 				}
+				# A run with nothing to shoot (every view only the mod has) isn't started.
+				if (-not @($runSteps | Where-Object { $_ -match '^shot\|' }).Count) { continue }
 				$mods = if ($variant -eq 'with') { @($name) + @($def.Also) } else { @($def.Also) }
 				Invoke-Game @($mods | Where-Object { $_ }) @($runSteps | ForEach-Object { Resolve-Step $_ "$name-" } | ForEach-Object {
 					if ($_ -match '^shot\|') { $_ -replace '\.png(\||$)', "-$variant.png`$1" } else { $_ }

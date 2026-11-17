@@ -30,6 +30,11 @@ In the **Ore mass** tab:
 The sliders work like the ones in the *Geologist* tab. While the switch is off they are dimmed, but you can still set
 them. Each ship keeps its own settings, saved with your game.
 
+In the picture, a chunk needs less of a dear mineral than of a cheap one: 200 kg more for each step down in price,
+from Be, the dearest, to Fe, the cheapest.
+
+![The Ore mass tab, switched on, with Base at 200 kg and each mineral's extra mass and total after it](images/GeologyByMass-settings.png)
+
 ## Changes how the game plays
 
 Compared to the normal game, while the mod's switch is on, which chunks keep a full info box depends on how many kg of
@@ -44,15 +49,19 @@ See [Installing mods](Home#installing-mods).
 
 <!-- wiki-values (checked by wiki.ps1)
 game-checked: 1.92.5
-GeologyByMass/i18n/en.po GEOLOGYBYMASS_TAB = "Ore mass"
+GeologyByMass/i18n/en.po GEOLOGYBYMASS_TAB = "Ore mass" | images/GeologyByMass-settings.png
 GeologyByMass/Settings.gd ENABLED.default = false -> off at first
-GeologyByMass/i18n/en.po GEOLOGYBYMASS_ENABLED = "Judge ore by mineral mass instead of the minimum value"
+GeologyByMass/i18n/en.po GEOLOGYBYMASS_ENABLED = "Judge ore by mineral mass instead of the minimum value" | images/GeologyByMass-settings.png
+GeologyByMass/i18n/en.po GEOLOGYBYMASS_HINT = "GeologyByMass mod: while this is on, an identified chunk keeps its full info box when it holds, of a mineral switched on in the Geologist tab, at least the base mass plus the extra mass set for that mineral. Its value and the Geologist tab's minimum value no longer count." | images/GeologyByMass-settings.png
 GeologyByMass/Settings.gd BASE_MASS.default = 0
 GeologyByMass/Settings.gd BASE_MASS.min = 0 -> 0 kg
 GeologyByMass/Settings.gd BASE_MASS.max = 5000 -> 5,000 kg
-GeologyByMass/i18n/en.po GEOLOGYBYMASS_BASE_MASS = "Base"
+GeologyByMass/i18n/en.po GEOLOGYBYMASS_BASE_MASS = "Base" | images/GeologyByMass-settings.png
+GeologyByMass/SettingsUI.gd EXTRA_FORMAT = "+%s " | images/GeologyByMass-settings.png
+GeologyByMass/SettingsUI.gd TOTAL_FORMAT = "= %s " | images/GeologyByMass-settings.png
 GeologyByMass/Settings.gd EXTRA_MASS.default = 0
 GeologyByMass/Settings.gd EXTRA_MASS.min = 0 -> 0 kg
 GeologyByMass/Settings.gd EXTRA_MASS.max = 5000 -> 5,000 kg
 GeologyByMass/i18n/en.po GEOLOGYBYMASS_EXTRA_MASS = "Mass of this mineral needed on top of the base, as your geologist estimates it, for a chunk to keep its full info box." -> on top of the base
+note: 200 kg, the base and the step of the example in the settings picture (its steps in _shots/shots.psd1, by the game's base prices, CurrentGame.mineralPrices): change it with that
 -->

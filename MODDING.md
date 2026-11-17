@@ -10,8 +10,8 @@ themselves, and how to install them, are in the [README](README.md); the test ha
 The mods are written in GDScript for the game's engine, Godot 3. Each top-level folder not starting with `_` or `.`
 is one independent mod and ships as one zip. There is no build system: `package.ps1` builds a mod's release zip (see
 *Packaging and releasing*), `_tests\` is a test harness for most mods (see *Testing*), and `_wiki\` is the users'
-wiki, checked by `wiki.ps1`, published by `.github\workflows\wiki.yml`, with its station screenshots taken by
-`_shots\shots.ps1` (see *The users' wiki*). The source has been in git since 14 Nov 2026, and `.gitignore` keeps out
+wiki, checked by `wiki.ps1`, published by `.github\workflows\wiki.yml`, with its screenshots of the station and the
+OMS taken by `_shots\shots.ps1` (see *The users' wiki*). The source has been in git since 14 Nov 2026, and `.gitignore` keeps out
 every zip, so the versions
 released before that exist only as release zips. Later changes are in the git history and, from 1.0.0 on, in each
 mod's `CHANGES.md`.
@@ -197,10 +197,11 @@ overwritten at the next publish, so edit `_wiki\` only. The wiki's settings rest
   in the values block of the mod's page like any other.
 
 **Pictures.** Only mods with a screen of their own, or that add to or change a game screen, have screenshots; mods
-that only reorder a list or change how the game plays have none. Screenshots of the station's screens are taken by
-`_shots\shots.ps1` in an isolated copy of the game, from a fixture save, each mod's in a run without it and a run with
-it ([`_shots/README.md`](_shots/README.md); its steps in `_shots\shots.psd1`); those taken in a dive (the HUD, the
-OMS), by hand, the pair from the same save, ship and view.
+that only reorder a list or change how the game plays have none. Every screenshot is taken with bloom off (the game's
+Bloom setting at No Bloom). Screenshots of the station's screens and of the OMS (which `shots.ps1` opens in a dive)
+are taken by `_shots\shots.ps1` in an isolated copy of the game, from a fixture save, each mod's in a run without it
+and a run with it ([`_shots/README.md`](_shots/README.md); its steps in `_shots\shots.psd1`); those of flight, which
+depend on what is around the ship (the HUD, the info boxes), by hand, the pair from the same save, ship and view.
 
 **A mod's page**, in this order (GitHub shows the file name as the title, so there is no `#` heading):
 
@@ -269,7 +270,7 @@ there).
 **Keeping it up to date.** A change to anything a mod's page says (behaviour, settings, a listed value or text, a
 screen its pictures show) updates the page, its values block and its pictures in the same change. A release reviews
 the page against the mod's `## NEXT` bullets, since no check catches a change of behaviour. A picture `wiki.ps1` names
-to re-take is taken again with `.\_shots\shots.ps1 -Mod <ModName>`, or by hand for one taken in a dive. After a game
+to re-take is taken again with `.\_shots\shots.ps1 -Mod <ModName>`, or by hand for one of flight. After a game
 update, every page's `game:` lines and "without" pictures are checked against the new version (the station's with
 `.\_shots\shots.ps1 -NewFixture`) before its `game-checked` changes.
 Adding or removing a mod adds or removes its page, and its lines in Home and the sidebar.
