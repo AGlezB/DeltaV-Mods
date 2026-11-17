@@ -94,6 +94,10 @@ Pirates still show no code.
 If ship identification, the LIDAR or the Pilot tab does something wrong, try again without the mod before you report a
 bug to the game's developers.
 
+## Works with other mods
+
+Don't use it together with *AltTransponderCodes*, its old name: both would load.
+
 ## Install
 
 See [Installing mods](Home#installing-mods).
@@ -101,38 +105,38 @@ See [Installing mods](Home#installing-mods).
 <!-- wiki-values (checked by wiki.ps1)
 game-checked: 1.92.5
 game: four digits picked at random after a place of registry, like MRS-3127 (CurrentGame.gd getNewTransponder)
-AltTransponderCodes/Code.gd MODEL_CODES.TRTL = "TK37" -> TK37
-AltTransponderCodes/Code.gd MODEL_CODES.TRTL-LCB = "TX37" -> TX37
-AltTransponderCodes/Code.gd MODEL_CODES.TRTL-R = "TR37" -> TR37
-AltTransponderCodes/Code.gd MODEL_CODES.TRTL-T = "TA24" -> TA24
-AltTransponderCodes/Code.gd MODEL_CODES.TRTL-44 = "MK44" -> MK44
-AltTransponderCodes/Code.gd MODEL_CODES.PROSPECTOR = "PEGL" -> PEGL
-AltTransponderCodes/Code.gd MODEL_CODES.PROSPECTOR-VP = "PVUL" -> PVUL
-AltTransponderCodes/Code.gd MODEL_CODES.PROSPECTOR-LUX = "PPCK" -> PPCK
-AltTransponderCodes/Code.gd MODEL_CODES.PROSPECTOR-FAT = "PPLC" -> PPLC
-AltTransponderCodes/Code.gd MODEL_CODES.PROSPECTOR-BALD = "PBLD" -> PBLD
-AltTransponderCodes/Code.gd MODEL_CODES.COTHON = "C212" -> C212
-AltTransponderCodes/Code.gd MODEL_CODES.COTHON-CHK = "C211" -> C211
-AltTransponderCodes/Code.gd MODEL_CODES.COTHON-LND = "C213" -> C213
-AltTransponderCodes/Code.gd MODEL_CODES.COTHON-V = "C217" -> C217
-AltTransponderCodes/Code.gd MODEL_CODES.AT225 = "AK25" -> AK25
-AltTransponderCodes/Code.gd MODEL_CODES.AT225-R = "AR25" -> AR25
-AltTransponderCodes/Code.gd MODEL_CODES.AT225-B = "AB25" -> AB25
-AltTransponderCodes/Code.gd MODEL_CODES.EIME = "EIME" -> EIME
-AltTransponderCodes/Code.gd MODEL_CODES.OCP209 = "O209" -> O209
-AltTransponderCodes/Code.gd MODEL_CODES.KITSUNE = "NKTS" -> NKTS
-AltTransponderCodes/Code.gd MODEL_CODES.MADCERF = "MCRF" -> MCRF
-AltTransponderCodes/Code.gd MODEL_CODES.HYBRID = "HYBR" -> HYBR
-AltTransponderCodes/Code.gd MODEL_CODES.TSUKUYOMI = "TSKY" -> TSKY
-AltTransponderCodes/Code.gd MODEL_CODES.DRONE = "RDRN" -> RDRN
-AltTransponderCodes/Code.gd MODEL_CODES.ATLAS = "ATLS" -> ATLS
-AltTransponderCodes/Code.gd MODEL_CODES.OBONTO = "OBNT" -> OBNT
-AltTransponderCodes/Code.gd SERIAL_LENGTH = 5 -> 5
-AltTransponderCodes/Code.gd SERIAL_CHARS = "0123456789ABCDEFGHJKLMNPRSTUVWXYZ" -> I, O or Q
-AltTransponderCodes/Code.gd LIFEPOD_SUFFIX = "-LPD" -> -LPD
-AltTransponderCodes/Code.gd AI_CORE_SUFFIX = "-AIC" -> -AIC
-AltTransponderCodes/Code.gd CREW_SUFFIX = "-CRW" -> -CRW
-AltTransponderCodes/Code.gd DRONE_CODES.CC = "CGO" -> CGO
-AltTransponderCodes/Code.gd DRONE_CODES.CS = "MNC" -> MNC
-AltTransponderCodes/Code.gd DRONE_CODES.CB = "CLM" -> CLM
+TransponderAltCodes/Code.gd MODEL_CODES.TRTL = "TK37" -> TK37
+TransponderAltCodes/Code.gd MODEL_CODES.TRTL-LCB = "TX37" -> TX37
+TransponderAltCodes/Code.gd MODEL_CODES.TRTL-R = "TR37" -> TR37
+TransponderAltCodes/Code.gd MODEL_CODES.TRTL-T = "TA24" -> TA24
+TransponderAltCodes/Code.gd MODEL_CODES.TRTL-44 = "MK44" -> MK44
+TransponderAltCodes/Code.gd MODEL_CODES.PROSPECTOR = "PEGL" -> PEGL
+TransponderAltCodes/Code.gd MODEL_CODES.PROSPECTOR-VP = "PVUL" -> PVUL
+TransponderAltCodes/Code.gd MODEL_CODES.PROSPECTOR-LUX = "PPCK" -> PPCK
+TransponderAltCodes/Code.gd MODEL_CODES.PROSPECTOR-FAT = "PPLC" -> PPLC
+TransponderAltCodes/Code.gd MODEL_CODES.PROSPECTOR-BALD = "PBLD" -> PBLD
+TransponderAltCodes/Code.gd MODEL_CODES.COTHON = "C212" -> C212
+TransponderAltCodes/Code.gd MODEL_CODES.COTHON-CHK = "C211" -> C211
+TransponderAltCodes/Code.gd MODEL_CODES.COTHON-LND = "C213" -> C213
+TransponderAltCodes/Code.gd MODEL_CODES.COTHON-V = "C217" -> C217
+TransponderAltCodes/Code.gd MODEL_CODES.AT225 = "AK25" -> AK25
+TransponderAltCodes/Code.gd MODEL_CODES.AT225-R = "AR25" -> AR25
+TransponderAltCodes/Code.gd MODEL_CODES.AT225-B = "AB25" -> AB25
+TransponderAltCodes/Code.gd MODEL_CODES.EIME = "EIME" -> EIME
+TransponderAltCodes/Code.gd MODEL_CODES.OCP209 = "O209" -> O209
+TransponderAltCodes/Code.gd MODEL_CODES.KITSUNE = "NKTS" -> NKTS
+TransponderAltCodes/Code.gd MODEL_CODES.MADCERF = "MCRF" -> MCRF
+TransponderAltCodes/Code.gd MODEL_CODES.HYBRID = "HYBR" -> HYBR
+TransponderAltCodes/Code.gd MODEL_CODES.TSUKUYOMI = "TSKY" -> TSKY
+TransponderAltCodes/Code.gd MODEL_CODES.DRONE = "RDRN" -> RDRN
+TransponderAltCodes/Code.gd MODEL_CODES.ATLAS = "ATLS" -> ATLS
+TransponderAltCodes/Code.gd MODEL_CODES.OBONTO = "OBNT" -> OBNT
+TransponderAltCodes/Code.gd SERIAL_LENGTH = 5 -> 5
+TransponderAltCodes/Code.gd SERIAL_CHARS = "0123456789ABCDEFGHJKLMNPRSTUVWXYZ" -> I, O or Q
+TransponderAltCodes/Code.gd LIFEPOD_SUFFIX = "-LPD" -> -LPD
+TransponderAltCodes/Code.gd AI_CORE_SUFFIX = "-AIC" -> -AIC
+TransponderAltCodes/Code.gd CREW_SUFFIX = "-CRW" -> -CRW
+TransponderAltCodes/Code.gd DRONE_CODES.CC = "CGO" -> CGO
+TransponderAltCodes/Code.gd DRONE_CODES.CS = "MNC" -> MNC
+TransponderAltCodes/Code.gd DRONE_CODES.CB = "CLM" -> CLM
 -->

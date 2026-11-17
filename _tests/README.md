@@ -77,7 +77,7 @@ except `boot`, `lidar`, `hud`, `crew`, `geology`, `fleet`, `skip`, `dealer` and 
 `moving` load the two arm mods by default, `dive` loads DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos,
 `lidar` loads LidarLouderPing, `hud` loads HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology` loads
 GeologyByMass, `fleet` loads ShipCopyPaste, `skip` loads DiveSkipTransit, `dealer` loads DealerNotifier,
-`transponder` loads AltTransponderCodes.
+`transponder` loads TransponderAltCodes.
 
 - `units`: the claude.ai unit tests (`arm/main.gd`) nearly verbatim, on synthetic arms around the game's
   `DockingArm.gd`. TargetSelection: area geometry on turned, scaled and offset arms, reach, the strip, the weighted
@@ -382,7 +382,7 @@ GeologyByMass, `fleet` loads ShipCopyPaste, `skip` loads DiveSkipTransit, `deale
   `state.transponders`; met again (not new, a frame later), its stored code back; a code stored before the mod reused
   as it is; no model left set. The player's ship: `createPlayerShip` and `validateState` code a ship without one by
   its model, a save's code is kept. The game's New Game+ screen, built on the node paths its script reads: the
-  extension, a code of the new game's ship model and the name the game makes from it. `_atcNodeAdded` on ships of the
+  extension, a code of the new game's ship model and the name the game makes from it. `_tacNodeAdded` on ships of the
   game's `ship-ctrl.gd` out of the tree: a ship's lifepod (the suffix, the name of the ship's code kept, the forgotten
   code not stored back; a ship's stored name kept; added again, unchanged), a lone lifepod (a `usedShipsPool` ship's
   code and the suffix, a model set around it kept), the AI core (with and without a code), another ship untouched, the

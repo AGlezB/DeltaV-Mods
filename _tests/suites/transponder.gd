@@ -1,6 +1,6 @@
 extends "res://harness/suite.gd"
 
-# AltTransponderCodes: new transponder codes say what carries them. The game's CurrentGame.gd (copied from the decompiled
+# TransponderAltCodes: new transponder codes say what carries them. The game's CurrentGame.gd (copied from the decompiled
 # game to res://CurrentGame.gd, where the mod's Code.gd extends it) is instanced under the suite, with the game's
 # Shipyard, Namer and Agenda autoloads as stubs; the CurrentGame autoload stays the stub, which hands
 # menu/NewGamePlus.gd's transponder calls to this instance. The game's ship-ctrl.gd, story/body.gd,
@@ -19,7 +19,7 @@ var ext # res://CurrentGame.gd: with the mod, its extension
 var cg # an instance of it, in the tree
 
 func run():
-	var mod = hasMod("AltTransponderCodes")
+	var mod = hasMod("TransponderAltCodes")
 	ext = load("res://CurrentGame.gd")
 	var game = ext.get_base_script() if mod else ext
 	cg = ext.new()
@@ -84,7 +84,7 @@ func checkCodes(prefixes):
 	var bySeed = {}
 	for s in SEEDS:
 		for m in ["COTHON", "PROSPECTOR-VP", "TRTL"]:
-			cg._atcModel = m
+			cg._tacModel = m
 			var code = cg.getNewTransponder(s)
 			var ser = code.substr(code.find("-") + 1)
 			if not code.begins_with(codeOf(m) + "-") or not isSerial(ser) or code != cg.getNewTransponder(s):
@@ -92,14 +92,14 @@ func checkCodes(prefixes):
 			if s in bySeed and bySeed[s] != ser:
 				differs.append([m, s, ser, bySeed[s]])
 			bySeed[s] = ser
-	cg._atcModel = null
+	cg._tacModel = null
 	check("a model's code, a dash, then a serial of SERIAL_LENGTH characters of SERIAL_CHARS, the same for a seed", wrong.empty(), wrong)
 	check("a seed gives the same serial whatever the model", differs.empty(), differs)
-	cg._atcModel = "SPARROW-9"
+	cg._tacModel = "SPARROW-9"
 	var unknown = cg.getNewTransponder(5)
-	cg._atcModel = "ab"
+	cg._tacModel = "ab"
 	var short = cg.getNewTransponder(5)
-	cg._atcModel = null
+	cg._tacModel = null
 	var pad = ext.MODEL_CODE_PAD
 	check("a model not in the table: its key's first letters and digits", unknown.begins_with("SPAR-"), unknown)
 	check("a short key is padded to the codes' length", short.begins_with("AB" + pad + pad + "-") and serial(short).length() == serial(unknown).length(), short)
@@ -141,13 +141,13 @@ func checkGetTransponder():
 	var kept = cg.getTransponder(true, {"model": "EIME", "faction": "civilian", "config": {}, "transponder": "XYZ-1"}, 9)
 	check("a config's own code is kept", kept == "XYZ-1", kept)
 	built = {"model": "EIME", "faction": "civilian", "config": {"fuel": {"capacity": 1.0}}}
-	cg._atcModel = "EIME"
+	cg._tacModel = "EIME"
 	var expected = cg.getNewTransponder(777)
-	cg._atcModel = null
+	cg._tacModel = null
 	builtCode = cg.getTransponder(true, built.duplicate(true), 777)
 	check("a ship the Shipyard builds gets its model's code, with the seed's serial", builtCode == expected and builtCode.begins_with(codeOf("EIME") + "-"), [builtCode, expected])
 	check("the code is stored in the save as the game stores it", builtCode in cg.state.transponders.lookup, cg.state.transponders.lookup.keys())
-	check("after it, no model is left set", cg._atcModel == null, cg._atcModel)
+	check("after it, no model is left set", cg._tacModel == null, cg._tacModel)
 
 func checkReuse():
 	var again = cg.getTransponder(false, built.duplicate(true), 888)
@@ -164,7 +164,7 @@ func checkPlayerShip():
 	cg.state.ship = {"model": "COTHON-V", "config": {}, "faction": "player"}
 	cg.createPlayerShip()
 	check("new game: the player's ship gets its model's code", cg.state.ship.transponder.begins_with(codeOf("COTHON-V") + "-"), cg.state.ship.transponder)
-	check("after it, no model is left set", cg._atcModel == null, cg._atcModel)
+	check("after it, no model is left set", cg._tacModel == null, cg._tacModel)
 	var state = cg.state
 	cg.state = cg.initialState.duplicate(true)
 	cg.state.ship = {"model": "PROSPECTOR-VP", "config": {}, "faction": "player"}
@@ -174,7 +174,7 @@ func checkPlayerShip():
 	cg.state.ship = {"model": "PROSPECTOR-VP", "config": {}, "faction": "player", "transponder": "MRS-1111"}
 	cg.validateState()
 	check("a save's ship keeps its code", cg.state.ship.transponder == "MRS-1111", cg.state.ship.transponder)
-	check("after it, no model is left set", cg._atcModel == null, cg._atcModel)
+	check("after it, no model is left set", cg._tacModel == null, cg._tacModel)
 	cg.state = state
 	cg.state.ship = saved
 
@@ -206,7 +206,7 @@ func checkNewGamePlus():
 	var code = popup.transponderLabel.text
 	check("New Game+: the screen shows a code of the new game's ship model", code.begins_with(codeOf(cg.initialShip.model) + "-"), code)
 	check("New Game+: and the name the game makes from that code", popup.nameLabel.text == cg.generateShipNameFromTransponder(code), popup.nameLabel.text)
-	check("after it, no model is left set", cg._atcModel == null, cg._atcModel)
+	check("after it, no model is left set", cg._tacModel == null, cg._tacModel)
 	popup.queue_free()
 
 # A node of the game's ship-ctrl.gd, out of the tree (its _ready never runs), as a lifepod, AI core or beacon.
@@ -221,39 +221,39 @@ func ship(special, code, filename = ""):
 func checkPods():
 	cg.state.shipNames = {"PVUL-2222": "Rocinante"}
 	var pod = ship("ODDITY_LIFEPOD", "C212-3127")
-	cg._atcNodeAdded(pod)
+	cg._tacNodeAdded(pod)
 	check("a ship's lifepod: the ship's code and the lifepod suffix", pod.transponder == "C212-3127" + ext.LIFEPOD_SUFFIX and pod.fullConfig.transponder == pod.transponder, pod.transponder)
 	check("it keeps the name the game gives the ship's code", cg.state.shipNames.get(pod.transponder) == cg.generateShipNameFromTransponder("C212-3127"), cg.state.shipNames)
 	check("the dead ship's code (forgotten by the game) isn't stored back", not "C212-3127" in cg.state.shipNames, cg.state.shipNames.keys())
-	cg._atcNodeAdded(pod)
+	cg._tacNodeAdded(pod)
 	check("added again, unchanged", pod.transponder == "C212-3127" + ext.LIFEPOD_SUFFIX, pod.transponder)
 	var named = ship("ODDITY_LIFEPOD", "PVUL-2222")
-	cg._atcNodeAdded(named)
+	cg._tacNodeAdded(named)
 	check("a ship's lifepod keeps the ship's stored name", cg.state.shipNames.get(named.transponder) == "Rocinante", cg.state.shipNames)
 	var pool = {}
 	for entry in cg.usedShipsPool:
 		pool[codeOf(entry.name)] = true
 	var lone = ship("ODDITY_LIFEPOD", "")
-	cg._atcModel = "EIME"
-	cg._atcNodeAdded(lone)
+	cg._tacModel = "EIME"
+	cg._tacNodeAdded(lone)
 	var parts = lone.transponder.split("-")
 	check("a lone lifepod: a ship's code from usedShipsPool, then the lifepod suffix", parts.size() == 3 and parts[0] in pool and lone.transponder.ends_with(ext.LIFEPOD_SUFFIX), lone.transponder)
-	check("a model set around it is kept", cg._atcModel == "EIME", cg._atcModel)
-	cg._atcModel = null
+	check("a model set around it is kept", cg._tacModel == "EIME", cg._tacModel)
+	cg._tacModel = null
 	var core = ship("ODDITY_AICORE", "ATLS-1234")
-	cg._atcNodeAdded(core)
+	cg._tacNodeAdded(core)
 	check("the ATLAS's AI core: the drone's code and the AI core suffix", core.transponder == "ATLS-1234" + ext.AI_CORE_SUFFIX, core.transponder)
 	var bare = ship("ODDITY_AICORE", "")
-	cg._atcNodeAdded(bare)
+	cg._tacNodeAdded(bare)
 	check("an AI core without a code keeps none", bare.transponder == "", bare.transponder)
 	var plain = ship("", "TK37-1234")
-	cg._atcNodeAdded(plain)
+	cg._tacNodeAdded(plain)
 	check("another ship is untouched", plain.transponder == "TK37-1234", plain.transponder)
 	var beacon = ship("", "C212-3127", BODY_BEACON)
-	cg._atcNodeAdded(beacon)
+	cg._tacNodeAdded(beacon)
 	check("the frozen bodies' beacon: their code and the crew suffix", beacon.transponder == "C212-3127" + ext.CREW_SUFFIX, beacon.transponder)
 	var habitat = ship("", "", BODY_BEACON)
-	cg._atcNodeAdded(habitat)
+	cg._tacNodeAdded(habitat)
 	check("the destroyed habitat's beacon, without a code yet, is untouched", habitat.transponder == "", habitat.transponder)
 	for s in [pod, named, lone, core, bare, plain, beacon, habitat]:
 		s.free()

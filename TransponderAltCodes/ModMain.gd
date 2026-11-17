@@ -5,5 +5,5 @@ extends Node
 # autoload gets the extension. Code.gd first: NewGamePlusScreen.gd reaches its member through CurrentGame.
 func _init(modLoader = null):
 	if modLoader != null:
-		modLoader.installScriptExtension("res://AltTransponderCodes/Code.gd")
-		modLoader.installScriptExtension("res://AltTransponderCodes/NewGamePlusScreen.gd")
+		modLoader.installScriptExtension("res://TransponderAltCodes/Code.gd")
+		modLoader.installScriptExtension("res://TransponderAltCodes/NewGamePlusScreen.gd")

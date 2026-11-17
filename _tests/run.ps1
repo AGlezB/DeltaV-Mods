@@ -39,7 +39,7 @@
 	- fleet: ShipCopyPaste.
 	- skip: DiveSkipTransit. Instances the ring scene stub (Game.tscn), whose root has the game's Game.gd.
 	- dealer: DealerNotifier. Instances the Dealer screen stub (Dealer.tscn), whose root has the game's Dealer.gd.
-	- transponder: AltTransponderCodes. Instances the game's CurrentGame.gd (the CurrentGame autoload stays the stub).
+	- transponder: TransponderAltCodes. Instances the game's CurrentGame.gd (the CurrentGame autoload stays the stub).
 
 .EXAMPLE
 	pwsh _tests\run.ps1
@@ -275,7 +275,7 @@ foreach ($scene in 'ships\drone\ClaimBeacon', 'ships\drone\ClaimBeaconForeign', 
 "@
 }
 # The ship models the game's Shipyard builds (ships\Shipyard.gd, the keys of `ships`), for the transponder suite: each
-# needs a code of its own in AltTransponderCodes' MODEL_CODES.
+# needs a code of its own in TransponderAltCodes' MODEL_CODES.
 $shipyard = (Get-Content -LiteralPath (Join-Path $GameSource 'ships\Shipyard.gd') -Raw) -replace "`r`n", "`n"
 $shipsBlock = [regex]::Match($shipyard, '(?ms)^onready var ships = \{\n(.*?)^\}')
 $models = @([regex]::Matches($shipsBlock.Groups[1].Value, '(?m)^\s*"([^"]+)": preload\(') | ForEach-Object { '"' + $_.Groups[1].Value + '"' })
@@ -1150,7 +1150,7 @@ $suiteMods = @{
 	fleet = @('ShipCopyPaste')
 	skip = @('DiveSkipTransit')
 	dealer = @('DealerNotifier')
-	transponder = @('AltTransponderCodes')
+	transponder = @('TransponderAltCodes')
 }
 $given = @{}
 foreach ($z in $ModZip)

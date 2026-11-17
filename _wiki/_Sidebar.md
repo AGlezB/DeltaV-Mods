@@ -19,11 +19,11 @@
 - [LidarLouderPing](LidarLouderPing)
 
 **Ships**
-- [AltTransponderCodes](AltTransponderCodes)
 - [DealerNotifier](DealerNotifier)
 - [ShipCopyPaste](ShipCopyPaste)
 - [ShipHighlightTypeAndPrice](ShipHighlightTypeAndPrice)
 - [ShipSortByTypeAndPrice](ShipSortByTypeAndPrice)
+- [TransponderAltCodes](TransponderAltCodes)
 
 **Starting the game**
 - [BootSkipLogos](BootSkipLogos)

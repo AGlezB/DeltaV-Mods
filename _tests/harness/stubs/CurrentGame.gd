@@ -3,7 +3,7 @@ extends Node
 # Stub of the game's CurrentGame autoload: what DockingArm.gd, CabinLight.gd, Tool.gd, TuningFloatValue.gd,
 # Hud.gd, PriceLabel.gd, HireableCrew.gd, CrewBio.gd, SystemBuyUI.gd, SystemShipUpgradeUI.gd, Dealer.gd, Game.gd,
 # Enceladus.gd, TransponderOnIntro.gd, story/body.gd, menu/NewGamePlus.gd, CrewCheapHireNotifier, GeologyByMass,
-# ShipCopyPaste, DiveSkipTransit, DealerNotifier and AltTransponderCodes reach.
+# ShipCopyPaste, DiveSkipTransit, DealerNotifier and TransponderAltCodes reach.
 
 signal dayPassed()
 signal employmentChanged()
@@ -58,7 +58,7 @@ var playtime = {} # what addPlaytime() added, by name
 var usedShipsPool = [] # the models the dealer draws its used ships from, as the game's; the dealer suite fills it
 var forSale = [] # the ships getShipsAvailableForSale() returns; the dealer suite fills it
 var ownedShips = [] # the ships getOwnedShips() returns (Fleet's list); the dealer suite fills it
-# The transponder suite's own CurrentGame (the game's script, with AltTransponderCodes' extension): this stub hands it
+# The transponder suite's own CurrentGame (the game's script, with TransponderAltCodes' extension): this stub hands it
 # menu/NewGamePlus.gd's transponder calls, and the members this stub doesn't have (_get, _set).
 var game = null
 

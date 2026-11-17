@@ -52,7 +52,7 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
   (BootSkipLogos relies on it; the `boot` suite checks it). Autoloads after `ModLoader` in the game's
   `project.godot` (`Settings`, `Loader`, `CurrentGame`, …) are still null at that point. The engine creates them
   afterwards from their script paths, so an extension of one of their scripts installed then applies to the autoload
-  itself (AltTransponderCodes extends `CurrentGame.gd`; its throwaway instance is safe because the game's script has
+  itself (TransponderAltCodes extends `CurrentGame.gd`; its throwaway instance is safe because the game's script has
   no `_init` and no initializer that needs another autoload).
 - `modLoader.installScriptExtension(path)` loads the child script, makes **one throwaway instance** of it (its
   `_init` runs with no scene or ship), then `take_over_path`s the parent's path: everything loaded afterwards gets
@@ -81,12 +81,12 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
    `enceladus/EnceladusMenu.gd`, where Shift+Click on the dive entry opens its settings screen, as
    CrewCheapHireNotifier's Crew entry does), DealerNotifier (`enceladus/EnceladusMenu.gd`, the Dealer entry's mark and
    Shift+Click, its settings screen copying the Dealer screen's frame; and `enceladus/Dealer.gd`, the Dealer screen,
-   whose refreshes tell it the stock), AltTransponderCodes (`CurrentGame.gd`, the autoload, where the game makes
+   whose refreshes tell it the stock), TransponderAltCodes (`CurrentGame.gd`, the autoload, where the game makes
    transponder codes, with a `node_added` handler, as the observers below have, for the objects whose code is built
    from a ship's; and `menu/NewGamePlus.gd`, the New Game+ screen). `ModMain.gd` only calls
    `installScriptExtension("res://<ModName>/Code.gd")` (CrewPerfectSort: once for each of its two extension files;
    CrewCheapHireNotifier: `Code.gd`, then `HireScreen.gd`; DiveSkipTransit: `Code.gd`, `Station.gd`,
-   `StationMenu.gd`, then `Ship.gd`; DealerNotifier: `Code.gd`, then `DealerScreen.gd`; AltTransponderCodes:
+   `StationMenu.gd`, then `Ship.gd`; DealerNotifier: `Code.gd`, then `DealerScreen.gd`; TransponderAltCodes:
    `Code.gd`, then `NewGamePlusScreen.gd`, from `_init`, before the engine creates `CurrentGame`); `Code.gd`
    `extends "res://<game script>"`. Rules that let mods stack on the same script (header of
    `ArmAltTargetSelection/Code.gd`):
@@ -118,6 +118,8 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
   rotors / excavator claws via `ship.hasSystem`): change `_entry` and `_intakePosition` together.
 - CrewPerfectSort replaces `CrewSortByJobAndSalary` (the first mod, not in this folder) and must not be installed
   with it: both sort the same lists.
+- TransponderAltCodes replaces `AltTransponderCodes`, the same mod under its old name (see *Conventions*, renamed
+  mods), and must not be installed with it: both extend `CurrentGame.gd`, and both would load.
 - CrewCheapHireNotifier (`HireScreen.gd`) and CrewPerfectSort (`HireableCrewSorted.gd`) both extend `HireableCrew.gd`
   and both override `fillCrew`, each calling the parent's first: by path the chain is game ← CrewCheapHireNotifier ←
   CrewPerfectSort, and CrewPerfectSort only reorders the entries, so the marks stay (both orders tested in `crew`).
@@ -157,7 +159,9 @@ history is the only record of them. A new mod's first release is its manifest ve
 
 Keep exactly one zip per mod in the game's `mods` folder: the game loads every file there, so two versions of one mod
 would both load (see *How the game loads a mod*). The running game keeps every zip in `mods` open, so close it before
-replacing one: otherwise the old zip can't be moved out, while the new one can still be moved in.
+replacing one: otherwise the old zip can't be moved out, while the new one can still be moved in. A renamed mod's
+first release also takes the zips of its old name out of `mods` (see *Conventions*): they have another name, and
+would load next to it.
 
 ## Testing
 
@@ -387,8 +391,17 @@ Adding or removing a mod adds or removes its page, and its lines in Home and the
   (a feature removed or changed incompatibly, saved settings that no longer load), **minor** for new behaviour or
   settings that keep the old working, **patch** for fixes and for changes with no visible effect (a file renamed,
   code moved between files). Every zip released gets a new version, and a released version is never changed.
-  A new mod always starts at **0.0.0**. Going to 1.0.0 comes with a clean-up: all logging removed, the code
-  simplified, and the what and why of each feature documented in the README for other modders.
+  A new mod always starts at **0.0.0**, except a renamed one (below). Going to 1.0.0 comes with a clean-up: all
+  logging removed, the code simplified, and the what and why of each feature documented in the README for other
+  modders.
+- **A renamed mod** (AltTransponderCodes became TransponderAltCodes, so that its name says where, then what) is not a
+  new version of the old one: it is a new mod that replaces it, with the same behaviour and only another name. It
+  keeps the old one's version, and its `CHANGES.md` if it has one, retitled, with no section for the rename; its first
+  release is that version under the new name. Everything that names the mod follows the new name: the folder,
+  `Mod.manifest`'s `name` and `id`, the `res://` paths, the members' prefix, the wiki page, the tests. Its README
+  (after *Install*), its wiki page (*Works with other mods*), the root README and *Cross-mod dependencies* say not to
+  install it together with the old one, since both would load; and its first release takes the old name's zips out
+  of `mods` (see *Packaging and releasing*).
 - **The version lives only in `[version]` of `Mod.manifest` and in `CHANGES.md`**. It never appears anywhere else in
   the mod: not in the README (whose *Install* step says "the mod's zip" and names neither the mod nor the zip), the
   code, comments or images. Godot's and the game's own versions may be mentioned. The version is bumped only at
@@ -966,7 +979,7 @@ English text there.
     and beacons (`SE1`, `SE1-SG`).
   - Pirates broadcast none (`ship-ctrl.gd` `getTransponder` returns ""; the LIDAR's tutorial sticker,
     `TUTORIAL_STICKER_LIDAR`, says "NO TRANSPONDER - pirate RUN!").
-  - AltTransponderCodes makes new codes say what carries them.
+  - TransponderAltCodes makes new codes say what carries them.
 - **Tuning** (`ENCELADUS_SHIP_TUNING`, `enceladus/Tuning.tscn`): the station screen with the settings of each piece
   of the current ship's equipment, registered by its script with `registerSubsystem` and saved with the game (see
   *Conventions*).

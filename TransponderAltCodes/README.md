@@ -1,4 +1,4 @@
-# AltTransponderCodes - ΔV: Rings of Saturn
+# TransponderAltCodes - ΔV: Rings of Saturn
 
 New transponder codes say what carries them: a ship's code names its series and model, and the codes made from it say
 whether it is that ship's lifepod, its drones, or frozen crew.
@@ -53,16 +53,16 @@ also happens without the mod.
   another autoload.
 - Overrides, each calling the parent's except `getNewTransponder`:
   - `getNewTransponder(s)` makes the whole code from the seed's draws (`srai(s, 1 + SERIAL_LENGTH)`): the model's code
-    (the model in `_atcModel`, or a ship of the game's `usedShipsPool` picked by the first draw, as the game picks its
+    (the model in `_tacModel`, or a ship of the game's `usedShipsPool` picked by the first draw, as the game picks its
     prefix), a dash, and one character of `SERIAL_CHARS` from each of the other draws. Each draw starts from the
     previous one's output, so neighbouring seeds give unrelated serials, and a seed always gives the same code (the
     Dealer's ships keep theirs from day to day). With no model given and an empty `usedShipsPool`, the game's code.
   - `getTransponder(new, config, sd)`, through which `Shipyard.gd` `createShipByConfig` codes every ship without one:
-    sets `_atcModel` to `config.model` around the parent's call. A config's code, and a code the save keeps for the
+    sets `_tacModel` to `config.model` around the parent's call. A config's code, and a code the save keeps for the
     ship's build, come back unchanged.
-  - `validateState()` (a save loaded) and `createPlayerShip()` (a new game): `_atcModel` set to `state.ship.model`
+  - `validateState()` (a save loaded) and `createPlayerShip()` (a new game): `_tacModel` set to `state.ship.model`
     around the parent's call, which gives the player's ship a code when it has none.
-  - `_ready` (the game's runs first) connects the tree's `node_added` to `_atcNodeAdded`, which matches the new node's
+  - `_ready` (the game's runs first) connects the tree's `node_added` to `_tacNodeAdded`, which matches the new node's
     `get_script().resource_path` (kept by `take_over_path`, so other mods' extensions still match) and acts before the
     node's own `_ready`: a lifepod (`ship-ctrl.gd` with `specialName` `ODDITY_LIFEPOD`) and the AI core
     (`ODDITY_AICORE`) get their suffix, a lone lifepod a code first (so `ships/LifepodFeedback.gd` keeps it); the
@@ -71,10 +71,10 @@ also happens without the mod.
     `ClaimBeaconForeign.gd`) a new `transponderFormat`. Each step leaves a code that already has its suffix, so a node
     added again isn't changed twice. The destroyed habitat's beacon gets its code later, from its dock, which isn't on
     a ship: it keeps the game's.
-  - `NewGamePlusScreen.gd` overrides `rerollNames()`: `_atcModel` set to the model of `CurrentGame.initialShip` (the
+  - `NewGamePlusScreen.gd` overrides `rerollNames()`: `_tacModel` set to the model of `CurrentGame.initialShip` (the
     new game's ship) around the parent's call, through `set` and `get`.
-- New members, all prefixed `_atc`: `_atcModel`, `_atcModelCode`, `_atcNodeAdded`, `_atcShipAdded`, `_atcAddSuffix`,
-  `_atcDockAdded`.
+- New members, all prefixed `_tac`: `_tacModel`, `_tacModelCode`, `_tacNodeAdded`, `_tacShipAdded`, `_tacAddSuffix`,
+  `_tacDockAdded`.
 - Constants (`Code.gd`) a player may edit inside the zip: `MODEL_CODES` (one code per model key of the game's
   `ships/Shipyard.gd`, all the same length), `MODEL_CODE_PAD` (fills the code of a model missing from the table, made
   from its key), `SERIAL_LENGTH` and `SERIAL_CHARS` (the serial), `LIFEPOD_SUFFIX`, `AI_CORE_SUFFIX`, `CREW_SUFFIX`
@@ -88,6 +88,9 @@ also happens without the mod.
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.
 2. Put the mod's zip in it, and remove any other version of the mod from there: they would all load. Do not unzip it.
 3. Launch the game with `--enable-mods`.
+
+Do not install it together with `AltTransponderCodes`, the mod it replaces (the same mod under its old name): both
+would load.
 
 Mods are unofficial and can break after game updates. Keep a backup of your save.
 

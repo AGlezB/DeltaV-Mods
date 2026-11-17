@@ -38,14 +38,14 @@ These pages explain what each mod does, for players. The code, and the notes for
 
 ### Ships
 
-- [AltTransponderCodes](AltTransponderCodes): a ship's transponder code tells you its model, and the codes of its
-  drones and other things tell you whose they are.
 - [DealerNotifier](DealerNotifier): the station menu tells you when a ship you are waiting for is for sale, and the
   Dealer shows you which one.
 - [ShipCopyPaste](ShipCopyPaste): copies one ship's setup onto another ship of the same model.
 - [ShipHighlightTypeAndPrice](ShipHighlightTypeAndPrice): makes each ship's type stand out in the Dealer and Fleet
   lists.
 - [ShipSortByTypeAndPrice](ShipSortByTypeAndPrice): sorts the Dealer's ships by type, then by price.
+- [TransponderAltCodes](TransponderAltCodes): a ship's transponder code tells you its model, and the codes of its
+  drones and other things tell you whose they are.
 
 ### Starting the game
 
@@ -55,8 +55,6 @@ These pages explain what each mod does, for players. The code, and the notes for
 
 Most of these mods only change what you see on screen. These also change how something works in a dive:
 
-- [AltTransponderCodes](AltTransponderCodes#changes-how-the-game-plays): you can tell a ship's model from its code
-  before you see it.
 - [ArmAltTargetSelection](ArmAltTargetSelection#changes-how-the-game-plays): which chunks the arm goes for, and which
   one first.
 - [ArmAltPullBehavior](ArmAltPullBehavior#changes-how-the-game-plays): how the arm brings a chunk in.
@@ -65,6 +63,8 @@ Most of these mods only change what you see on screen. These also change how som
 - [DiveSkipTransit](DiveSkipTransit#changes-how-the-game-plays): the cutscenes are skipped, and what they would have
   cost is worked out instead.
 - [GeologyByMass](GeologyByMass#changes-how-the-game-plays): which chunks keep a full info box.
+- [TransponderAltCodes](TransponderAltCodes#changes-how-the-game-plays): you can tell a ship's model from its code
+  before you see it.
 
 If something goes wrong in those parts of the game, try again without the mod before you report a bug to the game's
 developers: the problem may be the mod's, not the game's.

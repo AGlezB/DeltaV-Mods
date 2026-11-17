@@ -5,7 +5,7 @@ extends "res://CurrentGame.gd"
 # from the same seed instead: the ship's model code, then a serial of letters and digits. The model is the one a
 # caller names (getTransponder, which every ship the Shipyard builds goes through, and the player's ship), or else a
 # ship drawn from the game's usedShipsPool.
-# The objects whose code is built from a ship's get a suffix as they enter the scene tree (_atcNodeAdded), before
+# The objects whose code is built from a ship's get a suffix as they enter the scene tree (_tacNodeAdded), before
 # their own _ready. Codes already stored in a save are never changed: the game derives a ship's name, its captain and
 # what it remembers about the ship from its code.
 
@@ -73,17 +73,17 @@ const BODY_BEACON_SCENE = "res://story/DeadTalkingBeacon.tscn" # the frozen bodi
 const LIFEPOD_NAME = "ODDITY_LIFEPOD" # specialName of ships/Lifepod.tscn and the scenes inheriting it
 const AI_CORE_NAME = "ODDITY_AICORE" # specialName of ships/drone/AICore.tscn, the ATLAS's lifepod
 
-var _atcModel = null # the model the next getNewTransponder codes for; null: a ship from usedShipsPool
+var _tacModel = null # the model the next getNewTransponder codes for; null: a ship from usedShipsPool
 
 func _ready():
-	get_tree().connect("node_added", self, "_atcNodeAdded")
+	get_tree().connect("node_added", self, "_tacNodeAdded")
 
 # The seed's draws (srai): the first picks the ship when no model is given, as the game's picks its prefix; each of the
 # others a character of the serial. Each draw starts from the previous one's output, so neighbouring seeds don't give
 # related serials. The same seed always gives the same code, so the Dealer's ships keep theirs from day to day.
 func getNewTransponder(s: int) -> String:
 	var d = srai(s, 1 + SERIAL_LENGTH)
-	var model = _atcModel
+	var model = _tacModel
 	if model == null:
 		if usedShipsPool.empty():
 			return .getNewTransponder(s)
@@ -91,31 +91,31 @@ func getNewTransponder(s: int) -> String:
 	var serial = ""
 	for i in range(1, 1 + SERIAL_LENGTH):
 		serial += SERIAL_CHARS[d[i] % SERIAL_CHARS.length()]
-	return "%s-%s" % [_atcModelCode(model), serial]
+	return "%s-%s" % [_tacModelCode(model), serial]
 
 # Every ship the Shipyard builds without a code (Shipyard.gd createShipByConfig) gets it here, from its model.
 func getTransponder(new: bool, config: Dictionary, sd: int) -> String:
-	var previous = _atcModel
-	_atcModel = config.get("model")
+	var previous = _tacModel
+	_tacModel = config.get("model")
 	var code = .getTransponder(new, config, sd)
-	_atcModel = previous
+	_tacModel = previous
 	return code
 
 # Both give the player's ship a code when it has none: a save loaded, a new game.
 func validateState():
-	var previous = _atcModel
-	_atcModel = state.ship.get("model")
+	var previous = _tacModel
+	_tacModel = state.ship.get("model")
 	.validateState()
-	_atcModel = previous
+	_tacModel = previous
 
 func createPlayerShip():
-	var previous = _atcModel
-	_atcModel = state.ship.get("model")
+	var previous = _tacModel
+	_tacModel = state.ship.get("model")
 	var ship = .createPlayerShip()
-	_atcModel = previous
+	_tacModel = previous
 	return ship
 
-func _atcModelCode(model) -> String:
+func _tacModelCode(model) -> String:
 	if model in MODEL_CODES:
 		return MODEL_CODES[model]
 	var length = MODEL_CODES.values()[0].length()
@@ -129,36 +129,36 @@ func _atcModelCode(model) -> String:
 
 # Before the node's _ready, so lifepods keep the code (ships/LifepodFeedback.gd makes one only when there is none).
 # Each step leaves a code that already has its suffix, so a node added again isn't changed twice.
-func _atcNodeAdded(node: Node):
+func _tacNodeAdded(node: Node):
 	var script = node.get_script()
 	if script == null:
 		return
 	var path = script.resource_path
 	if path == SHIP_SCRIPT:
-		_atcShipAdded(node)
+		_tacShipAdded(node)
 	elif path == BODY_SCRIPT:
 		if node.transponder and not node.transponder.ends_with(CREW_SUFFIX):
 			node.transponder += CREW_SUFFIX
 	elif path == DOCK_SCRIPT:
-		_atcDockAdded(node)
+		_tacDockAdded(node)
 	elif path in STORY_BEACON_SCRIPTS:
 		for type in DRONE_CODES:
 			if node.transponderFormat == STORY_BEACON_FORMAT % type:
 				node.transponderFormat = "%%s-%s-%%d" % DRONE_CODES[type]
 
-func _atcShipAdded(ship: Node):
+func _tacShipAdded(ship: Node):
 	match ship.specialName:
 		LIFEPOD_NAME:
 			if ship.transponder == "":
-				var previous = _atcModel
-				_atcModel = null
+				var previous = _tacModel
+				_tacModel = null
 				ship.transponder = getNewTransponder(randi()) + LIFEPOD_SUFFIX
-				_atcModel = previous
+				_tacModel = previous
 			else:
-				_atcAddSuffix(ship, LIFEPOD_SUFFIX)
+				_tacAddSuffix(ship, LIFEPOD_SUFFIX)
 		AI_CORE_NAME:
 			if ship.transponder != "":
-				_atcAddSuffix(ship, AI_CORE_SUFFIX)
+				_tacAddSuffix(ship, AI_CORE_SUFFIX)
 		_:
 			# The destroyed habitat's beacon (story/habitat/DestoryedHabitat.tscn) gets its code later, from its
 			# ClaimOwner: it has none yet, and keeps the game's.
@@ -167,7 +167,7 @@ func _atcShipAdded(ship: Node):
 
 # Keeps the name the game gives the old code (a lifepod shows its ship's, as without the mod). The game has already
 # forgotten the dead ship's code (ship-ctrl.gd vanish, forgetTransponser), so its name isn't stored back.
-func _atcAddSuffix(ship: Node, suffix: String):
+func _tacAddSuffix(ship: Node, suffix: String):
 	var old = ship.transponder
 	if old.ends_with(suffix):
 		return
@@ -177,7 +177,7 @@ func _atcAddSuffix(ship: Node, suffix: String):
 	setShipNameByTransponder(ship.transponder, shipName)
 
 # Only a dock on a ship: the destroyed habitat's ClaimOwner codes its beacon with the habitat's fixed code.
-func _atcDockAdded(dock: Node):
+func _tacDockAdded(dock: Node):
 	var host = dock.get_parent()
 	while host != null and not "transponder" in host:
 		host = host.get_parent()

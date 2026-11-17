@@ -1,7 +1,7 @@
 [mod_information]
 
-name="AltTransponderCodes"
-id="AGlezB.AltTransponderCodes"
+name="TransponderAltCodes"
+id="AGlezB.TransponderAltCodes"
 description="New transponder codes say what carries them: a ship's model, its lifepod, crew bodies, its drones."
 author="AGlezB"
 
