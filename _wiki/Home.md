@@ -39,7 +39,7 @@ These pages explain what each mod does, for players. The code, and the notes for
 ### Ships
 
 - [AltTransponderCodes](AltTransponderCodes): a ship's transponder code tells you its model, and the codes of its
-  lifepod, drones and lost crew tell you whose they are.
+  drones and other things tell you whose they are.
 - [DealerNotifier](DealerNotifier): the station menu tells you when a ship you are waiting for is for sale, and the
   Dealer shows you which one.
 - [ShipCopyPaste](ShipCopyPaste): copies one ship's setup onto another ship of the same model.
