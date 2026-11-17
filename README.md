@@ -10,6 +10,7 @@ in its folder, has the details for modders.
 
 | Mod | What it does |
 |---|---|
+| [AltTransponderCodes](../../wiki/AltTransponderCodes) | New transponder codes say what carries them: a ship's series and model, and whether it is a ship's lifepod, its drones, an AI core or frozen crew. |
 | [ArmAltPullBehavior](../../wiki/ArmAltPullBehavior) | Changes how the ship's AR-1500 arm brings a target in: through the opening of the grinder or excavator, clear of the rotors, claws and hull. |
 | [ArmAltTargetSelection](../../wiki/ArmAltTargetSelection) | Changes how the ship's AR-1500 arm chooses its target: only what it can reach, preferring targets lined up with its intake. |
 | [BootSkipLogos](../../wiki/BootSkipLogos) | The game starts on the title screen, where the save slots are, without the logo sequence first. |
@@ -33,6 +34,8 @@ older mod it replaced: both sort the same lists.
 These change how something works in a dive, compared to vanilla. Each one's wiki page says what, in short, as does the
 *Warning* in its README.
 
+- [AltTransponderCodes](../../wiki/AltTransponderCodes#changes-how-the-game-plays): a ship's model shows in its
+  transponder code, on the LIDAR and in the Pilot tab, before the ship is in sight.
 - [ArmAltTargetSelection](../../wiki/ArmAltTargetSelection#changes-how-the-game-plays): which targets the arm takes, and which one first.
 - [ArmAltPullBehavior](../../wiki/ArmAltPullBehavior#changes-how-the-game-plays): how the arm brings a chunk in, on ships with a grinder or
   an excavator.

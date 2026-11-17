@@ -19,6 +19,7 @@
 - [LidarLouderPing](LidarLouderPing)
 
 **Ships**
+- [AltTransponderCodes](AltTransponderCodes)
 - [ShipCopyPaste](ShipCopyPaste)
 - [ShipHighlightTypeAndPrice](ShipHighlightTypeAndPrice)
 - [ShipSortByTypeAndPrice](ShipSortByTypeAndPrice)

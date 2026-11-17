@@ -10,13 +10,16 @@
 	TuningBoolValue.gd, TuningItems.gd, Hud.gd, OMS.gd, TabsWithGamepadControl.gd, PriceLabel.gd, RepeatingHSlider.gd, MineralLabel.gd,
 	MineralSystemToggle.gd, HireableCrew.gd, CrewBio.gd, CurrentCrewManagement.gd, PlaySoundsOnTheseButtons.gd,
 	SystemBuyUI.gd, SystemShipUpgradeUI.gd, Game.gd, Enceladus.gd, TransponderOnIntro.gd, ship-ctrl.gd, Reactor.gd,
-	FusionReactor.gd, Tool.gd, gdunzip.gd), the game's Shower.tscn, audio buses
+	FusionReactor.gd, Tool.gd, gdunzip.gd, CurrentGame.gd, body.gd, ClaimOwner.gd, ClaimBeacon-1.gd,
+	ClaimBeaconForeign.gd, NewGamePlus.gd), the game's ship models (harness\transponder_models.gd, read from
+	ships\Shipyard.gd), the game's Shower.tscn, audio buses
 	(default_bus_layout.tres), the skill icons CrewBio.gd preloads and the Fleet entry's Use icon, a stub mineral scene
 	carrying the chunk radius read from the game's, stubs of the two scenes LIDAR.gd preloads, of the Tuning parts
 	CrewCheapHireNotifier's settings screen is built from, of a Hire screen entry (CrewBio.tscn), of the Geologist
 	tab's parts GeologyByMass's OMS tab is built from, and of a Fleet entry (SystemBuyUI.tscn, with the game's
 	confirmation animations), an Equipment item (SystemShipUpgradeUI.tscn), the ring scene (Game.tscn, with the
-	game's root values and title cards), the two scenes ship-ctrl.gd preloads, and the station's fade-in
+	game's root values and title cards), the two scenes ship-ctrl.gd preloads, the three the story claim beacons
+	preload, and the station's fade-in
 	(harness\station_fadein.tres). Packages each mod into <WorkDir>\build\<Mod>.zip
 	(as a release zip), and runs every suite with its mods loaded from those zips, the way the game loads them:
 	by an autoload, before the engine loads the main scene. Logs: <WorkDir>\logs. Nothing in the repo, the game folder
@@ -34,6 +37,7 @@
 	- geology: GeologyByMass. Builds a HUD from harness\geology_hud.tscn, which holds the game's Hud.gd.
 	- fleet: ShipCopyPaste.
 	- skip: DiveSkipTransit. Instances the ring scene stub (Game.tscn), whose root has the game's Game.gd.
+	- transponder: AltTransponderCodes. Instances the game's CurrentGame.gd (the CurrentGame autoload stays the stub).
 
 .EXAMPLE
 	pwsh _tests\run.ps1
@@ -49,8 +53,8 @@
 #>
 [CmdletBinding()]
 param(
-	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip')]
-	[string[]] $Suite = @('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip'),
+	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'transponder')]
+	[string[]] $Suite = @('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'transponder'),
 	# Mod folders to load for every selected suite, in load order (the game's order: by path); @() = none.
 	# Default: each suite's own mods (see the description).
 	[string[]] $Mods,
@@ -164,7 +168,7 @@ foreach ($dir in $project, $build, $logs)
 }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'project.godot'), (Join-Path $PSScriptRoot 'main.tscn') -Destination $project
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'harness'), (Join-Path $PSScriptRoot 'suites') -Destination $project -Recurse
-foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningBoolValue.gd', 'enceladus\Tuning\TuningItems.gd', 'hud\Hud.gd', 'hud\OMS.gd', 'menu\TabsWithGamepadControl.gd', 'hud\components\PriceLabel.gd', 'hud\components\RepeatingHSlider.gd', 'hud\components\MineralLabel.gd', 'hud\components\MineralSystemToggle.gd', 'enceladus\HireableCrew.gd', 'enceladus\CrewBio.gd', 'enceladus\CurrentCrewManagement.gd', 'menu\sfx\PlaySoundsOnTheseButtons.gd', 'enceladus\SystemBuyUI.gd', 'enceladus\SystemShipUpgradeUI.gd', 'enceladus\Shower.tscn', 'Game.gd', 'enceladus\Enceladus.gd', 'TransponderOnIntro.gd', 'ships\ship-ctrl.gd', 'ships\Reactor.gd', 'ships\modules\FusionReactor.gd', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres')
+foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningBoolValue.gd', 'enceladus\Tuning\TuningItems.gd', 'hud\Hud.gd', 'hud\OMS.gd', 'menu\TabsWithGamepadControl.gd', 'hud\components\PriceLabel.gd', 'hud\components\RepeatingHSlider.gd', 'hud\components\MineralLabel.gd', 'hud\components\MineralSystemToggle.gd', 'enceladus\HireableCrew.gd', 'enceladus\CrewBio.gd', 'enceladus\CurrentCrewManagement.gd', 'menu\sfx\PlaySoundsOnTheseButtons.gd', 'enceladus\SystemBuyUI.gd', 'enceladus\SystemShipUpgradeUI.gd', 'enceladus\Shower.tscn', 'Game.gd', 'enceladus\Enceladus.gd', 'TransponderOnIntro.gd', 'ships\ship-ctrl.gd', 'ships\Reactor.gd', 'ships\modules\FusionReactor.gd', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres', 'CurrentGame.gd', 'story\body.gd', 'ships\modules\ClaimOwner.gd', 'story\ClaimBeacon-1.gd', 'story\ClaimBeaconForeign.gd', 'menu\NewGamePlus.gd')
 {
 	$target = Join-Path $project $file
 	New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
@@ -256,6 +260,28 @@ foreach ($scene in 'sfx\WeldingSparks', 'ships\modules\EVAflight')
 [node name="$(Split-Path $scene -Leaf)" type="Node2D"]
 "@
 }
+# The story claim beacons (story\ClaimBeacon-1.gd, ClaimBeaconForeign.gd) preload these three; the transponder suite
+# never spawns them, so bare nodes do.
+foreach ($scene in 'ships\drone\ClaimBeacon', 'ships\drone\ClaimBeaconForeign', 'story\DummyBeacon')
+{
+	$target = Join-Path $project "$scene.tscn"
+	New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
+	Write-Utf8Lf $target @"
+[gd_scene format=2]
+
+[node name="$(Split-Path $scene -Leaf)" type="RigidBody2D"]
+"@
+}
+# The ship models the game's Shipyard builds (ships\Shipyard.gd, the keys of `ships`), for the transponder suite: each
+# needs a code of its own in AltTransponderCodes' MODEL_CODES.
+$shipyard = (Get-Content -LiteralPath (Join-Path $GameSource 'ships\Shipyard.gd') -Raw) -replace "`r`n", "`n"
+$shipsBlock = [regex]::Match($shipyard, '(?ms)^onready var ships = \{\n(.*?)^\}')
+$models = @([regex]::Matches($shipsBlock.Groups[1].Value, '(?m)^\s*"([^"]+)": preload\(') | ForEach-Object { '"' + $_.Groups[1].Value + '"' })
+if (-not $shipsBlock.Success -or $models.Count -eq 0) { throw 'Cannot read the ship models from ships\Shipyard.gd (onready var ships)' }
+Write-Utf8Lf (Join-Path $project 'harness\transponder_models.gd') @"
+# Generated by run.ps1: the keys of `ships` in the game's ships\Shipyard.gd ($gameVersion).
+const MODELS = [$($models -join ', ')]
+"@
 # The Tuning parts CrewCheapHireNotifier's and DiveSkipTransit's settings screens are built from: the game's node paths,
 # scripts and connections (enceladus\Tuning\TuningFloatValue.tscn, TuningBoolValue.tscn, TuningItems.tscn,
 # enceladus\HeaderWithMoney.tscn), without the theme, textures, sounds, smooth scrolling and money display.
@@ -948,6 +974,7 @@ $suiteMods = @{
 	geology = @('GeologyByMass')
 	fleet = @('ShipCopyPaste')
 	skip = @('DiveSkipTransit')
+	transponder = @('AltTransponderCodes')
 }
 $given = @{}
 foreach ($z in $ModZip)

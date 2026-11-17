@@ -38,6 +38,8 @@ These pages explain what each mod does, for players. The code, and the notes for
 
 ### Ships
 
+- [AltTransponderCodes](AltTransponderCodes): a ship's transponder code tells you its model, and the codes of its
+  lifepod, drones and lost crew tell you whose they are.
 - [ShipCopyPaste](ShipCopyPaste): copies one ship's setup onto another ship of the same model.
 - [ShipHighlightTypeAndPrice](ShipHighlightTypeAndPrice): makes each ship's type stand out in the Dealer and Fleet
   lists.
@@ -51,6 +53,8 @@ These pages explain what each mod does, for players. The code, and the notes for
 
 Most of these mods only change what you see on screen. These also change how something works in a dive:
 
+- [AltTransponderCodes](AltTransponderCodes#changes-how-the-game-plays): you can tell a ship's model from its code
+  before you see it.
 - [ArmAltTargetSelection](ArmAltTargetSelection#changes-how-the-game-plays): which chunks the arm goes for, and which
   one first.
 - [ArmAltPullBehavior](ArmAltPullBehavior#changes-how-the-game-plays): how the arm brings a chunk in.

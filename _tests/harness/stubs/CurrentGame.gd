@@ -2,7 +2,8 @@ extends Node
 
 # Stub of the game's CurrentGame autoload: what DockingArm.gd, CabinLight.gd, Tool.gd, TuningFloatValue.gd,
 # Hud.gd, PriceLabel.gd, HireableCrew.gd, CrewBio.gd, SystemBuyUI.gd, SystemShipUpgradeUI.gd, Game.gd, Enceladus.gd,
-# TransponderOnIntro.gd, CrewCheapHireNotifier, GeologyByMass, ShipCopyPaste and DiveSkipTransit reach.
+# TransponderOnIntro.gd, story/body.gd, menu/NewGamePlus.gd, CrewCheapHireNotifier, GeologyByMass, ShipCopyPaste,
+# DiveSkipTransit and AltTransponderCodes reach.
 
 signal dayPassed()
 signal employmentChanged()
@@ -13,6 +14,7 @@ signal hourPassed()
 signal gameOver()
 signal plotCourseTo(to, vector)
 signal pointOfNoReturn()
+signal moodChange(mood, delta)
 
 # The game's crew occupations and level keys (CurrentGame.gd), for the Hire screen's entries.
 var occupations = ["CREW_OCCUPATION_PILOT", "CREW_OCCUPATION_MECHANIC", "CREW_OCCUPATION_GEOLOGIST", "CREW_OCCUPATION_ASTROGATOR"]
@@ -53,6 +55,27 @@ var targetTimeScale = 1.0 # Game.gd _process sets it during cutscenes (BulletTim
 var inventoryMode = false # Game.gd interlunarToEnceladus resets it
 var saves = 0 # how many times saveToFile() was called
 var playtime = {} # what addPlaytime() added, by name
+# The transponder suite's own CurrentGame (the game's script, with AltTransponderCodes' extension): this stub hands it
+# menu/NewGamePlus.gd's transponder calls, and the members this stub doesn't have (_get, _set).
+var game = null
+
+func getNewTransponder(s):
+	return game.getNewTransponder(s)
+
+func generateShipNameFromTransponder(transponder):
+	return game.generateShipNameFromTransponder(transponder)
+
+# A null return leaves the member unknown, as without _get.
+func _get(property):
+	if game != null and property in game:
+		return game.get(property)
+	return null
+
+func _set(property, value):
+	if game != null and property in game:
+		game.set(property, value)
+		return true
+	return false
 
 func isDemo():
 	return false

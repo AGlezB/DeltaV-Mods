@@ -50,7 +50,10 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
 - All of this happens in `ModLoader`'s `_init`, while the engine creates the autoloads and before it loads the main
   scene (`Boot.tscn`). An extension installed from a `ModMain`'s `_init` therefore applies even to the boot scene
   (BootSkipLogos relies on it; the `boot` suite checks it). Autoloads after `ModLoader` in the game's
-  `project.godot` (`Settings`, `Loader`, `CurrentGame`, …) are still null at that point.
+  `project.godot` (`Settings`, `Loader`, `CurrentGame`, …) are still null at that point. The engine creates them
+  afterwards from their script paths, so an extension of one of their scripts installed then applies to the autoload
+  itself (AltTransponderCodes extends `CurrentGame.gd`; its throwaway instance is safe because the game's script has
+  no `_init` and no initializer that needs another autoload).
 - `modLoader.installScriptExtension(path)` loads the child script, makes **one throwaway instance** of it (its
   `_init` runs with no scene or ship), then `take_over_path`s the parent's path: everything loaded afterwards gets
   the child. A second mod extending the same game script extends the first mod's extension. The throwaway instance
@@ -76,10 +79,13 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
    entries; it prices through the Equipment screen's items), DiveSkipTransit (`Game.gd`, the ring scene's cutscenes;
    `ships/ship-ctrl.gd`, astrogation; `enceladus/Enceladus.gd`, the station's fade-in and launch sequence; and
    `enceladus/EnceladusMenu.gd`, where Shift+Click on the dive entry opens its settings screen, as
-   CrewCheapHireNotifier's Crew entry does). `ModMain.gd` only calls
+   CrewCheapHireNotifier's Crew entry does), AltTransponderCodes (`CurrentGame.gd`, the autoload, where the game makes
+   transponder codes, with a `node_added` handler, as the observers below have, for the objects whose code is built
+   from a ship's; and `menu/NewGamePlus.gd`, the New Game+ screen). `ModMain.gd` only calls
    `installScriptExtension("res://<ModName>/Code.gd")` (CrewPerfectSort: once for each of its two extension files;
    CrewCheapHireNotifier: `Code.gd`, then `HireScreen.gd`; DiveSkipTransit: `Code.gd`, `Station.gd`,
-   `StationMenu.gd`, then `Ship.gd`); `Code.gd` `extends "res://<game script>"`. Rules that let mods stack on the same
+   `StationMenu.gd`, then `Ship.gd`; AltTransponderCodes: `Code.gd`, then `NewGamePlusScreen.gd`, from `_init`,
+   before the engine creates `CurrentGame`); `Code.gd` `extends "res://<game script>"`. Rules that let mods stack on the same
    script (header of `ArmAltTargetSelection/Code.gd`):
    - Never call the parent's `_ready`, `_process`, `_physics_process` or `_notification`. Godot 3 runs them at every
      level of the script chain by itself: `_ready` base first (so `ship` etc. are set), `_process`,
@@ -587,6 +593,17 @@ English text there.
   Launch Ring Dive (`ENCELADUS_RETURN_TO_RING`), at the dive entry point picked before launch
   (`ENCELADUS_DIVE_TARGET`, `enceladus/DiveTarget.tscn`); fees, licences, insurance and consumables are paid per
   dive, and on return the dive's output is stored or sold.
+- **Drones** (no key of their own; the word is in the NT Mining Companion's description, `SYSTEM_SCOOP_DESC`): small
+  craft a ship launches from a cradle, equipment on a hardpoint, each a ship of its own (`ship-ctrl.gd`) with a
+  transponder made from the ship's by the cradle's `ships/modules/ClaimOwner.gd` (see *Transponder*). The THI Cargo
+  Container and THI Monocargo Container (`SYSTEM_EXSTORAGE`, `SYSTEM_EXMONO`; `ships/drone/StoragePod.tscn`,
+  `StoragePodMono.tscn`) are storage pods that carry processed ore back to the station; the NT Mining Companion
+  (`SYSTEM_SCOOP`, `ships/drone/CargoScoop.tscn`) is a mining drone; the B8 Claim Beacon (`SYSTEM_CLAIM`,
+  `ships/drone/ClaimBeacon.tscn`) holds the player's excavation claim on a spot of the rings. The External Impact
+  Absorber (`SYSTEM_HUNK`, `ships/modules/Hunk.tscn`) hangs in a cradle too, but is a block, with no transponder.
+  Not drones in this sense: the nanodrones (`SYSTEM_DND_*`, the MPI Tug, MLF Haul and OME Maintenance drones,
+  `weapons/drone-plant.gd`), which the drone plant draws and which aren't objects of their own; and the NPC drones
+  (the racing drone and ATLAS, built by the Shipyard; locusts, berserk drones and mines in some events).
 - **E$**: the game's currency.
 - **EMP**: electromagnetic damage to a ship (`ship-ctrl.gd` `applyEmpDamage`); no key of its own, the word is in
   Short Circuit's tooltip (`DAMAGE_SHORT_CIRCUIT_TOOLTIP`, "Caused by EMP damage."). Sources: the MWG microwave
@@ -654,6 +671,13 @@ English text there.
     `enceladus/Enceladus.tscn`). Each one is there while the player's ship is in maintenance
     (`CurrentGame.isShipMaintained`: the in-game hours that fitting equipment and repairs take) or damaged past its
     `damageRequired` (`1 - getCombatCapacity()`). They are scenery, not crew.
+- **Frozen bodies** (corpses; `ODDITY_DEAD_BODY`, "Evidence gathering reward"): dead people floating in the rings,
+  oddities (see *Oddity*). Groups of 2 to 9 (`story/DeadBody.gd`, one of `story/body1.tscn`–`body10.tscn` each, on
+  `story/body.gd`) drift around a talking beacon (`story/DeadTalkingBeacon.tscn`), in chaotic parts of the rings or on
+  any spot from 25 October to 1 November by the computer's clock (`canBeAt`); up to 19 more float around the destroyed
+  habitat (`story/habitat/DestoryedHabitat.gd`) until one is picked up. A body's transponder is its group's (one
+  random code, which the beacon shows bare) plus its initials (`body.gd` `getTransponder`); its name is a random crew
+  name. Picking one up gives the achievement `DISCOVER_FROZEN_BODY`.
 - **Geologist**: the crew occupation for mining, and the OMS tab with the cargo's composition and the mineral
   targeting: which minerals the HUD marks, and their Minimum value (`HUD_MIN_PRICE`), kept in the HUD's
   `mineralConfig`.
@@ -706,6 +730,15 @@ English text there.
 - **LIDAR** (`HUD_LIDAR`, "Doppler LIDAR"; `hud/LIDAR.gd`): the HUD's scanner of nearby objects. Its sweep plays a
   ping (the `Bleep` node) for each strong return, pitched and set in volume by the distance; a Tuning switch
   (`doBleep`) turns the pings off.
+- **Lifepod** (`ODDITY_LIFEPOD`, "Lifepod rescue reward"): an escape pod, `ships/Lifepod.tscn`, a ship of its own
+  (`ship-ctrl.gd`) and an oddity (see *Oddity*). A ship whose scene names a `lifepod` leaves one when it explodes
+  (`ship-ctrl.gd` `vanish`), with the ship's transponder, faction and speed: every ship model has one but the
+  Tsukuyomi, the racing drone and the Obonto habitat. Others float alone in the rings (`story/LifepodIsFloating.gd`)
+  or are a pirate's bait (`story/PirateTrap.gd`, `ships/LifepodTrap.tscn`); a lone one gets a random transponder
+  (`ships/LifepodFeedback.gd`). A pirate's own lifepod (`ships/LifepodPirate.tscn`) is a bounty
+  (`ODDITY_LIFEPOD_BOUNTY`). It talks to the ship that picks it up (`comms/conversation/LifepodConversation.tscn`,
+  `DIALOG_LIFEPOD_*`). The ATLAS drone leaves an AI core instead (`ships/drone/AICore.tscn`, `ODDITY_AICORE`,
+  "Quantum computer retrieval reward").
 - **Mechanic**: the crew occupation for repairs, and the OMS tab listing the ship's equipment, to switch each piece
   on and off and fix it.
 - **Mineral**: what a chunk is made of, named in code by its element symbol (`mineral = "PT"`). Processed ore
@@ -737,8 +770,14 @@ English text there.
     At 45 days past due (`baseCrewPatience`) they are fired.
 - **MPU** (`SYSTEM_CARGO_MPU*`, `ships/modules/MineralProcessingUnit.gd`): the Mineral Processing Unit, which turns
   the chunks taken in into processed ore and, in most models, their water into remass.
+- **Oddity**: an object worth a reward of its own (`specialPrice`, named by its `specialName`): a lifepod, a frozen
+  body, an AI core and others. One the arm holds when the dive ends goes into the cargo (`ship-ctrl.gd`
+  `handleExitToEnceladus`) and is sold for its reward (`CurrentGame.gd` `getMarketPrice`).
 - **OMS** (`HUD_OMS`, `hud/OMS.gd`, `hud/OMS.tscn`): the Onboard Maintenance System, the console opened with `J` in
-  flight. Its tabs are named by the crew occupation keys: Mechanic, Astrogator, Geologist, Pilot.
+  flight. Its tabs are named by the crew occupation keys: Mechanic, Astrogator, Geologist, Pilot. The Pilot tab (the
+  pilot screen) lists what the ship has identified (`hud/ShipList.gd`, the ship's `identifiedShips`): every object
+  with a transponder the LIDAR has swept, and what the astrogator's marks name (`hud/ShipMark.gd`), each with its name
+  and transponder, a button to hail it (`HUD_HAIL`), its bearing and distance and its IFF.
 - **Reactor** (`SYSTEM_REACTOR_*`; `ships/Reactor.gd`): the ship's nuclear reactor, the equipment that makes heat. The
   turbine (`SYSTEM_TURBINE_*`, equipment for fission ships, read as the config `turbine.power`) turns that heat into
   electricity and burns remass to do it (`turbineConsumption`). With no remass left, it makes no power. The reactor
@@ -869,6 +908,24 @@ English text there.
   - The K37 TNTRL's HUD also shows Estimated interlunar transit time and Interlunar propellant usage
     (`HUD_RETURN_*_XENON`, `hud/trtl/ShipParams.tscn`): the outbound figures at the ship's current mass, not the trip
     back.
+- **Transponder** (no key of its own; the word is in many lines, `{origin/transponder}`): the code a ship or object
+  broadcasts. The Dealer and Fleet show it as Registration, and the HUD's ship marks, the LIDAR's labels, the OMS
+  Pilot tab, comms, the dive's title card and the save slots show it too.
+  - The game's codes: one of five prefixes, a dash and four digits (`CurrentGame.gd` `getNewTransponder`: `SE1`,
+    `JG4`, `ETH`, `MRS`, `BLT`), from a seed. The prefixes read as a place of registry: a crew member reads `SRA-01`
+    as "Saturn, Ring A, station 01" (`AGENDA_LOOKING_FOR_SIBLING_TAXI_JOB_HABITATS`). A ship the Shipyard builds gets
+    its code through `getTransponder`, which keeps it in the save against the ship's build (`state.transponders`), so
+    a ship met again has its old code; the player's first ship gets one on a new game.
+  - A ship keeps its code for good (its config's `transponder`). The game makes the ship's name from it
+    (`generateShipNameFromTransponder`, kept in `state.shipNames`) and its captain's and crew's names in comms
+    (`getCrewMember`), picks some lines by it, and keeps what it remembers about the ship by it (dispositions,
+    encountered ships).
+  - Codes made from a ship's: its lifepod's is the ship's; a drone's is `<ship>-CC42` (`ClaimOwner.gd`); frozen
+    bodies take their group's plus initials. Fixed codes: the stations (`IRRS-*`, the habitats `SRA-01`–`SRA-07`)
+    and beacons (`SE1`, `SE1-SG`).
+  - Pirates broadcast none (`ship-ctrl.gd` `getTransponder` returns ""; the LIDAR's tutorial sticker,
+    `TUTORIAL_STICKER_LIDAR`, says "NO TRANSPONDER - pirate RUN!").
+  - AltTransponderCodes makes new codes say what carries them.
 - **Tuning** (`ENCELADUS_SHIP_TUNING`, `enceladus/Tuning.tscn`): the station screen with the settings of each piece
   of the current ship's equipment, registered by its script with `registerSubsystem` and saved with the game (see
   *Conventions*).

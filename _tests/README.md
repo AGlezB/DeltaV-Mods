@@ -11,7 +11,8 @@ a Godot project in `TempDir\tests\project` from `_tests\`; the game's own `Docki
 `TabsWithGamepadControl.gd`, `PriceLabel.gd`, `RepeatingHSlider.gd`, `MineralLabel.gd`, `MineralSystemToggle.gd`,
 `HireableCrew.gd`, `CrewBio.gd`, `CurrentCrewManagement.gd`, `PlaySoundsOnTheseButtons.gd`, `SystemBuyUI.gd`,
 `SystemShipUpgradeUI.gd`, `Game.gd`, `Enceladus.gd`, `TransponderOnIntro.gd`, `ship-ctrl.gd`, `Reactor.gd`,
-`FusionReactor.gd`,
+`FusionReactor.gd`, `CurrentGame.gd`, `body.gd`, `ClaimOwner.gd`, `ClaimBeacon-1.gd`, `ClaimBeaconForeign.gd`,
+`NewGamePlus.gd`,
 `Tool.gd`, `gdunzip.gd`, `Shower.tscn`, audio buses (`default_bus_layout.tres`), the skill
 icons `CrewBio.gd` preloads and a Fleet entry's Use icon (`enceladus/Upgrades/switch.png`; their `.png.import` and
 imported `.stex`, so they load without an import step), copied from the decompiled source on every run and never
@@ -32,10 +33,17 @@ autoplay, process mode and `intro`, `exit`, `helpless`, `gameover` and `fasttrav
 those drive (the game's type where the scene declares one, the transponder label with `TransponderOnIntro.gd`) and an
 asteroid field that records the `despawnAllAsteroids` calls of `exit` and the rescue ship's spawn
 (`harness/skip_field.gd`); the method keys on the root call `Game.gd`'s own. Also bare stubs of the two scenes
-`ship-ctrl.gd` preloads (`sfx/WeldingSparks.tscn`, `ships/modules/EVAflight.tscn`), and the station's fade-in
-(`Enceladus.tscn`'s `FadeInCRT`) as an Animation resource of its own (`harness/station_fadein.tres`). The game's
-`Shipyard` (which makes the rescue ship, recorded), `K2RGB`, `Factions` and `Achivements` autoloads are stubs
-(`harness/stubs/`), in the game's order, so the game's scripts that name them compile. It packages each mod as a
+`ship-ctrl.gd` preloads (`sfx/WeldingSparks.tscn`, `ships/modules/EVAflight.tscn`) and of the three the story claim
+beacons preload (`ships/drone/ClaimBeacon.tscn`, `ClaimBeaconForeign.tscn`, `story/DummyBeacon.tscn`), the game's
+ship models (`harness/transponder_models.gd`, written from the keys of `ships` in `ships/Shipyard.gd`), and the
+station's fade-in (`Enceladus.tscn`'s `FadeInCRT`) as an Animation resource of its own (`harness/station_fadein.tres`).
+The game's `Shipyard` (which makes the rescue ship, recorded; and, as the game's, the build `stripEmpheralsFromConfig`
+keys codes by), `K2RGB`, `Factions`, `Namer` (fixed names: "Ann Bell", a ship name from its seed), `Agenda` (which the
+game's `CurrentGame.gd` names) and `Achivements` autoloads are stubs (`harness/stubs/`), in the game's order, so the
+game's scripts that name them compile. A script compiled once the autoloads exist has its calls on them checked
+against the stubs' scripts, arguments included, so the stubs take the game's arguments (`Shipyard.createShipByName`);
+one compiled while they are being created, from a `ModMain`'s `_init`, isn't checked (found with the game's
+`CurrentGame.gd`). It packages each mod as a
 release zip is laid out (MODDING.md *Packaging and releasing*, without the `LICENSE` copy) and loads the zips as
 `ModLoader.gd` does, at the same moment (`_tests\harness\loader.gd` is the `ModLoader` autoload, and loads in its
 `_init`; the autoloads keep the game's order), so the zip layout is tested too. Logs: `TempDir\tests\logs`. Godot and
@@ -54,10 +62,10 @@ Call it from a pwsh prompt or `pwsh -Command`: under `pwsh -File`, list argument
 not parsed as arrays. Exit code 0 = every run passed; a script error fails its run even if every check passed.
 
 The suites are ported from the claude.ai harness (DVModTestHarness 1.0.0; the original was deleted once ported),
-except `boot`, `lidar`, `hud`, `crew`, `geology`, `fleet` and `skip`. `units`, `still` and `moving` load the two arm
-mods by default, `dive` loads DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos, `lidar` loads LidarLouderPing,
-`hud` loads HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology` loads GeologyByMass, `fleet` loads
-ShipCopyPaste, `skip` loads DiveSkipTransit.
+except `boot`, `lidar`, `hud`, `crew`, `geology`, `fleet`, `skip` and `transponder`. `units`, `still` and `moving`
+load the two arm mods by default, `dive` loads DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos, `lidar` loads
+LidarLouderPing, `hud` loads HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology` loads GeologyByMass, `fleet`
+loads ShipCopyPaste, `skip` loads DiveSkipTransit, `transponder` loads AltTransponderCodes.
 
 - `units`: the claude.ai unit tests (`arm/main.gd`) nearly verbatim, on synthetic arms around the game's
   `DockingArm.gd`. TargetSelection: area geometry on turned, scaled and offset arms, reach, the strip, the weighted
@@ -288,6 +296,29 @@ ShipCopyPaste, `skip` loads DiveSkipTransit.
   launch keeps playing and doesn't go to the ring; the ship spawned for the cutscene, which goes on under the title
   card; only the transit charged; the exit, rescue and game over cutscenes play and call nothing yet; astrogation
   yields; the station's menu stays disabled) run on the game's own scripts.
+- `transponder` (`suites/transponder.gd`): the game's `CurrentGame.gd`, copied to `res://CurrentGame.gd` (where the
+  mod's `Code.gd` extends it), instanced under the suite with a player's ship in its state; the `CurrentGame` autoload
+  stays the stub, which hands this instance `menu/NewGamePlus.gd`'s transponder calls and the members it lacks
+  (`_get`, `_set`). Checks that the script has the extension; that every model of the game's Shipyard
+  (`harness/transponder_models.gd`) has a code in `MODEL_CODES`, all different, of one length, without a dash; that a
+  model's code is followed by a dash and a serial of `SERIAL_LENGTH` characters of `SERIAL_CHARS`, the same for a
+  seed, and the same serial for a seed whatever the model; a model not in the table (its key's letters and digits, a
+  short key padded with `MODEL_CODE_PAD`); with no model given, a ship of the game's `usedShipsPool`, the same for a
+  seed, several for several seeds; across those seeds, every character of `SERIAL_CHARS` in the serials.
+  `getTransponder`: a config's own code kept; a new build coded by its model, stored in
+  `state.transponders`; met again (not new, a frame later), its stored code back; a code stored before the mod reused
+  as it is; no model left set. The player's ship: `createPlayerShip` and `validateState` code a ship without one by
+  its model, a save's code is kept. The game's New Game+ screen, built on the node paths its script reads: the
+  extension, a code of the new game's ship model and the name the game makes from it. `_atcNodeAdded` on ships of the
+  game's `ship-ctrl.gd` out of the tree: a ship's lifepod (the suffix, the name of the ship's code kept, the forgotten
+  code not stored back; a ship's stored name kept; added again, unchanged), a lone lifepod (a `usedShipsPool` ship's
+  code and the suffix, a model set around it kept), the AI core (with and without a code), another ship untouched, the
+  bodies' beacon and the destroyed habitat's (no code yet, untouched). Through the tree's `node_added`: frozen bodies
+  of the game's `body.gd` (the group's code, the crew suffix, the initials; at the habitat; without a code, the
+  initials only; added again, unchanged); docks of the game's `ClaimOwner.gd` under a ship given its script once in
+  the tree, one per `DRONE_CODES` type (the format and the code it makes), another format and a dock under something
+  that isn't a ship untouched; the story claim beacons' format. The control checks (a vanilla prefix; a body's code
+  and a dock's format unchanged) run on the game's own scripts.
 - `_tests\harness\rig.gd` builds the arm's node tree as the game nests it, with the values in
   `_tests\harness\vp_data.gd`; each cites its scene file and line, so re-check them after a game update. The ship
   is a stub moved by hand (it takes the arm's impulses and torque; inertia from the hull); the rotors don't collide.
@@ -297,7 +328,8 @@ ShipCopyPaste, `skip` loads DiveSkipTransit.
   `crew` 140 (141 with CrewPerfectSort too, in both load orders; 3 control checks with `-Mods @()`), `geology` 60 (3
   control checks with `-Mods @()`), `fleet` 70 (the same with ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice
   too; 3 control checks with `-Mods @()`), `skip` 109 (112 with CrewCheapHireNotifier too; 13 control checks with
-  `-Mods @()`), all passing; `-Matrix` gives 16 of 16 in every combination.
+  `-Mods @()`), `transponder` 48 (3 control checks with `-Mods @()`), all passing; `-Matrix` gives 16 of 16 in every
+  combination.
   Feeding, a chunk beside the hull is in after 4.4–4.8 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.4.0 (the claude.ai results, case for case)
   took 5.9–6.3 s there, fails the 8 time limits, and `-Matrix` gave 16, 15, 16, 16 (feeding while turning with a 5 t
