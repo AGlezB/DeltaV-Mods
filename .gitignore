@@ -8,8 +8,5 @@ paths.local.psd1
 # Personal instructions for Claude Code in this repo
 CLAUDE.local.md
 
-# Earlier release zips, moved here out of the game's mods folder
-_backup/
-
 # Claude Code's per-user folder
 .claude/
