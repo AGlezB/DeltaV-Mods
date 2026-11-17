@@ -352,6 +352,31 @@ English text there.
     spent at the station.
 - **Astrogator**: the crew occupation for navigation, and the OMS tab with the map: points of interest (see
   *Astrogation*), distances, plotting a course (`HUD_PLOT_COURSE`).
+- **ATLAS**: an autonomous drone that hunts rogue AI; the ship has no name text in `en.po`, and calls itself an
+  "autonomous Edge Runner" (`DIALOG_ATLAS_BEING_AUDITED_1`). ATLAS stands for the Artificial Threat Location and
+  Apprehension Specialists (`DIALOG_ATLAS_WHATS_ATLAS_EXPLAIN`). Scene `ships/drone/ATLAS.tscn` (Shipyard model
+  `ATLAS`): faction `ai`, no crew, two MWG emitters (see *EMP*), no EMP shielding.
+  - Spawn: a random event of the rings (`AtlasRandom` in `story/TheRing.tscn`, a `story/RingRace.gd` with
+    `racerModel = "ATLAS"`). It passes at any depth, with no roll and no chaos limit, so it spawns once every pass of
+    the shuffled event list (see *Salvage*).
+  - The audit (`comms/conversation/AtlasConversation.tscn`): curious about the player's ship, it comes to talk once,
+    asking for an AT audit (Artificial Threat, `DIALOG_ATLAS_WHATS_AT_SCAN_EXPLAIN`). Granting access ends it with a
+    scan and one of three random closing lines, none of which has an effect ("Autopilot shackles upgraded",
+    `DIALOG_ATLAS_SHACKLES_ADJUSTED`, changes nothing). Refusing, or not answering within the line's `timeout`
+    (30 s), brings a threat (`DIALOG_ATLAS_AUTHORIZED_FORCE`). Refusing again, or not answering, makes it hostile
+    (`DIALOG_ATLAS_PREPARE_FOR_AUDIT`, `changeHostility`): it closes in and fires its MWGs (`ship-ctrl.gd`, the AI's
+    hunter mode). After the line's `noReplyTimeout` (20 s) it declares the scan complete and stops being hostile
+    (`DIALOG_ATLAS_SCAN_COMPLETE`). An ATLAS that is already hostile when it starts talking skips straight to that
+    forced audit.
+  - Crew agendas (see *EVA*): with the AI conspiracy theorist (`AGENDA_CONSPIRACY_AI_THEORIST`) in the dive crew, the
+    player can ask for a human in charge; the agent recognises them and authorizes deadly force. With the android
+    (`AGENDA_ANDROID`), they can answer for the ship (`AGENDA_ANDROID_ATLAS_PROTECTED`), and ATLAS lets it go. After
+    an audit, the theorist complains (their morale drops by 0.2). If the android is there too and replies, the game
+    grants the Short Circuit achievement (`ACHIEVEMENT_CREW_SHORTCIRCUT`).
+  - Destroyed, it leaves an AI core (`ships/drone/AICore.tscn`, the ship's `lifepod`). The core is an oddity: an
+    object the station pays a fixed price for when it comes back as cargo (`CurrentGame.isOddity`, `specialPrice`),
+    here 250,000 E$ (`ODDITY_AICORE`, "Quantum computer retrieval reward"). The drone itself has a transponder, so
+    holding it with the arm never adds it to the fleet (`CurrentGame.isShipSalvageable`, see *Salvage claim*).
 - **Chaos**: no text of its own in `en.po`. A value from 0 to 1 for each spot of the rings: the red channel of the
   ring map (`ring/ring-map.png`, one pixel per km, depth across and the way around the ring down, wrapping), read by
   `TheRing.gd` `getChaosAt`; its blue channel is the density (`getRawDensityAt`). Random events of the rings need a
@@ -465,16 +490,17 @@ English text there.
   draw × 0.9 × (1 − its Water Resonance tuning, `TUNE_EMP_RESONANCE`), up to about 61 MW; the SPC Gungnir
   (`SYSTEM_SYNCHRO`, `weapons/synchrotron.gd`), a quarter of its charge in one frame; ring storms
   (`story/RingStormManager.gd`: arcs that a storm beacon, `story/StormBeacon.tscn`, strikes between two objects, a
-  weak corona for a few seconds, then a discharge of up to 2 s); and, in one go, some conversation lines
-  (`damageEmp`) and the derelicts as they spawn (`extraEmp` in `RescueOperation.gd`, `AgendaSpecificDerelict.gd`).
+  weak corona for a few seconds, then a discharge of up to 2 s); the Singularity Core, 5 MW on everything within 40 m
+  (see *Hybrid*); and, in one go, some conversation lines (`damageEmp`) and the derelicts as they spawn (`extraEmp` in
+  `RescueOperation.gd`, `AgendaSpecificDerelict.gd`).
   - EMP shielding (in the Dealer's specs, "EMP shielding: 100 MW"; no key of its own): the ship's `empShield`, the
     larger of its scene's value and its config's `shielding.emp`. It comes with the hull: no equipment changes it.
     Each hit loses the shielding's MW over that frame (`empShield × 1000 × delta`; 1000 per second is 1 MW, the scale
     the MWG's Tuning shows), and only the rest gets through, so it stops continuous sources up to that power and
     barely touches one-frame ones. It applies per hit: two sources at once are each cut by the whole of it. The
-    Runasimi KR37 TNTRL has 200 MW; the Cothon-212, the Cothon-211 "Chonker", the Cothon-217 "Bender" and the
-    Antonoff-Titan K225 (modified) (the derelict of the sibling agenda, see *EVA*) 100 MW; the Cothon-213 "Triplet"
-    and every other ship model none.
+    Hybrid has 500 MW (the config its random event gives it, see *Hybrid*); the Runasimi KR37 TNTRL 200 MW; the
+    Cothon-212, the Cothon-211 "Chonker", the Cothon-217 "Bender" and the Antonoff-Titan K225 (modified) (the
+    derelict of the sibling agenda, see *EVA*) 100 MW; the Cothon-213 "Triplet" and every other ship model none.
   - What gets through (the `damageEMP` signal): Short Circuit (`DAMAGE_SHORT_CIRCUIT`) on the HUD, which falsifies its
     readouts and may reboot it on each hit, the likelier the more damaged (`hud/Hud.gd` `_on_emp`); Pump Failure
     (`DAMAGE_LASER_PUMP`) on the lasers (`weapons/laser.gd`: the CL-150, the CL-600P, the laser turret); and, near a
@@ -536,6 +562,34 @@ English text there.
   experience, salary, portrait, and a Hire button (`CREW_HIRE`, the entry's `hireButton`), disabled while the
   player can't pay the salary.
 - **HUD**: the ship's flight display (`hud/Hud.gd`), laid out per ship model in `hud/Display-<model>.tscn`.
+- **Hybrid** (players call it the dorito): a ship that matches no known model, with no name text in `en.po`. Scene
+  `ships/HYB-based.tscn` (Shipyard model `HYBRID`), faction `secret`. It flies with an ordinary transponder and ship
+  name, and can't be hailed (`hailable`). Its reactor shows a Singularity Core that spins faster the hotter the
+  reactor runs (`ships/Artifact.gd`).
+  - Spawn: a random event of the rings, `HybridHunterHuntingPlayer` in `story/TheRing.tscn`
+    (`story/HybridHunter.gd`), only where the chaos is above 0.3 (see *Chaos*). It never spawns on the Peaceful
+    difficulty (`SETTINGS_DIFFICULTY_0`). On Balanced (`SETTINGS_DIFFICULTY_1`) it needs the player to have at least
+    30,000 E$ and their ship's combat capacity (`getCombatCapacity`, the share of its equipment working) to be at
+    least 0.6. The event fits it with one MWG and 500 MW of EMP shielding, which stops any MWG's EMP (see *EMP*).
+  - Behaviour: its faction's disposition towards the player (`keepsecret` in `Factions.gd`) is mostly curious and
+    partly hostile. It first comes close to look at the player's ship. A crew member with one of five agendas (see
+    *EVA*) may remark on it (`comms/conversation/HybridEnconters.tscn`: `AGENDA_EX_PIRATE`, `AGENDA_LOOKING_FOR_CHILD`,
+    `AGENDA_ANDROID`, `AGENDA_HAS_CAT`, `AGENDA_SINGER`; the android's line, `AGENDA_ANDROID_HYBRID_SHIP`, is "This
+    doesn't match any signature I know of."). Once it has looked, it attacks with its MWG (`ship-ctrl.gd`, the AI's
+    choice of action). It only fires while its hostility, scaled by its own combat capacity and by the distance, is
+    above `aiHostilityToFire`, so a damaged one stops firing.
+  - Destroyed, it leaves its Singularity Core (`story/SingularityCore.tscn`, `story/SingularityCore.gd`; the ship's
+    `lifepod`). The core is an oddity: an object the station pays a fixed price for when it comes back as cargo
+    (`CurrentGame.isOddity`, `specialPrice`), here 1,000,000 E$ (`ODDITY_SINGULARITY_CORE`, "Research material").
+    While the core floats loose, two gravity areas (`Attractor`, `Repellant`) pull objects in from a few hundred
+    metres and push back those that come within 50 to 90 m. The core also puts out 5 MW of EMP (`empPerSecond`) on
+    everything within 40 m (`EmpArea`), and plays the game's mystery music. In a cargo hold the pull and push stop,
+    but the EMP doesn't (`setInCargoHold`). Taking it in gives the achievement A touch of Singularity
+    (`ACHIEVEMENT_TOUCH_SINGULARITY`).
+  - The same core also floats free, among 2 to 9 iron chunks, in another random event of the rings, `Singularity`
+    (`story/Singularity.gd`): only where the chaos is above 0.5 and no other event is within 2 km.
+  - The ship has a transponder, so holding it with the arm never adds it to the fleet (`CurrentGame.isShipSalvageable`,
+    see *Salvage claim*).
 - **Intake**: where the arm feeds chunks into the ship: a grinder, an excavator or a side bay (see *Salvage arm
   facts*).
 - **Launch sequence**: what the station plays after Launch Ring Dive (`ENCELADUS_RETURN_TO_RING`) and the dive target:
