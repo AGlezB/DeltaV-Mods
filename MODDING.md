@@ -352,6 +352,15 @@ English text there.
     spent at the station.
 - **Astrogator**: the crew occupation for navigation, and the OMS tab with the map: points of interest (see
   *Astrogation*), distances, plotting a course (`HUD_PLOT_COURSE`).
+- **Chaos**: no text of its own in `en.po`. A value from 0 to 1 for each spot of the rings: the red channel of the
+  ring map (`ring/ring-map.png`, one pixel per km, depth across and the way around the ring down, wrapping), read by
+  `TheRing.gd` `getChaosAt`; its blue channel is the density (`getRawDensityAt`). Random events of the rings need a
+  minimum chaos where they spawn (each event's `chaosLimit` in `story/TheRing.tscn`; see *Salvage*). The dive entry
+  point's Environmental damages fee (`MAP_FEE_ENVIRONMENT`) grows with chaos × density (`DiveTarget.gd` `getPrices`,
+  `chaosPricePerChaos`), less the geologist's cut (see *Crew stats*), so of two spots of the same density the dearer
+  is the more chaotic. By depth, on the 1.92.5 map: under 0.35 in the first 10 km; from 10 to 600 km about 0.35–0.4
+  on average, 0.4 or more in 20–60 % of spots and 0.5 or more in under 10 %; deeper, 0.45–0.5 on average, 0.5 or
+  more in 20–50 % of spots.
 - **Chunk** (mineral chunk, ore chunk): a loose piece of ore floating in the rings; what the arm grabs, the MPU
   processes and the HUD's mineral targeting marks. A `RigidBody2D` with `asteroids/mineral.gd`, one scene per
   mineral and size (`asteroids/mineral-<mineral>-<n>.tscn`); `mineral` names its mineral, `composition` its
@@ -501,7 +510,7 @@ English text there.
     the player can send them over to restart it (`DIALOG_DERELICT_GO_AND_BRING_IT`). On board, they may get it
     running, and it joins the player's fleet (`getThisShip`). Or they come back with nothing, or injured (leave days,
     `addAgendaLeaveTime`). What they find varies (the `DIALOG_DERELICT_*` subtrees: brick, junk, solo dead, hole,
-    ghost ship).
+    ghost ship). Which models are derelicts, where they come from and how often: see *Salvage*.
   - **Crew agendas**: an agenda is a crew member's personal story (`AGENDA_*`, followed in
     `CurrentGame.state.agenda`). The member looking for their child (`AGENDA_LOOKING_FOR_CHILD`, a branch of the same
     derelict conversation) and the one looking for their sibling (`AGENDA_LOOKING_FOR_SIBLING`, a derelict spawned for
@@ -613,6 +622,49 @@ English text there.
   frame) and the title cards of its cutscenes.
 - **Roid**: an asteroid (`asteroids/asteroid.gd`, a `RigidBody2D`), the rocks that fill the rings; the game's own
   texts say "roids" too.
+- **Salvage** (`POI_SALVAGE`, "Salvage: {0}"; the `ACHIEVEMENT_SALVAGE_*` achievements, "Recover a derelict ship"):
+  taking a derelict (see *EVA*) into the fleet, by holding it with the arm until the dive ends at the station or by
+  sending a crew member over to restart it (see *Salvage claim*). Only the models below are ever derelicts; pirate
+  ships are salvageable too (`CurrentGame.isShipSalvageable`), but only once disabled in combat. Derelicts come from:
+  - **Random events of the rings** (`story/TheRing.tscn`, `TheRing.gd` `getOddityAt`, asked by the asteroid field for
+    a spot near the ship). The ring scene spawns one only after 600 in-game seconds of flight since the last
+    (`odditiesEvery`; astrogation restarts the count, cutscenes don't count), once the basic tutorial is done, while
+    no other ship is around (`suppressEventIfShips`), and deeper than the edge limit (4 km at the start of a game,
+    shrinking to 0 over 300 in-game days; shallower, only miners come). The events, about a hundred, are walked in a
+    shuffled order, each tested once per pass, and the first that passes spawns. A derelict's event passes with a
+    chance of base × (1 − cash / ceiling), at least 10 %, where cash is the E$ in hand (`CurrentGame.getMoney()`,
+    without insurance), and only where the chaos (see *Chaos*) is at least its limit (`story/RescueOperation.gd`
+    `canBeAt`). Base, ceiling and chaos limit, by series, with the names the game shows:
+    - TNTRL: K37 TNTRL (80 %, 5 million E$, 0.2); KX37 TNTRL, Runasimi KR37 TNTRL, KTA24 TNTRL and K44 MHFTR
+      Prototype (40 %, 5 million E$, 0.2 each). Two more K37 TNTRLs come with a rescue ship (see *Salvage claim*):
+      one beside it (`RescueOperation`: 100 %, 10 million E$, any chaos), and one on a lone rescue ship's path
+      3 minutes after it spawns, if it is still there (`story/FlightForRescue.gd`, always). The rescue ship is often
+      in sight when the derelict talks, and then only the arm can take it.
+    - Eagle Prospector: Eagle Prospector (100 %, 10 million E$, 0.4); Peacock Prospector, Vulture Prospector (the
+      VP, `ships/Eagle-Prospector-VP.tscn`) and Pelican Prospector (50 %, 10 million E$, 0.4 each).
+    - Cothon: Cothon-212 (80 %, 10 million E$, 0.3); Cothon-211 "Chonker", Cothon-213 "Triplet" and Cothon-217
+      "Bender" (40 %, 10 million E$, 0.3 each).
+    - Antonoff-Titan K225 and Eon Interstellar Model E, the EIME (50 %, 2 million E$, 0.5 each); Antonoff-Titan
+      K225-BB, ND-LIS Kitsune and OCP-209 (30 %, 2 million E$, 0.5 each).
+
+    The derelict is a random used build of its model (`ships/Shipyard.gd` `createShipBuildByName`), so its equipment
+    varies, with its reactor off, no remass and, from these events, a random kinetic and EMP hit
+    (`applyExtraDamage`).
+  - **Scrapwright Recovery Operations** (`SERVICE_SALVAGE_LICENCE`, SRO): a subscription on the station's Services
+    screen (see *Morale*), 300,000 E$ for 30 days (`enceladus/Services.tscn`). While it lasts, three more random
+    events (`SalvageCall`, wherever the chaos is above 0) spawn a beacon whose broadcast
+    (`comms/conversation/SalvageBanter.tscn`) lists two derelicts, sometimes three, as destinations (see
+    *Astrogation*) 100 to 1,600 km away, for 24 h. Each listing is one of 50 lines of equal weight, three per model
+    above (two for the K225-BB, none for the K44 MHFTR), offered only if that model's event passes its test at one of
+    three random spots. At the spot, the derelict then spawns without a further roll.
+  - **Conversations** that reveal a destination, where the derelict spawns without a roll: crew chatter
+    (`DIALOG_POI_RANDOM_2`: a K37 TNTRL 10 to 100 km away); a rescue ship asked "Seen anything worth salvaging?"
+    (`DIALOG_HELPER_SALVAGE_ANY`, one of its four answers: a K37 TNTRL 25 km away, offered only if its event passes
+    there); the same answer to a member looking for their child who asks a rescue ship for clues (see *EVA*); and
+    pirates friendly enough to talk business (`DIALOG_PIRATE_BUSINESS_SHIP_*`: a K37 TNTRL, a Cothon-212 or an Eagle
+    Prospector about 500 km deeper, for 200,000 E$, kept for 7 days). The sibling's ship (see *EVA*), an
+    Antonoff-Titan K225 (modified) with full remass and no extra damage, comes only that way
+    (`story/AgendaSpecificDerelict.gd`).
 - **Salvage claim**: a phrase from one derelict line, "…with that rescue ship on our back, they'll file for a salvage
   claim anyway." (`DIALOG_DERELICT_TAKEN_4`), not a mechanic: the game records no claim on a derelict (see *EVA*).
   What decides who gets one:
