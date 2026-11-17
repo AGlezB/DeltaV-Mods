@@ -30,7 +30,7 @@ const _DST_RING_HEADING = PI / 2
 # (ship-ctrl.gd: Vector2(0, -1).rotated(rotation)), and a thruster's push is its own up (sfx/thruster.gd
 # getLocalThrustVector).
 const _DST_FORWARD = Vector2(0, -1)
-# The game's speed while Space is held in a cutscene (Game.gd _process): above it, the transit plays muted.
+# The game's speed while Space is held in a cutscene (Game.gd _process): above it, the transit plays without sound.
 const _DST_SPACE_SPEED = 3.0
 # The master bus, which the game mutes while its window is out of focus (Settings.gd _notification).
 const _DST_MASTER_BUS = 0

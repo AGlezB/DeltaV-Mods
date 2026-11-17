@@ -25,8 +25,8 @@ const SETTINGS = {
 		"group": "transit",
 	},
 	# The transit's speed while it isn't skipped, without holding Space (Code.gd); above the game's Space speed it plays
-	# muted. The most is the game's Space speed times the physics steps Godot 3 runs in one frame (8), so that every
-	# step keeps the size the game's own fast-forward gives it.
+	# without sound. The most is the game's Space speed times the physics steps Godot 3 runs in one frame (8), so that
+	# every step keeps the size the game's own fast-forward gives it.
 	"transitSpeed": {
 		"label": "DIVESKIPTRANSIT_TRANSIT_SPEED",
 		"default": 1.0,

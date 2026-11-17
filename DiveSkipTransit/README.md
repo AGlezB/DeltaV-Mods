@@ -68,8 +68,8 @@ the in-game time around them, to the game's developers, check that it also happe
       the most is the game's Space speed times the physics steps the game's engine runs in one frame.
   - *Skip*:
     - *Launch sequence*: no remass. The ship flown there is the station's.
-    - *Astrogation* (marked): the remass the turbine burns during the cutscene's waits, the remass for any change of speed to
-      the travel velocity, and the waits' in-game time, besides the trip's time the game adds.
+    - *Astrogation* (marked): the remass the turbine burns during the cutscene's waits, the remass for any change of
+      speed to the travel velocity, and the waits' in-game time, besides the trip's time the game adds.
     - *Rescue*: no remass (the tank is empty). The cutscene's in-game time, besides the stranded time the game adds.
     - *Game over*: nothing; the game is over.
     - *Arrival at the station*: nothing; the station's clock runs either way.
@@ -163,10 +163,10 @@ the in-game time around them, to the game's developers, check that it also happe
     `_notification`).
 - **The rescue.** `Game.gd` `_process` starts it once the ship has been helpless (out of remass) for
   `helplessTimeLimit`: the ship's cutscene on, its reactor off, its cargo claimed, then `TitleAnimPlayer`'s `helpless`,
-  whose method keys are `sendHelp` (the stranded time, and the MAD-CERF rescue ship, which goes for the helpless ship
-  but changes nothing) and `goToEnceladus`. That happens inside `_process`, so `Code.gd` connects the title card player's
-  `animation_started` in `_ready`; on `helpless`, while `skipRescue` is on, it plays it through, deferred so the
-  frame's processing ends first, charging `chargeSeconds`.
+  whose method keys are `sendHelp` (the stranded time, and the MAD-CERF rescue ship, which goes for the helpless
+  ship but changes nothing) and `goToEnceladus`. That happens inside `_process`, so `Code.gd` connects the title card
+  player's `animation_started` in `_ready`; on `helpless`, while `skipRescue` is on, it plays it through, deferred so
+  the frame's processing ends first, charging `chargeSeconds`.
 - **The game over.** A meltdown emits `CurrentGame.gameOver`; `Game.gd` `_on_gameOver` plays `gameover` the first time
   (`gamerunning`), whose method key `gameOverScreen` loads the title screen. `Code.gd` overrides `_on_gameOver`, calls
   the parent's, and only when that call started the game over, while `skipGameOver` is on, plays it through.
@@ -224,15 +224,15 @@ the in-game time around them, to the game's developers, check that it also happe
   - **The model** (`Settings.gd`, a `Reference`): `shared()` returns the one instance, kept as metadata of the script,
     loaded from the file when first made. `SETTINGS` describes each setting (`label`, which with `DESCRIPTION_SUFFIX`
     also names its description, `default`, `type`, `group`; for a slider its range, step, unit and format; `remass`
-    where skipping charges remass; `dimmedWhen`), in display order within its group. `getValue(key)`; `setValue(key, value)` keeps a switch's anything-but-a-bool at the default,
-    snaps a slider's number to its step and range (anything else gives the default) and, on a change only, saves and
-    emits `settingsChanged`. `loadFromFile()` overlays the defaults with the file's values (a key missing from an older
-    file keeps its default, or what the file held under the key's old names: format 2's `skipArrival` and `skipExit`
-    give `skipTransit`, on only if both were); `saveToFile()` writes them.
-    The file, `filePath` (`user://<the mod's id>.cfg`), holds one section named by the mod's id, with `formatVersion`
-    (`FORMAT_VERSION`), `modVersion` and each setting. The skips read the model when their cutscene starts, so a
-    change applies to the next one. Scripts reach it through the preload constant `DiveSkipTransit`, never `Settings`,
-    which would hide the game's autoload.
+    where skipping charges remass; `dimmedWhen`), in display order within its group. `getValue(key)`;
+    `setValue(key, value)` takes only a bool for a switch and only a number for a slider, snapped to its step and range
+    (anything else gives the default), and, on a change only, saves and emits `settingsChanged`. `loadFromFile()`
+    overlays the defaults with the file's values (a key missing from an older file keeps its default, or what the file
+    held under the key's old names: format 2's `skipArrival` and `skipExit` give `skipTransit`, on only if both were);
+    `saveToFile()` writes them. The file, `filePath` (`user://<the mod's id>.cfg`), holds one section named by the
+    mod's id, with `formatVersion` (`FORMAT_VERSION`), `modVersion` and each setting. The skips read the model when
+    their cutscene starts, so a change applies to the next one. Scripts reach it through the preload constant
+    `DiveSkipTransit`, never `Settings`, which would hide the game's autoload.
   - **The texts:** `i18n/en.po`, loaded in `ModMain.gd` with `load()` and `TranslationServer.add_translation`, as the
     game loads its own `.po` files. English is Godot's fallback language, so every language shows it until it gets its
     own file.
@@ -242,16 +242,17 @@ the in-game time around them, to the game's developers, check that it also happe
   `_dstTransitPace()`, `_dstApplyPace()`, `_dstStopPace()` and `_dstRestoreMute()`; it overrides `_ready`,
   `_on_exitingRing`, `_on_gameOver` and `_onFastTravel`, and adds `_physics_process`, `_process` and `_exit_tree`
   (`Game.gd`'s own `_process` still runs: Godot runs every level of it). Of `Ship.gd`: `DiveSkipTransit` (preload),
-  `_DST_ASTROGATION_BEFORE_JUMP`, `_DST_ASTROGATION_AFTER_JUMP`; it overrides `fastTravelTo`. Of `Station.gd`: `DiveSkipTransit` (preload); it
-  overrides `_ready` and `_on_DiveTarget_launch`. Of `StationMenu.gd`: `DiveSkipTransit` and `_DST_SETTINGS_UI`
-  (preloads), `_DST_SETTINGS_TOOLTIP`, `_dstDiveButton`, `_dstDiveKey`, `_dstSettingsScreen`, `_dstScreens`,
-  `_dstTuning`, `_dstUpdateTooltip()`, `_dstOnDiveInput()` and `_dstOpenSettings()`. No tunables.
+  `_DST_ASTROGATION_BEFORE_JUMP`, `_DST_ASTROGATION_AFTER_JUMP`; it overrides `fastTravelTo`. Of `Station.gd`:
+  `DiveSkipTransit` (preload); it overrides `_ready` and `_on_DiveTarget_launch`. Of `StationMenu.gd`:
+  `DiveSkipTransit` and `_DST_SETTINGS_UI` (preloads), `_DST_SETTINGS_TOOLTIP`, `_dstDiveButton`, `_dstDiveKey`,
+  `_dstSettingsScreen`, `_dstScreens`, `_dstTuning`, `_dstUpdateTooltip()`, `_dstOnDiveInput()` and
+  `_dstOpenSettings()`; it adds `_ready` and `_notification`, which the game's script doesn't have. No tunables.
 - Tested only outside the game, in a headless Godot 3.6 (the harness's `skip` suite): the game's `Game.gd` on a stub
   of the ring scene with the game's own title cards and values, the game's `Enceladus.gd` with the game's `FadeInCRT`,
   the game's `ship-ctrl.gd` (with the extension) for astrogation, and the game's `EnceladusMenu.gd`,
-  `HidingMarginContainer.gd`, `TuningItems.gd` and `TuningBoolValue.gd` in a station built as its scene nests them,
-  with stub ships holding the game's reactor scripts and stub thrusters; alone and with CrewCheapHireNotifier. It has
-  not been checked in a real game.
+  `HidingMarginContainer.gd`, `Shower.tscn`, `TuningItems.gd`, `TuningBoolValue.gd`, `TuningFloatValue.gd` and
+  `AnalogControlSlider.gd` in a station built as its scene nests them, with stub ships holding the game's reactor
+  scripts and stub thrusters; alone and with CrewCheapHireNotifier. It has not been checked in a real game.
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.
