@@ -166,17 +166,6 @@ decompiled game; `.\_tests\run.ps1` runs every suite. What each suite checks, th
 in [`_tests/README.md`](_tests/README.md). The harness doesn't replace the game: the real check is playing the game
 with the mods.
 
-## Conventions
-
-- **Godot 3 GDScript, not Godot 4**: `.method()` for parent calls, `yield(…, "timeout")`, `connect("signal", self,
-  "method")`, `PoolVector2Array`, `xform`, `extents`, `add_color_override`.
-- Tabs; UTF-8 without BOM; LF line endings (`.gitattributes` enforces them whatever `core.autocrlf` says). Script
-  extensions use the game's camelCase, the observer mods snake_case: match the file.
-- **File names in a mod folder**:
-  - `ModMain.gd` only hooks the mod in, and keeps its name (the game runs only zip entries named `modmain*.gd`): a
-    script extension calls `installScriptExtension("res://<ModName>/Code.gd")`, an observer adds a node with
-    `Code.gd` (see *The two ways these mods hook in*).
-  - `Code.gd` is the mod's main code.
 ## The users' wiki
 
 The repository's GitHub wiki explains each mod to players, so that sharing a mod means sharing a link: one page per
@@ -275,6 +264,17 @@ update, every page's `game:` lines and "without" pictures are checked against th
 `.\_shots\shots.ps1 -NewFixture`) before its `game-checked` changes.
 Adding or removing a mod adds or removes its page, and its lines in Home and the sidebar.
 
+## Conventions
+
+- **Godot 3 GDScript, not Godot 4**: `.method()` for parent calls, `yield(…, "timeout")`, `connect("signal", self,
+  "method")`, `PoolVector2Array`, `xform`, `extents`, `add_color_override`.
+- Tabs; UTF-8 without BOM; LF line endings (`.gitattributes` enforces them whatever `core.autocrlf` says). Script
+  extensions use the game's camelCase, the observer mods snake_case: match the file.
+- **File names in a mod folder**:
+  - `ModMain.gd` only hooks the mod in, and keeps its name (the game runs only zip entries named `modmain*.gd`): a
+    script extension calls `installScriptExtension("res://<ModName>/Code.gd")`, an observer adds a node with
+    `Code.gd` (see *The two ways these mods hook in*).
+  - `Code.gd` is the mod's main code.
   - A second script extension next to `Code.gd` is named for the screen it changes: CrewCheapHireNotifier's
     `HireScreen.gd` (the Hire screen, `enceladus/HireableCrew.gd`), DiveSkipTransit's `Station.gd` (the station,
     `enceladus/Enceladus.gd`), `StationMenu.gd` (the station menu, `enceladus/EnceladusMenu.gd`) and `Ship.gd` (every
@@ -385,7 +385,7 @@ Adding or removing a mod adds or removes its page, and its lines in Home and the
   (a feature removed or changed incompatibly, saved settings that no longer load), **minor** for new behaviour or
   settings that keep the old working, **patch** for fixes and for changes with no visible effect (a file renamed,
   code moved between files). Every zip released gets a new version, and a released version is never changed.
-  A new mod always starts at **0.1.0**. Going to 1.0.0 comes with a clean-up: all logging removed, the code
+  A new mod always starts at **0.0.0**. Going to 1.0.0 comes with a clean-up: all logging removed, the code
   simplified, and the what and why of each feature documented in the README for other modders.
 - **The version lives only in `[version]` of `Mod.manifest` and in `CHANGES.md`**. It never appears anywhere else in
   the mod: not in the README (whose *Install* step says "the mod's zip" and names neither the mod nor the zip), the
