@@ -569,8 +569,10 @@ English text there.
   - Spawn: a random event of the rings, `HybridHunterHuntingPlayer` in `story/TheRing.tscn`
     (`story/HybridHunter.gd`), only where the chaos is above 0.3 (see *Chaos*). It never spawns on the Peaceful
     difficulty (`SETTINGS_DIFFICULTY_0`). On Balanced (`SETTINGS_DIFFICULTY_1`) it needs the player to have at least
-    30,000 E$ and their ship's combat capacity (`getCombatCapacity`, the share of its equipment working) to be at
-    least 0.6. The event fits it with one MWG and 500 MW of EMP shielding, which stops any MWG's EMP (see *EMP*).
+    30,000 E$ and their ship's combat capacity to be at least 0.6. Combat capacity (`getCombatCapacity`,
+    `getRealStatus`) is the condition of the ship's worst piece of equipment, doubled and capped at 1, less the share of
+    its pieces switched off: 0.6 needs every piece at 30 % or better and none switched off. The event fits it with one
+    MWG and 500 MW of EMP shielding, which stops any MWG's EMP (see *EMP*).
   - Behaviour: its faction's disposition towards the player (`keepsecret` in `Factions.gd`) is mostly curious and
     partly hostile. It first comes close to look at the player's ship. A crew member with one of five agendas (see
     *EVA*) may remark on it (`comms/conversation/HybridEnconters.tscn`: `AGENDA_EX_PIRATE`, `AGENDA_LOOKING_FOR_CHILD`,
