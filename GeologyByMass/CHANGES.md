@@ -1,5 +1,8 @@
 # GeologyByMass - Changes
 
+## NEXT
+- The mod's OMS tab is now titled *GBM* (was *Ore mass*): text `GEOLOGYBYMASS_TAB`.
+
 ## 1.1.1
 - The mod's id is now `AGlezB.GeologyByMass` and its author `AGlezB` (were lowercase). Settings saved under the
   old id are not read: they start from the defaults.

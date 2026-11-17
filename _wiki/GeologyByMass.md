@@ -7,9 +7,9 @@ and its value. The game shrinks the box, hiding the list and the value, when the
 *Minimum value* you set in the *Geologist* tab of the Onboard Maintenance System (press **J**), or holds none of the
 minerals you switched on there.
 
-With the mod, a new tab, **Ore mass**, sits right after the *Geologist* tab. Switch it on, and a chunk keeps its full
-box when it holds enough kg of one of the minerals switched on in the *Geologist* tab, whatever the chunk is worth:
-the *Minimum value* no longer counts. Use it when you are after one mineral: how much of it a chunk holds tells you
+With the mod, a new tab, **GBM** (short for GeologyByMass), sits right after the *Geologist* tab. Switch it on, and a
+chunk keeps its full box when it holds enough kg of one of the minerals switched on in the *Geologist* tab, whatever
+the chunk is worth: the *Minimum value* no longer counts. Use it when you are after one mineral: how much of it a chunk holds tells you
 more than its price, which mixes every mineral in it and changes with the market.
 
 How much is enough is the **Base** mass, plus an extra mass for each mineral, on top of the base. Moving the Base
@@ -20,7 +20,7 @@ With the switch off, the game works as normal.
 
 ## Settings
 
-In the **Ore mass** tab:
+In the **GBM** tab:
 
 - The switch at the top, *Judge ore by mineral mass instead of the minimum value*: off at first.
 - **Base**: the least mass for every mineral, from 0 kg to 5,000 kg. It starts at 0.
@@ -33,7 +33,7 @@ them. Each ship keeps its own settings, saved with your game.
 In the picture, a chunk needs less of a dear mineral than of a cheap one: 200 kg more for each step down in price,
 from Be, the dearest, to Fe, the cheapest.
 
-![The Ore mass tab, switched on, with Base at 200 kg and each mineral's extra mass and total after it](images/GeologyByMass-settings.png)
+![The GBM tab, switched on, with Base at 200 kg and each mineral's extra mass and total after it](images/GeologyByMass-settings.png)
 
 ## Changes how the game plays
 
@@ -49,7 +49,7 @@ See [Installing mods](Home#installing-mods).
 
 <!-- wiki-values (checked by wiki.ps1)
 game-checked: 1.92.5
-GeologyByMass/i18n/en.po GEOLOGYBYMASS_TAB = "Ore mass" | images/GeologyByMass-settings.png
+GeologyByMass/i18n/en.po GEOLOGYBYMASS_TAB = "GBM" | images/GeologyByMass-settings.png
 GeologyByMass/Settings.gd ENABLED.default = false -> off at first
 GeologyByMass/i18n/en.po GEOLOGYBYMASS_ENABLED = "Judge ore by mineral mass instead of the minimum value" | images/GeologyByMass-settings.png
 GeologyByMass/i18n/en.po GEOLOGYBYMASS_HINT = "GeologyByMass mod: while this is on, an identified chunk keeps its full info box when it holds, of a mineral switched on in the Geologist tab, at least the base mass plus the extra mass set for that mineral. Its value and the Geologist tab's minimum value no longer count." | images/GeologyByMass-settings.png

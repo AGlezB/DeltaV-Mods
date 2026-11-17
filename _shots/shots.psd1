@@ -35,9 +35,9 @@
 			'with:shot|settings|545,15,1055,735'
 		)
 	}
-	# The Ore mass tab, in a dive (J opens the OMS), with an example set where it is stored (Settings.gd: the HUD's
-	# mineralConfig, under the mod's id): the switch on, a base of 200 kg, and extra masses growing by 200 kg from the
-	# dearest mineral to the cheapest by the game's base prices (CurrentGame.mineralPrices: Be, W, V, Pt, Pd, Fe).
+	# The mod's OMS tab (GBM), in a dive (J opens the OMS), with an example set where it is stored (Settings.gd: the
+	# HUD's mineralConfig, under the mod's id): the switch on, a base of 200 kg, and extra masses growing by 200 kg from
+	# the dearest mineral to the cheapest by the game's base prices (CurrentGame.mineralPrices: Be, W, V, Pt, Pd, Fe).
 	GeologyByMass = @{
 		Steps = @(
 			'load', 'wait|10'

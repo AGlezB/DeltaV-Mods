@@ -7,7 +7,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 
 msgid "GEOLOGYBYMASS_TAB"
-msgstr "Ore mass"
+msgstr "GBM"
 
 msgid "GEOLOGYBYMASS_ENABLED"
 msgstr "Judge ore by mineral mass instead of the minimum value"
