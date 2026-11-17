@@ -156,20 +156,57 @@ func badgeOf(tab, e):
 func badged(tab, e, job, limit) -> bool:
 	return badgedWith(tab, e, limitTip(tab, job, limit))
 
-# A visible badge, with `text` as the first line of the tooltip the game shows for it, and hiredLine() as its second.
+# A visible badge, reading badgeText(), with `text` as the first line of the tooltip the game shows for it, and
+# hiredLine() as its second.
 func badgedWith(tab, e, text) -> bool:
 	var badge = badgeOf(tab, e)
-	return badge != null and badge.visible and shownTip(tab, e) == text + "\n" + hiredLine(tab, e)
+	return badge != null and badge.visible and letters(tab, e) == badgeText(tab, e) and shownTip(tab, e) == text + "\n" + hiredLine(tab, e)
 
-# The tooltip's second line for the entry's job: how many of my crew have it (counted here, everyone in
-# CurrentGame.state.crew) out of its crew limit (the stored setting).
-func hiredLine(tab, e) -> String:
+# How many of my crew have `job`: counted here, everyone in CurrentGame.state.crew.
+func hiredCount(job) -> int:
 	var count = 0
 	for memberName in CurrentGame.state.crew:
-		if CurrentGame.state.crew[memberName].occupation == e.occupation:
+		if CurrentGame.state.crew[memberName].occupation == job:
 			count += 1
-	var limit = load(SETTINGS_SCRIPT).shared().getValue(CREW_LIMIT, e.occupation)
-	return tr(tab._CHEAP_HIRE_HIRED_TOOLTIP) % [count, limit]
+	return count
+
+# The colour a crew limit row's value should have for `job` at `limit`: the crew screens' (the game's CrewBio.gd)
+# worse-stat colour with more of the job hired than the limit, their better-stat colour with as many, white with fewer.
+func limitColor(job, limit) -> Color:
+	var crewEntry = load("res://enceladus/CrewBio.gd").new()
+	var color = Color(1, 1, 1)
+	if hiredCount(job) > limit:
+		color = crewEntry.colorWorse
+	elif hiredCount(job) == limit:
+		color = crewEntry.colorBetter
+	crewEntry.free()
+	return color
+
+# How many of my crew have the entry's job (hiredCount), and its crew limit (the stored setting).
+func jobCounts(e) -> Array:
+	return [hiredCount(e.occupation), load(SETTINGS_SCRIPT).shared().getValue(CREW_LIMIT, e.occupation)]
+
+# The tooltip's second line for the entry's job: jobCounts(), as how many hired out of the crew limit.
+func hiredLine(tab, e) -> String:
+	return tr(tab._CHEAP_HIRE_HIRED_TOOLTIP) % jobCounts(e)
+
+# The text the entry's badge should read: the capitals of the mod's name, then jobCounts().
+func badgeText(tab, e) -> String:
+	return tr(tab._CHEAP_HIRE_BADGE_TEXT) % ([initials()] + jobCounts(e))
+
+# The capitals of the mod's name in its manifest.
+func initials() -> String:
+	var text = ""
+	for c in manifestValue("mod_information", "name"):
+		if c != c.to_lower():
+			text += c
+	return text
+
+# The text the entry's badge reads.
+func letters(tab, e) -> String:
+	var badge = badgeOf(tab, e)
+	var label = badge.get_child(0) if badge != null and badge.get_child_count() > 0 else null
+	return label.text if label is Label else "(no label)"
 
 # The mouse moved to `at` through the scene tree's input, as the player moves it. Controls get the mouse's enter and
 # exit only once the window has had the mouse enter it (Godot 3.6, found in the harness), which the OS reports with
@@ -191,6 +228,19 @@ func shownTip(tab, e) -> String:
 	var text = tooltips.tooltipLabel.text if tooltips.tooltipPosition.visible else "(no tooltip)"
 	moveMouse(Vector2(-10, -10))
 	return text
+
+# The badge where the mod puts it: above the entry's values (the game's fullNameNode), right-aligned with them, one
+# grid row gap above the details, at its minimum size.
+func placed(badge, e) -> bool:
+	var values = e.fullNameNode
+	var grid = values.get_parent()
+	var bottom = badge.rect_global_position.y + badge.rect_size.y
+	var right = badge.rect_global_position.x + badge.rect_size.x
+	var valuesRight = values.rect_global_position.x + values.rect_size.x
+	return is_equal_approx(right, valuesRight) and badge.rect_global_position.x >= values.rect_global_position.x and is_equal_approx(bottom, grid.rect_global_position.y - grid.get_constant("vseparation")) and badge.rect_size == badge.get_combined_minimum_size()
+
+func placement(badge, e) -> String:
+	return "%s %s (least %s), values at %s %s" % [badge.rect_global_position, badge.rect_size, badge.get_combined_minimum_size(), e.fullNameNode.rect_global_position, e.fullNameNode.rect_size]
 
 # No badge, or a hidden one.
 func unbadged(tab, e) -> bool:
@@ -214,11 +264,12 @@ func panels(node) -> int:
 func untouched(e) -> bool:
 	return e != null and not e.hireButton.has_color_override("font_color") and e.hireButton.hint_tooltip == ""
 
+# What the entry's badge reads, then the tooltip the game shows for it.
 func tip(tab, e) -> String:
 	var badge = badgeOf(tab, e)
 	if badge == null:
 		return "(no badge)"
-	return shownTip(tab, e) if badge.visible else "(hidden)"
+	return "%s | %s" % [letters(tab, e), shownTip(tab, e)] if badge.visible else "(hidden)"
 
 # The tooltip the mod's format gives for a job's name and limit, shown as the game shows a salary.
 func limitTip(tab, job, limit) -> String:
@@ -659,7 +710,7 @@ func run():
 	settings.loadFromState()
 
 	# The texts (i18n/en.po), also in a language without them (Godot's fallback, en)
-	var textKeys = [load(MENU_SCRIPT)._CHEAP_HIRE_ALERT, load(MENU_SCRIPT)._CHEAP_HIRE_SETTINGS_TOOLTIP, load(HIRE_TAB_SCRIPT)._CHEAP_HIRE_LIMIT_TOOLTIP, load(HIRE_TAB_SCRIPT)._CHEAP_HIRE_FULL_TOOLTIP, load(HIRE_TAB_SCRIPT)._CHEAP_HIRE_HIRED_TOOLTIP, load(UI_SCRIPT).GROUP_LABEL]
+	var textKeys = [load(MENU_SCRIPT)._CHEAP_HIRE_ALERT, load(MENU_SCRIPT)._CHEAP_HIRE_SETTINGS_TOOLTIP, load(HIRE_TAB_SCRIPT)._CHEAP_HIRE_LIMIT_TOOLTIP, load(HIRE_TAB_SCRIPT)._CHEAP_HIRE_FULL_TOOLTIP, load(HIRE_TAB_SCRIPT)._CHEAP_HIRE_HIRED_TOOLTIP, load(HIRE_TAB_SCRIPT)._CHEAP_HIRE_BADGE_TEXT, load(UI_SCRIPT).GROUP_LABEL, load(UI_SCRIPT).CREW_LIMIT_VALUE]
 	for key in model.SETTINGS:
 		textKeys.append(model.SETTINGS[key].label)
 	var translated = true
@@ -688,19 +739,10 @@ func run():
 	var badge = badgeOf(tab, e)
 	check("a cheap hire's entry has a visible badge", badge != null and badge.visible)
 	if badge != null:
-		var values = e.fullNameNode
-		var grid = values.get_parent()
-		var bottom = badge.rect_global_position.y + badge.rect_size.y
-		var right = badge.rect_global_position.x + badge.rect_size.x
-		var valuesRight = values.rect_global_position.x + values.rect_size.x
-		check("above the values, right-aligned with them, one grid row gap above the details, at its minimum size", is_equal_approx(right, valuesRight) and badge.rect_global_position.x >= values.rect_global_position.x and is_equal_approx(bottom, grid.rect_global_position.y - grid.get_constant("vseparation")) and badge.rect_size == badge.get_combined_minimum_size(), "%s %s, values at %s %s" % [badge.rect_global_position, badge.rect_size, values.rect_global_position, values.rect_size])
+		check("above the values, right-aligned with them, one grid row gap above the details, at its minimum size", placed(badge, e), placement(badge, e))
 		check("inside the entry, in the empty band above the details", badge.rect_global_position.y >= e.rect_global_position.y, "%s, entry at %s" % [badge.rect_global_position, e.rect_global_position])
-		var initials = ""
-		for c in manifestValue("mod_information", "name"):
-			if c != c.to_lower():
-				initials += c
 		var label = badge.get_child(0) if badge.get_child_count() > 0 else null
-		check("holding the capitals of the mod's name", label is Label and label.text == initials, label.text if label is Label else "(no label)")
+		check("reading the capitals of the mod's name, then how many of that job I've hired out of its crew limit", label is Label and label.text == badgeText(tab, e), letters(tab, e))
 		check("in the Hire button's font color times the entry's colorBetter", label is Label and label.get_color("font_color").is_equal_approx(HIRE_FONT_COLOR * e.colorBetter))
 		var frame = tab.theme.get_stylebox("normal", "Button")
 		var copy = badge.get_stylebox("panel")
@@ -767,10 +809,17 @@ func run():
 		var cheaperPilot = member("Cheaper Pilot", PILOT, h - 100)
 		day([cheaperPilot], [hiredPilot])
 		yield(frames(1), "completed") # a new entry, laid out at the frame's end
-		settings.setValue(CREW_LIMIT, 1, PILOT)
 		e = hireEntry(tab, cheaperPilot)
+		var wide = badgeOf(tab, e).rect_size.x if badgeOf(tab, e) != null else 0.0
+		var wideText = letters(tab, e)
+		settings.setValue(CREW_LIMIT, 1, PILOT)
 		check("in a full job, a cheaper hire's badge tells the job is full, with my best-paid salary there", badgedWith(tab, e, fullTip(tab, PILOT_EN, h)), tip(tab, e))
 		check("and, on a second line, that I've hired 1 pilot out of 1", tip(tab, e).ends_with("\n" + tr(tab._CHEAP_HIRE_HIRED_TOOLTIP) % [1, 1]), tip(tab, e))
+		yield(frames(1), "completed") # the controls' deferred minimum size updates
+		badge = badgeOf(tab, e)
+		check("the badge's shorter text (the lower crew limit) shrinks it: at its minimum size, still right-aligned with the values, one grid row gap above them", badge != null and placed(badge, e), placement(badge, e) if badge != null else "(no badge)")
+		if badge != null and badge.rect_size.x >= wide:
+			note("the badge got no narrower with the lower crew limit (%s, %s wide, then %s, %s wide): the shrink isn't checked" % [wideText, wide, letters(tab, e), badge.rect_size.x])
 		settings.setValue(CREW_LIMIT, 2, PILOT)
 		check("with room in the job again, the badge gives the limit", badged(tab, e, PILOT_EN, capped(h)), tip(tab, e))
 		check("and that I've hired 1 out of 2", tip(tab, e).ends_with("\n" + tr(tab._CHEAP_HIRE_HIRED_TOOLTIP) % [1, 2]), tip(tab, e))
@@ -779,7 +828,7 @@ func run():
 		day([cheaperPilot], [hiredPilot, benched(member("Benched Pilot", PILOT, h - 500)), onLeave(member("Away Pilot", PILOT, h - 400))])
 		yield(frames(1), "completed")
 		e = hireEntry(tab, cheaperPilot)
-		check("benched and on-leave pilots count in that line too, out of the default limit", tip(tab, e).ends_with("\n" + tr(tab._CHEAP_HIRE_HIRED_TOOLTIP) % [3, cl.default]), tip(tab, e))
+		check("benched and on-leave pilots count in that line and on the badge too, out of the default limit", tip(tab, e).ends_with("\n" + tr(tab._CHEAP_HIRE_HIRED_TOOLTIP) % [3, cl.default]) and letters(tab, e) == tr(tab._CHEAP_HIRE_BADGE_TEXT) % [initials(), 3, cl.default], tip(tab, e))
 	else:
 		note("the crew limit's range doesn't reach from 1 to 2: the full job's badge isn't checked")
 
@@ -836,11 +885,18 @@ func run():
 	check("two Tuning groups: the settings that are not per job, then the crew limit, one row per job", g.size() == 2 and g[0].get_node("Label").text == load(UI_SCRIPT).GROUP_LABEL and g[1].get_node("Label").text == cl.label, g.size())
 	check("in an Items box in the scroll, as the Tuning screen's", screen.get_node_or_null("VB/ScrollContainer/Items") is VBoxContainer)
 	check("right below the header", screen.get_node("VB/ScrollContainer").get_index() == screen.get_node("VB/HeaderWithMoney").get_index() + 1)
-	# A different crew limit for each job, so each row shows its own.
+	# A different crew limit for each job, so each row shows its own, and a different number hired: more pilots than
+	# their limit, as many mechanics as theirs, nobody else.
 	var step = 0
 	for job in CurrentGame.occupations:
 		settings.setValue(CREW_LIMIT, clamp(cl.max - step * cl.step, cl.min, cl.max), job)
 		step += 1
+	var hiredCrew = []
+	for i in range(int(settings.getValue(CREW_LIMIT, PILOT)) + 1):
+		hiredCrew.append(member("Pilot %d" % i, PILOT, t))
+	for i in range(int(settings.getValue(CREW_LIMIT, MECHANIC))):
+		hiredCrew.append(member("Mechanic %d" % i, MECHANIC, t))
+	setCrew([], hiredCrew)
 	screen.hide()
 	yield(frames(40), "completed")
 	click(s.crew, true)
@@ -861,6 +917,52 @@ func run():
 	check("each slider has its setting's range and step, in the units shown", rangesOk)
 	check("and starts from the current value, its job's for a crew limit", valuesOk)
 	check("the first slider has the focus", r.size() > 0 and r[0].get_node("HSlider").has_focus())
+	# A crew limit row's value: how many of its job I've hired, then the limit, as the mod's text puts them.
+	var hiredOk = labelsOk
+	var othersOk = labelsOk
+	var shownValues = []
+	for i in range(min(r.size(), expected.size())):
+		var key = expected[i][1]
+		var valueText = r[i].get_node("HBoxContainer/Value").text
+		shownValues.append(valueText)
+		if key == CREW_LIMIT:
+			var job = expected[i][2]
+			hiredOk = hiredOk and valueText == tr(load(UI_SCRIPT).CREW_LIMIT_VALUE) % [hiredCount(job), int(settings.getValue(key, job))]
+		else:
+			othersOk = othersOk and not "format" in r[i].tune and valueText == CurrentGame.formatThousands(r[i].get_node("HSlider").value)
+	check("each crew limit row shows how many of its job I've hired before its limit", hiredOk, shownValues)
+	check("and the other rows show their value as the game does", othersOk, shownValues)
+	# Its colour: the crew screens' for a worse stat with more hired than the limit, for a better one with as many.
+	var colorsOk = labelsOk
+	var states = {}
+	var colorsShown = []
+	for i in range(min(r.size(), expected.size())):
+		if expected[i][1] == CREW_LIMIT:
+			var job = expected[i][2]
+			var limit = settings.getValue(CREW_LIMIT, job)
+			var color = r[i].get_node("HBoxContainer/Value").modulate
+			colorsShown.append(color)
+			colorsOk = colorsOk and color == limitColor(job, limit)
+			states[sign(hiredCount(job) - limit)] = true
+	check("on opening, a crew limit row's value has the crew screens' worse-stat colour with more of its job hired than its limit, their better-stat colour with as many, and the game's own with fewer", colorsOk, colorsShown)
+	if states.size() < 3:
+		note("the crew limits don't give a row over, at and under its limit: %s" % [states.keys()])
+	var mechanicLimitRow = rowOf(model, CREW_LIMIT, MECHANIC)
+	var mechanicLimit = settings.getValue(CREW_LIMIT, MECHANIC)
+	if mechanicLimitRow < 0 or mechanicLimitRow >= r.size():
+		check("the mechanics' crew limit row is there", false, mechanicLimitRow)
+	elif mechanicLimit + cl.step > cl.max or mechanicLimit - cl.step < cl.min:
+		note("the crew limit's range has no step above and below the mechanics' limit: its colours aren't checked as the slider moves")
+	else:
+		var mechanicSlider = r[mechanicLimitRow].get_node("HSlider")
+		var mechanicValue = r[mechanicLimitRow].get_node("HBoxContainer/Value")
+		mechanicSlider.value = settings.toShown(CREW_LIMIT, mechanicLimit + cl.step)
+		check("moving the mechanics' crew limit slider keeps the number hired before the new limit", mechanicValue.text == tr(load(UI_SCRIPT).CREW_LIMIT_VALUE) % [hiredCount(MECHANIC), int(mechanicLimit + cl.step)], mechanicValue.text)
+		check("and its colour follows: the game's own with fewer hired than the limit", mechanicValue.modulate == Color(1, 1, 1), mechanicValue.modulate)
+		mechanicSlider.value = settings.toShown(CREW_LIMIT, mechanicLimit)
+		check("the crew screens' better-stat colour with as many", mechanicValue.modulate == limitColor(MECHANIC, mechanicLimit) and mechanicValue.modulate != Color(1, 1, 1), mechanicValue.modulate)
+		mechanicSlider.value = settings.toShown(CREW_LIMIT, mechanicLimit - cl.step)
+		check("their worse-stat colour with more", mechanicValue.modulate == limitColor(MECHANIC, mechanicLimit - cl.step) and mechanicValue.modulate != Color(1, 1, 1), mechanicValue.modulate)
 	# The crew limit's rows by the jobs' names, in the language the screen opens in.
 	g = groups(screen)
 	var orderEn = rowJobs(g[1]) if g.size() > 1 else []

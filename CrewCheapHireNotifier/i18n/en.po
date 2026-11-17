@@ -1,6 +1,6 @@
 # CrewCheapHireNotifier: its texts, in English. Godot shows English for any language without its own file (its
 # fallback locale), so another language only needs a copy of this file with its Language and msgstr lines translated,
-# loaded in ModMain.gd. Keep each %s: the code fills them in.
+# loaded in ModMain.gd. Keep each %s and %d: the code fills them in.
 msgid ""
 msgstr ""
 "Language: en\n"
@@ -14,7 +14,12 @@ msgstr "%s (*)"
 msgid "CREWCHEAPHIRENOTIFIER_SETTINGS_TOOLTIP"
 msgstr "Click while pressing %s to open the %s settings."
 
-# The Hire screen badge's tooltip; the first %s is the job, the second the limit.
+# The Hire screen badge; the %s is the capitals of the mod's name, the first %d how many crew members with the job you
+# have hired, the second its crew limit.
+msgid "CREWCHEAPHIRENOTIFIER_BADGE"
+msgstr "%s %d/%d"
+
+# The badge's tooltip; the first %s is the job, the second the limit.
 msgid "CREWCHEAPHIRENOTIFIER_LIMIT_TOOLTIP"
 msgstr "Your limit for %s: %s"
 
@@ -40,3 +45,8 @@ msgstr "Salary tolerance"
 
 msgid "CREWCHEAPHIRENOTIFIER_CREW_LIMIT"
 msgstr "Crew limit"
+
+# A Crew limit row's value; the first %s is how many crew members with that job you have hired, the second the crew
+# limit the row sets.
+msgid "CREWCHEAPHIRENOTIFIER_CREW_LIMIT_VALUE"
+msgstr "%s/%s"

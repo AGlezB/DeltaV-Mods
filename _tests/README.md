@@ -146,7 +146,8 @@ GeologyByMass, `fleet` loads ShipCopyPaste, `skip` loads DiveSkipTransit, `deale
   `HireableCrew.gd` and `CrewBio.gd`, with a theme holding a Button font color and a flat frame with an overbright
   border, and the menu beside it. Each qualifying person's entry, at and below the limit, has a visible badge:
   above the details grid's values, right-aligned with them, one grid row gap above, at its minimum size and inside
-  the entry; the capitals of the manifest's name in the Hire button's font color times `colorBetter`; a copy of the
+  the entry; the capitals of the manifest's name, then how many of that job are hired out of its crew limit, as the
+  mod's text formats them, in the Hire button's font color times `colorBetter`; a copy of the
   Hire button's frame with a `colorBetter` border, the theme's frame unchanged; letting the mouse through; a mouse
   moved onto it through the scene tree's input (after `NOTIFICATION_WM_MOUSE_ENTER`: without it, a window-less Godot
   3.6 sends no control the mouse's enter) shows the limit for the job in the game's tooltip (the entry's
@@ -154,8 +155,10 @@ GeologyByMass, `fleet` loads ShipCopyPaste, `skip` loads DiveSkipTransit, `deale
   and the entry's height unchanged. Above the limit, no badge; the menu is marked exactly when an entry has one. A new
   day judges kept entries again, one badge each; firing (`employmentChanged`) hides it; hiring there gives another
   pilot one with the new limit; a setting shows and hides it; in a full job the tooltip tells so, with the best-paid
-  salary, and gives the limit again once there is room; every tooltip has a second line with how many of that job are
-  hired (benched and on-leave crew too) out of its crew limit; the tooltip follows a language change. A new entry is
+  salary, and gives the limit again once there is room; every badge reads, and every tooltip has a second line with,
+  how many of that job are hired (benched and on-leave crew too) out of its crew limit; a shorter text (the lower
+  crew limit) shrinks the badge to its minimum size, still right-aligned, a frame later (the controls' deferred size
+  updates); the tooltip follows a language change. A new entry is
   hovered a frame after it is made, once its containers have laid it out. With CrewPerfectSort loaded too (`-Mods
   CrewCheapHireNotifier,CrewPerfectSort`), the list is sorted and the badges stay. Then a station built as
   `enceladus/Enceladus.tscn` nests it (the menu, and the game's `HidingMarginContainer.gd` with stubs of the Crew and Tuning screens, `harness/crew_screen.gd`),
@@ -163,7 +166,11 @@ GeologyByMass, `fleet` loads ShipCopyPaste, `skip` loads DiveSkipTransit, `deale
   settings and not the Crew screen, a plain click the Crew screen, a disabled entry nothing; the screen copies
   Tuning's frame and place; it has two groups in an `Items` box right below the header (the settings that are not per
   job, then the crew limit, one row per job named by its key, in alphabetical order of the jobs' names whatever the case, and in a second language that language's order; test names for all four jobs in both), each row with its range, step and
-  value (each job's own); opening it stores nothing; moving a slider (the threshold, the tolerance, the pilots' crew
+  value (each job's own); each crew limit row's value shows how many of its job are hired before its limit, as the
+  mod's text puts them (more pilots hired than their limit, as many mechanics as theirs, nobody else), also once its
+  slider is moved, in the game's `CrewBio.gd` worse-stat colour over the limit, its better-stat colour at it and the
+  game's own under it, on opening and as the mechanics' slider moves through all three, and the other rows show
+  theirs as the game does; opening it stores nothing; moving a slider (the threshold, the tolerance, the pilots' crew
   limit) flips the mark at once and stores the value (the pilots' only); reset;
   Esc (handled, so `harness/unhandled_probe.gd`, standing in for the pause menu, doesn't get it), the controller's B
   and Start, and focusing another entry close it; after a JSON round trip of the state a new station has the saved
@@ -391,7 +398,7 @@ GeologyByMass, `fleet` loads ShipCopyPaste, `skip` loads DiveSkipTransit, `deale
 - **Baseline** (both arm load orders give the same results): `units` 114 checks with both arm mods (64 with
   PullBehavior alone, 61 with TargetSelection alone), `still` 9, `moving` 16, `dive` 8, `boot` 5 (3 control checks
   with `-Mods @()`), `lidar` 40 (3 control checks with `-Mods @()`), `hud` 13 (3 control checks with `-Mods @()`),
-  `crew` 140 (141 with CrewPerfectSort too, in both load orders; the same 140 with DealerNotifier too, in both; 3
+  `crew` 148 (149 with CrewPerfectSort too, in both load orders; the same 148 with DealerNotifier too, in both; 3
   control checks with `-Mods @()`), `geology` 60 (3 control checks with `-Mods @()`), `fleet` 70 (the same with
   ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too; 3 control checks with `-Mods @()`), `skip` 109 (112 with
   CrewCheapHireNotifier too, the same with DealerNotifier as well; 13 control checks with `-Mods @()`), `dealer` 92

@@ -2,8 +2,8 @@ extends "res://enceladus/HireableCrew.gd"
 
 # The Hire screen: everyone who counts (the settings model's isCheapHire, the rule that marks the station menu's Crew
 # entry) gets a badge above the values of their entry's details, right-aligned with them: the capitals of the mod's
-# name in an outline, with a tooltip giving the limit for their job, or telling that the job is full, and how many
-# crew members with the job you have hired out of its crew limit.
+# name and how many crew members with their job you have hired out of its crew limit, in an outline, with a tooltip
+# giving the limit for their job, or telling that the job is full, and those two numbers in words.
 
 # The settings and the rule: their model, shared with the station menu and the settings screen.
 const CrewCheapHireNotifier = preload("res://CrewCheapHireNotifier/Settings.gd")
@@ -15,6 +15,9 @@ const _CHEAP_HIRE_FULL_TOOLTIP = "CREWCHEAPHIRENOTIFIER_FULL_TOOLTIP"
 # Its second line: the first %d is how many crew members with the job you have hired (crewCount), the second its crew
 # limit.
 const _CHEAP_HIRE_HIRED_TOOLTIP = "CREWCHEAPHIRENOTIFIER_HIRED_TOOLTIP"
+# The badge's text, a translation key of i18n/en.po: the %s is the capitals of the mod's name, the first %d how many
+# crew members with the job you have hired (crewCount), the second its crew limit.
+const _CHEAP_HIRE_BADGE_TEXT = "CREWCHEAPHIRENOTIFIER_BADGE"
 
 # The badge's node name in an entry, so that a refresh finds the badge it made.
 const _CHEAP_HIRE_BADGE = "CrewCheapHireNotifierBadge"
@@ -35,7 +38,8 @@ func fillCrew():
 	_markCheapHires()
 
 # Entries are told apart from other children by `fullName`, as fillCrew does. The game keeps an entry from one day to
-# the next, so each is judged again; the game never touches the badge, so hiding it is enough.
+# the next, so each is judged again; the game never touches the badge, so hiding it is enough. The badge's text holds
+# counts that change, so it is set on every mark; the badge follows its size by itself, narrower as well as wider.
 func _markCheapHires():
 	if hireableCrew == null:
 		return
@@ -46,14 +50,20 @@ func _markCheapHires():
 		var badge = _cheapHireAnchor(entry).get_node_or_null(_CHEAP_HIRE_BADGE)
 		if settings.isCheapHire(entry):
 			badge = _cheapHireBadge(entry)
+			badge.get_child(0).text = _cheapHireBadgeText(settings, entry.occupation)
 			badge.hint_tooltip = _cheapHireTooltip(settings, entry.occupation)
 			badge.visible = true
 		elif badge != null:
 			badge.visible = false
 
+# The badge's text for a job: the capitals of the mod's name, then how many crew members with the job you have hired
+# out of its crew limit. The crew limit comes back from the save as a float, so it is made a whole number for %d.
+func _cheapHireBadgeText(settings, occupation) -> String:
+	return tr(_CHEAP_HIRE_BADGE_TEXT) % [_cheapHireInitials(), settings.crewCount(occupation), int(settings.getValue("crewLimit", occupation))]
+
 # The badge's tooltip for a job, with the salary formatted as CrewBio.gd formats one, rounded down. Each sentence on
-# its own line, as the game's own tooltips are; the tooltip's Label grows with them. The crew limit comes back from the
-# save as a float, so it is made a whole number for %d.
+# its own line, as the game's own tooltips are; the tooltip's Label grows with them. The crew limit is made a whole
+# number for %d, as in the badge's text.
 func _cheapHireTooltip(settings, occupation) -> String:
 	var text
 	if settings.isJobFull(occupation):
@@ -68,11 +78,11 @@ func _cheapHireTooltip(settings, occupation) -> String:
 func _cheapHireAnchor(entry):
 	return entry.fullNameNode
 
-# The entry's badge, made on first use: above the values, right-aligned with them. Anchored to the top value's
-# top-right corner, its bottom edge one grid row gap (the grid's vseparation) above it, it grows left and up to its
-# minimum size, so it follows the values wherever the layout puts them, in the empty band above the details (the
-# portrait sets the entry's height). As a child of the details it fades with them in the game's hire animation. It
-# lets the mouse through, so the wheel still scrolls the list, and still gets the mouse's enter and exit.
+# The entry's badge, made on first use, its text left to _markCheapHires: above the values, right-aligned with them.
+# Anchored to the top value's top-right corner, its bottom edge one grid row gap (the grid's vseparation) above it, it
+# grows left and up to its minimum size, so it follows the values wherever the layout puts them, in the empty band above
+# the details (the portrait sets the entry's height). As a child of the details it fades with them in the game's hire
+# animation. It lets the mouse through, so the wheel still scrolls the list, and still gets the mouse's enter and exit.
 # The frame is a copy of the Hire button's (menu/ButtonRoundCorners.tres in the game) with its border in the entry's
 # colorBetter: the game's border is overbright, and tinted it would clip to white. The letters are in the green the
 # entry shows for a better stat (compareStats sets colorBetter as that stat button's modulate).
@@ -102,7 +112,6 @@ func _cheapHireBadge(entry):
 		frame.border_color = entry.colorBetter
 	badge.add_stylebox_override("panel", frame)
 	var label = Label.new()
-	label.text = _cheapHireInitials()
 	label.add_color_override("font_color", entry.hireButton.get_color("font_color") * entry.colorBetter)
 	badge.add_child(label)
 	anchor.add_child(badge)

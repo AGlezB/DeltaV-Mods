@@ -1,5 +1,26 @@
 # CrewCheapHireNotifier - Changes
 
+## 1.9.0
+- On the settings screen, a Crew limit row's value turns light red (the crew screens' colour for a worse stat) while
+  more crew members with that job are hired than its limit, and green (their colour for a better stat) when exactly as
+  many.
+- `SettingsUI.gd`: `GAME_CREW_ENTRY` and `_colorCrewLimit()` added.
+- README: the colours.
+
+## 1.8.0
+- On the settings screen, each Crew limit row shows how many crew members with that job you have hired before the
+  limit, as the Hire screen badge does.
+- `i18n/en.po`: `CREWCHEAPHIRENOTIFIER_CREW_LIMIT_VALUE` added. `SettingsUI.gd`: `CREW_LIMIT_VALUE` and
+  `_hiredFormat()` added.
+- README: the Crew limit rows' value.
+
+## 1.7.0
+- The Hire screen badge shows, after the capitals of the mod's name, how many crew members with that job you have
+  hired (active, benched or on leave) out of its crew limit, the same two numbers as its tooltip's second line.
+- `i18n/en.po`: `CREWCHEAPHIRENOTIFIER_BADGE` added. `HireScreen.gd`: `_CHEAP_HIRE_BADGE_TEXT` and
+  `_cheapHireBadgeText()` added.
+- README: the badge's text.
+
 ## 1.6.1
 - The mod's id is now `AGlezB.CrewCheapHireNotifier` and its author `AGlezB` (were lowercase). Settings saved
   under the old id are not read: they start from the defaults.

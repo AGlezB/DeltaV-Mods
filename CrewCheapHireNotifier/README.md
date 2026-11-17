@@ -15,12 +15,13 @@ Marks the Crew entry of the Enceladus Prime menu while someone cheap is for hire
   With a limit of 0 and nobody in the job, nobody for hire in it counts. Each limit starts at the most it can be
   (`CREW_LIMIT_MAX`), so no job is full until you lower its limit.
 - **On the Hire screen:** everyone who qualifies gets a badge above the values of their details (their name,
-  occupation, …), right-aligned with them: the capitals of the mod's name (CCHN) in the game's button frame, outlined
-  and lettered in the light green the screen already uses for a better stat. Hovering the badge shows the limit for
-  their job in the game's own tooltip, as the `CREWCHEAPHIRENOTIFIER_LIMIT_TOOLTIP` text says; in a full job, that the
-  job is full and the salary to beat, as the `CREWCHEAPHIRENOTIFIER_FULL_TOOLTIP` text says. A second line says how
-  many crew members with that job you have hired out of its crew limit, as the `CREWCHEAPHIRENOTIFIER_HIRED_TOOLTIP`
-  text says. It is the same rule as the menu entry's, so the menu is marked exactly when someone there has a badge.
+  occupation, …), right-aligned with them: the capitals of the mod's name (CCHN), then how many crew members with
+  their job you have hired out of its crew limit, as the `CREWCHEAPHIRENOTIFIER_BADGE` text says, in the game's button
+  frame, outlined and lettered in the light green the screen already uses for a better stat. Hovering the badge shows
+  the limit for their job in the game's own tooltip, as the `CREWCHEAPHIRENOTIFIER_LIMIT_TOOLTIP` text says; in a full
+  job, that the job is full and the salary to beat, as the `CREWCHEAPHIRENOTIFIER_FULL_TOOLTIP` text says. A second
+  line spells out the badge's two numbers, as the `CREWCHEAPHIRENOTIFIER_HIRED_TOOLTIP` text says. It is the same rule
+  as the menu entry's, so the menu is marked exactly when someone there has a badge.
 - **The tolerance:** a percentage of your best-paid crew member's salary in that job. A positive one lets a hire earn
   up to that much more and still count (50 % would let a salary up to half as much again count); a negative one
   requires them to earn at least that much less (−20 %: a fifth less, or more); 0 % means as much or less. Its range is
@@ -43,14 +44,17 @@ Marks the Crew entry of the Enceladus Prime menu while someone cheap is for hire
     menu.
   - Two groups: *Cheap hire alert* with the *Salary threshold* and the *Salary tolerance*, then *Crew limit* with one
     row per job, in alphabetical order of the jobs' names in the game's language. Each row has a slider and a button
-    that resets it to its default. A change applies at once.
+    that resets it to its default. A change applies at once. A *Crew limit* row shows how many crew members with that
+    job you have hired before the limit, as the `CREWCHEAPHIRENOTIFIER_CREW_LIMIT_VALUE` text says, counted as the
+    screen opens. The two numbers turn light red, the crew screens' colour for a worse stat, while you have hired more
+    than the limit, and green, their colour for a better stat, when exactly as many.
   - They are kept in your save game, each save with its own, and written to disk the next time the game saves (when
     you launch a dive, or quit through the pause menu). A new game, or a save made before the mod, starts from the
     defaults.
   - Opening them needs a mouse and a keyboard; a controller can use and close them.
   - Each setting's default, range and step are in `SETTINGS` at the top of `CrewCheapHireNotifier/Settings.gd`, inside
-    the zip, with `CREW_LIMIT_MAX` above it; a crew limit's apply to every job. The mod's texts (the mark, the
-    tooltips, the settings' names) are in `CrewCheapHireNotifier/i18n/en.po`.
+    the zip, with `CREW_LIMIT_MAX` above it; a crew limit's apply to every job. The mod's texts (the mark, the badge,
+    the tooltips, the settings' names, the crew limit rows' value) are in `CrewCheapHireNotifier/i18n/en.po`.
 
 ## For modders
 - Four scripts: `Code.gd` (the station menu's script extension: the Crew entry, opening the settings), `HireScreen.gd`
@@ -98,21 +102,27 @@ Marks the Crew entry of the Enceladus Prime menu while someone cheap is for hire
   - **The badge** is a `PanelContainer` named `_CHEAP_HIRE_BADGE`, a child of the entry's top value
     (`_cheapHireAnchor()`: the game's `fullNameNode`, which spans the details grid's values column to its right edge,
     its text right-aligned, in `CrewBio.tscn`). The mod makes it the first time the entry qualifies, and then only
-    shows or hides it; the game never touches it.
+    shows or hides it and sets its text; the game never touches it.
   - **Where:** a Label is no container, so it leaves the badge where its anchors and margins put it: anchored to the
     top value's top-right corner (`PRESET_TOP_RIGHT`), its bottom edge one grid row gap (the grid's `vseparation`)
     above the value, and both grow directions set to `GROW_DIRECTION_BEGIN`, so it grows left and up to its minimum
-    size and its right edge stays on the values' right edge. It follows the values wherever the layout puts them (font,
-    language), and no game node is moved, so the paths of the game's `hire` animation still hold. The space above the
+    size and its right edge stays on the values' right edge. Godot keeps it at its minimum size as its text changes,
+    narrower as well as wider (within the frame, once the controls' deferred size updates have run). It follows the
+    values wherever the layout puts them (font, language), and no game node is moved, so the paths of the game's
+    `hire` animation still hold. The space above the
     details is empty: they sit at the bottom of the entry and the portrait sets its height (`CrewBio.tscn`), so the
     badge takes no room. As a child of the details it flashes and fades with them in the `hire` animation, and with
     the entry in its `grow` animation.
   - **Look:** its frame is a copy of the Hire button's `normal` stylebox (`menu/ButtonRoundCorners.tres` through
     `enceladus/Subwindow.theme`), duplicated so the game's shared resource is never edited. A `StyleBoxFlat` frame gets
     its border in the entry's `colorBetter`: the game's border is an overbright white, and the game renders without HDR,
-    so tinting it would clip to white. The letters, `_cheapHireInitials()` (the capitals of `modName()`), are a Label in
-    the entry's font, colored the Hire button's `font_color` times `colorBetter`. That is the green the entry shows for
-    a better stat: `CrewBio.gd` `compareStats` sets `colorBetter` as that stat button's `modulate`.
+    so tinting it would clip to white. The letters are a Label in the entry's font, colored the Hire button's
+    `font_color` times `colorBetter`. That is the green the entry shows for a better stat: `CrewBio.gd` `compareStats`
+    sets `colorBetter` as that stat button's `modulate`.
+  - **The text** is `_cheapHireBadgeText()`: `tr(_CHEAP_HIRE_BADGE_TEXT)` with `_cheapHireInitials()` (the capitals of
+    `modName()`), `crewCount` and the job's crew limit (made a whole number: the save gives it back as a float), the
+    same two numbers as the tooltip's second line. The counts change with hires, dismissals and the settings, so
+    `_markCheapHires` sets the text every time it marks.
   - **The tooltip** is the badge's `hint_tooltip` (`_cheapHireTooltip()`): `tr(_CHEAP_HIRE_LIMIT_TOOLTIP)` with the
     job, translated, and the limit; in a full job, `tr(_CHEAP_HIRE_FULL_TOOLTIP)` with the job and `bestPaid`. Salaries
     are formatted as `CrewBio.gd` formats one (`CurrentGame.formatThousands` and ` E$`), rounded down. They are whole
@@ -152,6 +162,20 @@ Marks the Crew entry of the Enceladus Prime menu while someone cheap is for hire
     the order follows a language change. Titles and row names are translation keys, which the game's Labels translate
     themselves. A group's `key` comes back as the first argument of its `tuningChanged`: null for the first group,
     whose rows the screen maps to their settings by label, or the per-job setting's key, whose rows are its jobs.
+  - **The crew limit rows' value:** the game's row (`TuningFloatValue.gd` `changed`) shows its value as
+    `format % value` when its description has a `format`, else with `formatThousands`, and does it again on every move
+    of its slider. A crew limit row gets `_hiredFormat()`: `tr(CREW_LIMIT_VALUE)` with `crewCount` in its first `%s`
+    and a literal `%d` in its second, which the row then fills with its value, so the number hired stays in front of
+    the limit while the slider moves. It is counted as the screen opens, and can't go stale while it is open: the
+    crew changes only on screens that close it (a menu entry's focus, `hidefoka`).
+  - **Its colour** (`_colorCrewLimit()`): the value label's `modulate` (the row's `HBoxContainer/Value`, kept in
+    `_valueLabels` by job) is the crew screens' `colorWorse` with more of the job hired than its limit, their
+    `colorBetter` with as many, and white (the game's own colour) with fewer, set through `modulate` as `CrewBio.gd`
+    `compareStats` colours a stat. Both colours are read in `setup` from a throwaway instance of the crew entries'
+    script (`GAME_CREW_ENTRY`, `enceladus/CrewBio.gd`), which is safe: the script has no `_init`, and `CrewBio.tscn`
+    sets neither colour. The rows' first `tuningChanged`, from their `_ready`, comes before the screen connects to
+    their group, so `_fill` colours them first; then every `tuningChanged` of a crew limit row (a slider move, its
+    reset, its focus) colours it again.
 - **The settings model** (`Settings.gd`, a `Reference`): `shared()` returns the one instance, kept as metadata of the
   script, since Godot 3 has no static variables. `SETTINGS` describes each setting (label, default, min, max, step,
   unit, `shown`, the factor between the stored value and the one shown: a fraction is shown as %, and `perJob`);
@@ -171,10 +195,10 @@ Marks the Crew entry of the Enceladus Prime menu while someone cheap is for hire
   setting, a dictionary by job key (a copy, so the entry never shares the model's). A saved key renamed without a
   migration, or a new id, would lose the saved values.
 - **The texts.** `i18n/en.po` (the game keeps its own in `i18n/` too) holds every text the mod shows, under keys that
-  start with `CREWCHEAPHIRENOTIFIER_`: the mark, the four tooltip texts, the settings group's title, and each setting's
-  name (its `label`). `ModMain.gd` loads it
-  with `load()` and `TranslationServer.add_translation`, as the game loads its own `.po` files. English is Godot's
-  fallback language, so every language shows it until it gets its own file. The mod loader's `addTranslationsFromCSV`
+  start with `CREWCHEAPHIRENOTIFIER_`: the mark, the badge, the four tooltip texts, the settings group's title, each
+  setting's name (its `label`) and the crew limit rows' value. `ModMain.gd` loads it with `load()` and
+  `TranslationServer.add_translation`, as the game loads its own `.po` files. English is Godot's fallback language, so
+  every language shows it until it gets its own file. The mod loader's `addTranslationsFromCSV`
   is not used: it reads nothing from a mod's zip, because a file in a zip reports its end before the first read, and
   `get_csv_line` checks for the end first.
 - Both extensions override `_ready` and `_notification`, which their parents do not have, and do not call the
@@ -184,15 +208,17 @@ Marks the Crew entry of the Enceladus Prime menu while someone cheap is for hire
   `_cheapHireSettings`, `_cheapHireScreens`, `_cheapHireTuning`, `_updateCheapHire()`, `_cheapHireAvailable()`,
   `_onCrewInput()` and `_openCheapHireSettings()`.
 - Members of the Hire screen's extension (`HireScreen.gd`): `CrewCheapHireNotifier` (preload),
-  `_CHEAP_HIRE_LIMIT_TOOLTIP`, `_CHEAP_HIRE_FULL_TOOLTIP` and `_CHEAP_HIRE_HIRED_TOOLTIP` (translation keys),
-  `_CHEAP_HIRE_BADGE`, `_markCheapHires()`, `_cheapHireTooltip()`, `_cheapHireAnchor()`, `_cheapHireBadge()` and
-  `_cheapHireInitials()`.
+  `_CHEAP_HIRE_LIMIT_TOOLTIP`, `_CHEAP_HIRE_FULL_TOOLTIP`, `_CHEAP_HIRE_HIRED_TOOLTIP` and `_CHEAP_HIRE_BADGE_TEXT`
+  (translation keys), `_CHEAP_HIRE_BADGE`, `_markCheapHires()`, `_cheapHireBadgeText()`, `_cheapHireTooltip()`,
+  `_cheapHireAnchor()`, `_cheapHireBadge()` and `_cheapHireInitials()`.
 - Tested only outside the game, in a headless Godot 3.6 with the game's `EnceladusMenu.gd`, `HidingMarginContainer.gd`,
   `TuningItems.gd`, `TuningFloatValue.gd`, `AnalogControlSlider.gd`, `HireableCrew.gd`, `CrewBio.gd`,
   `PlaySoundsOnTheseButtons.gd` and `Shower.tscn`. The station and the Hire tab are built in code as their scenes nest
   them, with a stub of a Hire screen entry's scene and stubs of `CurrentGame` and of the Crew and Tuning screens (the
   `crew` suite of the repository's test harness), alone and with CrewPerfectSort in both load orders. The badge's
-  tooltip is checked with a mouse moved through the scene tree's input. It has not been checked in a real game.
+  text is checked wherever it is shown, and its size when the text gets shorter; its tooltip with a mouse moved
+  through the scene tree's input. The crew limit rows' value and its colours are checked on opening and as a slider
+  moves. It has not been checked in a real game.
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.
