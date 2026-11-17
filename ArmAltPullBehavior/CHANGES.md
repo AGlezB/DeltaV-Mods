@@ -1,5 +1,10 @@
 # ArmAltPullBehavior - Changes
 
+## NEXT
+- The README's two images moved out of the mod into the repository's users' wiki
+  (`_wiki/images/ArmAltPullBehavior-feeding.png` and `-not-feeding.png`, were `PullBehavior-feeding.png` and
+  `PullBehavior-not-feeding.png`), which the README now links: the zip no longer carries them.
+
 ## 1.5.1
 - The script extension is now `ArmAltPullBehavior/Code.gd` (was `DockingArmPullBehavior.gd`): edit the constants
   there. No change in behaviour.

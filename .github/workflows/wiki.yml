@@ -1,0 +1,83 @@
+# Publishes _wiki/ to the repository's GitHub wiki (MODDING.md, The users' wiki). The check (wiki.ps1) runs on every
+# push to main, so a push that leaves a page out of date fails here; the wiki is updated only when the push changed
+# _wiki/, or when this workflow is run by hand (Actions, Wiki, Run workflow).
+name: Wiki
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wiki
+  cancel-in-progress: false
+
+jobs:
+  wiki:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the next steps compare with the commit before the push
+
+      - name: Check the wiki against the mods
+        run: ./wiki.ps1
+
+      # Over the whole push, all its commits: a change to _wiki/ in any of them counts. A manual run, a new branch
+      # (no commit before) or a force push (that commit gone) publishes.
+      - name: Did this push change the wiki?
+        id: changed
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $false
+          $publish = $true
+          if ($env:GITHUB_EVENT_NAME -eq 'push' -and $env:BEFORE -and $env:BEFORE -notmatch '^0+$')
+          {
+            git cat-file -e "$($env:BEFORE)^{commit}" 2>$null
+            if ($LASTEXITCODE -eq 0)
+            {
+              git diff --quiet $env:BEFORE $env:GITHUB_SHA -- _wiki
+              $publish = $LASTEXITCODE -ne 0
+            }
+          }
+          if ($publish) { 'Publishing the wiki.' } else { 'This push did not change _wiki/: the wiki is left as it is.' }
+          "publish=$($publish.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+          exit 0
+
+      - name: Check out the wiki
+        id: wikirepo
+        if: steps.changed.outputs.publish == 'true'
+        continue-on-error: true
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: wiki-repo
+
+      # The wiki is a mirror of _wiki/: pages edited or added on the website are overwritten or removed.
+      - name: Publish
+        if: steps.changed.outputs.publish == 'true'
+        env:
+          WIKI_REPO: ${{ steps.wikirepo.outcome }}
+        run: |
+          if ($env:WIKI_REPO -ne 'success')
+          {
+            '::error::The wiki has no repository yet. Create its first page on the website (the Wiki tab, Create the first page), then run this workflow by hand (Actions, Wiki, Run workflow).'
+            exit 1
+          }
+          rsync -a --delete --exclude .git _wiki/ wiki-repo/
+          Set-Location wiki-repo
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add --all
+          if (-not (git status --porcelain)) { 'The wiki already matches _wiki/.'; exit 0 }
+          git commit --quiet -m "Sync from $($env:GITHUB_REPOSITORY)@$($env:GITHUB_SHA)"
+          git push origin HEAD
+          exit $LASTEXITCODE

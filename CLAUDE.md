@@ -25,3 +25,6 @@ keep these docs up to date as they ask.
 - A game term in a request means what MODDING.md's *Glossary* says, with no further explanation; check a term's
   English text in the game's `i18n/en.po`, not from memory. When a request uses a game term that isn't there, find it
   in the decompiled game and add it; an entry explains every game term it uses, or that term has its own entry.
+- A change to anything a mod's page in the users' wiki says (behaviour, settings, a value or text its values block
+  lists, a screen its pictures show) updates `_wiki\<ModName>.md` in the same change, written for players as MODDING.md
+  *The users' wiki* says; then run `.\wiki.ps1`.

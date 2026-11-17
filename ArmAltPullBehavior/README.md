@@ -7,9 +7,9 @@ Station dock arms are left alone. Works together with `ArmAltTargetSelection`, b
 **Only ships with a grinder or an excavator are covered.** On any other ship (the OCP-209, for one) the mod
 does nothing at all and the game's own arm handling applies.
 
-![While feeding, shown on the Eagle-Prospector-VP](PullBehavior-feeding.png)
+![While feeding, shown on the Eagle-Prospector-VP](../_wiki/images/ArmAltPullBehavior-feeding.png)
 
-![While not feeding, shown on the Eagle-Prospector-VP](PullBehavior-not-feeding.png)
+![While not feeding, shown on the Eagle-Prospector-VP](../_wiki/images/ArmAltPullBehavior-not-feeding.png)
 
 *Eagle-Prospector-VP, arm base at the white dot, ship facing right; top right, the grinder 4x. Red: the red line.
 Yellow bar: the opening, measured from the tip of one grinder rotor to the other. Cyan: the hull (the ship's

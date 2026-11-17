@@ -1,5 +1,10 @@
 # ArmAltTargetSelection - Changes
 
+## NEXT
+- The README's image moved out of the mod into the repository's users' wiki
+  (`_wiki/images/ArmAltTargetSelection-area.png`, was `TargetSelection.png`), which the README now links: the zip
+  no longer carries it.
+
 ## 1.2.2
 - The script extension is now `ArmAltTargetSelection/Code.gd` (was `DockingArmTargetSelection.gd`): edit the
   constants there. No change in behaviour.

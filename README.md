@@ -2,45 +2,46 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
-Mods for ΔV: Rings of Saturn. Each folder is one independent mod and ships as one zip. Its README says what it does,
-how to set it up and how to install it.
+Mods for ΔV: Rings of Saturn. Each folder is one independent mod and ships as one zip. The
+[wiki](../../wiki) explains each mod for players, with pictures: the links below go to its pages. Each mod's README,
+in its folder, has the details for modders.
 
 ## Mods
 
 | Mod | What it does |
 |---|---|
-| [ArmAltPullBehavior](ArmAltPullBehavior/README.md) | Changes how the ship's AR-1500 arm brings a target in: through the opening of the grinder or excavator, clear of the rotors, claws and hull. |
-| [ArmAltTargetSelection](ArmAltTargetSelection/README.md) | Changes how the ship's AR-1500 arm chooses its target: only what it can reach, preferring targets lined up with its intake. |
-| [BootSkipLogos](BootSkipLogos/README.md) | The game starts on the title screen, where the save slots are, without the logo sequence first. |
-| [CrewCheapHireNotifier](CrewCheapHireNotifier/README.md) | Marks the Crew entry of the Enceladus Prime menu while someone cheap is for hire, and shows who on the Hire screen. |
-| [CrewHighlightJobAndSalary](CrewHighlightJobAndSalary/README.md) | Makes the job and the salary of every crew entry (hired and unhired) stand out on the crew screens, and dims the rest. |
-| [CrewPerfectSort](CrewPerfectSort/README.md) | Sorts the crew lists at Enceladus Prime: the Hire screen by salary, then occupation; Your crew by occupation, then salary. |
-| [DiveDisableAdrenalineBooster](DiveDisableAdrenalineBooster/README.md) | The Adrenaline Booster of your ship starts every dive switched off. |
-| [DiveSkipTransit](DiveSkipTransit/README.md) | Skips a dive's cutscenes (the transit both ways, launch, astrogation, rescue, game over, the station's fade-in), charging the remass and in-game time they would have cost, or plays the transit faster without holding Space. Each skip has its own switch (Shift+Click Launch Ring Dive). |
-| [GeologyByMass](GeologyByMass/README.md) | Judges the ore your geologist identifies by the mass of each mineral in it instead of its value, as set on a new tab of the OMS. |
-| [HudHideLabels](HudHideLabels/README.md) | Hides the titles on the screens of the dive HUD. |
-| [LidarLouderPing](LidarLouderPing/README.md) | The lidar's ping for sensor contacts plays louder, by as much as you set in the ship's Tuning. |
-| [ShipCopyPaste](ShipCopyPaste/README.md) | On the Fleet screen, copies one ship's setup onto the current ship when both are the same model: the equipment, bought at the Equipment screen's prices, the tuning, the mineral targeting and the crew aboard. |
-| [ShipHighlightTypeAndPrice](ShipHighlightTypeAndPrice/README.md) | Makes the type of every ship in the dealer and fleet lists stand out, and hides the ship image behind each row. |
-| [ShipSortByTypeAndPrice](ShipSortByTypeAndPrice/README.md) | Sorts the ship list on the dealer screen by type, then by price (cheapest first). |
+| [ArmAltPullBehavior](../../wiki/ArmAltPullBehavior) | Changes how the ship's AR-1500 arm brings a target in: through the opening of the grinder or excavator, clear of the rotors, claws and hull. |
+| [ArmAltTargetSelection](../../wiki/ArmAltTargetSelection) | Changes how the ship's AR-1500 arm chooses its target: only what it can reach, preferring targets lined up with its intake. |
+| [BootSkipLogos](../../wiki/BootSkipLogos) | The game starts on the title screen, where the save slots are, without the logo sequence first. |
+| [CrewCheapHireNotifier](../../wiki/CrewCheapHireNotifier) | Marks the Crew entry of the Enceladus Prime menu while someone cheap is for hire, and shows who on the Hire screen. |
+| [CrewHighlightJobAndSalary](../../wiki/CrewHighlightJobAndSalary) | Makes the job and the salary of every crew entry (hired and unhired) stand out on the crew screens, and dims the rest. |
+| [CrewPerfectSort](../../wiki/CrewPerfectSort) | Sorts the crew lists at Enceladus Prime: the Hire screen by salary, then occupation; Your crew by occupation, then salary. |
+| [DiveDisableAdrenalineBooster](../../wiki/DiveDisableAdrenalineBooster) | The Adrenaline Booster of your ship starts every dive switched off. |
+| [DiveSkipTransit](../../wiki/DiveSkipTransit) | Skips a dive's cutscenes (the transit both ways, launch, astrogation, rescue, game over, the station's fade-in), charging the remass and in-game time they would have cost, or plays the transit faster without holding Space. Each skip has its own switch (Shift+Click Launch Ring Dive). |
+| [GeologyByMass](../../wiki/GeologyByMass) | Judges the ore your geologist identifies by the mass of each mineral in it instead of its value, as set on a new tab of the OMS. |
+| [HudHideLabels](../../wiki/HudHideLabels) | Hides the titles on the screens of the dive HUD. |
+| [LidarLouderPing](../../wiki/LidarLouderPing) | The lidar's ping for sensor contacts plays louder, by as much as you set in the ship's Tuning. |
+| [ShipCopyPaste](../../wiki/ShipCopyPaste) | On the Fleet screen, copies one ship's setup onto the current ship when both are the same model: the equipment, bought at the Equipment screen's prices, the tuning, the mineral targeting and the crew aboard. |
+| [ShipHighlightTypeAndPrice](../../wiki/ShipHighlightTypeAndPrice) | Makes the type of every ship in the dealer and fleet lists stand out, and hides the ship image behind each row. |
+| [ShipSortByTypeAndPrice](../../wiki/ShipSortByTypeAndPrice) | Sorts the ship list on the dealer screen by type, then by price (cheapest first). |
 
 The two arm mods work together or alone. Do not install `CrewPerfectSort` together with `CrewSortByJobAndSalary`, the
 older mod it replaced: both sort the same lists.
 
 ## Mods that change how the game plays
 
-These change how something works in a dive, compared to vanilla. The *Warning* in each one's README says what, in
-short.
+These change how something works in a dive, compared to vanilla. Each one's wiki page says what, in short, as does the
+*Warning* in its README.
 
-- [ArmAltTargetSelection](ArmAltTargetSelection/README.md#warning): which targets the arm takes, and which one first.
-- [ArmAltPullBehavior](ArmAltPullBehavior/README.md#warning): how the arm brings a chunk in, on ships with a grinder or
+- [ArmAltTargetSelection](../../wiki/ArmAltTargetSelection#changes-how-the-game-plays): which targets the arm takes, and which one first.
+- [ArmAltPullBehavior](../../wiki/ArmAltPullBehavior#changes-how-the-game-plays): how the arm brings a chunk in, on ships with a grinder or
   an excavator.
-- [DiveDisableAdrenalineBooster](DiveDisableAdrenalineBooster/README.md#warning): the Adrenaline Booster starts every
+- [DiveDisableAdrenalineBooster](../../wiki/DiveDisableAdrenalineBooster#changes-how-the-game-plays): the Adrenaline Booster starts every
   dive switched off, which also damps the bullet time from the pilot and the smart camera.
-- [DiveSkipTransit](DiveSkipTransit/README.md#warning): a dive's cutscenes are skipped, with their remass and in-game
+- [DiveSkipTransit](../../wiki/DiveSkipTransit#changes-how-the-game-plays): a dive's cutscenes are skipped, with their remass and in-game
   time charged from the game's formulas (the switches marked in its settings affect remass); the burn away from the
   ring is an estimate. The transit, when played, can run faster than the game's own fast-forward, without sound.
-- [GeologyByMass](GeologyByMass/README.md#warning): with its switch on, which chunks keep a full info box depends
+- [GeologyByMass](../../wiki/GeologyByMass#changes-how-the-game-plays): with its switch on, which chunks keep a full info box depends
   on ore mass instead of value.
 
 Before reporting a bug in those parts of the game to the game's developers, check that it also happens without these

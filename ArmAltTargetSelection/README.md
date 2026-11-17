@@ -4,7 +4,7 @@ Changes how the AR-1500 salvage arm (`SYSTEM_SALVAGE_ARM` on a ship) chooses its
 target. Station dock arms are left alone. Works together with `ArmAltPullBehavior`, but does not
 need it (the two do not touch each other's code).
 
-![What the mod changes, shown on the Eagle-Prospector-VP](TargetSelection.png)
+![What the mod changes, shown on the Eagle-Prospector-VP](../_wiki/images/ArmAltTargetSelection-area.png)
 
 *Eagle-Prospector-VP, arm base at the white dot, ship facing right. Cyan: the area the mod gives the arm,
 a polygon of `AREA_SEGMENTS` straight segments (the dots). Orange: the buffer area, the part of it beyond the arm's

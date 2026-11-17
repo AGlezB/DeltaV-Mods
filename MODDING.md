@@ -1,14 +1,18 @@
 # ΔV: Rings of Saturn mods - for modders
 
 For those who read or change the code: how the repository is laid out, how the game loads a mod and how these mods
-hook in, packaging and releasing, the conventions they follow and the game's terms. The mods themselves, and how to
-install them, are in the [README](README.md); the test harness is in [`_tests/README.md`](_tests/README.md).
+hook in, packaging and releasing, the users' wiki, the conventions they follow and the game's terms. The mods
+themselves, and how to install them, are in the [README](README.md); the test harness is in
+[`_tests/README.md`](_tests/README.md).
 
 ## The repository
 
-The mods are written in GDScript for the game's engine, Godot 3. Each top-level folder not starting with `_` is one
-independent mod and ships as one zip. There is no build system: `package.ps1` builds a mod's release zip (see
-*Packaging and releasing*), and `_tests\` is a test harness for most mods (see *Testing*). The source has been in git since 14 Nov 2026, and `.gitignore` keeps out every zip, so the versions
+The mods are written in GDScript for the game's engine, Godot 3. Each top-level folder not starting with `_` or `.`
+is one independent mod and ships as one zip. There is no build system: `package.ps1` builds a mod's release zip (see
+*Packaging and releasing*), `_tests\` is a test harness for most mods (see *Testing*), and `_wiki\` is the users'
+wiki, checked by `wiki.ps1`, published by `.github\workflows\wiki.yml`, with its station screenshots taken by
+`_shots\shots.ps1` (see *The users' wiki*). The source has been in git since 14 Nov 2026, and `.gitignore` keeps out
+every zip, so the versions
 released before that exist only as release zips. Later changes are in the git history and, from 1.0.0 on, in each
 mod's `CHANGES.md`.
 
@@ -25,7 +29,7 @@ Never write their values into a committed file.
 | `GameDir` | The game (`Delta-V.exe`, `mods\`) |
 | `TempDir\gdre\Delta-V-<version>\` | The decompiled game, one folder per game version (1.91.61 and 1.92.5 so far) |
 | `GodotDir` | Godot 3.6 (the game's engine) and GDRE Tools 2.7.4 |
-| `TempDir` | Generated and temporary files: zips being packaged, test runs, scratch scripts; never the repo |
+| `TempDir` | Generated and temporary files: zips being packaged, test runs, the wiki's screenshot runs (`shots\`), scratch scripts; never the repo |
 
 The decompiled game is where the `res://` paths the mods extend resolve (`res://ModLoader.gd`,
 `res://ships/modules/DockingArm.gd`, …). **Always read and test against the newest version there.** After a game
@@ -129,10 +133,11 @@ at its root, with a copy of the repository's `LICENSE` in it: the GPL asks for o
 .\package.ps1 <ModName> -VersionOnly   # prints the version the zip would have
 ```
 
-The version comes from `[version]` of `Mod.manifest`. The script refuses to overwrite a zip, and refuses a mod whose
-`CHANGES.md` doesn't start with that version. It checks that every entry is `<ModName>/…` with forward slashes: the
-game needs them for the `res://` paths, and Windows PowerShell 5.1's `Compress-Archive` writes `\` instead, hence
-PowerShell 7.
+The version comes from `[version]` of `Mod.manifest`. The script refuses to overwrite a zip, refuses a mod whose
+`CHANGES.md` doesn't start with that version, and refuses a mod whose page in the users' wiki is missing or out of
+date (`wiki.ps1 -Mod <ModName>`, see *The users' wiki*): a new mod needs its page before its first release. It checks
+that every entry is `<ModName>/…` with forward slashes: the game needs them for the `res://` paths, and Windows
+PowerShell 5.1's `Compress-Archive` writes `\` instead, hence PowerShell 7.
 
 A release gets a new version, picked by semver (see *Conventions*) from the changes since the last release, set in
 `[version]` of `<ModName>\Mod.manifest`. From 1.0.0 on, those changes are the `## NEXT` section of
@@ -161,6 +166,103 @@ with the mods.
     script extension calls `installScriptExtension("res://<ModName>/Code.gd")`, an observer adds a node with
     `Code.gd` (see *The two ways these mods hook in*).
   - `Code.gd` is the mod's main code.
+## The users' wiki
+
+The repository's GitHub wiki explains each mod to players, so that sharing a mod means sharing a link: one page per
+mod, in plain words, with "without the mod / with the mod" pictures where a mod changes what the screen shows. Its
+source is `_wiki\`; `.github\workflows\wiki.yml` copies it to the wiki when a push to `main` changes it, or when the
+workflow is run by hand (Actions, Wiki, Run workflow). The wiki is a mirror: whatever is edited on the website is
+overwritten at the next publish, so edit `_wiki\` only. The wiki's settings restrict editing to collaborators.
+
+**Files.** `_wiki\` holds only pages and images, since everything in it is published:
+
+- `Home.md`: what the mods are, every mod in groups with a plain one-line summary, *Mods that change how the game
+  plays*, and *Installing mods* (where a zip comes from, the `mods` folder, `--enable-mods`, a backup of the save).
+- `_Sidebar.md` (Home and every mod page, in Home's groups) and `_Footer.md`.
+- `<ModName>.md`, one per mod: the page's name is the mod's, so its link is `…/wiki/<ModName>`.
+- `images\<ModName>-<view>-without.png` and `-with.png` (a single picture: `<ModName>-<view>.png`): PNG, at most 2 MB,
+  a screenshot cropped to the part of the screen that changes. The mods' READMEs keep their pictures here too (the
+  arm diagrams), linked as `../_wiki/images/<file>`, so a mod's zip carries none; such a picture's values are listed
+  in the values block of the mod's page like any other.
+
+**Pictures.** Only mods with a screen of their own, or that add to or change a game screen, have screenshots; mods
+that only reorder a list or change how the game plays have none. Screenshots of the station's screens are taken by
+`_shots\shots.ps1` in an isolated copy of the game, from a fixture save, each mod's in a run without it and a run with
+it ([`_shots/README.md`](_shots/README.md); its steps in `_shots\shots.psd1`); those taken in a dive (the HUD, the
+OMS), by hand, the pair from the same save, ship and view.
+
+**A mod's page**, in this order (GitHub shows the file name as the title, so there is no `#` heading):
+
+1. One sentence on what the mod does for the player.
+2. `## What changes`: what the player sees or gets, compared with the game without the mod. Pictures go side by side
+   in a two-column table, *Without the mod* and *With the mod*, or one under the other when they are wide (the HUD);
+   each has alt text.
+3. `## Settings`, for a mod that has any: how to open them, and for each its name as the screen shows it, what it
+   does, its default and its range, in the units the screen shows.
+4. `## Changes how the game plays`, exactly when the README has a *Warning*: in short, what differs from the normal
+   game, and to try without the mod before reporting a bug to the game's developers.
+5. `## Works with other mods`, where it matters (mods that stack, mods that must not be installed together).
+6. `## Install`: a link to Home's *Installing mods*.
+7. The values block (below).
+
+**Writing.** For players of any age the game is for: short sentences, "you", the active voice. Game words exactly as
+the game shows them in English (check them in the newest decompiled game's `i18n/en.po`), each explained in a few
+words the first time a page uses it if a new player wouldn't know it ("remass, your ship's propellant"). No code words:
+no constant, file or member names, translation keys, "script" or "world units". Numbers in the units the game shows,
+rounded where that reads better, ranges written with "to". No mod versions (the version rule holds here too). The
+wiki describes `main`, so for a while it can be ahead of a zip already shared.
+
+**The values block.** The wiki is the one place besides the code where a constant's value may appear (see
+*Conventions*), and the values block is what keeps it true. Every mod page ends with a hidden comment listing what
+the page shows, in its text or its pictures, that can change. For a made-up mod:
+
+```
+<!-- wiki-values (checked by wiki.ps1)
+game-checked: 1.92.5
+SomeMod/Settings.gd SETTINGS.share.default = 0.25 -> 25 % | images/SomeMod-settings.png
+SomeMod/i18n/en.po SOMEMOD_SHARE = "Share of the cargo"
+SomeMod/Code.gd SEGMENTS = 12
+game: 45 m, how far the AR-1500 reaches (ships/modules/SalvageArm.tscn scale, Arm.gd armLength)
+note: 400 t and 100 t, an example worked out from the share's default: change it with that
+-->
+```
+
+- A value line: a file of a mod (a `.gd`, or a `.po` for the mod's on-screen texts), a constant (`NAME`, `NAME.key`,
+  `NAME[0]`; a key may have dashes, as the game's model keys do: `MODEL_CODES.TRTL-LCB`) or a text's key, `=` its value written as in the code, then optionally `->` how the page writes it (10 %,
+  4.5 m, 24x, on) and `|` the pictures that show it. A constant that names another one is followed to its value.
+- `game:` a value of the base game, in words, with where it comes from; `game-checked:` the game version the page's
+  game values and its "without" pictures were checked against.
+- `note:` a number in the text that isn't a value (a rule of thumb, an example).
+- The wiki quotes only constants, the mods' `.po` texts and `game:` values. A value written inline in the code becomes
+  a constant first.
+
+**`wiki.ps1`** (PowerShell 7) checks every page, or with `-Mod <ModName>` one page. It fails when:
+
+- a listed value no longer matches the code (it names the page's lines showing the old value, and the pictures to
+  re-take), or a listed value doesn't show in the page's text or a picture;
+- a number in a page's text isn't in its values block (names such as OCP-209 or K37 don't count);
+- a setting the mod describes isn't listed: every setting of its `Settings.gd` (its default, its `min` and `max`, the
+  text of its `label`) and every Tuning entry it registers (`registerSubsystem`: the constants of its default and
+  range, the text of its key);
+- a mod has no page, Home or the sidebar doesn't link it, or a page has no mod; a page's *Changes how the game plays*
+  doesn't match its README's *Warning*;
+- a link between pages or to a heading doesn't resolve, an image is missing (spelling counts: GitHub's servers are
+  case-sensitive), unused, not a PNG or larger than 2 MB, or `_wiki\` holds anything but pages and `images\`; a mod's
+  README shows a picture from anywhere but `_wiki\images\`.
+
+Where `paths.local.psd1` points at a decompiled game, it also warns when a page's `game-checked` is older than the
+newest one. It runs by hand (`.\wiki.ps1`), in `package.ps1` for the mod being packaged (so a release stops before
+anything is built), and in the workflow before anything is published (so a push that leaves a page out of date fails
+there).
+
+**Keeping it up to date.** A change to anything a mod's page says (behaviour, settings, a listed value or text, a
+screen its pictures show) updates the page, its values block and its pictures in the same change. A release reviews
+the page against the mod's `## NEXT` bullets, since no check catches a change of behaviour. A picture `wiki.ps1` names
+to re-take is taken again with `.\_shots\shots.ps1 -Mod <ModName>`, or by hand for one taken in a dive. After a game
+update, every page's `game:` lines and "without" pictures are checked against the new version (the station's with
+`.\_shots\shots.ps1 -NewFixture`) before its `game-checked` changes.
+Adding or removing a mod adds or removes its page, and its lines in Home and the sidebar.
+
   - A second script extension next to `Code.gd` is named for the screen it changes: CrewCheapHireNotifier's
     `HireScreen.gd` (the Hire screen, `enceladus/HireableCrew.gd`), DiveSkipTransit's `Station.gd` (the station,
     `enceladus/Enceladus.gd`), `StationMenu.gd` (the station menu, `enceladus/EnceladusMenu.gd`) and `Ship.gd` (every
@@ -250,12 +352,13 @@ with the mods.
   Tuning entry's default, range and step stay constants in `Code.gd` (see above), and the README names the entry.
 - **A constant's value exists in one place only: where the constant is declared**, so that changing it touches
   nothing but that file. READMEs, manifests, these docs, `CLAUDE.md`, comments in other files and the tests refer to a constant by
-  its name and never repeat its value or a figure computed from it. The tests read constants from the mod (`_const`
+  its name and never repeat its value or a figure computed from it. The one exception is the users' wiki, which shows
+  players the values they meet: each page lists every value it shows in its values block, and `wiki.ps1` fails when
+  one no longer matches the code (see *The users' wiki*). The tests read constants from the mod (`_const`
   in `units.gd`, the instance in `lidar.gd`, the script's constant map in `hud.gd`) and build their layouts from them,
   so another value of a constant still passes. Base-game values a modder would have trouble finding may be quoted
-  (the arm's 45 m reach; the game shows 10 world units as 1 m). Known exception, to fix when those mods next change:
-  the legends of `ArmAltTargetSelection/TargetSelection.png` and of the two `ArmAltPullBehavior` images still show
-  values of their constants.
+  (the arm's 45 m reach; the game shows 10 world units as 1 m). The arm diagrams, whose legends show values of their
+  mods' constants, are pictures of the users' wiki, listed in their pages' values blocks.
 - Read values from the game (the ship's nodes and collision shapes, scene files, the arm's own properties), never
   from per-ship tables. A constant is only a fallback for when the game data can't be read (`CHUNK_RADIUS_FALLBACK`).
 - Game behaviour a mod relies on is cited with the game file and function it comes from (`Game.gd`
@@ -289,20 +392,21 @@ with the mods.
   ```
 - `Mod.manifest`: `id = "AGlezB.<ModName>"`, `author = "AGlezB"`, a one-line `description` that only says what the
   mod does (the details go in the README), the `group` tag naming the game script or the part of the game the mod
-  touches (`DockingArm`, `Hud`), `manifest_version = 2.2`. The wiki's manifest format is outdated; follow
+  touches (`DockingArm`, `Hud`), `manifest_version = 2.2`. The game's modding wiki has an outdated manifest format; follow
   [DVTools](https://github.com/rwqfsfasxc100/DVTools).
-- README layout: `# <ModName> - ΔV: Rings of Saturn`; the summary (no version), with its images, if any; for a mod
+- README layout: `# <ModName> - ΔV: Rings of Saturn`; the summary (no version), with its images, if any (kept in
+  `_wiki\images\` and linked from there, see *The users' wiki*, so the zip carries none); for a mod
   that changes how the game plays in a dive, *Warning*: in short, what it changes compared to vanilla, and to check a
   bug without the mod before reporting it to the game's developers; *What it does and why* (What / Why bullets); *For
   modders* for script extensions (what is extended, overrides, new members, constants, how it was tested); *Install*
   (three steps; the second, the same in every README, is "Put the mod's zip in it, and remove any other version of
   the mod from there: they would all load. Do not unzip it."; the third, `--enable-mods`); the "Mods are unofficial …
   Keep a backup of your save." line; *About* (made with the help of Claude; GPLv3). When the behaviour changes, update
-  the README's text, *Warning* and figures too.
-- The root `README.md`, this file and `_tests/README.md` are the repository's own (they ship in no zip). Update the
-  README's *Mods* table when a mod is added or removed or a mod's summary changes, and its *Mods that change how the
-  game plays* when a mod gains or loses its *Warning*; update `_tests/README.md` with every change to the harness or
-  its suites.
+  the README's text, *Warning* and figures too, and the mod's page in the users' wiki.
+- The root `README.md`, this file, `_tests/README.md` and `_wiki\` are the repository's own (they ship in no zip, and
+  `CHANGES.md` doesn't list their changes). Update the README's *Mods* table when a mod is added or removed or a mod's
+  summary changes, and its *Mods that change how the game plays* when a mod gains or loses its *Warning*, and the
+  wiki's Home and sidebar with them; update `_tests/README.md` with every change to the harness or its suites.
 
 ## Salvage arm facts (for the ArmAlt mods)
 

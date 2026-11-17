@@ -6,9 +6,10 @@
 .DESCRIPTION
 	Packages the mod folder <Mod> into <OutDir>\<Mod>-<version>.zip, the version read from [version] of its
 	Mod.manifest: the mod folder at the zip's root, with a copy of the repository's LICENSE in it (the GPL asks for one
-	with every copy given out). Refuses to overwrite a zip, and refuses a mod whose CHANGES.md doesn't start with that
-	version. Checks that every entry is <Mod>/... with forward slashes, as the game needs for the res:// paths (Windows
-	PowerShell 5.1's Compress-Archive writes '\', hence PowerShell 7). Prints the zip's path.
+	with every copy given out). Refuses to overwrite a zip, refuses a mod whose CHANGES.md doesn't start with that
+	version, and refuses a mod whose page in the users' wiki is missing or out of date (wiki.ps1 -Mod <Mod>). Checks that
+	every entry is <Mod>/... with forward slashes, as the game needs for the res:// paths (Windows PowerShell 5.1's
+	Compress-Archive writes '\', hence PowerShell 7). Prints the zip's path.
 
 .EXAMPLE
 	.\package.ps1 ShipCopyPaste
@@ -60,6 +61,9 @@ if (Test-Path -LiteralPath $changes)
 	}
 }
 if ($VersionOnly) { return $version }
+
+# The mod's page in the users' wiki must be there and up to date (MODDING.md, The users' wiki): wiki.ps1 throws if not.
+& (Join-Path $repo 'wiki.ps1') -Mod $Mod
 
 if (-not $OutDir)
 {
