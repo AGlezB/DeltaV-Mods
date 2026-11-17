@@ -1,5 +1,9 @@
 # HudHideLabels - Changes
 
+## NEXT
+- The README's *For modders* says the mod was also seen in the real game, on every HUD, in the users' wiki's
+  screenshot runs.
+
 ## 1.0.1
 - The code moved from `ModMain.gd` to `HudHideLabels/Code.gd`, which `ModMain.gd` now adds as a node: edit
   `HIDDEN_KEYS` there. No change in behaviour.

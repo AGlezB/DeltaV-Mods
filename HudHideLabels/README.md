@@ -34,9 +34,10 @@ Hides the titles on the screens of the dive HUD.
   OCP-209 the cargo title is a 50 px row above the cargo scanner) and the `modulate` some titles have still applies.
   No game script or animation sets these properties on the titles.
 - Constants: `HIDDEN_KEYS` (a user may edit it) and `DISPLAY_PREFIX`. No members, and nothing shared with other mods.
-- Tested only outside the game, in a headless Godot 3.6 with the game's `HardwareLabel.gd` on trees built with the
-  node paths of the OCP-209's HUD, the Upgrades screen and the management screen (the `hud` suite of the
-  repository's test harness). It has not been checked in a real game.
+- Tested in a headless Godot 3.6 with the game's `HardwareLabel.gd` on trees built with the node paths of the
+  OCP-209's HUD, the Upgrades screen and the management screen (the `hud` suite of the repository's test harness).
+  The users' wiki's screenshots (`_shots\shots.ps1`) show it in the real game, in a dive, on every HUD the Equipment
+  screen offers, fitted to the same ship: no title is left, and nothing else moves.
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.

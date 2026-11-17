@@ -1,7 +1,8 @@
 #Requires -Version 7
 <#
 .SYNOPSIS
-	Takes the users' wiki's screenshots of the station screens, in an isolated copy of the game.
+	Takes the users' wiki's screenshots of the station screens, and of the OMS and the HUD in a dive, in an isolated
+	copy of the game.
 
 .DESCRIPTION
 	For each mod in shots.psd1, runs the game twice from the same fixture save, without the mod and with it, and saves
@@ -37,7 +38,7 @@ param(
 	[string[]] $Steps = @(),
 	# With -Steps: the mods to load (besides BootSkipLogos).
 	[string[]] $WithMods = @(),
-	# Seconds before a run is stopped.
+	# Seconds before a run is stopped, unless shots.psd1 sets the mod's own TimeoutSeconds.
 	[int] $TimeoutSeconds = 240
 )
 
@@ -120,8 +121,8 @@ function Start-Copy([string[]] $ExtraArgs, [int] $Seconds)
 	return @{ Lines = @($stdout.Result -split "`r?`n") + @($stderr.Result -split "`r?`n"); TimedOut = $timedOut }
 }
 
-# Runs the game copy once with these mods and steps; throws if the run fails.
-function Invoke-Game([string[]] $Mods, [string[]] $JobSteps)
+# Runs the game copy once with these mods and steps, stopping it after $Seconds; throws if the run fails.
+function Invoke-Game([string[]] $Mods, [string[]] $JobSteps, [int] $Seconds)
 {
 	Assert-GameNotRunning
 	Remove-Item -Path (Join-Path $modsDir '*') -Force -ErrorAction SilentlyContinue
@@ -145,12 +146,12 @@ function Invoke-Game([string[]] $Mods, [string[]] $JobSteps)
 	if (@($check.Lines | Where-Object { $_ -match '^SHOTRENDERER userdir=.*/shots/' }).Count -eq 0) { throw 'ShotRenderer did not start in the check without a window' }
 
 	Write-Host "Run: $(@($Mods) -join ', ')" -ForegroundColor Cyan
-	$run = Start-Copy @() $TimeoutSeconds
+	$run = Start-Copy @() $Seconds
 	$lines = $run.Lines
 	$lines | Where-Object { $_ -match 'SHOTRENDERER' } | ForEach-Object { Write-Host "  $_" }
 	$errors = @($lines | Where-Object { $_ -match '^SHOTRENDERER: |SCRIPT ERROR|Parse Error' })
 	$errors | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
-	if ($run.TimedOut) { throw "The run took more than $TimeoutSeconds s and was stopped" }
+	if ($run.TimedOut) { throw "The run took more than $Seconds s and was stopped" }
 	if (@($lines | Where-Object { $_ -match '^SHOTRENDERER userdir=.*/shots/' }).Count -eq 0) { throw 'ShotRenderer never confirmed the isolated user folder' }
 	if (@($errors | Where-Object { $_ -match '^SHOTRENDERER: ' }).Count) { throw 'ShotRenderer could not do every step (above)' }
 }
@@ -202,11 +203,11 @@ try
 {
 	if ($NewFixture -or -not (Test-Path -LiteralPath (Join-Path $userDir 'savegame.dv')))
 	{
-		Invoke-Game @() @('newgame', 'wait|1')
+		Invoke-Game @() @('newgame', 'wait|1') $TimeoutSeconds
 	}
 	if ($Steps)
 	{
-		Invoke-Game $WithMods @($Steps | ForEach-Object { Resolve-Step $_ '' })
+		Invoke-Game $WithMods @($Steps | ForEach-Object { Resolve-Step $_ '' }) $TimeoutSeconds
 	}
 	else
 	{
@@ -216,6 +217,7 @@ try
 		{
 			$def = $definitions[$name]
 			if (-not $def) { throw "No shots for $name in shots.psd1" }
+			$seconds = if ($def.TimeoutSeconds) { $def.TimeoutSeconds } else { $TimeoutSeconds }
 			foreach ($variant in 'without', 'with')
 			{
 				# with: steps run only with the mod.
@@ -229,7 +231,7 @@ try
 				$mods = if ($variant -eq 'with') { @($name) + @($def.Also) } else { @($def.Also) }
 				Invoke-Game @($mods | Where-Object { $_ }) @($runSteps | ForEach-Object { Resolve-Step $_ "$name-" } | ForEach-Object {
 					if ($_ -match '^shot\|') { $_ -replace '\.png(\||$)', "-$variant.png`$1" } else { $_ }
-				})
+				}) $seconds
 			}
 			foreach ($step in @($def.Steps | Where-Object { $_ -match '^(with:)?shot\|' }))
 			{

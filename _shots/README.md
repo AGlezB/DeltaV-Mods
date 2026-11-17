@@ -1,9 +1,9 @@
 # Screenshots for the users' wiki
 
-`shots.ps1` (PowerShell 7) takes the users' wiki's "without the mod / with the mod" pictures of the station screens
-and of the OMS, which it opens in a dive, by running the real game, in an isolated copy, and saves them in
-`_wiki\images\` (see MODDING.md *The users' wiki*). Pictures of flight, which depend on what is around the ship (the
-HUD, the info boxes), are taken by hand, with bloom off as in the runs.
+`shots.ps1` (PowerShell 7) takes the users' wiki's "without the mod / with the mod" pictures of the station screens,
+and of the OMS and the HUD in a dive it starts, by running the real game, in an isolated copy, and saves them in
+`_wiki\images\` (see MODDING.md *The users' wiki*). Pictures that depend on what is around the ship (the info boxes by
+the chunks) are taken by hand, with bloom off as in the runs.
 
 ```powershell
 .\_shots\shots.ps1                                    # every mod in shots.psd1
@@ -13,11 +13,11 @@ HUD, the info boxes), are taken by hand, with bloom off as in the runs.
                                                       # ad-hoc steps, saved in TempDir\shots\out: to find a view
 ```
 
-Each mod runs twice from the same save, without the mod and with it, about half a minute each, a minute with a dive; a
-run with nothing to shoot (every view only the mod has) is skipped. The game's window opens on a screen other than the
-main one, where there is one, and plays without sound. ShotRenderer is what moves it there, so before each run the copy
-starts once without a window, for a single frame: if a script doesn't load (ShotRenderer's or a mod's), the run stops
-there, before any window opens.
+Each mod runs twice from the same save, without the mod and with it, about half a minute each, a minute with a dive
+(HudHideLabels dives once per HUD, so each of its runs takes several minutes); a run with nothing to shoot (every view
+only the mod has) is skipped. The game's window opens on a screen other than the main one, where there is one, and plays
+without sound. ShotRenderer is what moves it there, so before each run the copy starts once without a window, for a
+single frame: if a script doesn't load (ShotRenderer's or a mod's), the run stops there, before any window opens.
 
 ## Which mods
 
@@ -48,14 +48,16 @@ ShipSortByTypeAndPrice); the arm mods have their diagrams.
   `shots.ps1` writes next to the executable (`bin\shotrenderer.cfg`), then quits. Without that file it does nothing.
   Its steps are listed at the top of the script: `load`, `wait`, `press` (a button's `pressed` signal), `click` and
   `clickfind` (a real mouse click, through the game's input), `shiftclick` (Shift+Click, as the mods' settings open),
-  `tab` (by number or by the tab's node name), `scroll` and `shot`. In a dive: `dive` (from the station into the ring
-  scene, without the dive target screen, which saves, then until the arrival cutscene is over), `action` (an input
-  action, as its key: `jury_rig` is J, the OMS) and `set` (a node's property, or a key of a dictionary in it, to a JSON
-  value: GeologyByMass's example settings). A path starting with `ship:` starts at the player's ship.
+  `tab` (by number or by the tab's node name), `scroll`, `set` (a node's property, or a key of a dictionary in it, to a
+  JSON value: GeologyByMass's example settings, HudHideLabels' HUD) and `shot`. For a dive: `dive` (from the station
+  into the ring scene, without the dive target screen, which saves, then until the arrival cutscene is over) and
+  `action` (an input action, as its key: `jury_rig` is J, the OMS). A path starting with `ship:` starts at the player's
+  ship, and `ship:.` is the ship itself.
 - **`shots.psd1`**: the steps of each mod. `shot|<view>|x,y,w,h` saves that part of the window as
   `<Mod>-<view>-without.png` and `-with.png`; a step starting with `with:` runs only with the mod, and a view shot that
   way is saved once, as `<Mod>-<view>.png`. `{menu}` and `{screens}` stand for the station menu's entries and the
-  screens they open, `{oms}` for the OMS's tabs in a dive.
+  screens they open, `{oms}` for the OMS's tabs in a dive. `TimeoutSeconds` gives a mod's runs longer than
+  `shots.ps1`'s default before they are stopped (HudHideLabels, one dive per HUD).
 
 ## Notes
 
