@@ -17,6 +17,7 @@ in its folder, has the details for modders.
 | [CrewCheapHireNotifier](../../wiki/CrewCheapHireNotifier) | Marks the Crew entry of the Enceladus Prime menu while someone cheap is for hire, and shows who on the Hire screen. |
 | [CrewHighlightJobAndSalary](../../wiki/CrewHighlightJobAndSalary) | Makes the job and the salary of every crew entry (hired and unhired) stand out on the crew screens, and dims the rest. |
 | [CrewPerfectSort](../../wiki/CrewPerfectSort) | Sorts the crew lists at Enceladus Prime: the Hire screen by salary, then occupation; Your crew by occupation, then salary. |
+| [DealerNotifier](../../wiki/DealerNotifier) | Marks the Dealer entry of the Enceladus Prime menu when a ship you are waiting for comes up for sale, and that ship on the Dealer screen. You pick the ships with Shift+Click on Dealer. |
 | [DiveDisableAdrenalineBooster](../../wiki/DiveDisableAdrenalineBooster) | The Adrenaline Booster of your ship starts every dive switched off. |
 | [DiveSkipTransit](../../wiki/DiveSkipTransit) | Skips a dive's cutscenes (the transit both ways, launch, astrogation, rescue, game over, the station's fade-in), charging the remass and in-game time they would have cost, or plays the transit faster without holding Space. Each skip has its own switch (Shift+Click Launch Ring Dive). |
 | [GeologyByMass](../../wiki/GeologyByMass) | Judges the ore your geologist identifies by the mass of each mineral in it instead of its value, as set on a new tab of the OMS. |

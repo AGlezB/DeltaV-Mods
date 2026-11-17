@@ -10,9 +10,9 @@ a Godot project in `TempDir\tests\project` from `_tests\`; the game's own `Docki
 `Hud.gd`, `OMS.gd`,
 `TabsWithGamepadControl.gd`, `PriceLabel.gd`, `RepeatingHSlider.gd`, `MineralLabel.gd`, `MineralSystemToggle.gd`,
 `HireableCrew.gd`, `CrewBio.gd`, `CurrentCrewManagement.gd`, `PlaySoundsOnTheseButtons.gd`, `SystemBuyUI.gd`,
-`SystemShipUpgradeUI.gd`, `Game.gd`, `Enceladus.gd`, `TransponderOnIntro.gd`, `ship-ctrl.gd`, `Reactor.gd`,
+`SystemShipUpgradeUI.gd`, `Dealer.gd`, `Game.gd`, `Enceladus.gd`, `TransponderOnIntro.gd`, `ship-ctrl.gd`, `Reactor.gd`,
 `FusionReactor.gd`, `CurrentGame.gd`, `body.gd`, `ClaimOwner.gd`, `ClaimBeacon-1.gd`, `ClaimBeaconForeign.gd`,
-`NewGamePlus.gd`,
+`NewGamePlus.gd`, `WeaponSlot.gd`,
 `Tool.gd`, `gdunzip.gd`, `Shower.tscn`, audio buses (`default_bus_layout.tres`), the skill
 icons `CrewBio.gd` preloads and a Fleet entry's Use icon (`enceladus/Upgrades/switch.png`; their `.png.import` and
 imported `.stex`, so they load without an import step), copied from the decompiled source on every run and never
@@ -25,9 +25,18 @@ screen entry (`CrewBio.tscn`, with a portrait stub,
 Use and OK icons, the confirmation's frame and margins, the confirmation animations read from the game's scene, the
 game's themes for the entry, its labels' grid and its thumbnail margin (`menu/MenuTheme.tres`, `hud/TNTRL-theme.tres`,
 `enceladus/Subwindow.theme`, and every font, stylebox and image they load, found by following their `res://` paths),
-so its sizes and looks are the game's, and a
+so its sizes and looks are the game's, its picture's sprite placement and its Buy button's margins read from the
+game's scene, and a
 flicker stub, `harness/fleet_flicker.gd`) and of an Equipment item (`SystemShipUpgradeUI.tscn`) with the game's node
-paths and scripts but no theme, textures or sounds (beyond those named); and a stub of the ring scene (`Game.tscn`)
+paths and scripts but no theme, textures or sounds (beyond those named); a stub of the Dealer screen (`Dealer.tscn`)
+built from the game's: its root with `Dealer.gd`, its theme, anchors and the node paths the scene sets, the Shower,
+and a node at every path `Dealer.gd` reads and at their parents (the game's type, or the root type of the scene
+instanced there), with the game's sizes, margins, themes and frames where its scene sets them; its entries are
+`harness/dealer_entry.tscn`, the Fleet entry stub with the game's tooltip node. Fleet (`Owned.tscn`) is that stub
+with the game's values for it, and `harness/station_dealer.tscn` and `station_owned.tscn` are the two with the
+station's (`Enceladus.tscn`: size, size flags, frame, lists); a stub of a ship's hardpoint (`weapons/WeaponSlot.tscn`),
+the game's root with `WeaponSlot.gd` and the values it sets, without the systems' placeholders; and a stub of the ring
+scene (`Game.tscn`)
 built from the game's: its root node with `Game.gd` and the scene's values, the title card player with the game's
 autoplay, process mode and `intro`, `exit`, `helpless`, `gameover` and `fasttravel` animations, a node at every path
 those drive (the game's type where the scene declares one, the transponder label with `TransponderOnIntro.gd`) and an
@@ -37,16 +46,18 @@ asteroid field that records the `despawnAllAsteroids` calls of `exit` and the re
 beacons preload (`ships/drone/ClaimBeacon.tscn`, `ClaimBeaconForeign.tscn`, `story/DummyBeacon.tscn`), the game's
 ship models (`harness/transponder_models.gd`, written from the keys of `ships` in `ships/Shipyard.gd`), and the
 station's fade-in (`Enceladus.tscn`'s `FadeInCRT`) as an Animation resource of its own (`harness/station_fadein.tres`).
-The game's `Shipyard` (which makes the rescue ship, recorded; and, as the game's, the build `stripEmpheralsFromConfig`
-keys codes by), `K2RGB`, `Factions`, `Namer` (fixed names: "Ann Bell", a ship name from its seed), `Agenda` (which the
-game's `CurrentGame.gd` names) and `Achivements` autoloads are stubs (`harness/stubs/`), in the game's order, so the
-game's scripts that name them compile. A script compiled once the autoloads exist has its calls on them checked
-against the stubs' scripts, arguments included, so the stubs take the game's arguments (`Shipyard.createShipByName`);
-one compiled while they are being created, from a `ModMain`'s `_init`, isn't checked (found with the game's
-`CurrentGame.gd`). It packages each mod as a
-release zip is laid out (MODDING.md *Packaging and releasing*, without the `LICENSE` copy) and loads the zips as
-`ModLoader.gd` does, at the same moment (`_tests\harness\loader.gd` is the `ModLoader` autoload, and loads in its
-`_init`; the autoloads keep the game's order), so the zip layout is tested too. Logs: `TempDir\tests\logs`. Godot and
+The game's `Shipyard` (which makes the rescue ship, recorded; for the `dealer` suite, the ship models' scenes,
+aliases and default configs (`getDefaultConfigByName`, falling back to the base model's, as the game's), and a
+`createShipByConfig` that records each config, keeps it and its `config` by reference and, as the game's, registers a
+transponder for a config without one; and, as the game's, the build `stripEmpheralsFromConfig` keys codes by),
+`K2RGB`, `Factions`, `Namer` (fixed names: "Ann Bell", a ship name from its seed), `Agenda` (which the game's
+`CurrentGame.gd` names) and `Achivements` autoloads are stubs (`harness/stubs/`), in the game's order, so the game's
+scripts that name them compile. A script compiled once the autoloads exist has its calls on them checked against the
+stubs' scripts, arguments included, so the stubs take the game's arguments (`Shipyard.createShipByName`); one compiled
+while they are being created, from a `ModMain`'s `_init`, isn't checked (found with the game's `CurrentGame.gd`). It
+packages each mod as a release zip is laid out (MODDING.md *Packaging and releasing*, without the `LICENSE` copy) and
+loads the zips as `ModLoader.gd` does, at the same moment (`_tests\harness\loader.gd` is the `ModLoader` autoload, and
+loads in its `_init`; the autoloads keep the game's order), so the zip layout is tested too. Logs: `TempDir\tests\logs`. Godot and
 these folders come from `paths.local.psd1` (MODDING.md *Folders outside the repo*), or from the parameters `-GodotPath`,
 `-DecompiledRoot`, `-GameSource` and `-WorkDir`.
 
@@ -62,10 +73,11 @@ Call it from a pwsh prompt or `pwsh -Command`: under `pwsh -File`, list argument
 not parsed as arrays. Exit code 0 = every run passed; a script error fails its run even if every check passed.
 
 The suites are ported from the claude.ai harness (DVModTestHarness 1.0.0; the original was deleted once ported),
-except `boot`, `lidar`, `hud`, `crew`, `geology`, `fleet`, `skip` and `transponder`. `units`, `still` and `moving`
-load the two arm mods by default, `dive` loads DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos, `lidar` loads
-LidarLouderPing, `hud` loads HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology` loads GeologyByMass, `fleet`
-loads ShipCopyPaste, `skip` loads DiveSkipTransit, `transponder` loads AltTransponderCodes.
+except `boot`, `lidar`, `hud`, `crew`, `geology`, `fleet`, `skip`, `dealer` and `transponder`. `units`, `still` and
+`moving` load the two arm mods by default, `dive` loads DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos,
+`lidar` loads LidarLouderPing, `hud` loads HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology` loads
+GeologyByMass, `fleet` loads ShipCopyPaste, `skip` loads DiveSkipTransit, `dealer` loads DealerNotifier,
+`transponder` loads AltTransponderCodes.
 
 - `units`: the claude.ai unit tests (`arm/main.gd`) nearly verbatim, on synthetic arms around the game's
   `DockingArm.gd`. TargetSelection: area geometry on turned, scaled and offset arms, reach, the strip, the weighted
@@ -296,6 +308,60 @@ loads ShipCopyPaste, `skip` loads DiveSkipTransit, `transponder` loads AltTransp
   launch keeps playing and doesn't go to the ring; the ship spawned for the cutscene, which goes on under the title
   card; only the transit charged; the exit, rescue and game over cutscenes play and call nothing yet; astrogation
   yields; the station's menu stays disabled) run on the game's own scripts.
+- `dealer` (`suites/dealer.gd`): stations built in code as `enceladus/Enceladus.tscn` nests the menu (the game's
+  `EnceladusMenu.gd`, with its `ShipMarket`, `OwnedShips` and `Logs` entries, and the Crew and dive entries of
+  CrewCheapHireNotifier and DiveSkipTransit when they are loaded too) and the right-hand screens (the game's
+  `HidingMarginContainer.gd` with the station's Dealer and Fleet, from `harness/station_dealer.tscn` and
+  `station_owned.tscn`, on the game's `Dealer.gd`, wired to their entries as the scene wires them, and a Tuning stub
+  with its description window). The dealer's stock is the `CurrentGame` stub's (`forSale`, `harness/fleet_ship.gd`
+  ships), refreshed as the game refreshes it (`hourPassed`); the ship models are the suite's own scenes
+  (`harness/dealer/*.tscn` on `harness/dealer_ship.gd`) under the game's model keys, two of them variants (one
+  inheriting its base's scene), with test names in two languages, in a different order in each. Their hardpoints are
+  the game's `WeaponSlot.gd`, inline (one nested) or as placeholders of the hardpoint stub, one leaving its slot to the
+  scene, beside a placeholder of another scene that stores a slot. `dealer_ship.gd` counts its instances; keeps its
+  config by reference and reads and writes it as `ship-ctrl.gd` does, with what the game's hardpoints ask of their ship;
+  is set up two physics frames after it enters the tree; and records the config it enters the tree with and its
+  viewport.
+  Clicks go through the scene tree's input, keys as real input events with the game's bindings. The settings model:
+  one shared instance; the models (the mod's `NEW_STOCK`, then the pool, each once, only those with a scene); a
+  variant's series; each model's names, read from its scene, the scene it inherits from, or (made once) an instance,
+  and no ship made for the others; every switch off by default; a value that isn't a switch's giving the default and
+  storing nothing; storing under the manifest's id with the format and mod versions and the ships seen, signalling once,
+  a copy; a JSON round trip; a hand-edited entry (switches, ships seen) read safely. The rule: the stock reaches the
+  model at the game's refresh; switching a model on with a ship of it for sale doesn't mark the entry; a new ship of a
+  model switched off, or one the player sold, doesn't; a new ship of a model switched on does, also in a second
+  language, with the tooltip; switching the model off unmarks it, and on again doesn't mark it; a later ship does;
+  Fleet's refreshes and opening change nothing and its entries get no badge; a plain click opens the Dealer screen,
+  which clears the mark at once and sees every ship; the ship that marked gets a badge and no other, also after the
+  refresh the opening makes; the badge (the manifest name's capitals in the Buy button's font colour times the Owned
+  label's, in the font a Label gets in the entry's picture, smaller than the name's, a copy of the Buy button's frame
+  with its border in that colour, letting the mouse through to the entry's name, at the right end of the name inside
+  the right margin around its text, centred from top to bottom, at its least size, its tooltip registered with the
+  entry's `PlaySoundsOnTheseButtons`);
+  ships no longer for sale forgotten; badges kept through hourly refreshes and reopening; after a JSON round trip, a new
+  station with the saved switches and ships seen, no mark for the same stock, and no badges. The screen: Shift+Click on
+  a disabled entry does nothing, on the entry opens the settings and not the Dealer; opening stores nothing; the Dealer
+  screen's theme, frame, size and size flags; the entry's title; under the header the window, the note and the groups;
+  the window copies the Dealer's (theme, margins around and inside, panel, least height, the texts' spacing, clipping);
+  the note is the setting's description, in `i18n/en.po`; one group per series titled by its name, the series and their
+  rows in alphabetical order of the names whatever the case, the models alone in their series last under `OTHERS_LABEL`,
+  in an `Items` box; the first switch focused; each switch showing its setting; each row dressed as a Dealer entry (the
+  picture first, of the entry's picture's size, its sprite placed as the entry's; no reset; the switch at the row's
+  right end, at least as wide as the entry's Buy button; its tooltip the setting's label); focusing a row shows its
+  ship's description after its series' where that differs; switching a model on stores it, describes it, and doesn't
+  mark for a ship of it for sale, and focusing it again doesn't switch it back; a later ship marks; the pictures drawn
+  all at once, a viewport for each model; one ship of each model made to draw, in the screen's order, from the dealer's
+  config, with a transponder, a name and a making time, nothing written to `state.transponders`, each in a viewport of
+  its own; each entering the tree with every hardpoint empty (`PICTURED`: the dealer's, its other settings kept; the
+  scene's inline ones, nested too; its placeholders', one with its slot left to the scene and a gun as its default;
+  not the other scene's placeholder; the thrusters and propellant kept); every row's picture (frames drawn with
+  `VisualServer.force_draw`, the render loop being off); the drawn ships gone; Esc closes it and gives the focus back;
+  reopened in the second language, its order and the pictures kept (no ship made again); focusing another entry hides
+  it; without a Dealer screen no tooltip and no settings. With CrewCheapHireNotifier and DiveSkipTransit
+  (`-Mods CrewCheapHireNotifier,DealerNotifier,DiveSkipTransit`),
+  Shift+Click on each of their entries opens their screen, then on Dealer opens this one and hides theirs, and every
+  entry keeps its own tooltip. The control checks (the entry keeps its key; the Dealer lists the stock and no entry gets
+  a badge) run on the game's own scripts.
 - `transponder` (`suites/transponder.gd`): the game's `CurrentGame.gd`, copied to `res://CurrentGame.gd` (where the
   mod's `Code.gd` extends it), instanced under the suite with a player's ship in its state; the `CurrentGame` autoload
   stays the stub, which hands this instance `menu/NewGamePlus.gd`'s transponder calls and the members it lacks
@@ -325,11 +391,13 @@ loads ShipCopyPaste, `skip` loads DiveSkipTransit, `transponder` loads AltTransp
 - **Baseline** (both arm load orders give the same results): `units` 114 checks with both arm mods (64 with
   PullBehavior alone, 61 with TargetSelection alone), `still` 9, `moving` 16, `dive` 8, `boot` 5 (3 control checks
   with `-Mods @()`), `lidar` 40 (3 control checks with `-Mods @()`), `hud` 13 (3 control checks with `-Mods @()`),
-  `crew` 140 (141 with CrewPerfectSort too, in both load orders; 3 control checks with `-Mods @()`), `geology` 60 (3
-  control checks with `-Mods @()`), `fleet` 70 (the same with ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice
-  too; 3 control checks with `-Mods @()`), `skip` 109 (112 with CrewCheapHireNotifier too; 13 control checks with
-  `-Mods @()`), `transponder` 48 (3 control checks with `-Mods @()`), all passing; `-Matrix` gives 16 of 16 in every
-  combination.
+  `crew` 140 (141 with CrewPerfectSort too, in both load orders; the same 140 with DealerNotifier too, in both; 3
+  control checks with `-Mods @()`), `geology` 60 (3 control checks with `-Mods @()`), `fleet` 70 (the same with
+  ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too; 3 control checks with `-Mods @()`), `skip` 109 (112 with
+  CrewCheapHireNotifier too, the same with DealerNotifier as well; 13 control checks with `-Mods @()`), `dealer` 92
+  (95 with CrewCheapHireNotifier and DiveSkipTransit too, in every load order; the same 92 with ShipCopyPaste,
+  ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too; 2 control checks with `-Mods @()`), `transponder` 48 (3
+  control checks with `-Mods @()`), all passing; `-Matrix` gives 16 of 16 in every combination.
   Feeding, a chunk beside the hull is in after 4.4–4.8 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.4.0 (the claude.ai results, case for case)
   took 5.9–6.3 s there, fails the 8 time limits, and `-Matrix` gave 16, 15, 16, 16 (feeding while turning with a 5 t
@@ -339,5 +407,5 @@ loads ShipCopyPaste, `skip` loads DiveSkipTransit, `transponder` loads AltTransp
 
 The harness doesn't replace the game. CrewHighlightJobAndSalary has no tests at all, and CrewPerfectSort and the
 ship-list mods have none of their own: only CrewPerfectSort's Hire screen sort runs, beside CrewCheapHireNotifier in
-`crew`, and the ship-list mods load beside ShipCopyPaste in `fleet` without checks of their own. The real check is
-playing the game with the mods.
+`crew`, and the ship-list mods load beside ShipCopyPaste in `fleet` (and beside DealerNotifier in `dealer`) without
+checks of their own. The real check is playing the game with the mods.

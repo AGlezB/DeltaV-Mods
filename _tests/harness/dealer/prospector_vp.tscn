@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://harness/dealer/prospector.tscn" type="PackedScene" id=1]
+
+[node name="ProspectorVP" instance=ExtResource( 1 )]
+shipName = "TEST_SHIP_PROSPECTOR_VP"
+baseShipName = "TEST_SHIP_DEFAULT"

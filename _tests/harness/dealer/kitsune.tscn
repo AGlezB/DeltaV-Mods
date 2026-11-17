@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://harness/dealer_ship.gd" type="Script" id=1]
+[ext_resource path="res://weapons/WeaponSlot.tscn" type="PackedScene" id=2]
+
+[node name="Kitsune" type="Node2D"]
+script = ExtResource( 1 )
+shipName = "TEST_SHIP_KITSUNE"
+baseShipName = "TEST_SHIP_KITSUNE"
+
+[node name="Front" type="Node2D" parent="."]
+
+[node name="WeaponSlot" parent="Front" instance=ExtResource( 2 )]
+slot = "mainLow"
+
+[node name="WeaponRight" parent="." instance_placeholder="res://weapons/WeaponSlot.tscn"]
+slot = "right"

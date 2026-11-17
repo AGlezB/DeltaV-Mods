@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://harness/dealer/trtl.tscn" type="PackedScene" id=1]
+
+[node name="TrtlR" instance=ExtResource( 1 )]
+shipName = "TEST_SHIP_TRTL_R"

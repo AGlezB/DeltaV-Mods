@@ -1,0 +1,32 @@
+# DealerNotifier: its texts, in English. Godot shows English for any language without its own file (its fallback
+# locale), so another language only needs a copy of this file with its Language and msgstr lines translated, loaded in
+# ModMain.gd. Keep each %s: the code fills them in.
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+# The station menu's Dealer entry while a ship you watch is new at the dealer; %s is the entry's own text.
+msgid "DEALERNOTIFIER_ALERT"
+msgstr "%s (*)"
+
+# The Dealer entry's tooltip; the first %s is the key to hold while clicking, the second the mod's name.
+msgid "DEALERNOTIFIER_SETTINGS_TOOLTIP"
+msgstr "Click while pressing %s to open the %s settings."
+
+# The settings screen: the tooltip of every ship's switch, and the note above the ships.
+msgid "DEALERNOTIFIER_WATCHED"
+msgstr "Mark Dealer when this ship comes up for sale"
+
+msgid "DEALERNOTIFIER_WATCHED_DESC"
+msgstr ""
+"Switch on the ships you are waiting for: the station menu marks Dealer when one of them comes up for sale, until "
+"you open it. On the Dealer screen, those ships get a badge until you leave the station."
+
+# The title of the group of the ships whose series has no other ship in the list.
+msgid "DEALERNOTIFIER_OTHERS"
+msgstr "Others"
+
+# The tooltip of the badge on a Dealer screen entry.
+msgid "DEALERNOTIFIER_BADGE_TOOLTIP"
+msgstr "New since you last opened Dealer, and a ship you are watching."

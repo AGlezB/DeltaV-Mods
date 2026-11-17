@@ -416,9 +416,8 @@ func freeStation(s):
 
 func run():
 	var mod = hasMod("CrewCheapHireNotifier")
-	var game = load("res://enceladus/EnceladusMenu.gd")
-	if mod:
-		game = game.get_base_script()
+	# The game's own menu script: at the root of the chain, which DealerNotifier, loaded too, extends as well.
+	var game = rootScript(load("res://enceladus/EnceladusMenu.gd"))
 	addTranslation("en", TEXT_EN, JOBS_EN)
 	addTranslation("de", TEXT_DE, JOBS_DE)
 	TranslationServer.set_locale("en")

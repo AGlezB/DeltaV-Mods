@@ -79,14 +79,17 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
    entries; it prices through the Equipment screen's items), DiveSkipTransit (`Game.gd`, the ring scene's cutscenes;
    `ships/ship-ctrl.gd`, astrogation; `enceladus/Enceladus.gd`, the station's fade-in and launch sequence; and
    `enceladus/EnceladusMenu.gd`, where Shift+Click on the dive entry opens its settings screen, as
-   CrewCheapHireNotifier's Crew entry does), AltTransponderCodes (`CurrentGame.gd`, the autoload, where the game makes
+   CrewCheapHireNotifier's Crew entry does), DealerNotifier (`enceladus/EnceladusMenu.gd`, the Dealer entry's mark and
+   Shift+Click, its settings screen copying the Dealer screen's frame; and `enceladus/Dealer.gd`, the Dealer screen,
+   whose refreshes tell it the stock), AltTransponderCodes (`CurrentGame.gd`, the autoload, where the game makes
    transponder codes, with a `node_added` handler, as the observers below have, for the objects whose code is built
    from a ship's; and `menu/NewGamePlus.gd`, the New Game+ screen). `ModMain.gd` only calls
    `installScriptExtension("res://<ModName>/Code.gd")` (CrewPerfectSort: once for each of its two extension files;
    CrewCheapHireNotifier: `Code.gd`, then `HireScreen.gd`; DiveSkipTransit: `Code.gd`, `Station.gd`,
-   `StationMenu.gd`, then `Ship.gd`; AltTransponderCodes: `Code.gd`, then `NewGamePlusScreen.gd`, from `_init`,
-   before the engine creates `CurrentGame`); `Code.gd` `extends "res://<game script>"`. Rules that let mods stack on the same
-   script (header of `ArmAltTargetSelection/Code.gd`):
+   `StationMenu.gd`, then `Ship.gd`; DealerNotifier: `Code.gd`, then `DealerScreen.gd`; AltTransponderCodes:
+   `Code.gd`, then `NewGamePlusScreen.gd`, from `_init`, before the engine creates `CurrentGame`); `Code.gd`
+   `extends "res://<game script>"`. Rules that let mods stack on the same script (header of
+   `ArmAltTargetSelection/Code.gd`):
    - Never call the parent's `_ready`, `_process`, `_physics_process` or `_notification`. Godot 3 runs them at every
      level of the script chain by itself: `_ready` base first (so `ship` etc. are set), `_process`,
      `_physics_process` and `_notification` child first. LidarLouderPing overrides `onSetup` (an ordinary function)
@@ -119,14 +122,16 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
   and both override `fillCrew`, each calling the parent's first: by path the chain is game ← CrewCheapHireNotifier ←
   CrewPerfectSort, and CrewPerfectSort only reorders the entries, so the marks stay (both orders tested in `crew`).
   Their member names must stay distinct.
-- CrewCheapHireNotifier (`Code.gd`) and DiveSkipTransit (`StationMenu.gd`) both extend `EnceladusMenu.gd`, each
-  hooking Shift+Click on its own menu entry (Crew, Launch Ring Dive) to open its settings screen among the station's
-  right-hand screens. By path the chain is game ← CrewCheapHireNotifier ← DiveSkipTransit; both override `_ready` and
-  `_notification` (the game's script has neither) without calling the parent's. Their member names must stay
-  distinct; opening one screen hides the other (`hidefoka`). Loaded together in `skip`.
+- CrewCheapHireNotifier (`Code.gd`), DealerNotifier (`Code.gd`) and DiveSkipTransit (`StationMenu.gd`) all extend
+  `EnceladusMenu.gd`, each hooking Shift+Click on its own menu entry (Crew, Dealer, Launch Ring Dive) to open its
+  settings screen among the station's right-hand screens. By path the chain is game ← CrewCheapHireNotifier ←
+  DealerNotifier ← DiveSkipTransit; all override `_ready` and `_notification` (the game's script has neither) without
+  calling the parent's. Their member names must stay distinct; opening one screen hides the others (`hidefoka`).
+  Loaded together in `skip` (CrewCheapHireNotifier and DiveSkipTransit) and in `dealer` (all three, every order).
 - ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice find the ship entries by `node.get_script().resource_path`;
   ShipCopyPaste extends that script, and `take_over_path` keeps the path, so they still find them (loaded together in
-  `fleet`).
+  `fleet`). DealerNotifier reads the stock from the Dealer screen's entries in any order and hangs its badge in each
+  entry's name, so it works with all three.
 
 ## Packaging and releasing
 
@@ -272,9 +277,10 @@ Adding or removing a mod adds or removes its page, and its lines in Home and the
   - A second script extension next to `Code.gd` is named for the screen it changes: CrewCheapHireNotifier's
     `HireScreen.gd` (the Hire screen, `enceladus/HireableCrew.gd`), DiveSkipTransit's `Station.gd` (the station,
     `enceladus/Enceladus.gd`), `StationMenu.gd` (the station menu, `enceladus/EnceladusMenu.gd`) and `Ship.gd` (every
-    ship, `ships/ship-ctrl.gd`). Code more than one of them uses goes in `Settings.gd`, which they already share:
-    CrewCheapHireNotifier's rule (`limitFor` / `isCheapHire`), DiveSkipTransit's static helpers (`playThrough`,
-    `chargeDv`, `chargeSeconds`).
+    ship, `ships/ship-ctrl.gd`), DealerNotifier's `DealerScreen.gd` (the Dealer screen, `enceladus/Dealer.gd`). Code
+    more than one of them uses goes in `Settings.gd`, which they already share: CrewCheapHireNotifier's rule
+    (`limitFor` / `isCheapHire`), DiveSkipTransit's static helpers (`playThrough`, `chargeDv`, `chargeSeconds`),
+    DealerNotifier's stock and rule (`setStock`, `markSeen`, `newShips`).
   - `SettingsUI.gd` is the mod's settings UI, when it has one.
   - `Settings.gd`, only in a mod with a settings UI, is the settings model `Code.gd` and `SettingsUI.gd` share, built
     like the game's own `Settings` autoload (`res://Settings.gd`: a `cfg` dict of defaults, a `ConfigFile` in
@@ -305,9 +311,12 @@ Adding or removing a mod adds or removes its page, and its lines in Home and the
       bool gives its default; the screen shows it with the game's Tuning switch. Where a mod's settings mix switches and
       sliders (DiveSkipTransit's transit speed), each has a `type` (`"bool"` or `"float"`), and a slider its `min`,
       `max`, `step`, `unit` and the `format` of the value shown; `group` puts it in one of the screen's groups, and
-      `dimmedWhen` names the switch while which it doesn't apply. `var cfg`: the current values by key
-      (a dictionary by job key for a per-job setting), set to the defaults in `_init`. `const FORMAT_VERSION`.
+      `dimmedWhen` names the switch while which it doesn't apply. `perModel` (DealerNotifier's switch) is `perJob` for
+      the ship models the dealer can offer. `var cfg`: the current values by key (a dictionary by job or model key for
+      a per-job or per-model setting), set to the defaults in `_init`. `const FORMAT_VERSION`.
     - `jobs()`: the jobs a per-job setting has values for, the game's `CurrentGame.occupations`; `isPerJob(key)`.
+      DealerNotifier's `models()` and `isPerModel(key)` are the same for its ship models, and its `getValue` /
+      `setValue` take a model where CrewCheapHireNotifier's take a job.
     - `getValue(key, job = null)`; `setValue(key, value, job = null)` clamps and snaps to the step, and only on a change stores
       (`saveToState()`) and emits `settingsChanged`; `job` is only for a per-job setting. `toShown(key, value)` /
       `fromShown(key, shown)`.
@@ -332,7 +341,9 @@ Adding or removing a mod adds or removes its page, and its lines in Home and the
     `i18n/en.po`. It is set on every `tuningChanged`, which a row emits when it changes and when it gets the focus
     (`Tuning.gd` `tuningChanged` does the same with `<key>_DESC`). Every setting has one, written as the game's
     `TUNE_*_DESC` are: what it does, a blank line, then the details. DiveSkipTransit has it; CrewCheapHireNotifier
-    doesn't yet, to add when it next changes.
+    doesn't yet, to add when it next changes. DealerNotifier's rows are ship models, all of one setting: its window,
+    framed as the Dealer screen's, shows the game's own description of the selected ship, as the Dealer does
+    (`<shipName>_DESC`), and its setting's description is a note between the window and the list.
   - A mod without a settings UI has no `Settings.gd`, and no constants file either: that would only add a prefix to
     every use.
   - Settings that belong to a ship system go in the game's Tuning screen instead (`registerSubsystem` from the
@@ -580,7 +591,17 @@ English text there.
   exit (the transit) under one setting, and charges what it would have cost; with the transit not skipped, it plays
   both at a speed of its own, without Space.
 - **Dealer** (`ENCELADUS_SHIP_MARKET`, `enceladus/Dealer.tscn`): the station's ship market. Its entries are
-  `enceladus/SystemBuyUI.gd` (the ship-list mods change them); its Examine tab can launch the simulator. **Fleet**
+  `enceladus/SystemBuyUI.gd` (the ship-list mods change them); its Examine tab can launch the simulator.
+  - The stock is stored nowhere: `CurrentGame.getShipsAvailableForSale` builds it anew on every call from the in-game
+    day, the week and the save's `state.seed`. It holds a few models new every week (named in its code), one used ship a
+    day kept 10 days (its model drawn from `CurrentGame.usedShipsPool`, by weight), and the ships the player sold
+    (`state.soldShips`), for 10 days; ships the player owns are left out.
+  - Only `Dealer.gd` `doAddShips` asks for it: when the station loads, every in-game hour (`hourPassed`) and when the
+    screen opens; a dive doesn't, and nothing signals a change.
+  - A ship's transponder is the same from one refresh, visit or save to the next (`getNewTransponder` is seeded), so it
+    tells ships apart; `shipHashFromConfig` doesn't (it holds the moment the ship was instanced, `madeIn`).
+
+  **Fleet**
   (`ENCELADUS_OWNED_SHIPS`): the ships the player owns, and the station screen listing them (`enceladus/Owned.tscn`,
   an instance of `Dealer.tscn` with the same entries, the current ship first), where the player switches ships
   (`GARAGE_SWITCH`, `Dealer.gd` `use`) and sells them (`GARAGE_SELL`). Each owned ship keeps its own config: equipment,
@@ -595,7 +616,11 @@ English text there.
   dive, and on return the dive's output is stored or sold.
 - **Drones** (no key of their own; the word is in the NT Mining Companion's description, `SYSTEM_SCOOP_DESC`): small
   craft a ship launches from a cradle, equipment on a hardpoint, each a ship of its own (`ship-ctrl.gd`) with a
-  transponder made from the ship's by the cradle's `ships/modules/ClaimOwner.gd` (see *Transponder*). The THI Cargo
+  transponder made from the ship's by the cradle's `ships/modules/ClaimOwner.gd` (see *Transponder*). A physics frame
+  after the cradle enters the tree, it lets its drone go into the ship's parent (`ClaimOwner.gd` `_ready`, unless the
+  cradle has left the tree by then), so the drone outlives the ship's node: whoever takes a ship out of a scene takes
+  its drones out too (`Upgrades.gd`'s preview removes every rigid body; DealerNotifier frees each picture's whole
+  viewport). The THI Cargo
   Container and THI Monocargo Container (`SYSTEM_EXSTORAGE`, `SYSTEM_EXMONO`; `ships/drone/StoragePod.tscn`,
   `StoragePodMono.tscn`) are storage pods that carry processed ore back to the station; the NT Mining Companion
   (`SYSTEM_SCOOP`, `ships/drone/CargoScoop.tscn`) is a mining drone; the B8 Claim Beacon (`SYSTEM_CLAIM`,
@@ -682,7 +707,12 @@ English text there.
   targeting: which minerals the HUD marks, and their Minimum value (`HUD_MIN_PRICE`), kept in the HUD's
   `mineralConfig`.
 - **Hardpoint**: a ship's mount for a piece of equipment: high-stress, low-stress or spinal. Only high-stress ones
-  take the arm.
+  take the arm. In the ship's scene each is a `ships/WeaponSlot.gd` node, inline (some nested, the ND-LIS Kitsune's is
+  `Front/WeaponSlot`) or a placeholder of `weapons/WeaponSlot.tscn`, which stores only the values it overrides
+  (RA-TRTL's and the Vulture Prospector's main hardpoint leaves `slot` to the scene's own, `main`). In the ship's config
+  `weaponSlot.<slot>.type` holds what is mounted. A hardpoint the config names nothing for gets its node's `default`
+  when the ship enters the tree: `SYSTEM_NONE`, nothing, on every model the dealer sells. The Equipment screen offers
+  None on every hardpoint, free, as its default (`enceladus/Upgrades/WeaponSlotUpgrade.tscn`).
 - **Hire screen** (`ENCELADUS_CREW_HIRE`, "Hire"; also the Hire list): the Crew screen's tab of the people for hire
   that day, the `HireableCrew` node of `enceladus/Crew.tscn` (`enceladus/HireableCrew.gd`), filled from
   `CurrentGame.getAvailableCrew()` on the first show and every in-game day. One entry per person
@@ -884,8 +914,16 @@ English text there.
     `CurrentGame.addShip`; the arm's manual says so too, `SYSTEM_SALVAGE_ARM_MANUAL`). A rescue ship nearby doesn't
     prevent it. A `helpless` ship that isn't salvageable pays 10 % of its value instead (`getShipValue`). Nothing
     held is taken when the player's own ship ends the dive helpless (see *Rescue*).
-- **Ship models**: Eagle-Prospector-VP (the VP), EIME, OCP-209, K37 TNTRL, the Cothon series, the Kitsune, …: names
-  of ships as the Dealer shows them.
+- **Ship models**: the kinds of ship, each with a key in `Shipyard.ships` (`TRTL`, `PROSPECTOR-VP`, …), a scene
+  (`ships/RA-TRTL.tscn`) and the translation key of its name in the ship's `shipName` (`SHIP_TRTL`). The Dealer shows
+  the names: K37 TNTRL, Eagle Prospector, Vulture Prospector, EIME (Eon Interstellar Model E), OCP-209, the Cothons,
+  the ND-LIS Kitsune, …. These docs also name some by their scenes: the Eagle-Prospector-VP (the VP) is the Vulture
+  Prospector, the Eagle-Prospector-Lux the Peacock Prospector.
+  - A **series** is a base model and its variants, as `Shipyard.gd` `configAlias` folds each variant into its base
+    model (`getShipAlias`); a variant's `baseShipName` is its base's name. In game 1.92.5: K37 TNTRL (KX37, Runasimi
+    KR37 and KTA24 TNTRL, K44 MHFTR Prototype), Eagle Prospector (Vulture, Peacock and Pelican Prospector), Cothon-212
+    (Cothon-211 "Chonker", -213 "Triplet", -217 "Bender"), Antonoff-Titan K225 (K225-BB, K225 (modified)); the other
+    models are alone in theirs. Which models the dealer offers: see *Dealer*.
 - **Simulator** (MVFS; `ENCELADUS_LAUNCH_VR`, `enceladus/Simulator/`): the Minding Virtual Flight Service, the
   station's flight simulator for trying a ship as fitted; launched from the Tuning and Equipment screens and the
   Dealer's Examine tab. A Premium subscription (`SERVICE_SIMULATOR`) adds a simulated ring scenario.

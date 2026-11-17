@@ -1,0 +1,23 @@
+[mod_information]
+
+name="DealerNotifier"
+id="AGlezB.DealerNotifier"
+description="Marks the station menu's Dealer entry when a ship of a model you watch comes up for sale, and that ship on the Dealer screen."
+author="AGlezB"
+
+[version]
+
+version_major=1
+version_minor=0
+version_bugfix=0
+
+[tags]
+
+group={
+"type": "string",
+"value": "Dealer"
+}
+
+[manifest_definitions]
+
+manifest_version=2.2

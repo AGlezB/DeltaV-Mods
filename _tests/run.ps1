@@ -9,18 +9,19 @@
 	HardwareLabel.gd, EnceladusMenu.gd, HidingMarginContainer.gd, AnalogControlSlider.gd, TuningFloatValue.gd,
 	TuningBoolValue.gd, TuningItems.gd, Hud.gd, OMS.gd, TabsWithGamepadControl.gd, PriceLabel.gd, RepeatingHSlider.gd, MineralLabel.gd,
 	MineralSystemToggle.gd, HireableCrew.gd, CrewBio.gd, CurrentCrewManagement.gd, PlaySoundsOnTheseButtons.gd,
-	SystemBuyUI.gd, SystemShipUpgradeUI.gd, Game.gd, Enceladus.gd, TransponderOnIntro.gd, ship-ctrl.gd, Reactor.gd,
-	FusionReactor.gd, Tool.gd, gdunzip.gd, CurrentGame.gd, body.gd, ClaimOwner.gd, ClaimBeacon-1.gd,
+	SystemBuyUI.gd, SystemShipUpgradeUI.gd, Dealer.gd, Game.gd, Enceladus.gd, TransponderOnIntro.gd, ship-ctrl.gd,
+	Reactor.gd, FusionReactor.gd, Tool.gd, gdunzip.gd, CurrentGame.gd, body.gd, ClaimOwner.gd, ClaimBeacon-1.gd,
 	ClaimBeaconForeign.gd, NewGamePlus.gd), the game's ship models (harness\transponder_models.gd, read from
 	ships\Shipyard.gd), the game's Shower.tscn, audio buses
 	(default_bus_layout.tres), the skill icons CrewBio.gd preloads and the Fleet entry's Use icon, a stub mineral scene
 	carrying the chunk radius read from the game's, stubs of the two scenes LIDAR.gd preloads, of the Tuning parts
 	CrewCheapHireNotifier's settings screen is built from, of a Hire screen entry (CrewBio.tscn), of the Geologist
 	tab's parts GeologyByMass's OMS tab is built from, and of a Fleet entry (SystemBuyUI.tscn, with the game's
-	confirmation animations), an Equipment item (SystemShipUpgradeUI.tscn), the ring scene (Game.tscn, with the
-	game's root values and title cards), the two scenes ship-ctrl.gd preloads, the three the story claim beacons
-	preload, and the station's fade-in
-	(harness\station_fadein.tres). Packages each mod into <WorkDir>\build\<Mod>.zip
+	confirmation animations), an Equipment item (SystemShipUpgradeUI.tscn), the Dealer screen (Dealer.tscn, as the
+	station and Owned.tscn instance it, with a Dealer entry that has the game's tooltip node), the ring scene
+	(Game.tscn, with the game's root values and title cards), the two scenes ship-ctrl.gd preloads, the three the
+	story claim beacons preload, and the station's
+	fade-in (harness\station_fadein.tres). Packages each mod into <WorkDir>\build\<Mod>.zip
 	(as a release zip), and runs every suite with its mods loaded from those zips, the way the game loads them:
 	by an autoload, before the engine loads the main scene. Logs: <WorkDir>\logs. Nothing in the repo, the game folder
 	or the decompiled game is changed. Godot, the decompiled game and <WorkDir> default to folders under the ones set in
@@ -37,6 +38,7 @@
 	- geology: GeologyByMass. Builds a HUD from harness\geology_hud.tscn, which holds the game's Hud.gd.
 	- fleet: ShipCopyPaste.
 	- skip: DiveSkipTransit. Instances the ring scene stub (Game.tscn), whose root has the game's Game.gd.
+	- dealer: DealerNotifier. Instances the Dealer screen stub (Dealer.tscn), whose root has the game's Dealer.gd.
 	- transponder: AltTransponderCodes. Instances the game's CurrentGame.gd (the CurrentGame autoload stays the stub).
 
 .EXAMPLE
@@ -53,8 +55,8 @@
 #>
 [CmdletBinding()]
 param(
-	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'transponder')]
-	[string[]] $Suite = @('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'transponder'),
+	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder')]
+	[string[]] $Suite = @('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder'),
 	# Mod folders to load for every selected suite, in load order (the game's order: by path); @() = none.
 	# Default: each suite's own mods (see the description).
 	[string[]] $Mods,
@@ -168,7 +170,7 @@ foreach ($dir in $project, $build, $logs)
 }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'project.godot'), (Join-Path $PSScriptRoot 'main.tscn') -Destination $project
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'harness'), (Join-Path $PSScriptRoot 'suites') -Destination $project -Recurse
-foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningBoolValue.gd', 'enceladus\Tuning\TuningItems.gd', 'hud\Hud.gd', 'hud\OMS.gd', 'menu\TabsWithGamepadControl.gd', 'hud\components\PriceLabel.gd', 'hud\components\RepeatingHSlider.gd', 'hud\components\MineralLabel.gd', 'hud\components\MineralSystemToggle.gd', 'enceladus\HireableCrew.gd', 'enceladus\CrewBio.gd', 'enceladus\CurrentCrewManagement.gd', 'menu\sfx\PlaySoundsOnTheseButtons.gd', 'enceladus\SystemBuyUI.gd', 'enceladus\SystemShipUpgradeUI.gd', 'enceladus\Shower.tscn', 'Game.gd', 'enceladus\Enceladus.gd', 'TransponderOnIntro.gd', 'ships\ship-ctrl.gd', 'ships\Reactor.gd', 'ships\modules\FusionReactor.gd', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres', 'CurrentGame.gd', 'story\body.gd', 'ships\modules\ClaimOwner.gd', 'story\ClaimBeacon-1.gd', 'story\ClaimBeaconForeign.gd', 'menu\NewGamePlus.gd')
+foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningBoolValue.gd', 'enceladus\Tuning\TuningItems.gd', 'hud\Hud.gd', 'hud\OMS.gd', 'menu\TabsWithGamepadControl.gd', 'hud\components\PriceLabel.gd', 'hud\components\RepeatingHSlider.gd', 'hud\components\MineralLabel.gd', 'hud\components\MineralSystemToggle.gd', 'enceladus\HireableCrew.gd', 'enceladus\CrewBio.gd', 'enceladus\CurrentCrewManagement.gd', 'menu\sfx\PlaySoundsOnTheseButtons.gd', 'enceladus\SystemBuyUI.gd', 'enceladus\SystemShipUpgradeUI.gd', 'enceladus\Dealer.gd', 'enceladus\Shower.tscn', 'Game.gd', 'enceladus\Enceladus.gd', 'TransponderOnIntro.gd', 'ships\ship-ctrl.gd', 'ships\Reactor.gd', 'ships\modules\FusionReactor.gd', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres', 'CurrentGame.gd', 'story\body.gd', 'ships\modules\ClaimOwner.gd', 'ships\WeaponSlot.gd', 'story\ClaimBeacon-1.gd', 'story\ClaimBeaconForeign.gd', 'menu\NewGamePlus.gd')
 {
 	$target = Join-Path $project $file
 	New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
@@ -591,13 +593,20 @@ mouse_filter = 2
 # A Fleet entry (enceladus\SystemBuyUI.tscn, as enceladus\Dealer.gd instances it): the game's node paths, script, values
 # and connections, the Use and OK icons, the confirmation's frame and margins, and the confirmation animations read from
 # the game's scene (ShipCopyPaste copies BuyShow and BuyHide), and the game's themes (menu\MenuTheme.tres for the entry,
-# hud\TNTRL-theme.tres for its labels' grid), so sizes and looks are the game's; without the other textures, the lights
-# and environment of the ship's view, the smooth scrolling (a bare node in its place under Use), the sounds and the
-# flicker (harness\fleet_flicker.gd).
+# hud\TNTRL-theme.tres for its labels' grid), so sizes and looks are the game's; the picture's sprite placed, scaled and
+# flipped and the Buy button's margins as the game's scene has them (DealerNotifier's settings rows copy them); without
+# the other textures, the lights and environment of the ship's view, the smooth scrolling (a bare node in its place
+# under Use), the sounds and the flicker (harness\fleet_flicker.gd).
 $buyUi = (Get-Content -LiteralPath (Join-Path $GameSource 'enceladus\SystemBuyUI.tscn') -Raw) -replace "`r`n", "`n"
 $animations = [regex]::Matches($buyUi, '(?ms)^\[sub_resource type="Animation" id=\d+\]\n.*?(?=^\[)')
 $anims = [regex]::Matches($buyUi, '(?m)^anims/\w+ = SubResource\( \d+ \)$')
 if ($animations.Count -lt 2 -or $anims.Count -ne $animations.Count) { throw 'Cannot read the confirmation animations from enceladus\SystemBuyUI.tscn' }
+$spriteBlock = [regex]::Match($buyUi, '(?ms)^\[node name="Sprite" type="Sprite" parent="HBox/Margin"\]\n(.*?)(?=^\[)')
+$buyBlock = [regex]::Match($buyUi, '(?ms)^\[node name="Buy" type="Button" parent="HBox"\]\n(.*?)(?=^\[)')
+if (-not $spriteBlock.Success -or -not $buyBlock.Success) { throw 'Cannot read the picture sprite and the Buy button from enceladus\SystemBuyUI.tscn' }
+$spriteLines = @($spriteBlock.Groups[1].Value -split "`n" | Where-Object { $_ -match '^(position|scale|centered|offset|flip_h|flip_v) = ' }) -join "`n"
+$buyLines = @($buyBlock.Groups[1].Value -split "`n" | Where-Object { $_ -match '^margin_\w+ = ' }) -join "`n"
+if (-not $spriteLines -or -not $buyLines) { throw 'enceladus\SystemBuyUI.tscn: no placement for the picture sprite or no margins for the Buy button' }
 $entry = @'
 [gd_scene load_steps=@@STEPS@@ format=2]
 
@@ -642,6 +651,7 @@ rect_clip_content = true
 theme = ExtResource( 8 )
 
 [node name="Sprite" type="Sprite" parent="HBox/Margin"]
+@@SPRITE@@
 
 [node name="NewMark" type="Sprite" parent="HBox/Margin"]
 
@@ -701,6 +711,7 @@ flat = true
 [node name="SmoothScrollTo" type="Node" parent="HBox/Use"]
 
 [node name="Buy" type="Button" parent="HBox"]
+@@BUY@@
 hint_tooltip = "UPGRADE_BUY"
 disabled = true
 flat = true
@@ -787,6 +798,7 @@ supress = true
 [connection signal="pressed" from="ConfirmationCenter/SellPanel/MarginContainer/VBoxContainer/HBoxContainer/SellCancel" to="." method="_on_SellCancel_pressed"]
 '@
 $entry = $entry.Replace('@@STEPS@@', [string](9 + $animations.Count)).Replace('@@ANIMATIONS@@', (($animations | ForEach-Object { $_.Value.TrimEnd() + "`n" }) -join "`n")).Replace('@@ANIMS@@', (($anims | ForEach-Object { $_.Value }) -join "`n"))
+$entry = $entry.Replace('@@SPRITE@@', $spriteLines).Replace('@@BUY@@', $buyLines)
 Write-Utf8Lf (Join-Path $project 'enceladus\SystemBuyUI.tscn') $entry
 # An Equipment item (enceladus\SystemShipUpgradeUI.tscn, as enceladus\Upgrades.tscn instances it): the game's node
 # paths, script, labels and connections; without the theme, the icons, the system name's script, the smooth scrolling,
@@ -844,6 +856,169 @@ script = ExtResource( 2 )
 [connection signal="focus_entered" from="HBox/Buy" to="." method="_on_Buy_focus_entered"]
 [connection signal="pressed" from="HBox/Buy" to="." method="_on_Buy_pressed"]
 '@
+# A ship's hardpoint (weapons\WeaponSlot.tscn, which the ship scenes instance inline or as placeholders): the game's
+# root, with its script (ships\WeaponSlot.gd) and the values it sets, without the systems' placeholders.
+$slotScene = (Get-Content -LiteralPath (Join-Path $GameSource 'weapons\WeaponSlot.tscn') -Raw) -replace "`r`n", "`n"
+$slotScript = [regex]::Match($slotScene, '(?m)^\[ext_resource path="res://ships/WeaponSlot\.gd" type="Script" id=(\d+)\]$')
+$slotRoot = [regex]::Match($slotScene, '(?ms)^\[node name="WeaponSlot" type="Node2D"\]\n(.*?)(?=^\[)')
+if (-not $slotScript.Success -or -not $slotRoot.Success) { throw 'Cannot read the hardpoint from weapons\WeaponSlot.tscn' }
+$slotLines = @(foreach ($line in $slotRoot.Groups[1].Value -split "`n")
+{
+	if ($line -eq "script = ExtResource( $($slotScript.Groups[1].Value) )") { 'script = ExtResource( 1 )' }
+	elseif ($line -match '^\w+ = ' -and $line -notmatch 'Resource\(') { $line }
+})
+if ($slotLines -notcontains 'script = ExtResource( 1 )') { throw 'The hardpoint in weapons\WeaponSlot.tscn has no ships\WeaponSlot.gd' }
+New-Item -ItemType Directory -Force (Join-Path $project 'weapons') | Out-Null
+Write-Utf8Lf (Join-Path $project 'weapons\WeaponSlot.tscn') ("[gd_scene load_steps=2 format=2]`n`n[ext_resource path=`"res://ships/WeaponSlot.gd`" type=`"Script`" id=1]`n`n[node name=`"WeaponSlot`" type=`"Node2D`"]`n" + ($slotLines -join "`n") + "`n")
+# The Dealer screen (enceladus\Dealer.tscn, which enceladus\Enceladus.tscn instances as the station's Dealer and
+# enceladus\Owned.tscn as Fleet): the root with the game's script, theme, anchors, size flags and the node paths it sets,
+# the Shower, and a node at every path Dealer.gd reads and at their parents (the game's node type, or the root type of
+# the scene the game instances there, without that scene's content), with the game's own sizes, margins, size flags,
+# themes and frames where its scene sets them (DealerNotifier's settings screen copies the description window); without
+# the scripts below the root, the viewports' contents, the texts, the tabs' hints, the simulator's button and the
+# sounds. Its entries are a Dealer entry: the Fleet entry above, with the game's tooltip node
+# (menu\sfx\PlaySoundsOnTheseButtons.tscn: its script, paths and nodes, without the sounds and theme), as the game's
+# SystemBuyUI.tscn has it.
+Write-Utf8Lf (Join-Path $project 'harness\dealer_entry.tscn') @'
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://enceladus/SystemBuyUI.tscn" type="PackedScene" id=1]
+[ext_resource path="res://menu/sfx/PlaySoundsOnTheseButtons.gd" type="Script" id=2]
+
+[node name="SystemBuyUi" instance=ExtResource( 1 )]
+
+[node name="PlaySoundsOnTheseButtons" type="Node" parent="."]
+pause_mode = 2
+script = ExtResource( 2 )
+tooltipLabelPath = NodePath("Separation/Tooltip/MarginContainer/PanelContainer/TooltipLabel")
+tooltipContainerPath = NodePath("Separation/Tooltip/MarginContainer")
+tooltipPositionPath = NodePath("Separation/Tooltip")
+
+[node name="focus" type="AudioStreamPlayer" parent="PlaySoundsOnTheseButtons"]
+
+[node name="hover" type="AudioStreamPlayer" parent="PlaySoundsOnTheseButtons"]
+
+[node name="select" type="AudioStreamPlayer" parent="PlaySoundsOnTheseButtons"]
+
+[node name="Separation" type="Node" parent="PlaySoundsOnTheseButtons"]
+
+[node name="Tooltip" type="Node2D" parent="PlaySoundsOnTheseButtons/Separation"]
+visible = false
+
+[node name="MarginContainer" type="MarginContainer" parent="PlaySoundsOnTheseButtons/Separation/Tooltip"]
+mouse_filter = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="PlaySoundsOnTheseButtons/Separation/Tooltip/MarginContainer"]
+mouse_filter = 2
+
+[node name="TooltipLabel" type="Label" parent="PlaySoundsOnTheseButtons/Separation/Tooltip/MarginContainer/PanelContainer"]
+'@
+$dealerScene = (Get-Content -LiteralPath (Join-Path $GameSource 'enceladus\Dealer.tscn') -Raw) -replace "`r`n", "`n"
+$dealerScript = Get-Content -LiteralPath (Join-Path $GameSource 'enceladus\Dealer.gd') -Raw
+$stationScene = (Get-Content -LiteralPath (Join-Path $GameSource 'enceladus\Enceladus.tscn') -Raw) -replace "`r`n", "`n"
+$dealerPaths = [ordered]@{}
+foreach ($m in [regex]::Matches($dealerScript, '(?m)^export \(NodePath\) var (\w+) = NodePath\("([^"]*)"\)')) { $dealerPaths[$m.Groups[1].Value] = $m.Groups[2].Value }
+$dealerRoot = [regex]::Match($dealerScene, '(?ms)^\[node name="Dealer" type="PanelContainer"\]\n(.*?)(?=^\[)')
+if ($dealerPaths.Count -eq 0 -or -not $dealerRoot.Success) { throw 'Cannot read the node paths of enceladus\Dealer.gd and enceladus\Dealer.tscn' }
+$dealerExt = @{}
+foreach ($m in [regex]::Matches($dealerScene, '(?m)^\[ext_resource path="res://([^"]+)" type="(\w+)" id=(\d+)\]$')) { $dealerExt[$m.Groups[3].Value] = @{ Path = $m.Groups[1].Value; Type = $m.Groups[2].Value } }
+$dealerSubs = @{}
+foreach ($m in [regex]::Matches($dealerScene, '(?ms)^\[sub_resource type="(\w+)" id=(\d+)\]\n(.*?)(?=^\[)')) { $dealerSubs[$m.Groups[2].Value] = "[sub_resource type=`"$($m.Groups[1].Value)`" id=$($m.Groups[2].Value)]`n" + $m.Groups[3].Value.TrimEnd() + "`n" }
+# The stub's resources: each game resource it uses once, by its path, numbered in the order they are met.
+$stubExt = [ordered]@{}
+function Add-DealerExt([string] $Path, [string] $Type)
+{
+	if (-not (Test-Path -LiteralPath (Join-Path $project $Path.Replace('/', '\')))) { throw "The Dealer screen stub needs res://$Path, which the project lacks" }
+	if (-not $stubExt.Contains($Path)) { $stubExt[$Path] = @{ Id = $stubExt.Count + 1; Type = $Type } }
+	return $stubExt[$Path].Id
+}
+$stubSubs = [ordered]@{}
+$scriptId = Add-DealerExt 'enceladus/Dealer.gd' 'Script'
+$entryId = Add-DealerExt 'harness/dealer_entry.tscn' 'PackedScene'
+$showerId = Add-DealerExt 'enceladus/Shower.tscn' 'PackedScene'
+# The node's own values, then the script, then the script's: values of a script's variables set before it is are lost.
+$rootLines = @()
+$rootVars = @()
+foreach ($line in $dealerRoot.Groups[1].Value -split "`n")
+{
+	if ($line -match '^(\w+Path) = NodePath\("([^"]*)"\)$') { $dealerPaths[$Matches[1]] = $Matches[2]; $rootVars += $line }
+	elseif ($line -match '^theme = ExtResource\( (\d+) \)$') { $e = $dealerExt[$Matches[1]]; $rootLines += "theme = ExtResource( $(Add-DealerExt $e.Path $e.Type) )" }
+	elseif ($line -match '^(anchor_\w+|size_flags_\w+) = ') { $rootLines += $line }
+}
+# The game's nodes by path, in the scene's order (parents first).
+$dealerNodes = [ordered]@{}
+foreach ($m in [regex]::Matches($dealerScene, '(?ms)^\[node name="([^"]+)"([^\]]*)\]\n(.*?)(?=^\[|\z)'))
+{
+	$attrs = $m.Groups[2].Value
+	$parent = [regex]::Match($attrs, 'parent="([^"]*)"')
+	if (-not $parent.Success) { continue }
+	$path = if ($parent.Groups[1].Value -eq '.') { $m.Groups[1].Value } else { $parent.Groups[1].Value + '/' + $m.Groups[1].Value }
+	$type = [regex]::Match($attrs, 'type="(\w+)"').Groups[1].Value
+	$instance = [regex]::Match($attrs, 'instance=ExtResource\( (\d+) \)')
+	if (-not $type -and $instance.Success)
+	{
+		$sub = Get-Content -LiteralPath (Join-Path $GameSource $dealerExt[$instance.Groups[1].Value].Path.Replace('/', '\')) -Raw
+		$type = [regex]::Match($sub, '(?m)^\[node name="[^"]+" type="(\w+)"\]').Groups[1].Value
+	}
+	$dealerNodes[$path] = @{ Name = $m.Groups[1].Value; Parent = $parent.Groups[1].Value; Type = $type; Body = $m.Groups[3].Value }
+}
+$neededNodes = [Collections.Generic.HashSet[string]]::new()
+foreach ($p in $dealerPaths.Values)
+{
+	if (-not $dealerNodes.Contains($p)) { throw "enceladus\Dealer.tscn has no node at $p, which Dealer.gd reads" }
+	$parts = $p.Split('/')
+	for ($i = 1; $i -le $parts.Count; $i++) { $null = $neededNodes.Add(($parts[0..($i - 1)] -join '/')) }
+}
+$dealerNodeText = foreach ($p in $dealerNodes.Keys)
+{
+	if (-not $neededNodes.Contains($p)) { continue }
+	$n = $dealerNodes[$p]
+	if (-not $n.Type) { throw "enceladus\Dealer.tscn: no node type for $p" }
+	$lines = @("[node name=`"$($n.Name)`" type=`"$($n.Type)`" parent=`"$($n.Parent)`"]")
+	foreach ($line in $n.Body -split "`n")
+	{
+		if ($line -match '^(theme|custom_styles/panel) = ExtResource\( (\d+) \)$') { $e = $dealerExt[$Matches[2]]; $lines += "$($Matches[1]) = ExtResource( $(Add-DealerExt $e.Path $e.Type) )" }
+		elseif ($line -match '^custom_styles/panel = SubResource\( (\d+) \)$') { $stubSubs[$Matches[1]] = $dealerSubs[$Matches[1]]; $lines += $line }
+		elseif ($line -match '^(custom_constants/\w+|rect_min_size|rect_clip_content|size_flags_\w+|autowrap|columns) = ') { $lines += $line }
+	}
+	($lines -join "`n") + "`n"
+}
+$dealerStub = "[gd_scene load_steps=$(1 + $stubExt.Count + $stubSubs.Count) format=2]`n`n"
+$dealerStub += (($stubExt.Keys | ForEach-Object { "[ext_resource path=`"res://$_`" type=`"$($stubExt[$_].Type)`" id=$($stubExt[$_].Id)]" }) -join "`n") + "`n`n"
+if ($stubSubs.Count -gt 0) { $dealerStub += ($stubSubs.Values -join "`n") + "`n" }
+$dealerStub += "[node name=`"Dealer`" type=`"PanelContainer`"]`n" + (@($rootLines) + "script = ExtResource( $scriptId )" + @($rootVars) + "shipLineBlueprint = ExtResource( $entryId )" -join "`n") + "`n`n"
+$dealerStub += "[node name=`"Shower`" parent=`".`" instance=ExtResource( $showerId )]`n`n"
+$dealerStub += $dealerNodeText -join "`n"
+Write-Utf8Lf (Join-Path $project 'enceladus\Dealer.tscn') $dealerStub
+# Fleet (enceladus\Owned.tscn): the Dealer screen stub with the game's values for it (which lists it shows). The
+# station's Dealer and Fleet (their nodes in enceladus\Enceladus.tscn, harness\station_dealer.tscn and
+# station_owned.tscn): those stubs with the station's values for them (size, size flags, frame, lists).
+$ownedScene = (Get-Content -LiteralPath (Join-Path $GameSource 'enceladus\Owned.tscn') -Raw) -replace "`r`n", "`n"
+$ownedRoot = [regex]::Match($ownedScene, '(?ms)^\[node name="Owned" instance=ExtResource\( \d+ \)\]\n(.*?)(?=^\[)')
+$ownedLines = @(if ($ownedRoot.Success) { $ownedRoot.Groups[1].Value -split "`n" | Where-Object { $_ -match '^show\w+ = ' } })
+if ($ownedLines.Count -eq 0) { throw 'Cannot read which lists enceladus\Owned.tscn shows' }
+Write-Utf8Lf (Join-Path $project 'enceladus\Owned.tscn') ("[gd_scene load_steps=2 format=2]`n`n[ext_resource path=`"res://enceladus/Dealer.tscn`" type=`"PackedScene`" id=1]`n`n[node name=`"Owned`" instance=ExtResource( 1 )]`n" + ($ownedLines -join "`n") + "`n")
+$stationExt = @{}
+foreach ($m in [regex]::Matches($stationScene, '(?m)^\[ext_resource path="res://([^"]+)" type="(\w+)" id=(\d+)\]$')) { $stationExt[$m.Groups[3].Value] = @{ Path = $m.Groups[1].Value; Type = $m.Groups[2].Value } }
+foreach ($screen in @(@('Dealer', 'enceladus/Dealer.tscn', 'station_dealer'), @('Owned', 'enceladus/Owned.tscn', 'station_owned')))
+{
+	$block = [regex]::Match($stationScene, '(?ms)^\[node name="' + $screen[0] + '" parent="EnceladusMenu/MenuContainer/MarginContainer/CanvasLayer/MarginContainer" instance=ExtResource\( \d+ \)\]\n(.*?)(?=^\[)')
+	if (-not $block.Success) { throw "Cannot read the $($screen[0]) screen from enceladus\Enceladus.tscn" }
+	$stationLines = @()
+	$stationRes = @("[ext_resource path=`"res://$($screen[1])`" type=`"PackedScene`" id=1]")
+	foreach ($line in $block.Groups[1].Value -split "`n")
+	{
+		if ($line -match '^custom_styles/panel = ExtResource\( (\d+) \)$')
+		{
+			$e = $stationExt[$Matches[1]]
+			if (-not (Test-Path -LiteralPath (Join-Path $project $e.Path.Replace('/', '\')))) { throw "The station's $($screen[0]) needs res://$($e.Path), which the project lacks" }
+			$stationRes += "[ext_resource path=`"res://$($e.Path)`" type=`"$($e.Type)`" id=2]"
+			$stationLines += 'custom_styles/panel = ExtResource( 2 )'
+		}
+		elseif ($line -match '^(rect_min_size|size_flags_\w+|show\w+) = ') { $stationLines += $line }
+	}
+	Write-Utf8Lf (Join-Path $project "harness\$($screen[2]).tscn") ("[gd_scene load_steps=$(1 + $stationRes.Count) format=2]`n`n" + ($stationRes -join "`n") + "`n`n[node name=`"$($screen[0])`" instance=ExtResource( 1 )]`n" + ($stationLines -join "`n") + "`n")
+}
 # The ring scene (Game.tscn, as enceladus\Enceladus.gd loads it): the game's root node with its script and values
 # (totalCutsceneTime, initialCutsceneTime), the title card player with the game's autoplay, process mode and the
 # "intro", "exit", "helpless", "gameover" and "fasttravel" animations, a node at every path those drive (the game's node
@@ -974,6 +1149,7 @@ $suiteMods = @{
 	geology = @('GeologyByMass')
 	fleet = @('ShipCopyPaste')
 	skip = @('DiveSkipTransit')
+	dealer = @('DealerNotifier')
 	transponder = @('AltTransponderCodes')
 }
 $given = @{}

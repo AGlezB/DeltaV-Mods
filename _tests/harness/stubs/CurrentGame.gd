@@ -1,9 +1,9 @@
 extends Node
 
 # Stub of the game's CurrentGame autoload: what DockingArm.gd, CabinLight.gd, Tool.gd, TuningFloatValue.gd,
-# Hud.gd, PriceLabel.gd, HireableCrew.gd, CrewBio.gd, SystemBuyUI.gd, SystemShipUpgradeUI.gd, Game.gd, Enceladus.gd,
-# TransponderOnIntro.gd, story/body.gd, menu/NewGamePlus.gd, CrewCheapHireNotifier, GeologyByMass, ShipCopyPaste,
-# DiveSkipTransit and AltTransponderCodes reach.
+# Hud.gd, PriceLabel.gd, HireableCrew.gd, CrewBio.gd, SystemBuyUI.gd, SystemShipUpgradeUI.gd, Dealer.gd, Game.gd,
+# Enceladus.gd, TransponderOnIntro.gd, story/body.gd, menu/NewGamePlus.gd, CrewCheapHireNotifier, GeologyByMass,
+# ShipCopyPaste, DiveSkipTransit, DealerNotifier and AltTransponderCodes reach.
 
 signal dayPassed()
 signal employmentChanged()
@@ -55,6 +55,9 @@ var targetTimeScale = 1.0 # Game.gd _process sets it during cutscenes (BulletTim
 var inventoryMode = false # Game.gd interlunarToEnceladus resets it
 var saves = 0 # how many times saveToFile() was called
 var playtime = {} # what addPlaytime() added, by name
+var usedShipsPool = [] # the models the dealer draws its used ships from, as the game's; the dealer suite fills it
+var forSale = [] # the ships getShipsAvailableForSale() returns; the dealer suite fills it
+var ownedShips = [] # the ships getOwnedShips() returns (Fleet's list); the dealer suite fills it
 # The transponder suite's own CurrentGame (the game's script, with AltTransponderCodes' extension): this stub hands it
 # menu/NewGamePlus.gd's transponder calls, and the members this stub doesn't have (_get, _set).
 var game = null
@@ -76,6 +79,24 @@ func _set(property, value):
 		game.set(property, value)
 		return true
 	return false
+
+# The game's builds the dealer's stock anew (day, week, seed, the ships sold); this one gives `forSale`.
+func getShipsAvailableForSale():
+	return forSale.duplicate()
+
+func getOwnedShips(_includeCurrent = false):
+	return ownedShips.duplicate()
+
+# As the game's: the transponders of the ships sold, which state.soldShips holds with their configs.
+func getSoldTransponders():
+	var transponders = []
+	for s in state.get("soldShips", []):
+		transponders.append(s.config.transponder)
+	return transponders
+
+# As the game's.
+func shipHashFromConfig(sc):
+	return JSON.print(sc, "", true)
 
 func isDemo():
 	return false

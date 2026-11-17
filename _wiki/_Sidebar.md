@@ -20,6 +20,7 @@
 
 **Ships**
 - [AltTransponderCodes](AltTransponderCodes)
+- [DealerNotifier](DealerNotifier)
 - [ShipCopyPaste](ShipCopyPaste)
 - [ShipHighlightTypeAndPrice](ShipHighlightTypeAndPrice)
 - [ShipSortByTypeAndPrice](ShipSortByTypeAndPrice)
