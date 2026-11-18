@@ -89,3 +89,16 @@ To remove a mod, take its zip out of the `mods` folder. To play without any mods
 Mods are unofficial: the game's developers didn't make them, and a game update can break them. **Keep a backup of
 your save.** On Windows your save is the file `savegame.dv` in the folder `%APPDATA%\dV` (type that in the address
 bar of File Explorer to open it).
+
+## Disclaimer
+
+ΔV: Rings of Saturn is made and owned by Kodera Software. The game's name, and everything from the game these pages
+show (its screens, words and pictures), belong to Kodera Software.
+
+AGlezB, who made these mods, has no tie of any kind to the game or to Kodera Software. Kodera Software didn't make,
+check or approve these mods, and doesn't support them.
+
+Everything in the [repository](https://github.com/AGlezB/DeltaV-Mods) (the mods, their code and these pages) is
+given as is, for free, and without warranty of any kind: nobody promises that it works or that it suits any use, and
+you use it at your own risk. The [GNU GPLv3](https://github.com/AGlezB/DeltaV-Mods/blob/main/LICENSE), the license
+the mods come under, says this in full.

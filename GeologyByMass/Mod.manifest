@@ -8,8 +8,8 @@ author="AGlezB"
 [version]
 
 version_major=1
-version_minor=1
-version_bugfix=1
+version_minor=2
+version_bugfix=0
 
 [tags]
 

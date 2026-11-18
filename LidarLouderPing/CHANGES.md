@@ -1,5 +1,9 @@
 # LidarLouderPing - Changes
 
+## 1.2.2
+- The README has a new *Disclaimer*: the game belongs to Kodera Software, the author has no tie to it or to the
+  company, and the mod is provided as is, for free, without warranty.
+
 ## 1.2.1
 - The mod's id is now `AGlezB.LidarLouderPing` and its author `AGlezB` (were lowercase).
 

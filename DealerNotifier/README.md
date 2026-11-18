@@ -194,3 +194,13 @@ Mods are unofficial and can break after game updates. Keep a backup of your save
 ## About
 Made with the help of AI (Claude, by Anthropic).
 Licensed under the GNU General Public License v3.0 (GNU GPLv3).
+
+## Disclaimer
+ΔV: Rings of Saturn is made and owned by Kodera Software. The game's name, and everything from the game this mod uses
+or shows, belong to Kodera Software.
+
+AGlezB, the author of this mod, has no tie of any kind to the game or to Kodera Software. Kodera Software didn't make,
+check or approve this mod, and doesn't support it.
+
+This mod is provided as is, for free, and without warranty of any kind, express or implied: use it at your own risk.
+The GNU GPLv3 it is licensed under says so in full, in its sections 15 and 16.

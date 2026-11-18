@@ -1,9 +1,11 @@
 # ArmAltTargetSelection - Changes
 
-## NEXT
+## 1.2.3
 - The README's image moved out of the mod into the repository's users' wiki
   (`_wiki/images/ArmAltTargetSelection-area.png`, was `TargetSelection.png`), which the README now links: the zip
   no longer carries it.
+- The README has a new *Disclaimer*: the game belongs to Kodera Software, the author has no tie to it or to the
+  company, and the mod is provided as is, for free, without warranty.
 
 ## 1.2.2
 - The script extension is now `ArmAltTargetSelection/Code.gd` (was `DockingArmTargetSelection.gd`): edit the

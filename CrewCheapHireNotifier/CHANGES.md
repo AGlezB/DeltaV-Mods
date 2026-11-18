@@ -1,5 +1,9 @@
 # CrewCheapHireNotifier - Changes
 
+## 1.9.1
+- The README has a new *Disclaimer*: the game belongs to Kodera Software, the author has no tie to it or to the
+  company, and the mod is provided as is, for free, without warranty.
+
 ## 1.9.0
 - On the settings screen, a Crew limit row's value turns light red (the crew screens' colour for a worse stat) while
   more crew members with that job are hired than its limit, and green (their colour for a better stat) when exactly as

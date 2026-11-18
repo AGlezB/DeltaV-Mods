@@ -1,5 +1,9 @@
 # ShipHighlightTypeAndPrice - Changes
 
+## 1.0.4
+- The README has a new *Disclaimer*: the game belongs to Kodera Software, the author has no tie to it or to the
+  company, and the mod is provided as is, for free, without warranty.
+
 ## 1.0.3
 - The code moved from `ModMain.gd` to `ShipHighlightTypeAndPrice/Code.gd`, which `ModMain.gd` now adds as a node:
   edit `TYPE_COLOR` and `DIM_COLOR` there. No change in behaviour.

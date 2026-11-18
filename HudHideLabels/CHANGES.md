@@ -1,8 +1,10 @@
 # HudHideLabels - Changes
 
-## NEXT
+## 1.0.2
 - The README's *For modders* says the mod was also seen in the real game, on every HUD, in the users' wiki's
   screenshot runs.
+- The README has a new *Disclaimer*: the game belongs to Kodera Software, the author has no tie to it or to the
+  company, and the mod is provided as is, for free, without warranty.
 
 ## 1.0.1
 - The code moved from `ModMain.gd` to `HudHideLabels/Code.gd`, which `ModMain.gd` now adds as a node: edit

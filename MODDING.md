@@ -181,8 +181,11 @@ overwritten at the next publish, so edit `_wiki\` only. The wiki's settings rest
 **Files.** `_wiki\` holds only pages and images, since everything in it is published:
 
 - `Home.md`: what the mods are, every mod in groups with a plain one-line summary, *Mods that change how the game
-  plays*, and *Installing mods* (where a zip comes from, the `mods` folder, `--enable-mods`, a backup of the save).
-- `_Sidebar.md` (Home and every mod page, in Home's groups) and `_Footer.md`.
+  plays*, *Installing mods* (where a zip comes from, the `mods` folder, `--enable-mods`, a backup of the save), and
+  *Disclaimer* (the game belongs to Kodera Software, the author has no tie to it or to the company, and everything in
+  the repository is given as is, for free, without warranty).
+- `_Sidebar.md` (Home and every mod page, in Home's groups) and `_Footer.md` (on every page: the mods are unofficial,
+  the short disclaimer with its link to Home's, the source code, the license, the AI credit).
 - `<ModName>.md`, one per mod: the page's name is the mod's, so its link is `…/wiki/<ModName>`.
 - `images\<ModName>-<view>-without.png` and `-with.png` (a single picture: `<ModName>-<view>.png`): PNG, at most 2 MB,
   a screenshot cropped to the part of the screen that changes. The mods' READMEs keep their pictures here too (the
@@ -434,8 +437,10 @@ Adding or removing a mod adds or removes its page, and its lines in Home and the
   modders* for script extensions (what is extended, overrides, new members, constants, how it was tested); *Install*
   (three steps; the second, the same in every README, is "Put the mod's zip in it, and remove any other version of
   the mod from there: they would all load. Do not unzip it."; the third, `--enable-mods`); the "Mods are unofficial …
-  Keep a backup of your save." line; *About* (made with the help of Claude; GPLv3). When the behaviour changes, update
-  the README's text, *Warning* and figures too, and the mod's page in the users' wiki.
+  Keep a backup of your save." line; *About* (made with the help of Claude; GPLv3); *Disclaimer* (the game belongs to
+  Kodera Software, the author has no tie to it or to the company, the mod is provided as is, for free, without
+  warranty; the same text in every README, ending with the GPLv3's sections 15 and 16). When the behaviour changes,
+  update the README's text, *Warning* and figures too, and the mod's page in the users' wiki.
 - The root `README.md`, this file, `_tests/README.md` and `_wiki\` are the repository's own (they ship in no zip, and
   `CHANGES.md` doesn't list their changes). Update the README's *Mods* table when a mod is added or removed or a mod's
   summary changes, and its *Mods that change how the game plays* when a mod gains or loses its *Warning*, and the

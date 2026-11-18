@@ -1,9 +1,11 @@
 # ArmAltPullBehavior - Changes
 
-## NEXT
+## 1.5.2
 - The README's two images moved out of the mod into the repository's users' wiki
   (`_wiki/images/ArmAltPullBehavior-feeding.png` and `-not-feeding.png`, were `PullBehavior-feeding.png` and
   `PullBehavior-not-feeding.png`), which the README now links: the zip no longer carries them.
+- The README has a new *Disclaimer*: the game belongs to Kodera Software, the author has no tie to it or to the
+  company, and the mod is provided as is, for free, without warranty.
 
 ## 1.5.1
 - The script extension is now `ArmAltPullBehavior/Code.gd` (was `DockingArmPullBehavior.gd`): edit the constants
