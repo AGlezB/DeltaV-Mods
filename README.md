@@ -64,7 +64,8 @@ Mods are unofficial and can break after game updates. Keep a backup of your save
 ## For modders
 
 How the code is laid out, how the game loads a mod and how these mods hook in, the conventions they follow and the
-game's terms are in [MODDING.md](MODDING.md); the test harness is in [`_tests/README.md`](_tests/README.md).
+game's terms are in [MODDING.md](MODDING.md); how the game works behind those terms, in [GAME.md](GAME.md); the test
+harness, in [`_tests/README.md`](_tests/README.md).
 
 ## About
 Made with the help of AI (Claude, by Anthropic).

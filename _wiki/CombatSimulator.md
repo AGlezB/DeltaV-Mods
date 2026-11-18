@@ -879,7 +879,7 @@ CombatSimulator/CombatLayer.gd BUILDERS.HYBRID.script = "res://story/HybridHunte
 CombatSimulator/CombatLayer.gd BUILDERS.TSUKUYOMI.node = "BigBadWolf" -> as the Big Bad Wolf
 CombatSimulator/CombatLayer.gd NEW_BUILDS = ["ATLAS", "DRONE", "PROSPECTOR-BALD"] -> Bald Eagle, the racing drone and ATLAS come new
 game: 16 s, from a ship's explosion to its removal, which ends the fight (sfx/Explosion.tscn, the explosion animation's explodeCleanup key; ships/Reactor.gd explodeCleanup)
-game: 0.3 to 0.5, the chaos of most of the rings, more the deeper (ring/ring-map.png red channel by depth; MODDING.md Glossary, Chaos)
+game: 0.3 to 0.5, the chaos of most of the rings, more the deeper (ring/ring-map.png red channel by depth; GAME.md, Chaos)
 game: 30 to 80 t; 30 t; 80 t; 15 t; 800 t; 1,300 t; 2 t; 40 t: the remass an enemy carries, its tanks full as built (ships/Shipyard.gd defaultConfig, defaultShipConfig and usedShipConfigs fuel.capacity)
 game: 10 t and 5 t, the remass and ammunition of the pirate K37 TNTRL (story/PirateCombat.gd makeAt fuel.initial, ammo)
 game: 0.5, 3 and 0.03 t/s, the most remass a reactor vents at a full leak (ships/modules/NuclearReactor.tscn, MAD-CERF.tscn, Tsukuyomi.tscn, drone/ATLAS.tscn, drone/Drone.tscn leakFuelConsumption); a quarter, where venting starts (ships/Reactor.gd damageLeakOffset 0.25)

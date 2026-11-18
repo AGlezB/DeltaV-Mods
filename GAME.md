@@ -1,0 +1,526 @@
+# ΔV: Rings of Saturn mods - how the game works
+
+How the base game works behind the terms of [MODDING.md](MODDING.md)'s *Glossary*: formulas, figures, spawn rules and
+what decides what, found in the decompiled game while making these mods. Each section is named as its Glossary entry,
+which says what the term is, its key and where it lives in the game; *Section* names a section of this file, and every
+other game term is in the Glossary. Like the rest of the docs, this file cites game behaviour with the game file and
+function it comes from, checked in the newest decompiled game (MODDING.md *Folders outside the repo*), and quotes only
+the base game's values, never a mod's constants (MODDING.md *Conventions*). A game update can change what it says.
+
+## Adrenaline
+
+Three things raise it: the Adrenaline Booster; the smart camera (a display setting, `Settings.cfg.display.smartCamera`;
+`ships/camera.gd`) when objects close in fast; and the pilot, when their Course anticipation
+(`CREW_STATS_PILOT_ANTICIPATION`) foresees a collision (`ship-ctrl.gd` `handlePilotAdrenaline`). How slow time gets at
+full adrenaline is the pilot's Adrenal slowdown (`CREW_STATS_PILOT_ADRENALINE`, `CurrentGame.getAdrenalSlowdown`), set
+by their talent (see *Crew stats*).
+
+## Astrogation
+
+- The trip: the ship first speeds up to the tab's travel velocity (`HUD_VELOCITY`), flown by the autopilot while Use
+  autopilot (`HUD_ASTROGATION_AUTOPILOT_MATCH`) is on (`Game.gd` `initiateFastTravel`). Then it jumps to the
+  destination, in-game time advances by the distance divided by that velocity, and the autopilot brakes the ship
+  (`ship-ctrl.gd` `fastTravelTo`). A faster trip takes less time and more remass, for speeding up and braking. A
+  destination too close can't be picked (`HINT_POI_TOO_CLOSE`). Enceladus (`DESTINATION_ENCELADUS`) is always
+  listed: picking it leaves the ring, through the exit cutscene and the transit back.
+- Destinations: kept per save in `CurrentGame.state.astrogation`, each with a deadline (`time`). A trackable one
+  stays usable until the crew's Coordinate tracking time (see *Crew stats*) after its deadline
+  (`getTimeLeftForDestination`, shown next to its name). Entering its spot again moves the deadline to that moment,
+  plus the spot's own extra days (`story/Discovery.gd`, `discoverPoi`).
+- Past that time a destination is lost: listed only with Show lost destinations (`HUD_ASTROGATION_SHOW_EXPIRED`),
+  and a trip to it lands off target, by an error that grows to `expiredAstrogationPeakError` (18 km) over one more
+  tracking time (`getDestinationUncertinty`). Destinations that aren't trackable (timed events) drop off the list
+  at their deadline. Every in-game hour counts against them: transit, the dive itself, astrogation and the hours
+  spent at the station.
+
+## ATLAS
+
+- Spawn: a random event of the rings (`AtlasRandom` in `story/TheRing.tscn`, a `story/RingRace.gd` with
+  `racerModel = "ATLAS"`). It passes at any depth, with no roll and no chaos limit, so it spawns once every pass of
+  the shuffled event list (see *Salvage*).
+- The audit (`comms/conversation/AtlasConversation.tscn`): curious about the player's ship, it comes to talk once,
+  asking for an AT audit (Artificial Threat, `DIALOG_ATLAS_WHATS_AT_SCAN_EXPLAIN`). Granting access ends it with a
+  scan and one of three random closing lines, none of which has an effect ("Autopilot shackles upgraded",
+  `DIALOG_ATLAS_SHACKLES_ADJUSTED`, changes nothing). Refusing, or not answering within the line's `timeout`
+  (30 s), brings a threat (`DIALOG_ATLAS_AUTHORIZED_FORCE`). Refusing again, or not answering, makes it hostile
+  (`DIALOG_ATLAS_PREPARE_FOR_AUDIT`, `changeHostility`): it closes in and fires its MWGs (`ship-ctrl.gd`, the AI's
+  hunter mode). After the line's `noReplyTimeout` (20 s) it declares the scan complete and stops being hostile
+  (`DIALOG_ATLAS_SCAN_COMPLETE`). An ATLAS that is already hostile when it starts talking skips straight to that
+  forced audit.
+- Crew agendas (see *EVA*): with the AI conspiracy theorist (`AGENDA_CONSPIRACY_AI_THEORIST`) in the dive crew, the
+  player can ask for a human in charge; the agent recognises them and authorizes deadly force. With the android
+  (`AGENDA_ANDROID`), they can answer for the ship (`AGENDA_ANDROID_ATLAS_PROTECTED`), and ATLAS lets it go. After
+  an audit, the theorist complains (their morale drops by 0.2). If the android is there too and replies, the game
+  grants the Short Circuit achievement (`ACHIEVEMENT_CREW_SHORTCIRCUT`).
+- Destroyed, it leaves an AI core (`ships/drone/AICore.tscn`, the ship's `lifepod`). The core is an oddity: an
+  object the station pays a fixed price for when it comes back as cargo (`CurrentGame.isOddity`, `specialPrice`),
+  here 250,000 E$ (`ODDITY_AICORE`, "Quantum computer retrieval reward"). The drone itself has a transponder, so
+  holding it with the arm never adds it to the fleet (`CurrentGame.isShipSalvageable`, see *Salvage claim*).
+
+## Chaos
+
+Random events of the rings need a minimum chaos where they spawn (each event's `chaosLimit` in `story/TheRing.tscn`;
+see *Salvage*). The dive entry point's Environmental damages fee (`MAP_FEE_ENVIRONMENT`) grows with chaos × density
+(`DiveTarget.gd` `getPrices`, `chaosPricePerChaos`), less the geologist's cut (see *Crew stats*), so of two spots of
+the same density the dearer is the more chaotic. By depth, on the 1.92.5 map: under 0.35 in the first 10 km; from 10
+to 600 km about 0.35–0.4 on average, 0.4 or more in 20–60 % of spots and 0.5 or more in under 10 %; deeper, 0.45–0.5
+on average, 0.5 or more in 20–50 % of spots.
+
+## Crew stats
+
+- The crew's value for an occupation is the best among the dive crew in it, not counting those on leave, raised by
+  that member's good morale and lowered by bad (see *Morale*; `CurrentGame.getCrewStats`).
+- Each occupation's talent and experience give one stat each, shown on Your Crew (`deriveStats`, `skillMatrix`).
+  With no one of an occupation in the dive crew, its values are 0, and its stats still apply where 0 gives them a
+  value.
+  - Pilot. Adrenal slowdown (`CREW_STATS_PILOT_ADRENALINE`, from talent; see *Adrenaline*): game time at full
+    adrenaline runs at 0.7 − 0.5 × talent of its normal speed, from 0.7 with no pilot to 0.2 (`getAdrenalSlowdown`,
+    `BulletTimer.gd`); Your Crew shows it as the gain in the pilot's perception of time, 43 % to 400 %. Course
+    anticipation (`CREW_STATS_PILOT_ANTICIPATION`, from experience): how far ahead, 4 s × experience, the pilot
+    checks the ship's course for collisions; one foreseen raises adrenaline (`ship-ctrl.gd`
+    `handlePilotAdrenaline`), so with no pilot only the other sources do.
+  - Mechanic. Jury-rig efficiency (`CREW_STATS_MECHANIC_JURYRIG`, from talent; 25 % + 75 % × talent). Jury-rigging
+    is the OMS Mechanic tab's slider on each kind of damage a piece of equipment can take, from -1 to 1; moving one
+    moves the piece's others the opposite way by as much in total (`ship-ctrl.gd` `setSystemJuryRig`). A slider
+    multiplies that kind's damage capacity by 1 + slider × efficiency, at least 0.1
+    (`getCrewAdjustedJuryRigFactorForSystem`), and the damage counts against that capacity: at full efficiency the
+    same damage counts half at 1 and ten times at -1. Repair limit (`CREW_STATS_MECHANIC_FIX`, from experience;
+    71 % + 29 % × experience, at most 99.5 %; `getRepairLimit`): the Repairs screen offers Fix only for a piece
+    whose condition is below it, and fixes it only up to it; past it, only Replace
+    (`enceladus/SystemShipRepairUI.gd`). It counts the whole crew not on leave, not only the dive crew. How long a
+    Fix takes depends on the number of mechanics, not on their stats (`getMechanicMultiplier`).
+  - Geologist. Price prediction accuracy (`CREW_STATS_GEOLOGIST_PREDICTION`, from talent; 10 % + 80 % × talent). At
+    the Mineral Market, the price forecast's error is (time ahead / 40 days)² / accuracy, and at 1 the forecast is
+    noise (`getMineralPricePredictionError`, `enceladus/MineralPriceChart.gd`): about 13 days ahead at 10 %, 38 days
+    at 90 %. In a dive, each chunk's info box (`hud/MineralMark.gd`: the box the HUD shows by a chunk, with the mass
+    of each mineral in it and its value) gets one random error within ±(1 − accuracy), from ±90 % to ±10 %, on both
+    the masses and the value, and the ship records the chunk with those figures (`addIdentifiedObject`). Mineral
+    discovery range (`CREW_STATS_GEOLOGIST_RANGE`, from experience; 100 m + 1000 m × experience, 0 with no geologist
+    in the dive crew): only chunks within it get an info box (`hud/AutopilotOverlay.gd` `geologistMineralMarkers`).
+    It also sets how many past finds of each mineral the Geologist tab's mineral map keeps
+    (`getMineralHistoryLength`, `hud/components/MineralMap.gd`).
+  - Astrogator. Tactical awareness range (`CREW_STATS_ASTROGATOR_RANGE`, from talent; 500 m + 5000 m × talent, 0
+    with no astrogator in the dive crew): ships, stations and other tactical objects within it that the LIDAR has
+    seen get a marker with their transponder and name, the more likely the closer they are (a chance of
+    (1 − distance / range)² at each check; `hud/AutopilotOverlay.gd` `astrogatorTacticalMarkers`,
+    `hud/ShipMark.gd`). Coordinate tracking time (`CREW_STATS_ASTROGATOR_TIME`, from experience): how long trackable
+    destinations stay usable, see *Astrogation*; the longer of 12 h and 90 days × experience.
+  - Launch fees, on the dive entry point screen (`DiveTarget.gd` `getPrices`): the dive crew's astrogator talent
+    cuts the Xaser pathway burn fee (`MAP_FEE_DEPTH`), and its geologist experience the Environmental damages fee
+    (`MAP_FEE_ENVIRONMENT`), each by 99 % × the value.
+- Salary: the occupation's base (`CurrentGame.baseSalary`: Pilot 1700, Mechanic 1500, Geologist 2400, Astrogator
+  2100 E$) × (1 + bias + experience + 3 × talent)², the bias a random -0.5 to 0.5 per person
+  (`getExpectedSalaryFrom`), so talent counts three times as much as experience. It is fixed when the person is
+  offered, rounded up to 100 E$, and doesn't follow their growth; a raise request compares it with this figure
+  (see *Morale*). Each candidate on the Hire screen gets talent and experience as a uniform random number squared
+  (`randomizeAvailableCrewMember`), so most are low.
+- Growth (`giveXp`): a step of size x first pulls a value towards the best member of the occupation by
+  `mentorXpGain` (0.5 %) × x of the difference, then closes `normalXpGain` (0.25 %) × x of what is left to 1.
+  - Talent: one step per in-game day, wherever the ship is, for the whole crew, aboard, at the station or on leave
+    (`daysPassed` → `grantXpAtStation`, despite its name). Alone, a member's gap to 1 halves in about 277 days.
+  - Experience, from events: everyone aboard, a step of 0.5 about once a minute while the ship flies faster than
+    5 m/s outside a cutscene (`ship-ctrl.gd` `handleExperience`); the pilot, the more the longer the ship has flown
+    on through foreseen collisions without hitting anything (`leafOnTheWind`, reset by every impact); the
+    geologist, for each chunk identified, more for a valuable one (`hud/MineralMark.gd`); the astrogator, for each
+    ship identified (`hud/ShipMark.gd`) and each destination revisited after its deadline, more the later
+    (`discoverPoi`); every mechanic hired, for each repair at the station, by its hours (`SystemShipRepairUI.gd`).
+
+## Cutscene
+
+Each plays a title card on `Game.tscn`'s `TitleAnimPlayer`; the arrival's, `intro`, shows `CUTSCENE_RINGS_OF_SATURN`,
+the transponder, the date and the transit tip (`codex/TransitTip.gd`). Holding `cutscene_ff` runs a cutscene at up to
+3x speed (`Game.gd` `_process`, through `CurrentGame.targetTimeScale`), with VHS stripes over the screen while
+`Engine.time_scale` is above 1 and post-processing is on (`FastForward.gd`). In the arrival, the ship comes in fast
+towards the dive entry point and brakes to a crawl, turned to face into the rings (`Game.gd` `_ready` and `_process`:
+`initialSpeed` from `desiredAcceleration` and `initialCutsceneTime`, braking for `totalCutsceneTime`; `Game.tscn` sets
+the two times). The arrival, astrogation and the exit really fly the ship: its thrusters and its reactor's turbine burn
+remass, and in-game time passes.
+
+## Dealer
+
+- The stock is stored nowhere: `CurrentGame.getShipsAvailableForSale` builds it anew on every call from the in-game
+  day, the week and the save's `state.seed`. It holds a few models new every week (named in its code), one used ship a
+  day kept 10 days (its model drawn from `CurrentGame.usedShipsPool`, by weight), and the ships the player sold
+  (`state.soldShips`), for 10 days; ships the player owns are left out.
+- Only `Dealer.gd` `doAddShips` asks for it: when the station loads, every in-game hour (`hourPassed`) and when the
+  screen opens; a dive doesn't, and nothing signals a change.
+- A ship's transponder is the same from one refresh, visit or save to the next (`getNewTransponder` is seeded), so it
+  tells ships apart; `shipHashFromConfig` doesn't (it holds the moment the ship was instanced, `madeIn`).
+
+## Fleet
+
+Each owned ship keeps its own config: equipment, Tuning, mineral targeting, damage, cargo (`CurrentGame.state.ship`,
+the others in `state.garage`), and a crew list (`preferredCrew`), which the game writes only when the crew changes
+while that ship is flown (hiring, firing, who dives) and puts aboard when the player switches to it (`CurrentGame.gd`
+`validateEmployment`); a ship without one keeps whoever is aboard.
+
+## EMP
+
+Sources: the MWG microwave emitter (`SYSTEM_MWG`, `weapons/emp.gd`; the ONMWG-650 turret, `SYSTEM_PDMWG`, is built on
+it), whose EMP is its draw × 0.9 × (1 − its Water Resonance tuning, `TUNE_EMP_RESONANCE`), up to about 61 MW; the SPC
+Gungnir (`SYSTEM_SYNCHRO`, `weapons/synchrotron.gd`), a quarter of its charge in one frame; ring storms
+(`story/RingStormManager.gd`: arcs that a storm beacon, `story/StormBeacon.tscn`, strikes between two objects, a weak
+corona for a few seconds, then a discharge of up to 2 s); the Singularity Core, 5 MW on everything within 40 m (see
+*Hybrid*); and, in one go, some conversation lines (`damageEmp`) and the derelicts as they spawn (`extraEmp` in
+`RescueOperation.gd`, `AgendaSpecificDerelict.gd`).
+
+- EMP shielding (in the Dealer's specs, "EMP shielding: 100 MW"; no key of its own): the ship's `empShield`, the
+  larger of its scene's value and its config's `shielding.emp`. It comes with the hull: no equipment changes it.
+  Each hit loses the shielding's MW over that frame (`empShield × 1000 × delta`; 1000 per second is 1 MW, the scale
+  the MWG's Tuning shows), and only the rest gets through, so it stops continuous sources up to that power and
+  barely touches one-frame ones. It applies per hit: two sources at once are each cut by the whole of it. The
+  Hybrid has 500 MW (the config its random event gives it, see *Hybrid*); the Runasimi KR37 TNTRL 200 MW; the
+  Cothon-212, the Cothon-211 "Chonker", the Cothon-217 "Bender" and the Antonoff-Titan K225 (modified) (the
+  derelict of the sibling agenda, see *EVA*) 100 MW; the Cothon-213 "Triplet" and every other ship model none.
+- What gets through (the `damageEMP` signal): Short Circuit (`DAMAGE_SHORT_CIRCUIT`) on the HUD, which falsifies its
+  readouts and may reboot it on each hit, the likelier the more damaged (`hud/Hud.gd` `_on_emp`); Pump Failure
+  (`DAMAGE_LASER_PUMP`) on the lasers (`weapons/laser.gd`: the CL-150, the CL-600P, the laser turret); and, near a
+  fission reactor, an emergency shutdown (`Reactor.gd` `_on_emp`, with the EMP falling off with the square of the
+  distance from the reactor): the reactor disengages instead of engaging while the EMP lasts, so the ship loses
+  power. The EIME's fusion reactor ignores EMP (`FusionReactor.gd`). The hull's sparks and their crackle (`empLevel`)
+  are only effects.
+
+## EVA
+
+In flight an EVA is only a suited sprite with a lamp (`ships/modules/EVAflight.tscn`, `EVAflight.gd`), which flies
+between the player's ship and the ship the player is talking with when a conversation line sets `evaDirection`
+(`comms/ConversationPlayer.gd` `execute`, over the line's `evaTime`; `ship-ctrl.gd` `handleEvaProgress`). -1 flies from
+the player's ship to the other ship, 1 from the other ship to the player's. The sprite is decoration: the line's other
+fields decide what happens. The player can't order an EVA. The base game shows one only in the cases below. The first
+three are conversations during a dive, and in them the one who goes out is a member of the dive crew, so a captain
+flying alone never gets them:
+
+- **Derelicts**: abandoned ships with their reactor off, in the `helpless` faction (`story/RescueOperation.gd`, a
+  random event of the rings in `story/TheRing.tscn`, sometimes with a rescue ship nearby;
+  `story/FlightForRescue.gd`, on a rescue ship's path). A derelict can't be hailed. It opens its conversation
+  (`comms/conversation/DerelictConversation.tscn`) by itself, once, when the player's ship comes within its
+  `aiCuriosityDisance` (150 m; `ship-ctrl.gd` `AI.examine`). Unless a rescue ship (faction `helper`) is in sight
+  (then it's taken: see *Salvage claim*), a random crew member reports it (`DIALOG_DERELICT_RANDOM.tscn`), and
+  the player can send them over to restart it (`DIALOG_DERELICT_GO_AND_BRING_IT`). On board, they may get it
+  running, and it joins the player's fleet (`getThisShip`). Or they come back with nothing, or injured (leave days,
+  `addAgendaLeaveTime`). What they find varies (the `DIALOG_DERELICT_*` subtrees: brick, junk, solo dead, hole,
+  ghost ship). Which models are derelicts, where they come from and how often: see *Salvage*.
+- **Crew agendas**: an agenda is a crew member's personal story (`AGENDA_*`, followed in
+  `CurrentGame.state.agenda`). The member looking for their child (`AGENDA_LOOKING_FOR_CHILD`, a branch of the same
+  derelict conversation) and the one looking for their sibling (`AGENDA_LOOKING_FOR_SIBLING`, a derelict spawned for
+  it by `story/AgendaSpecificDerelict.gd`, which talks within 250 m: `AI.playDeadButTalk`) go over to the ship
+  they were looking for.
+- **Vilcy** (faction `vilcy`, bounty hunters): a Vilcy ship hails the player about an ex-pirate in the crew
+  (`AGENDA_EX_PIRATE`, `comms/conversation/VilcyConversation.tscn`). Handing them over
+  (`AGENDA_EX_PIRATE_TAKE_HIM`) fires them, with an EVA.
+- **At the station**, outside any conversation: the dock in Enceladus's background shows up to five suited
+  workers with flickering welding lights (`faces/EVA.tscn`, `faces/EVA.gd`; `EVA01`–`EVA05` in
+  `enceladus/Enceladus.tscn`). Each one is there while the player's ship is in maintenance
+  (`CurrentGame.isShipMaintained`: the in-game hours that fitting equipment and repairs take) or damaged past its
+  `damageRequired` (`1 - getCombatCapacity()`). They are scenery, not crew.
+
+## Faction
+
+A ship's `faction` reads `player` while the player flies it, `helpless` while it is helpless (out of remass or power,
+`isHelpless`; derelicts are made in it) and no faction (`Factions.noFaction`) in a cargo hold (`_getFaction`);
+`getRealFaction` gives `player` or the one stored.
+
+- Dispositions: what one faction feels towards another, as five values, `fear`, `curiosity`, `hostility`, `greed`
+  and `support` (`Factions.disposition` names sets of them: `hostile` is hostility 0.8 and curiosity 0.3; `curious`,
+  `cautious`, `fear`, `want`, …). `defaultDispositionOf` gives each faction's: pirates are hostile towards the player
+  and Vilcy, fear the military and want minerals; miners are curious about the player and fear pirates; the player
+  is hostile towards pirates. A pair it doesn't list is `noInterest`, all 0.
+- The save's adjustments (`factionDispositionAdjustment`, which is `CurrentGame.state.factions`, taken on every new
+  game and load, `newGame`) add to the defaults, each value clamped to -1 to 1 (`getDispositionTowards`). A row a read
+  doesn't find is created, all 0 (`getDispositionAdjustment`), so plain reads write into the save too. They come
+  from hits (weapons and thruster exhaust call the hit ship's `ship-ctrl.gd` `applyHostility` with the attacker's
+  faction: its faction gains hostility and fear towards the attacker's and loses support, by a share of the hit,
+  `factor`, that shrinks with each further hit, `hostileDiminish`) and from taking a ship to the station with the arm
+  (`hostilityHitWhenEncelading`); from a ship's own changes of disposition (`changeDisposition`, half of the change
+  by default, `factionRation`), made by conversations (`changeFear`, `changeHostility`, `changeSupport` in
+  `comms/ConversationPlayer.gd`) and trading at the habitats (`story/habitat/TradingHub.gd`); and from the Services
+  screen's Local Vilcy Branch, The Miner's Guild and Obonto Habitats (`enceladus/ServiceUIFactionChange.gd`), which
+  clear `vilcy`'s, `civilian`'s or `obonto`'s hostility and fear towards the player, for a price that grows with
+  them. So the more pirates the player has hit, the more pirates fear them, and the sooner they flee.
+- Frozen factions (`frozenFactions`: `player`, `helpless`, `ai.berserk`) ignore the adjustments: their dispositions
+  are always the defaults, as is every faction's towards itself.
+- Each AI ship adds its own on top (`aiGetDispositionTowardsFaction`): a personal variation, kept in the save by
+  transponder (`state.dispositions`, taken as the ship is set up, `setDummy`), each value first drawn within
+  ±`dispositionRandomVariation` (0.2), moved by hits (`applyHostility`) and by the hostility it sees done to others
+  (`seenHostileAction`), and moving back towards 0 by 1 every 600 s (`Factions.timeForDispositionErosion`), while
+  fear also drops by 1 every 300 s (`timeForFearErosion`) times the ship's combat capacity (see *Hybrid*), down to -1
+  (`erodeDispositions`); a temporary disposition from conversations (`temporaryDisposition`); and, on the player's
+  ship, the IFF the player sets for a target in the OMS Pilot tab (`setIff`, `iffWeight`).
+- `factionIndependent` (`ship-ctrl.gd`): a ship whose hits don't change its faction's disposition
+  (`applyHostility`, unless `includeIndependents`), which doesn't get to know a ship by overhearing it talk to one of
+  its faction (`aiKnow`), and which, held as cargo, keeps its faction when a conversation converts the faction of
+  what the ship holds (`convertFactionInCargo`). Set on the derelicts (`RescueOperation.gd`,
+  `AgendaSpecificDerelict.gd`) and the ring's diggers (`TheRing.gd` `oddityDigger`).
+
+## Frozen bodies
+
+Groups of 2 to 9 (`story/DeadBody.gd`, one of `story/body1.tscn`–`body10.tscn` each, on `story/body.gd`) drift around
+a talking beacon (`story/DeadTalkingBeacon.tscn`), in chaotic parts of the rings or on any spot from 25 October to
+1 November by the computer's clock (`canBeAt`); up to 19 more float around the destroyed habitat
+(`story/habitat/DestoryedHabitat.gd`) until one is picked up. A body's transponder is its group's (one random code,
+which the beacon shows bare) plus its initials (`body.gd` `getTransponder`); its name is a random crew name. Picking
+one up gives the achievement `DISCOVER_FROZEN_BODY`.
+
+## Hybrid
+
+- Spawn: a random event of the rings, `HybridHunterHuntingPlayer` in `story/TheRing.tscn`
+  (`story/HybridHunter.gd`), only where the chaos is above 0.3 (see *Chaos*). It never spawns on the Peaceful
+  difficulty (`SETTINGS_DIFFICULTY_0`). On Balanced (`SETTINGS_DIFFICULTY_1`) it needs the player to have at least
+  30,000 E$ and their ship's combat capacity to be at least 0.6. Combat capacity (`getCombatCapacity`,
+  `getRealStatus`) is the condition of the ship's worst piece of equipment, doubled and capped at 1, less the share of
+  its pieces switched off: 0.6 needs every piece at 30 % or better and none switched off. The event fits it with one
+  MWG and 500 MW of EMP shielding, which stops any MWG's EMP (see *EMP*).
+- Behaviour: its faction's disposition towards the player (`keepsecret` in `Factions.gd`) is mostly curious and
+  partly hostile. It first comes close to look at the player's ship. A crew member with one of five agendas (see
+  *EVA*) may remark on it (`comms/conversation/HybridEnconters.tscn`: `AGENDA_EX_PIRATE`, `AGENDA_LOOKING_FOR_CHILD`,
+  `AGENDA_ANDROID`, `AGENDA_HAS_CAT`, `AGENDA_SINGER`; the android's line, `AGENDA_ANDROID_HYBRID_SHIP`, is "This
+  doesn't match any signature I know of."). Once it has looked, it attacks with its MWG (`ship-ctrl.gd`, the AI's
+  choice of action). It only fires while its hostility, scaled by its own combat capacity and by the distance, is
+  above `aiHostilityToFire`, so a damaged one stops firing.
+- Destroyed, it leaves its Singularity Core (`story/SingularityCore.tscn`, `story/SingularityCore.gd`; the ship's
+  `lifepod`). The core is an oddity: an object the station pays a fixed price for when it comes back as cargo
+  (`CurrentGame.isOddity`, `specialPrice`), here 1,000,000 E$ (`ODDITY_SINGULARITY_CORE`, "Research material").
+  While the core floats loose, two gravity areas (`Attractor`, `Repellant`) pull objects in from a few hundred
+  metres and push back those that come within 50 to 90 m. The core also puts out 5 MW of EMP (`empPerSecond`) on
+  everything within 40 m (`EmpArea`), and plays the game's mystery music. In a cargo hold the pull and push stop,
+  but the EMP doesn't (`setInCargoHold`). Taking it in gives the achievement A touch of Singularity
+  (`ACHIEVEMENT_TOUCH_SINGULARITY`).
+- The same core also floats free, among 2 to 9 iron chunks, in another random event of the rings, `Singularity`
+  (`story/Singularity.gd`): only where the chaos is above 0.5 and no other event is within 2 km.
+- The ship has a transponder, so holding it with the arm never adds it to the fleet (`CurrentGame.isShipSalvageable`,
+  see *Salvage claim*).
+
+## Lifepod
+
+Every ship model has one but the Tsukuyomi, the racing drone and the Obonto habitat. Others float alone in the rings
+(`story/LifepodIsFloating.gd`) or are a pirate's bait (`story/PirateTrap.gd`, `ships/LifepodTrap.tscn`); a lone one
+gets a random transponder (`ships/LifepodFeedback.gd`). A pirate's own lifepod (`ships/LifepodPirate.tscn`) is a bounty
+(`ODDITY_LIFEPOD_BOUNTY`). It talks to the ship that picks it up (`comms/conversation/LifepodConversation.tscn`,
+`DIALOG_LIFEPOD_*`). The ATLAS drone leaves an AI core instead (`ships/drone/AICore.tscn`, `ODDITY_AICORE`, "Quantum
+computer retrieval reward").
+
+## MAD-CERF
+
+The abductor comes from `makeAbductor` in `story/RescueOperation.gd` (a chance with a derelict, `pirateChance`, never
+on the Peaceful difficulty) and in `story/Vilcy.gd`. It is of the `pirate` faction, with 15 t of ammunition and six
+weapons asked for, of which it mounts four ERFMD-17 and two MWG: its scene has two hardpoints with the slot `right2`
+and none with `left2`. Its six hardpoints are slots the Equipment screen has no entry for.
+
+## Morale
+
+The crew line-up at the station (`enceladus/CrewFaceOnEnceladus.gd`) shows a happy icon above `moraleLimit` (0.3) and a
+sad one below minus that. The dive HUD's crew faces (`hud/CrewFaceOnDive.tscn`) hide both icons.
+
+- Effect: the crew stats use the exponent `1 - morale` on the member's talent and experience (`getCrewStats`). At
+  0.5 a talent of 0.5 counts as about 0.71, and at -0.5 as about 0.35. The Hire screen's comparison leaves morale
+  out (`CrewBio.gd`). Some crew conversations need it inside a range (`maxAgendaMorale` / `minAgendaMorale`,
+  `comms/ConversationPlayer.gd`). A crew member asks for a raise (`DIALOG_NEED_RAISE`) only when their morale is 0
+  or less and their salary is below the market's (`getExpectedSalaryFrom`). If the player refuses and their morale
+  is -0.4 or less, they quit and are fired on the spot (`DIALOG_RAISE_I_QUIT`).
+- Drift: every in-game day, morale closes 5 % of the gap to a target (`erodeCrewMorale`, `moraleErodePerDay`), so it
+  halves in about two weeks. For the dive crew, from launch to return (transits included), the target is the ship's
+  `crewMoraleBonus`: the Eagle-Prospector-VP -0.3, the Eagle-Prospector-Lux 0.4, the OCP-209 0.3, other ships 0.
+  Everywhere else the target is 0, except during a hotel stay.
+- Changes: the station's Services screen (`Services.tscn`). A hotel stay sets the target to its `moraleStay` for the
+  hours it lasts. Some services also add their `moraleChange` at the end to the crew not on leave: The Twins (a bar,
+  4 h, once a day) adds 0.1. Moonview Capsule Hotel (24 h) sets the target to 0.2. The Underside Inn (168 h) sets it to
+  0.2, then adds 0.1. SkyDome Resort (72 h) sets it to 0.3, then adds 0.15. Conversations also change morale
+  (`adjustGlobalMorale` for the crew aboard, `adjustAgendaMorale` for one member). A round of drinks at a space bar
+  (`DIALOG_SPACE_BAR_ROUND_OF_DRINKS`) gives everyone 0.2. Agenda events (see *EVA*, *Crew agendas*) give or take up
+  to 0.5 from that member, and a refused raise takes 0.2. When the player can't pay a member's wages, which are due
+  every 30 days, that member loses 0.05 every in-game hour at the station (`payWages`, called from `Enceladus.gd`).
+  At 45 days past due (`baseCrewPatience`) they are fired.
+
+## Physics rate
+
+With Dynamic Temporal Simulation Simplification on, `Settings.gd` `_process` moves the rate once a second towards the
+real frame rate, never below 30. What counts physics frames changes with it: a mass driver pushes its slug frame by
+frame for `timeFire` (`weapons/massdriver.gd`), so at 30 its slugs carry more energy; a pulse laser fires at most one
+pulse a step; the per-hit floors of roids (`asteroid.gd` `applyKineticDamage`, `hardness`) and reactors (`Reactor.gd`
+`_on_impact`, `damageLeakThreshold`) scale with the step. Godot 3 seems to work the step's length out in 32 bits,
+which puts 1/60 s a hair over (CombatSimulator's wiki page relies on it for a few figures; not measured).
+
+## Reactor
+
+The reactor engages and disengages by itself to hold its target temperature, a Tuning setting
+(`TUNE_TARGET_TEMPERATURE`). Its damage is listed in the Mechanic tab (`hud/SystemList.gd`): Fuel rods jammed
+(`DAMAGE_RODS`, from hard accelerations: slower to engage and disengage, and the temperature swings), Reactor leak
+(`DAMAGE_LEAK`) and Turbine Galling (`DAMAGE_TURBINE`, from overheating: the turbine needs more heat to make power). If
+the reactor stays above its meltdown temperature for a few seconds (`telegraphTimeLimit`, with a growing glow as
+warning), it explodes and the ship is lost. For the player's ship, that is game over. The EIME's fusion reactor has
+other kinds of damage (coils, coolant, lasers) and no leak.
+
+## Reactor leak
+
+The leak comes from the impact's power divided by the distance squared, counted above a threshold (`Reactor.gd`
+`_on_impact`). The spot that was hit becomes a leak point. Used ships start with some leak damage (`ageIfNeeded`). Past
+a quarter of its capacity (`damageLeakOffset`), the leak vents remass at random moments. It vents more often the worse
+the leak, and more remass the hotter the reactor; it doesn't vent while the reactor is below `leakTemperature`. Each
+vent wastes remass, cools the reactor and pushes the ship from the leak point. The leak also lowers the meltdown
+temperature (`meltdownTemperature - jamTemperatureAdj * leak`), so an overheating reactor explodes sooner. Leaks matter
+most in combat: they are the only way to disable an enemy ship so it can be captured, because a ship that runs out of
+remass stops working.
+
+## Repairs
+
+Replace costs the piece's `repairReplacementPrice` less what it is still worth, in `repairReplacementTime` hours; Fix
+costs `repairFixPrice` per step, in `repairFixTime` hours shortened by the crew's mechanics. The hours are the ship's
+maintenance, a time stored in that ship's own config (`maintaineceUntil`, `CurrentGame.isShipMaintained`); fitting
+equipment adds to it only when the piece replaced was damaged (`ship-ctrl.gd` `getSlotTime`). A ship in maintenance
+can't dive (`Enceladus.gd` `shipPassesInspection`; the pre-flight inspection offers a hotel stay until it is done) or be
+sold, but the player can switch to another ship of the fleet, while the first one's maintenance runs on.
+
+## Rescue
+
+The ship is helpless when it is out of remass (or with no capacitor, `ship-ctrl.gd` `isHelpless`) for longer than
+`helplessTimeLimit`, outside a cutscene (`Game.gd` `_process`). The game switches the reactor off, claims the cargo and
+plays the `helpless` cutscene: `sendHelp` advances the clock by a random stranded time (up to `strandedTIme`, two weeks)
+and spawns a MAD-CERF of the `helper` faction near the ship (the ship counts as `helpless`, so the MAD-CERF goes for it
+as it does for a derelict, see *Salvage claim*; this changes nothing), and `goToEnceladus` ends the dive at the
+station. The transit back isn't charged.
+
+## Roid
+
+Five size classes, from 4096 t down to 16 t, each a quarter of the one above, every roid spawned at 0.75 to 1.25 times
+its class's mass (`AsteroidSpawner.gd`). Its damage adds up for good (`totalEnergy`): kinetic hits less a floor per hit
+(`hardness`, scaled with the physics step, see *Physics rate*), heat at `energyDamageScale`; EMP does nothing to it.
+Once past `splitEnergyThreshold` (`baseEnergyThreshold` times its mass) it splits into two roids of the next class, the
+smallest class into chunks; for each further doubling the damage went past, it skips a class (`obliterating`), so its
+pieces hold half the ore each time.
+
+## Salvage
+
+Derelicts come from:
+
+- **Random events of the rings** (`story/TheRing.tscn`, `TheRing.gd` `getOddityAt`, asked by the asteroid field for
+  a spot near the ship). The ring scene spawns one only after 600 in-game seconds of flight since the last
+  (`odditiesEvery`; astrogation restarts the count, cutscenes don't count), once the basic tutorial is done, while
+  no other ship is around (`suppressEventIfShips`), and deeper than the edge limit (4 km at the start of a game,
+  shrinking to 0 over 300 in-game days; shallower, only miners come). The events, about a hundred, are walked in a
+  shuffled order, each tested once per pass, and the first that passes spawns. A derelict's event passes with a
+  chance of base × (1 − cash / ceiling), at least 10 %, where cash is the E$ in hand (`CurrentGame.getMoney()`,
+  without insurance), and only where the chaos (see *Chaos*) is at least its limit (`story/RescueOperation.gd`
+  `canBeAt`). Base, ceiling and chaos limit, by series, with the names the game shows:
+  - TNTRL: K37 TNTRL (80 %, 5 million E$, 0.2); KX37 TNTRL, Runasimi KR37 TNTRL, KTA24 TNTRL and K44 MHFTR
+    Prototype (40 %, 5 million E$, 0.2 each). Two more K37 TNTRLs come with a rescue ship (see *Salvage claim*):
+    one beside it (`RescueOperation`: 100 %, 10 million E$, any chaos), and one on a lone rescue ship's path
+    3 minutes after it spawns, if it is still there (`story/FlightForRescue.gd`, always). The rescue ship is often
+    in sight when the derelict talks, and then only the arm can take it.
+  - Eagle Prospector: Eagle Prospector (100 %, 10 million E$, 0.4); Peacock Prospector, Vulture Prospector (the
+    VP, `ships/Eagle-Prospector-VP.tscn`) and Pelican Prospector (50 %, 10 million E$, 0.4 each).
+  - Cothon: Cothon-212 (80 %, 10 million E$, 0.3); Cothon-211 "Chonker", Cothon-213 "Triplet" and Cothon-217
+    "Bender" (40 %, 10 million E$, 0.3 each).
+  - Antonoff-Titan K225 and Eon Interstellar Model E, the EIME (50 %, 2 million E$, 0.5 each); Antonoff-Titan
+    K225-BB, ND-LIS Kitsune and OCP-209 (30 %, 2 million E$, 0.5 each).
+
+  The derelict is a random used build of its model (`ships/Shipyard.gd` `createShipBuildByName`), so its equipment
+  varies, with its reactor off, no remass and, from these events, a random kinetic and EMP hit
+  (`applyExtraDamage`).
+- **Scrapwright Recovery Operations** (`SERVICE_SALVAGE_LICENCE`, SRO): a subscription on the station's Services
+  screen, 300,000 E$ for 30 days (`enceladus/Services.tscn`). While it lasts, three more random events (`SalvageCall`,
+  wherever the chaos is above 0) spawn a beacon whose broadcast (`comms/conversation/SalvageBanter.tscn`) lists two
+  derelicts, sometimes three, as destinations (see *Astrogation*) 100 to 1,600 km away, for 24 h. Each listing is one
+  of 50 lines of equal weight, three per model above (two for the K225-BB, none for the K44 MHFTR), offered only if
+  that model's event passes its test at one of three random spots. At the spot, the derelict then spawns without a
+  further roll.
+- **Conversations** that reveal a destination, where the derelict spawns without a roll: crew chatter
+  (`DIALOG_POI_RANDOM_2`: a K37 TNTRL 10 to 100 km away); a rescue ship asked "Seen anything worth salvaging?"
+  (`DIALOG_HELPER_SALVAGE_ANY`, one of its four answers: a K37 TNTRL 25 km away, offered only if its event passes
+  there); the same answer to a member looking for their child who asks a rescue ship for clues (see *EVA*); and
+  pirates friendly enough to talk business (`DIALOG_PIRATE_BUSINESS_SHIP_*`: a K37 TNTRL, a Cothon-212 or an Eagle
+  Prospector about 500 km deeper, for 200,000 E$, kept for 7 days). The sibling's ship (see *EVA*), an
+  Antonoff-Titan K225 (modified) with full remass and no extra damage, comes only that way
+  (`story/AgendaSpecificDerelict.gd`).
+
+## Salvage claim
+
+What decides who gets a derelict:
+
+- **The rescue ship**: a MAD-CERF of the `helper` faction, spawned with the derelict (`story/RescueOperation.gd`) or
+  before it, the derelict then appearing on its path after `time` (`story/FlightForRescue.gd`). It goes for
+  `helpless` ships. A powerless one (`powerBalance` at or below 0, as a derelict is with its reactor off and no
+  remass) it docks with its clamps (`SYSTEM_DOCKING_CLAMPS`; `ship-ctrl.gd` `AI.dock`), and after
+  `aiDockingSecureTime` it leaves (`AI.exit`). Nothing passes to it: the derelict doesn't become its cargo.
+- **The derelict's conversation**: if the derelict sees a rescue ship when the conversation opens
+  (`mustSeeFaction = "helper"`, tested on the derelict's `getObjectsAIisAwareOf`), a random crew member says one of
+  the four `DIALOG_DERELICT_TAKEN_*` lines and the conversation ends, without the offer to send them over. Every
+  other branch needs no rescue ship in sight (`cantSeeFaction`). A derelict talks once, so for that one the chance
+  is gone.
+- **The arm**: a ship the arm holds (`addTemporaryCargo`, which sets its `docked`) counts as taken for the AI
+  (`aiIsTaken`), so a rescue ship no longer goes for it. If the arm still holds it when the dive ends at the
+  station, it joins the fleet for free when `CurrentGame.isShipSalvageable` says so: abandoned (every derelict),
+  of the `pirate` faction, or without a transponder (`ship-ctrl.gd` `handleExitToEnceladus`,
+  `CurrentGame.addShip`; the arm's manual says so too, `SYSTEM_SALVAGE_ARM_MANUAL`). A rescue ship nearby doesn't
+  prevent it. A `helpless` ship that isn't salvageable pays 10 % of its value instead (`getShipValue`). Nothing
+  held is taken when the player's own ship ends the dive helpless (see *Rescue*).
+
+## Transit
+
+The main drives, the ship's thrusters, cover the ΔV in `CurrentGame.timeDistanceToEnceladus` (12 h), burning the remass
+the rocket equation gives for the ship's whole mass and its best thruster's exhaust velocity (`ship-ctrl.gd`
+`getRemassRequiredForDv`, `getBestThrusterVe`); the xenon drive covers it in `xenonBurnToEnceladus` (96 h) and burns
+none.
+
+- Out, at the start of a dive: charged once the ship is set up (`Game.gd` `_ready`: `getInterlunarTransitRemass`,
+  `getInterlunarTransitTime`), then the arrival cutscene plays. The xenon drive's Tuning setting splits the ΔV
+  between the two drives, and the time between their two times, in the same shares; the remass doesn't follow the
+  shares, because the rocket equation isn't linear. The dive entry point screen shows that remass as Interlunar
+  propellant usage (`HUD_RETURN_FUEL_XENON`) and won't launch without it (`HUD_WARN_PROPELLANT`).
+- Back, at the end: charged during the exit cutscene (`Game.gd` `interlunarToEnceladus`), whatever the setting. The
+  main drives burn all the remass aboard, up to the Transit reserve (`HUD_RETURN_FUEL`: the remass for the whole ΔV
+  at the ship's mass then, cargo included), and the xenon drive does the rest. The time is split between the two
+  drives' times by the share of the reserve burned (`getTimeRequiredToBurnToEnceladus`, the HUD's Transit time,
+  `HUD_RETURN_TIME`), so a ship out of remass comes back in the xenon drive's time, never stranded.
+- The K37 TNTRL's HUD also shows Estimated interlunar transit time and Interlunar propellant usage
+  (`HUD_RETURN_*_XENON`, `hud/trtl/ShipParams.tscn`): the outbound figures at the ship's current mass, not the trip
+  back.
+
+## Transponder
+
+- The game's codes: one of five prefixes, a dash and four digits (`CurrentGame.gd` `getNewTransponder`: `SE1`,
+  `JG4`, `ETH`, `MRS`, `BLT`), from a seed. The prefixes read as a place of registry: a crew member reads `SRA-01`
+  as "Saturn, Ring A, station 01" (`AGENDA_LOOKING_FOR_SIBLING_TAXI_JOB_HABITATS`). A ship the Shipyard builds gets
+  its code through `getTransponder`, which keeps it in the save against the ship's build (`state.transponders`), so
+  a ship met again has its old code; the player's first ship gets one on a new game.
+- A ship keeps its code for good (its config's `transponder`). The game makes the ship's name from it
+  (`generateShipNameFromTransponder`, kept in `state.shipNames`) and its captain's and crew's names in comms
+  (`getCrewMember`), picks some lines by it, and keeps what it remembers about the ship by it (dispositions,
+  encountered ships).
+- Codes made from a ship's: its lifepod's is the ship's; a drone's is `<ship>-CC42` (`ClaimOwner.gd`); frozen
+  bodies take their group's plus initials. Fixed codes: the stations (`IRRS-*`, the habitats `SRA-01`–`SRA-07`)
+  and beacons (`SE1`, `SE1-SG`).
+- Pirates broadcast none (`ship-ctrl.gd` `getTransponder` returns ""; the LIDAR's tutorial sticker,
+  `TUTORIAL_STICKER_LIDAR`, says "NO TRANSPONDER - pirate RUN!").
+
+## Tsukuyomi
+
+Its seven turrets are `ships/modules/PDT.tscn` on no hardpoint: two CL-150, two CL-600P and three MWG; its laser
+turrets also aim at reactors. The Big Bad Wolf is brought by two random events of the rings (`BigBadWolf` and
+`BigBadWolfPatrol` in `story/TheRing.tscn`, on `story/MinerMining.gd`, faction `vilcy`) until the story says it was
+destroyed (`lockOutStory` `vilcy.bbw.destroyed`, which its reactors set as they explode, their `storyFlag`; the
+achievement `ACHIEVEMENT_STORY_BBW_DESTROYED`, "Blow up the Big Bad Wolf"). It has no lifepod.
+
+## Weapons
+
+By family, as CombatSimulator's wiki page explains them:
+
+- mass drivers (`weapons/massdriver.gd`): the EMD-14 (`SYSTEM_EMD14`), ERFMD-17 (`SYSTEM_EMD17RF`), MPI Railgun MkI
+  (`SYSTEM_RAILTOR`), AEMD-14 (`SYSTEM_ACTEMD14`, on a mount of `ships/modules/PDT.gd` that aims it within its
+  `gimbalLimit`, `ships/modules/act-massdriver.tscn`) and the NDPT-4205's. A shot
+  pushes its slug frame by frame for `timeFire`, takes ammunition (`SLOT_AMMO`) and recoils on the ship; slugs
+  (`weapons/projectile.gd`) have no lifetime, and the AI aims within the boresight's range;
+- lasers (`weapons/laser.gd`): the CL-150 (`SYSTEM_CL150`, a steady beam), the pulse lasers CL-600P
+  (`SYSTEM_CL600P`) and CL-200AP (`SYSTEM_ACL200P`, aimed as the AEMD-14, `act-laser.tscn`), whose pulses split into
+  heat and a kinetic part (`kineticPart`), and a laser turret no ship carries and the station never sells
+  (`SYSTEM_PDTL`, `ships/modules/PDT-laser.tscn`, no name text);
+- microwave emitters (`weapons/emp.gd`): the MWG (`SYSTEM_MWG`) and the ONMWG-650 turret (`SYSTEM_PDMWG`), their
+  output split into heat and EMP by Water Resonance (`TUNE_EMP_RESONANCE`; see *EMP*);
+- the SPC Gungnir (`SYSTEM_SYNCHRO`, `weapons/synchrotron.gd`), charged while the trigger is held, on side mounts
+  only;
+- exhaust weapons, thrusters pointed forward (`sfx/thruster.gd`): the EINAT Kzinti Lesson MkII (`SYSTEM_EINAT`), the
+  NANI (`SYSTEM_NANI`) and the Tetsuo HMX-2000I (`SYSTEM_IROH`, which also throws iron taken from the cargo,
+  `iron-blob.tscn`); their heat ray is fed by the reactor's heat (`drawThermal`).
+
+A hit does kinetic damage (`applyKineticDamage`: it leaks reactors, see *Reactor leak*, and chokes and bends
+thrusters), heat (`applyEnergyDamage`: it heats reactors towards a meltdown, see *Reactor*) or EMP (`applyEmpDamage`,
+see *EMP*); roids take kinetic damage and heat (see *Roid*).
