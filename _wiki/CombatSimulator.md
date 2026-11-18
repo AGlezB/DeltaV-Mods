@@ -105,8 +105,6 @@ See [Installing mods](Home#installing-mods).
 The ships you can fight, with what matters in a fight. The figures are worked out from the game's own files, for game
 version 1.92.5: a game update can change them.
 
-- **Remass tanks**: as the Dealer sells the ship, then the most you can fit on the Equipment screen. Used ships come
-  with one of several builds, so theirs vary.
 - **Enemy remass**: what an enemy of that model carries in the fight.
 - **Reactor Core**: how big the enemy's reactor core is. A bigger core takes longer to melt down (see
   [Melting a reactor down](#melting-a-reactor-down)).
@@ -124,10 +122,11 @@ version 1.92.5: a game update can change them.
 Enemies are built used, so each part of one may start with up to 35 % damage. Its reactor may already leak: it then
 melts down sooner and starts venting sooner.
 
-**The pictures.** Each ship is seen from above, nose up, with nothing on its hardpoints (turrets that come with the hull
-stay). Most are drawn at one scale, 10 pixels to the metre, so you can compare their sizes; a ship too small or too
-big for that is drawn bigger or smaller. The bar at the bottom left is 5 m long, unless the ship's name gives another
-length. The glow shows where a kinetic hit damages a reactor: full colour over the reactor's core, then fading as a hit
+**The pictures.** One picture per series (a ship and the models built from it), of its first model: where hits damage
+the reactors is the same on all of them. Each ship is seen from above, nose up, with nothing on its hardpoints (turrets
+that come with the hull stay). Most are drawn at one scale, 10 pixels to the metre, so you can compare their sizes; a
+ship too small or too big for that is drawn bigger or smaller. The bar at the bottom left is 5 m long, unless the
+picture's title gives another length. The glow shows where a kinetic hit damages a reactor: full colour over the reactor's core, then fading as a hit
 there would do 10, 100 and 1,000 times less damage, with a thin line at each of those steps. Every picture uses the
 same colours for the same damage, so ships compare: red, orange and yellow is reactor leak; blue is the coolant damage
 of the Eon Interstellar Model E's fusion reactor, which doesn't leak. Where reactors overlap, the one a hit there
@@ -135,25 +134,25 @@ damages more shows.
 
 ### Ships the station sells
 
-| Ship | Remass tanks | Enemy remass | Reactor | Vents at a full leak | One EMD-14 slug leaks it within; slugs to vent, to a full leak | EMP shielding | Hardpoints |
-|---|---|---|---|---|---|---|---|
-| K37 TNTRL | 30 to 80 t, up to 200 t | 10 t | 1 fission | 0.5 t/s | 15 m; 2, 5 | none | 3 (1 high-stress) |
-| KX37 TNTRL | 30 to 80 t, up to 200 t | 30 to 80 t | 1 fission | 0.5 t/s | 15 m; 2, 5 | none | 3 (1 high-stress) |
-| Runasimi KR37 TNTRL | 30 to 80 t, up to 200 t | 30 to 80 t | 1 fission | 0.5 t/s | 15 m; 2, 5 | 200 MW | 3 (1 high-stress) |
-| KTA24 TNTRL | 30 to 80 t, up to 200 t | 30 to 80 t | 1 fission | 0.5 t/s | 15 m; 2, 5 | none | 3 (1 high-stress) |
-| Eagle Prospector | 30 to 80 t, up to 200 t | 30 to 80 t | 1 fission | 0.5 t/s | 15 m; 2, 5 | none | 2, and 2 drone mounts |
-| Peacock Prospector | 30 to 80 t, up to 200 t | 30 to 80 t | 1 fission | 0.5 t/s | 15 m; 2, 5 | none | 2, and 2 drone mounts |
-| Vulture Prospector | 30 to 80 t, up to 200 t | 30 to 80 t | 1 fission | 0.5 t/s | 15 m; 2, 5 | none | 3 (1 high-stress) |
-| Pelican Prospector | 30 to 80 t, up to 200 t | 30 to 80 t | 1 fission | 0.5 t/s | 15 m; 2, 5 | none | 2, and 2 drone mounts |
-| Eon Interstellar Model E | 30 t, up to 200 t | 30 t | 1 fusion | doesn't leak | doesn't leak | none | 3 (1 high-stress) |
-| Cothon-212 | 80 t, up to 500 t | 80 t | 1 fission, bigger | 0.5 t/s | 23.5 m; 2, 8 | 100 MW | 2, and 2 rear |
-| Cothon-211 "Chonker" | 80 t, up to 500 t | 80 t | 1 fission, bigger | 0.5 t/s | 23.5 m; 2, 8 | 100 MW | 2, and 2 rear |
-| Cothon-213 "Triplet" | 80 t, up to 500 t | 80 t | 1 fission, bigger | 0.5 t/s | 23.5 m; 2, 8 | none | 2, and 2 rear |
-| Cothon-217 "Bender" | 80 t, up to 500 t | 80 t | 1 fission, bigger | 0.5 t/s | 23.5 m; 2, 8 | 100 MW | 2, and 2 rear |
-| Antonoff-Titan K225 | 80 t, up to 500 t | 80 t | 1 fission, wide | 0.5 t/s | 40 m; 2, 8 | none | 2, and 6 docking bays |
-| Antonoff-Titan K225-BB | 80 t, up to 500 t | 80 t | 1 fission, wide | 0.5 t/s | 40 m; 2, 8 | none | 2, and 2 docking bays |
-| OCP-209 | 80 t, up to 500 t | 80 t | 1 fission | 0.5 t/s | 15 m; 2, 5 | none | 4 (2 high-stress) |
-| ND-LIS Kitsune | 15 t, up to 50 t | 15 t | 1 fission | 0.5 t/s | 15 m; 2, 5 | none | 1, spinal |
+| Ship | Enemy remass | Reactor | Vents at a full leak | One EMD-14 slug leaks it within; slugs to vent, to a full leak | EMP shielding | Hardpoints |
+|---|---|---|---|---|---|---|
+| K37 TNTRL | 10 t | 1 fission | 0.5 t/s | 15 m; 2, 5 | none | 3 (1 high-stress) |
+| KX37 TNTRL | 30 to 80 t | 1 fission | 0.5 t/s | 15 m; 2, 5 | none | 3 (1 high-stress) |
+| Runasimi KR37 TNTRL | 30 to 80 t | 1 fission | 0.5 t/s | 15 m; 2, 5 | 200 MW | 3 (1 high-stress) |
+| KTA24 TNTRL | 30 to 80 t | 1 fission | 0.5 t/s | 15 m; 2, 5 | none | 3 (1 high-stress) |
+| Eagle Prospector | 30 to 80 t | 1 fission | 0.5 t/s | 15 m; 2, 5 | none | 2, and 2 drone mounts |
+| Peacock Prospector | 30 to 80 t | 1 fission | 0.5 t/s | 15 m; 2, 5 | none | 2, and 2 drone mounts |
+| Vulture Prospector | 30 to 80 t | 1 fission | 0.5 t/s | 15 m; 2, 5 | none | 3 (1 high-stress) |
+| Pelican Prospector | 30 to 80 t | 1 fission | 0.5 t/s | 15 m; 2, 5 | none | 2, and 2 drone mounts |
+| Eon Interstellar Model E | 30 t | 1 fusion | doesn't leak | doesn't leak | none | 3 (1 high-stress) |
+| Cothon-212 | 80 t | 1 fission, bigger | 0.5 t/s | 23.5 m; 2, 8 | 100 MW | 2, and 2 rear |
+| Cothon-211 "Chonker" | 80 t | 1 fission, bigger | 0.5 t/s | 23.5 m; 2, 8 | 100 MW | 2, and 2 rear |
+| Cothon-213 "Triplet" | 80 t | 1 fission, bigger | 0.5 t/s | 23.5 m; 2, 8 | none | 2, and 2 rear |
+| Cothon-217 "Bender" | 80 t | 1 fission, bigger | 0.5 t/s | 23.5 m; 2, 8 | 100 MW | 2, and 2 rear |
+| Antonoff-Titan K225 | 80 t | 1 fission, wide | 0.5 t/s | 40 m; 2, 8 | none | 2, and 6 docking bays |
+| Antonoff-Titan K225-BB | 80 t | 1 fission, wide | 0.5 t/s | 40 m; 2, 8 | none | 2, and 2 docking bays |
+| OCP-209 | 80 t | 1 fission | 0.5 t/s | 15 m; 2, 5 | none | 4 (2 high-stress) |
+| ND-LIS Kitsune | 15 t | 1 fission | 0.5 t/s | 15 m; 2, 5 | none | 1, spinal |
 
 None of these ships has weapons of its own. In the fight, each enemy comes as the game builds it:
 
@@ -174,58 +173,16 @@ to leak them fully. The Eon Interstellar Model E's fusion reactor doesn't leak: 
 instead, EMP doesn't shut it down, and weapon heat barely warms it.
 
 <details>
-<summary>K37 TNTRL</summary>
+<summary>K37 TNTRL series: the K37, KX37, Runasimi KR37 and KTA24 TNTRL</summary>
 
 ![The K37 TNTRL from above, nose up, with the glow over its reactor at the back](images/CombatSimulator-ship-trtl.png)
 
 </details>
 
 <details>
-<summary>KX37 TNTRL</summary>
-
-![The KX37 TNTRL from above, nose up, with the glow over its reactor at the back](images/CombatSimulator-ship-trtl-lcb.png)
-
-</details>
-
-<details>
-<summary>Runasimi KR37 TNTRL</summary>
-
-![The Runasimi KR37 TNTRL from above, nose up, with the glow over its reactor at the back](images/CombatSimulator-ship-trtl-r.png)
-
-</details>
-
-<details>
-<summary>KTA24 TNTRL</summary>
-
-![The KTA24 TNTRL from above, nose up, with the glow over its reactor at the back](images/CombatSimulator-ship-trtl-t.png)
-
-</details>
-
-<details>
-<summary>Eagle Prospector</summary>
+<summary>Eagle Prospector series: the Eagle, Peacock, Vulture and Pelican Prospector</summary>
 
 ![The Eagle Prospector from above, nose up, with the glow over its reactor](images/CombatSimulator-ship-prospector.png)
-
-</details>
-
-<details>
-<summary>Peacock Prospector</summary>
-
-![The Peacock Prospector from above, nose up, with the glow over its reactor](images/CombatSimulator-ship-prospector-lux.png)
-
-</details>
-
-<details>
-<summary>Vulture Prospector</summary>
-
-![The Vulture Prospector from above, nose up, with the glow over its reactor](images/CombatSimulator-ship-prospector-vp.png)
-
-</details>
-
-<details>
-<summary>Pelican Prospector (bar: 10 m)</summary>
-
-![The Pelican Prospector from above, nose up, with the glow over its reactor](images/CombatSimulator-ship-prospector-fat.png)
 
 </details>
 
@@ -237,44 +194,16 @@ instead, EMP doesn't shut it down, and weapon heat barely warms it.
 </details>
 
 <details>
-<summary>Cothon-212 (bar: 10 m)</summary>
+<summary>Cothon series: the Cothon-212, the Chonker, the Triplet and the Bender (bar: 10 m)</summary>
 
 ![The Cothon-212 from above, nose up, with the glow over its big reactor](images/CombatSimulator-ship-cothon.png)
 
 </details>
 
 <details>
-<summary>Cothon-211 "Chonker" (bar: 10 m)</summary>
-
-![The Cothon-211 Chonker from above, nose up, with the glow over its big reactor](images/CombatSimulator-ship-cothon-chk.png)
-
-</details>
-
-<details>
-<summary>Cothon-213 "Triplet" (bar: 10 m)</summary>
-
-![The Cothon-213 Triplet from above, nose up, with the glow over its big reactor](images/CombatSimulator-ship-cothon-lnd.png)
-
-</details>
-
-<details>
-<summary>Cothon-217 "Bender" (bar: 10 m)</summary>
-
-![The Cothon-217 Bender from above, nose up, with the glow over its big reactor](images/CombatSimulator-ship-cothon-v.png)
-
-</details>
-
-<details>
-<summary>Antonoff-Titan K225 (bar: 10 m)</summary>
+<summary>Antonoff-Titan K225 series: the K225 and the K225-BB (bar: 10 m)</summary>
 
 ![The Antonoff-Titan K225 from above, nose up, with the glow over its wide reactor](images/CombatSimulator-ship-at225.png)
-
-</details>
-
-<details>
-<summary>Antonoff-Titan K225-BB (bar: 10 m)</summary>
-
-![The Antonoff-Titan K225-BB from above, nose up, with the glow over its wide reactor](images/CombatSimulator-ship-at225-b.png)
 
 </details>
 
@@ -295,16 +224,16 @@ instead, EMP doesn't shut it down, and weapon heat barely warms it.
 <details>
 <summary><b>SPOILER ALERT</b>: ships the station doesn't sell (click to show)</summary>
 
-| Ship | Remass tanks | Enemy remass | Reactor | Vents at a full leak | One EMD-14 slug leaks it within; slugs to vent, to a full leak | EMP shielding | Hardpoints |
-|---|---|---|---|---|---|---|---|
-| K44 MHFTR Prototype | 30 to 80 t, up to 200 t | 30 to 80 t | 1 fission | 0.5 t/s | 15 m; 2, 5 | none | 2, and 2 rear |
-| Bald Eagle | 30 t | 30 t | 1 fission | 0.5 t/s | 15 m; 2, 5 | none | 2, and 2 drone mounts |
-| Antonoff-Titan K225 (modified) | 80 t, up to 500 t | 80 t | 1 fission, wide | 0.5 t/s | 40 m; 2, 8 | 100 MW | 2 |
-| MAD-CERF | 800 t | 800 t | 2 fission, large | 3 t/s each | 27.5 m; 1, 4 | none | 6, which the station can't fit |
-| Hybrid | 15 t | 15 t | 1 fission | 0.5 t/s | 15 m; 2, 5 | 500 MW | 1 (1 high-stress) |
-| Tsukuyomi | 1,300 t | 1,300 t | 3 fission, large | 3 t/s each | 55 m; 1, 4 | none | none |
-| Racing drone | 2 t | 2 t | 1 fission, tiny | 0.03 t/s | 1.2 m; a single slug is a full leak | none | none |
-| ATLAS | 40 t | 40 t | 1 fission | 0.03 t/s | 12 m; 1, 4 | none | 2 |
+| Ship | Enemy remass | Reactor | Vents at a full leak | One EMD-14 slug leaks it within; slugs to vent, to a full leak | EMP shielding | Hardpoints |
+|---|---|---|---|---|---|---|
+| K44 MHFTR Prototype | 30 to 80 t | 1 fission | 0.5 t/s | 15 m; 2, 5 | none | 2, and 2 rear |
+| Bald Eagle | 30 t | 1 fission | 0.5 t/s | 15 m; 2, 5 | none | 2, and 2 drone mounts |
+| Antonoff-Titan K225 (modified) | 80 t | 1 fission, wide | 0.5 t/s | 40 m; 2, 8 | 100 MW | 2 |
+| MAD-CERF | 800 t | 2 fission, large | 3 t/s each | 27.5 m; 1, 4 | none | 6, which the station can't fit |
+| Hybrid | 15 t | 1 fission | 0.5 t/s | 15 m; 2, 5 | 500 MW | 1 (1 high-stress) |
+| Tsukuyomi | 1,300 t | 3 fission, large | 3 t/s each | 55 m; 1, 4 | none | none |
+| Racing drone | 2 t | 1 fission, tiny | 0.03 t/s | 1.2 m; a single slug is a full leak | none | none |
+| ATLAS | 40 t | 1 fission | 0.03 t/s | 12 m; 1, 4 | none | 2 |
 
 | Ship | Its weapons in the fight | Reactor Core |
 |---|---|---|
@@ -322,24 +251,13 @@ Bald Eagle, the racing drone and ATLAS come new, without damage. At a full leak,
 with both reactors venting, the Tsukuyomi's in 144 s with all three, and ATLAS's in 22 min. The Tsukuyomi's reactors
 hold 3,000 K, as the Eagle's do, so they take longer to melt down.
 
-<details>
-<summary>K44 MHFTR Prototype</summary>
-
-![The K44 MHFTR Prototype from above, nose up, with the glow over its reactor at the back](images/CombatSimulator-ship-trtl-44.png)
-
-</details>
+The K44 MHFTR Prototype is in the K37 TNTRL series and the Antonoff-Titan K225 (modified) in the K225 series: their
+reactors are where those series' pictures, above, show them.
 
 <details>
 <summary>Bald Eagle</summary>
 
 ![The Bald Eagle from above, nose up, with the glow over its reactor](images/CombatSimulator-ship-prospector-bald.png)
-
-</details>
-
-<details>
-<summary>Antonoff-Titan K225 (modified) (bar: 10 m)</summary>
-
-![The Antonoff-Titan K225 (modified) from above, nose up, with the glow over its wide reactor](images/CombatSimulator-ship-at225-r.png)
 
 </details>
 
@@ -840,8 +758,6 @@ your computer can't keep up, down to 30. At 30:
   instead of 225 MW), so set it to 30 Hz;
 - beams, microwave emitters, exhaust rays and pulse frequencies of 30 Hz or less work the same.
 
-Faster physics settings (75 to 165 steps a second) weren't worked out.
-
 <details>
 <summary><b>SPOILER ALERT</b>: the NDPT-4205 (click to show)</summary>
 
@@ -850,12 +766,49 @@ At 30 physics steps a second, an NDPT-4205 round carries 78 % more energy, hitti
 
 </details>
 
+### Faster physics
+
+*Physics Simulation FPS* also has faster settings, 75 to 165 steps a second, which *Dynamic Temporal Simulation
+Simplification* lowers too when your computer can't keep up. The game counts a hit's strength against a part's
+threshold once per step, so the faster the physics, the weaker a single hit needs to be. At 120:
+
+- mass driver slugs carry the same energy as at 60: each fires over twice as many steps, each half as long;
+- a single hit needs half the strength to leak a reactor: one EMD-14 slug starts a standard reactor venting (2 at 60)
+  and 4 leak it fully (5 at 60), from up to 18 m away (15 m at 60); the default CL-600P now leaks standard reactors,
+  43 pulses to start venting; the Tetsuo's iron now leaks the MAD-CERF, the Tsukuyomi and ATLAS too; and a full SPC
+  Gungnir charge leaks a standard reactor from up to 35 m away (27 m at 60);
+- rocks break as at 60;
+- beams, microwave emitters, exhaust rays and every pulse frequency work the same.
+
+At 165:
+
+- the EMD-14, ERFMD-17 and AEMD-14 slugs carry 2 % more energy, the MPI Railgun MkI's 19 % more (hitting like
+  5.8 MJ), and they fire about 3 % slower (the ERFMD-17 4.85 shots a second instead of 5, the railgun 9.7 instead of
+  10);
+- a single hit needs 36 % of the strength it needs at 60 to leak a reactor: one EMD-14 slug starts a standard reactor
+  venting and 4 leak it fully, from up to 20 m away; a railgun slug starts it venting after 2 and leaks it fully after
+  7 (3 and 10 at 60); the default CL-600P starts it venting after 29 pulses; and a full SPC Gungnir charge leaks it
+  from up to 39 m away;
+- the EMD-14 at its default power skips a size on every 256 t rock, not only the lighter ones, and the railgun on
+  every 64 t rock even at its least power;
+- beams, microwave emitters, exhaust rays and every pulse frequency work the same.
+
+<details>
+<summary><b>SPOILER ALERT</b>: the NDPT-4205 at faster physics (click to show)</summary>
+
+At 120 physics steps a second, the NDPT-4205 breaks rocks as at 60, and at 200 MW still never skips a size; its rounds
+start a standard reactor venting after 5 and leak it fully after 17. At 165, a round carries 19 % more energy, hitting
+like 3.3 MJ, and at 200 MW it skips sizes on 64 t rocks too.
+
+</details>
+
 ### How sure these figures are
 
 - They come from reading the game's files, not from measuring in the game.
 - A few depend on how the game's engine rounds the length of a physics step: the mass drivers' slug energy, and the
   CL-600P's exact 6 Hz and 12 Hz. Rounded the other way, an EMD-14 slug would carry 23 % more energy, and 6 Hz and
-  12 Hz would fire like 5.5 Hz and 10 Hz.
+  12 Hz would fire like 5.5 Hz and 10 Hz. At 120 physics steps a second the slug would carry 11 % more; at 165 the
+  rounding doesn't matter.
 - A slug's hit assumes the target isn't moving toward you or away from you: one flying into your slugs takes harder
   hits.
 - The times on target are the shooter's best case (see [Time on target](#time-on-target)), and enemies come with
@@ -927,7 +880,7 @@ CombatSimulator/CombatLayer.gd BUILDERS.TSUKUYOMI.node = "BigBadWolf" -> as the 
 CombatSimulator/CombatLayer.gd NEW_BUILDS = ["ATLAS", "DRONE", "PROSPECTOR-BALD"] -> Bald Eagle, the racing drone and ATLAS come new
 game: 16 s, from a ship's explosion to its removal, which ends the fight (sfx/Explosion.tscn, the explosion animation's explodeCleanup key; ships/Reactor.gd explodeCleanup)
 game: 0.3 to 0.5, the chaos of most of the rings, more the deeper (ring/ring-map.png red channel by depth; MODDING.md Glossary, Chaos)
-game: 30 to 80 t, up to 200 t; 30 t; 80 t, up to 500 t; 15 t, up to 50 t; 800 t; 1,300 t; 2 t; 40 t: remass tanks as built and the most the Equipment screen allows (ships/Shipyard.gd defaultConfig, defaultShipConfig and usedShipConfigs fuel.capacity; ships/ship-ctrl.gd upgradeLimits; Cothon.tscn, ATK225.tscn, ocp-209.tscn, kitsune.tscn upgradeLimits)
+game: 30 to 80 t; 30 t; 80 t; 15 t; 800 t; 1,300 t; 2 t; 40 t: the remass an enemy carries, its tanks full as built (ships/Shipyard.gd defaultConfig, defaultShipConfig and usedShipConfigs fuel.capacity)
 game: 10 t and 5 t, the remass and ammunition of the pirate K37 TNTRL (story/PirateCombat.gd makeAt fuel.initial, ammo)
 game: 0.5, 3 and 0.03 t/s, the most remass a reactor vents at a full leak (ships/modules/NuclearReactor.tscn, MAD-CERF.tscn, Tsukuyomi.tscn, drone/ATLAS.tscn, drone/Drone.tscn leakFuelConsumption); a quarter, where venting starts (ships/Reactor.gd damageLeakOffset 0.25)
 note: 20 s, 60 s, 160 s, 133 s, 144 s and 22 min: a full leak emptying an enemy's 10, 30, 80, 800 (both reactors), 1,300 (all three) and 40 t at the reactors' leakFuelConsumption
@@ -1020,7 +973,9 @@ note: 30 s, the SPC Gungnir's full charge
 note: 770 kN and 935 kN, 70 % and 85 % of the Tetsuo's 1,100 kN, where its iron stops leaking standard reactors and stops making 64 t rocks skip a size (blob kinetic energy grows with Thrust squared)
 note: 600 MW, 3 and 12 rounds; 200 MW, 1.4 MJ; 400 MW; 60 physics steps a second: NDPT-4205 Tuning (minirail.tscn)
 note: at 30 physics steps a second: 23 %, 12.5 MJ; 78 %, 8.7 MJ and 4.9 MJ; 200 MW, 2.5 MJ, 64 t; 120 lumps; 990 MW at 3 Hz, 2 and 7 pulses; 30 pulses a second, 48 Hz, 141 MW instead of 225 MW
-note: 6 Hz and 12 Hz firing like 5.5 Hz and 10 Hz, and 23 % more slug energy, with the physics step rounded the other way (exactly 1/60 s instead of Godot 3's 32-bit step)
+note: at 120 physics steps a second: one EMD-14 slug and 4 slugs (2 and 5 at 60), 18 m (15 m); 43 CL-600P pulses; 35 m (27 m) for a full SPC Gungnir charge; 5 and 17 NDPT-4205 rounds; 200 MW (Reactor.gd _on_impact with the per-step threshold; massdriver.gd push frames)
+note: at 165 physics steps a second: 2 % and 19 % more slug energy, 5.8 MJ and 3.3 MJ; 3 % slower, 4.85 and 5, 9.7 and 10 shots a second; 36 % of the strength; 4 slugs, 20 m; 2 and 7, 3 and 10 railgun slugs; 29 pulses; 39 m; 256 t and 64 t rocks (same sources, asteroid.gd obliterating)
+note: 6 Hz and 12 Hz firing like 5.5 Hz and 10 Hz, and 23 % more slug energy, with the physics step rounded the other way (exactly 1/60 s instead of Godot 3's 32-bit step); 11 % at 120 physics steps a second (19 push steps instead of 18), none at 165 (0.15 s isn't a whole number of steps)
 game: 4,096 t, the rock kind that breaks at half the damage (asteroids class-11, baseEnergyThreshold 8)
 game: 600 m, 8,000 m, 100 m, 18.4 GW, 1000 m, 500 kg/s, 17.0 GW, 11.2 GJ, 4,500 K: figures in the game's descriptions (i18n/en.po SYSTEM_MWG_SPECS, SYSTEM_PDMWG_SPECS, SYSTEM_CL600P_SPECS, SYSTEM_EINAT_SPECS, SYSTEM_IROH_SPECS, SYSTEM_SYNCHRO_SPECS, SYSTEM_RODS_*_SPECS)
 -->

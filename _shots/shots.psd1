@@ -12,8 +12,9 @@
 # is stopped, where they take longer than shots.ps1's default.
 @{
 	# The dialog (Shift+Click on the Tuning screen's simulator button), its first tab and its ship tab. Then, drawn
-	# alone (ShotRenderer's ship and weapon steps, which need no screen): every ship model of Shipyard.ships but the
-	# habitat (OBONTO, no ship), with where hits damage its reactors; and every weapon, mounted on a ship and hardpoint
+	# alone (ShotRenderer's ship and weapon steps, which need no screen): one ship per series of Shipyard.ships (its
+	# base model, Shipyard.gd configAlias; the variants' reactors sit the same), but the habitat (OBONTO, no ship), with
+	# where hits damage its reactors; and every weapon, mounted on a ship and hardpoint
 	# that take it (the TNTRL's high-stress main hardpoint, its side one for the SPC), with its cone and reach; the
 	# Tsukuyomi's built-in turrets (ships/modules/PDT.tscn, never on a hardpoint) as its scene mounts them.
 	CombatSimulator = @{
@@ -27,27 +28,15 @@
 			'with:shot|ships|545,15,1055,875'
 			'with:ship|HYBRID|ship-hybrid'
 			'with:ship|TRTL|ship-trtl'
-			'with:ship|TRTL-LCB|ship-trtl-lcb'
-			'with:ship|TRTL-R|ship-trtl-r'
-			'with:ship|TRTL-T|ship-trtl-t'
-			'with:ship|TRTL-44|ship-trtl-44'
 			'with:ship|MADCERF|ship-madcerf'
 			'with:ship|PROSPECTOR|ship-prospector'
-			'with:ship|PROSPECTOR-LUX|ship-prospector-lux'
-			'with:ship|PROSPECTOR-VP|ship-prospector-vp'
-			'with:ship|PROSPECTOR-FAT|ship-prospector-fat'
 			'with:ship|PROSPECTOR-BALD|ship-prospector-bald'
 			'with:ship|TSUKUYOMI|ship-tsukuyomi'
 			'with:ship|DRONE|ship-drone'
 			'with:ship|ATLAS|ship-atlas'
 			'with:ship|EIME|ship-eime'
 			'with:ship|COTHON|ship-cothon'
-			'with:ship|COTHON-CHK|ship-cothon-chk'
-			'with:ship|COTHON-LND|ship-cothon-lnd'
-			'with:ship|COTHON-V|ship-cothon-v'
 			'with:ship|AT225|ship-at225'
-			'with:ship|AT225-R|ship-at225-r'
-			'with:ship|AT225-B|ship-at225-b'
 			'with:ship|OCP209|ship-ocp209'
 			'with:ship|KITSUNE|ship-kitsune'
 			'with:weapon|SYSTEM_EMD14|TRTL|main|weapon-emd14'

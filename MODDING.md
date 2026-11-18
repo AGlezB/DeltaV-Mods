@@ -224,10 +224,11 @@ Bloom setting at No Bloom). Screenshots of the station's screens, and of the OMS
 starts), are taken by `_shots\shots.ps1` in an isolated copy of the game, from a fixture save, each mod's in a run
 without it and a run with it ([`_shots/README.md`](_shots/README.md); its steps in `_shots\shots.psd1`); those that
 depend on what is around the ship (the info boxes by the chunks), by hand, the pair from the same save, ship and view.
-`shots.ps1` also draws the game's ships and weapons alone, for a page that explains combat (CombatSimulator's): each
-ship model nose up with a heat map of where hits damage its reactors, and each weapon mounted on a ship with its cone,
-range and, for a turret, its pick-up areas. Every ship is drawn at one scale where it fits; each picture has a scale
-bar of a round length, which the run prints and the page states (see `_shots/README.md` *Ship and weapon pictures*).
+`shots.ps1` also draws the game's ships and weapons alone, for a page that explains combat (CombatSimulator's): one
+ship per series (its base model; the variants' reactors sit the same) nose up with a heat map of where hits damage its
+reactors, and each weapon mounted on a ship with its cone, range and, for a turret, its pick-up areas. Every ship is
+drawn at one scale where it fits; each picture has a scale bar of a round length, which the run prints and the page
+states (see `_shots/README.md` *Ship and weapon pictures*).
 
 **A mod's page**, in this order (GitHub shows the file name as the title, so there is no `#` heading):
 
