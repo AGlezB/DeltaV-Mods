@@ -635,7 +635,8 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   [GAME.md](GAME.md#frozen-bodies).
 - **Geologist**: the crew occupation for mining, and the OMS tab with the cargo's composition and the mineral
   targeting: which minerals the HUD marks, and their Minimum value (`HUD_MIN_PRICE`), kept in the HUD's
-  `mineralConfig`.
+  `mineralConfig`. The tab's mineral map (`hud/components/MineralMap.gd`) colours the areas around the ship where the
+  mineral picked in its list has been found. Details: [GAME.md](GAME.md#geologist).
 - **Hardpoint**: a ship's mount for a piece of equipment: high-stress, low-stress or spinal. Only high-stress ones
   take the arm. In the ship's scene each is a `ships/WeaponSlot.gd` node, inline (some nested, the ND-LIS Kitsune's is
   `Front/WeaponSlot`) or a placeholder of `weapons/WeaponSlot.tscn`, which stores only the values it overrides

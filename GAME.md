@@ -98,7 +98,7 @@ on average, 0.5 or more in 20–50 % of spots.
     discovery range (`CREW_STATS_GEOLOGIST_RANGE`, from experience; 100 m + 1000 m × experience, 0 with no geologist
     in the dive crew): only chunks within it get an info box (`hud/AutopilotOverlay.gd` `geologistMineralMarkers`).
     It also sets how many past finds of each mineral the Geologist tab's mineral map keeps
-    (`getMineralHistoryLength`, `hud/components/MineralMap.gd`).
+    (`getMineralHistoryLength`, `hud/components/MineralMap.gd`; see *Geologist*).
   - Astrogator. Tactical awareness range (`CREW_STATS_ASTROGATOR_RANGE`, from talent; 500 m + 5000 m × talent, 0
     with no astrogator in the dive crew): ships, stations and other tactical objects within it that the LIDAR has
     seen get a marker with their transponder and name, the more likely the closer they are (a chance of
@@ -260,6 +260,39 @@ a talking beacon (`story/DeadTalkingBeacon.tscn`), in chaotic parts of the rings
 (`story/habitat/DestoryedHabitat.gd`) until one is picked up. A body's transponder is its group's (one random code,
 which the beacon shows bare) plus its initials (`body.gd` `getTransponder`); its name is a random crew name. Picking
 one up gives the achievement `DISCOVER_FROZEN_BODY`.
+
+## Geologist
+
+The Geologist tab's mineral map (`MineralMapVoronoi`, `hud/components/MineralMap.tscn`; no text of its own), under the
+tab's LIDAR picture at the same scale, shows where the mineral picked in the tab's list has been found around the ship,
+in that mineral's colour.
+
+- Finds: each chunk that gets an info box (see *Crew stats*, Mineral discovery range) is recorded by the ship
+  (`hud/MineralMark.gd` → `ship-ctrl.gd` `addIdentifiedObject`) twice, when the box shows the masses
+  (`identifyMinerals`) and when it shows the value (`identifyValue`; both in its `PopIn` animation). It is kept as a
+  live object at the chunk's current position while the box lasts (`identifiedObjects`, dropped with the box,
+  `AutopilotOverlay.gd` `removeMineralMarker`), and as one past find per mineral in it, at the spot where it was
+  recorded (`addMineralHistory`, `mineralHistory`). Each mineral keeps its latest `getMineralHistoryLength` finds,
+  500 plus the Mineral discovery range in metres, the oldest overwritten first. The finds live on the ship's node, so
+  every dive starts with none; a chunk whose box is dropped can get another and add its finds again. A find's mass is
+  stored but unused: every find counts the same.
+- Drawing (`MineralMap.gd` `_draw`, every frame while the tab shows), on a viewport of its own: a near-black background
+  (`colorBg`, with a trace of red), a blue square for the ship, a square for each live object, green if it holds the
+  picked mineral and red if not, and a smaller one for each past find, green for the picked mineral's and red for
+  every other mineral's (where squares overlap, the last drawn covers the others). Positions are offsets from the
+  ship, not turned with it; the map's shorter side reaches 3.6 km each way (`distance`, `distanceScale`). With no
+  mineral picked (`mineralFocus` empty), every square is red.
+- Areas (`shader/voronoi.shader` on the `Voronoi` ColorRect over that canvas, with `shader/voronoi.material`): none of
+  the squares shows. The shader reads the canvas blurred (its mipmap level `sample`, 2.6) and paints each pixel
+  `colorNo` (black) where red outweighs green, `colorYes` (a dark grey, 0.086) where green is at least as strong, and
+  `colorEdge` (4, overbright) where that result differs from the next pixel to the right or below. The background's
+  trace of red makes empty space count as red. Despite the name it isn't a Voronoi diagram: it is a blurred majority
+  of the nearby squares, which merges them into areas that look like cells.
+- Colour: `recolor()` sets the ColorRect's `modulate` to the picked mineral's colour
+  (`CurrentGame.specificMineralColors`), so the map is black, with a faint fill of that colour where the mineral makes
+  up most of the finds nearby and a bright outline around each such area. A mineral is picked by focusing its entry in
+  the tab's list (`hud/SystemMineralList.gd` `focusOnMineral` → `mineralFocusChanged` →
+  `_on_SystemMineralList_mineralFocusChanged`).
 
 ## Hybrid
 
