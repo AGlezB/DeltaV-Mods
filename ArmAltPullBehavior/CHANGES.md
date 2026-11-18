@@ -1,5 +1,8 @@
 # ArmAltPullBehavior - Changes
 
+## 1.5.3
+- The README's *Disclaimer* no longer names the author.
+
 ## 1.5.2
 - The README's two images moved out of the mod into the repository's users' wiki
   (`_wiki/images/ArmAltPullBehavior-feeding.png` and `-not-feeding.png`, were `PullBehavior-feeding.png` and
@@ -15,7 +18,7 @@
   any other version of the mod from the `mods` folder.
 - The README starts with a *Warning*: what the mod changes compared to vanilla, and to check a bug without the mod
   before reporting it to the game's developers.
-- The mod's id is now `AGlezB.ArmAltPullBehavior` and its author `AGlezB` (were lowercase).
+- The mod's id is now `AGlezB.ArmAltPullBehavior`, and its author is capitalized the same way (both were lowercase).
 
 ## 1.5.0
 - While feeding, a target in the corridor is no longer handed back to the game: the mod pulls it straight in along

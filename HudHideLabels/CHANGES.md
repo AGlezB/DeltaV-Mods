@@ -1,5 +1,8 @@
 # HudHideLabels - Changes
 
+## 1.0.3
+- The README's *Disclaimer* no longer names the author.
+
 ## 1.0.2
 - The README's *For modders* says the mod was also seen in the real game, on every HUD, in the users' wiki's
   screenshot runs.
@@ -12,4 +15,4 @@
 - Adds this CHANGES.md.
 - The README no longer states the version (it is in `Mod.manifest` and here), and its Install step says to remove
   any other version of the mod from the `mods` folder.
-- The mod's id is now `AGlezB.HudHideLabels` and its author `AGlezB` (were lowercase).
+- The mod's id is now `AGlezB.HudHideLabels`, and its author is capitalized the same way (both were lowercase).

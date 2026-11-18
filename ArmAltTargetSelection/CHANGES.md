@@ -1,5 +1,8 @@
 # ArmAltTargetSelection - Changes
 
+## 1.2.4
+- The README's *Disclaimer* no longer names the author.
+
 ## 1.2.3
 - The README's image moved out of the mod into the repository's users' wiki
   (`_wiki/images/ArmAltTargetSelection-area.png`, was `TargetSelection.png`), which the README now links: the zip
@@ -15,7 +18,7 @@
   any other version of the mod from the `mods` folder.
 - The README starts with a *Warning*: what the mod changes compared to vanilla, and to check a bug without the mod
   before reporting it to the game's developers.
-- The mod's id is now `AGlezB.ArmAltTargetSelection` and its author `AGlezB` (were lowercase).
+- The mod's id is now `AGlezB.ArmAltTargetSelection`, and its author is capitalized the same way (both were lowercase).
 
 ## 1.2.1
 - When the arm is switched off, the mod drops the target itself again, as up to 1.1.2. Keeping the queue empty

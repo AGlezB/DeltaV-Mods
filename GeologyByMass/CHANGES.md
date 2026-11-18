@@ -1,13 +1,16 @@
 # GeologyByMass - Changes
 
+## 1.2.1
+- The README's *Disclaimer* no longer names the author.
+
 ## 1.2.0
 - The mod's OMS tab is now titled *GBM* (was *Ore mass*): text `GEOLOGYBYMASS_TAB`.
 - The README has a new *Disclaimer*: the game belongs to Kodera Software, the author has no tie to it or to the
   company, and the mod is provided as is, for free, without warranty.
 
 ## 1.1.1
-- The mod's id is now `AGlezB.GeologyByMass` and its author `AGlezB` (were lowercase). Settings saved under the
-  old id are not read: they start from the defaults.
+- The mod's id is now `AGlezB.GeologyByMass`, and its author is capitalized the same way (both were lowercase).
+  Settings saved under the old id are not read: they start from the defaults.
 
 ## 1.1.0
 - New *Base* slider at the top of the mod's OMS tab: the least mass for every mineral. Each mineral's slider is now

@@ -1,5 +1,8 @@
 # CrewCheapHireNotifier - Changes
 
+## 1.9.2
+- The README's *Disclaimer* no longer names the author.
+
 ## 1.9.1
 - The README has a new *Disclaimer*: the game belongs to Kodera Software, the author has no tie to it or to the
   company, and the mod is provided as is, for free, without warranty.
@@ -26,8 +29,8 @@
 - README: the badge's text.
 
 ## 1.6.1
-- The mod's id is now `AGlezB.CrewCheapHireNotifier` and its author `AGlezB` (were lowercase). Settings saved
-  under the old id are not read: they start from the defaults.
+- The mod's id is now `AGlezB.CrewCheapHireNotifier`, and its author is capitalized the same way (both were lowercase).
+  Settings saved under the old id are not read: they start from the defaults.
 
 ## 1.6.0
 - The Hire screen badge's tooltip has a second line: how many crew members with that job you have hired (active,

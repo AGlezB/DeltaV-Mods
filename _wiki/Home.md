@@ -1,7 +1,7 @@
 <!-- This wiki is published from the _wiki folder of the repository (MODDING.md, The users' wiki): edit it there.
 Changes made on the website are overwritten at the next publish. -->
 
-Mods for **ΔV: Rings of Saturn**, made by AGlezB. Each mod is a small add-on that changes one thing in the game.
+Mods for **ΔV: Rings of Saturn**. Each mod is a small add-on that changes one thing in the game.
 Pick the ones you like: every mod works on its own.
 
 These pages explain what each mod does, for players. The code, and the notes for people who make mods, are in the
@@ -97,7 +97,7 @@ bar of File Explorer to open it).
 ΔV: Rings of Saturn is made and owned by Kodera Software. The game's name, and everything from the game these pages
 show (its screens, words and pictures), belong to Kodera Software.
 
-AGlezB, who made these mods, has no tie of any kind to the game or to Kodera Software. Kodera Software didn't make,
+The author of these mods has no tie of any kind to the game or to Kodera Software. Kodera Software didn't make,
 check or approve these mods, and doesn't support them.
 
 Everything in the [repository](https://github.com/AGlezB/DeltaV-Mods) (the mods, their code and these pages) is
