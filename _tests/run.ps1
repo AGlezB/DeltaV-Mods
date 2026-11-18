@@ -11,17 +11,21 @@
 	MineralSystemToggle.gd, HireableCrew.gd, CrewBio.gd, CurrentCrewManagement.gd, PlaySoundsOnTheseButtons.gd,
 	SystemBuyUI.gd, SystemShipUpgradeUI.gd, Dealer.gd, Game.gd, Enceladus.gd, TransponderOnIntro.gd, ship-ctrl.gd,
 	Reactor.gd, FusionReactor.gd, Tool.gd, gdunzip.gd, CurrentGame.gd, body.gd, ClaimOwner.gd, ClaimBeacon-1.gd,
-	ClaimBeaconForeign.gd, NewGamePlus.gd), the game's ship models (harness\transponder_models.gd, read from
-	ships\Shipyard.gd), the game's Shower.tscn, audio buses
+	ClaimBeaconForeign.gd, NewGamePlus.gd, PauseLayer.gd, PDT.gd, Video.gd, GravimetricReadout.gd, massdriver.gd,
+	TheRing.gd, MarginViewportUpscale.gd, ViewportWithProxy.gd, NoBulletTime.gd, CanvasHidding.gd, MouseLayer.gd), the
+	game's ship models (harness\transponder_models.gd, read from ships\Shipyard.gd), the game's Shower.tscn, audio buses
 	(default_bus_layout.tres), the skill icons CrewBio.gd preloads and the Fleet entry's Use icon, a stub mineral scene
 	carrying the chunk radius read from the game's, stubs of the two scenes LIDAR.gd preloads, of the Tuning parts
 	CrewCheapHireNotifier's settings screen is built from, of a Hire screen entry (CrewBio.tscn), of the Geologist
 	tab's parts GeologyByMass's OMS tab is built from, and of a Fleet entry (SystemBuyUI.tscn, with the game's
 	confirmation animations), an Equipment item (SystemShipUpgradeUI.tscn), the Dealer screen (Dealer.tscn, as the
 	station and Owned.tscn instance it, with a Dealer entry that has the game's tooltip node), the ring scene
-	(Game.tscn, with the game's root values and title cards), the two scenes ship-ctrl.gd preloads, the three the
-	story claim beacons preload, and the station's
-	fade-in (harness\station_fadein.tres). Packages each mod into <WorkDir>\build\<Mod>.zip
+	(Game.tscn, with the game's root values and title cards, the asteroid field's masks and the cursor's fade), the two
+	scenes ship-ctrl.gd preloads, the three the story claim beacons preload, the station's fade-in
+	(harness\station_fadein.tres), and what CombatSimulator's arena builds and loads: the simulator's button
+	(LaunchVRButton.tscn), the asteroid field, BulletTimer, the music and WESpace, a ship scene under ships\, the pirate
+	event (story\PirateCombat.gd), the scene massdriver.gd preloads and stand-ins of the ring maps TheRing.gd preloads.
+	Packages each mod into <WorkDir>\build\<Mod>.zip
 	(as a release zip), and runs every suite with its mods loaded from those zips, the way the game loads them:
 	by an autoload, before the engine loads the main scene. Logs: <WorkDir>\logs. Nothing in the repo, the game folder
 	or the decompiled game is changed. Godot, the decompiled game and <WorkDir> default to folders under the ones set in
@@ -40,6 +44,8 @@
 	- skip: DiveSkipTransit. Instances the ring scene stub (Game.tscn), whose root has the game's Game.gd.
 	- dealer: DealerNotifier. Instances the Dealer screen stub (Dealer.tscn), whose root has the game's Dealer.gd.
 	- transponder: TransponderAltCodes. Instances the game's CurrentGame.gd (the CurrentGame autoload stays the stub).
+	- combat: CombatSimulator. Builds a station around the game's Enceladus.gd, with the game's PauseLayer.gd and
+	  TheRing.gd, and runs the arena on stub ships and a stub asteroid field.
 
 .EXAMPLE
 	pwsh _tests\run.ps1
@@ -55,8 +61,8 @@
 #>
 [CmdletBinding()]
 param(
-	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder')]
-	[string[]] $Suite = @('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder'),
+	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat')]
+	[string[]] $Suite = @('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat'),
 	# Mod folders to load for every selected suite, in load order (the game's order: by path); @() = none.
 	# Default: each suite's own mods (see the description).
 	[string[]] $Mods,
@@ -170,7 +176,7 @@ foreach ($dir in $project, $build, $logs)
 }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'project.godot'), (Join-Path $PSScriptRoot 'main.tscn') -Destination $project
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'harness'), (Join-Path $PSScriptRoot 'suites') -Destination $project -Recurse
-foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningBoolValue.gd', 'enceladus\Tuning\TuningItems.gd', 'hud\Hud.gd', 'hud\OMS.gd', 'menu\TabsWithGamepadControl.gd', 'hud\components\PriceLabel.gd', 'hud\components\RepeatingHSlider.gd', 'hud\components\MineralLabel.gd', 'hud\components\MineralSystemToggle.gd', 'enceladus\HireableCrew.gd', 'enceladus\CrewBio.gd', 'enceladus\CurrentCrewManagement.gd', 'menu\sfx\PlaySoundsOnTheseButtons.gd', 'enceladus\SystemBuyUI.gd', 'enceladus\SystemShipUpgradeUI.gd', 'enceladus\Dealer.gd', 'enceladus\Shower.tscn', 'Game.gd', 'enceladus\Enceladus.gd', 'TransponderOnIntro.gd', 'ships\ship-ctrl.gd', 'ships\Reactor.gd', 'ships\modules\FusionReactor.gd', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres', 'CurrentGame.gd', 'story\body.gd', 'ships\modules\ClaimOwner.gd', 'ships\WeaponSlot.gd', 'story\ClaimBeacon-1.gd', 'story\ClaimBeaconForeign.gd', 'menu\NewGamePlus.gd')
+foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningBoolValue.gd', 'enceladus\Tuning\TuningItems.gd', 'hud\Hud.gd', 'hud\OMS.gd', 'menu\TabsWithGamepadControl.gd', 'hud\components\PriceLabel.gd', 'hud\components\RepeatingHSlider.gd', 'hud\components\MineralLabel.gd', 'hud\components\MineralSystemToggle.gd', 'enceladus\HireableCrew.gd', 'enceladus\CrewBio.gd', 'enceladus\CurrentCrewManagement.gd', 'menu\sfx\PlaySoundsOnTheseButtons.gd', 'enceladus\SystemBuyUI.gd', 'enceladus\SystemShipUpgradeUI.gd', 'enceladus\Dealer.gd', 'enceladus\Shower.tscn', 'Game.gd', 'enceladus\Enceladus.gd', 'TransponderOnIntro.gd', 'ships\ship-ctrl.gd', 'ships\Reactor.gd', 'ships\modules\FusionReactor.gd', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres', 'CurrentGame.gd', 'story\body.gd', 'ships\modules\ClaimOwner.gd', 'ships\WeaponSlot.gd', 'story\ClaimBeacon-1.gd', 'story\ClaimBeaconForeign.gd', 'menu\NewGamePlus.gd', 'PauseLayer.gd', 'ships\modules\PDT.gd', 'hud\Video.gd', 'hud\GravimetricReadout.gd', 'weapons\massdriver.gd', 'TheRing.gd', 'enceladus\MarginViewportUpscale.gd', 'enceladus\Simulator\ViewportWithProxy.gd', 'enceladus\NoBulletTime.gd', 'enceladus\CanvasHidding.gd', 'menu\MouseLayer.gd')
 {
 	$target = Join-Path $project $file
 	New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
@@ -1106,12 +1112,22 @@ foreach ($animName in $cardAnims.Keys)
 	$subResources += "[sub_resource type=`"Animation`" id=$subId]`n" + $cardAnims[$animName].TrimEnd() + "`n"
 	$animLines += "anims/$animName = SubResource( $subId )"
 }
+# CombatSimulator's arena reads two more things from the scene's state: the masks the scene gives its asteroid field,
+# and the fade time it gives its cursor layer (an instance of menu\MouseLayer.tscn; here a CanvasLayer with the game's
+# menu\MouseLayer.gd). skip_field.gd has no masks, so instancing drops them (a value for a property a node lacks is
+# ignored); the state keeps them.
+$fieldBlock = [regex]::Match($gameScene, '(?ms)^\[node name="AsteroidField" parent="\." instance=ExtResource\( \d+ \)\]\n(.*?)(?=^\[)')
+$fieldMasks = @($fieldBlock.Groups[1].Value -split "`n" | Where-Object { $_ -match '^\w+IntersectionTest = ' })
+$mouseBlock = [regex]::Match($gameScene, '(?ms)^\[node name="MouseLayer" parent="\." instance=ExtResource\( \d+ \)\]\n(.*?)(?=^\[)')
+$mouseFade = @($mouseBlock.Groups[1].Value -split "`n" | Where-Object { $_ -match '^fadeTime = ' })
+if ($fieldMasks.Count -ne 2 -or $mouseFade.Count -ne 1) { throw "Cannot read the asteroid field's masks and the cursor's fade time from Game.tscn" }
 $ringScene = @"
-[gd_scene load_steps=$(4 + $subId) format=2]
+[gd_scene load_steps=$(5 + $subId) format=2]
 
 [ext_resource path="res://Game.gd" type="Script" id=1]
 [ext_resource path="res://TransponderOnIntro.gd" type="Script" id=2]
 [ext_resource path="res://harness/skip_field.gd" type="Script" id=3]
+[ext_resource path="res://menu/MouseLayer.gd" type="Script" id=4]
 
 $($subResources -join "`n")
 [node name="Game" type="Node"]
@@ -1125,6 +1141,11 @@ $($animLines -join "`n")
 $($nodeText -join "`n")
 [node name="AsteroidField" type="Node2D" parent="."]
 script = ExtResource( 3 )
+$($fieldMasks -join "`n")
+
+[node name="MouseLayer" type="CanvasLayer" parent="."]
+script = ExtResource( 4 )
+$($mouseFade -join "`n")
 "@
 Write-Utf8Lf (Join-Path $project 'Game.tscn') $ringScene
 # The station's fade-in on arrival (enceladus\Enceladus.tscn: the root AnimationPlayer's "FadeInCRT"), as an Animation
@@ -1135,6 +1156,88 @@ $fadeId = [regex]::Match($stationPlayer.Groups[1].Value, '(?m)^anims/FadeInCRT =
 $fade = [regex]::Match($stationScene, '(?ms)^\[sub_resource type="Animation" id=' + $fadeId.Groups[1].Value + '\]\n(.*?)(?=^\[)')
 if (-not $stationPlayer.Success -or -not $fadeId.Success -or -not $fade.Success) { throw 'Cannot read the "FadeInCRT" animation from enceladus\Enceladus.tscn' }
 Write-Utf8Lf (Join-Path $project 'harness\station_fadein.tres') ("[gd_resource type=`"Animation`" format=2]`n`n[resource]`n" + $fade.Groups[1].Value.TrimEnd() + "`n")
+# What CombatSimulator loads and builds (the combat suite). The simulator's button (enceladus\Simulator\LaunchVRButton.tscn,
+# which every screen with one instances, and by whose path the mod finds them): the game's root, with its theme, its
+# shortcut (the jury_rig action) and its values, without the key hint under it.
+$vrScene = (Get-Content -LiteralPath (Join-Path $GameSource 'enceladus\Simulator\LaunchVRButton.tscn') -Raw) -replace "`r`n", "`n"
+$vrTheme = [regex]::Match($vrScene, '(?m)^\[ext_resource path="res://menu/MenuTheme\.tres" type="Theme" id=\d+\]$')
+$vrSubs = @([regex]::Matches($vrScene, '(?ms)^\[sub_resource type="\w+" id=\d+\]\n.*?(?=^\[)') | ForEach-Object { $_.Value.TrimEnd() + "`n" })
+$vrRoot = [regex]::Match($vrScene, '(?ms)^\[node name="LaunchVR" type="Button"\]\n(.*?)(?=^\[|\z)')
+if (-not $vrTheme.Success -or $vrSubs.Count -eq 0 -or -not $vrRoot.Success -or $vrRoot.Groups[1].Value -notmatch '(?m)^shortcut = SubResource') { throw 'Cannot read the simulator button from enceladus\Simulator\LaunchVRButton.tscn' }
+$vrLines = @($vrRoot.Groups[1].Value -split "`n" | Where-Object { $_ -match '^\w+ = ' })
+New-Item -ItemType Directory -Force (Join-Path $project 'enceladus\Simulator') | Out-Null
+Write-Utf8Lf (Join-Path $project 'enceladus\Simulator\LaunchVRButton.tscn') ("[gd_scene load_steps=$(2 + $vrSubs.Count) format=2]`n`n" + $vrTheme.Value + "`n`n" + ($vrSubs -join "`n") + "`n[node name=`"LaunchVR`" type=`"Button`"]`n" + ($vrLines -join "`n") + "`n")
+# The ring scene's parts the arena instances in its viewport: the asteroid field (AsteroidField.tscn, a stub,
+# harness\combat_field.gd), BulletTimer (BulletTimer.tscn: a stub root, harness\combat_bullet_timer.gd, and the
+# notifications layer the arena removes), the music (music\Music.tscn: the root, with the game's pause mode) and
+# WESpace.tscn (a bare WorldEnvironment). A ship scene under ships\ (ships\CombatTestShip.tscn, harness\combat_ship.gd,
+# in the ships group as the game's ship scenes are; without gravity, as the game's world has none): CombatSimulator
+# offers only the models whose scene is there. The pirate event the arena builds a TRTL with (story\PirateCombat.gd,
+# harness\combat_pirate.gd: the game's preloads its loot), and the projectile massdriver.gd preloads (a bare node).
+$musicScene = (Get-Content -LiteralPath (Join-Path $GameSource 'music\Music.tscn') -Raw) -replace "`r`n", "`n"
+$musicPause = [regex]::Match($musicScene, '(?ms)^\[node name="Music" type="Node"\]\n[^\[]*?^(pause_mode = \d+)$')
+if (-not $musicPause.Success) { throw 'Cannot read the pause mode of music\Music.tscn' }
+New-Item -ItemType Directory -Force (Join-Path $project 'music'), (Join-Path $project 'weapons\projectiles') | Out-Null
+Write-Utf8Lf (Join-Path $project 'AsteroidField.tscn') "[gd_scene load_steps=2 format=2]`n`n[ext_resource path=`"res://harness/combat_field.gd`" type=`"Script`" id=1]`n`n[node name=`"AsteroidField`" type=`"Node2D`"]`nscript = ExtResource( 1 )`n"
+Write-Utf8Lf (Join-Path $project 'BulletTimer.tscn') "[gd_scene load_steps=2 format=2]`n`n[ext_resource path=`"res://harness/combat_bullet_timer.gd`" type=`"Script`" id=1]`n`n[node name=`"BulletTimer`" type=`"Node`"]`nscript = ExtResource( 1 )`n`n[node name=`"NotificationsLayer`" type=`"CanvasLayer`" parent=`".`"]`n"
+Write-Utf8Lf (Join-Path $project 'music\Music.tscn') "[gd_scene format=2]`n`n[node name=`"Music`" type=`"Node`"]`n$($musicPause.Groups[1].Value)`n"
+Write-Utf8Lf (Join-Path $project 'WESpace.tscn') "[gd_scene format=2]`n`n[node name=`"WESpace`" type=`"WorldEnvironment`"]`n"
+Write-Utf8Lf (Join-Path $project 'ships\CombatTestShip.tscn') "[gd_scene load_steps=2 format=2]`n`n[ext_resource path=`"res://harness/combat_ship.gd`" type=`"Script`" id=1]`n`n[node name=`"CombatTestShip`" type=`"RigidBody2D`" groups=[`"ships`"]]`ngravity_scale = 0.0`nscript = ExtResource( 1 )`nshipName = `"SHIP_TEST_COMBAT`"`n"
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'harness\combat_pirate.gd') -Destination (Join-Path $project 'story\PirateCombat.gd')
+Write-Utf8Lf (Join-Path $project 'weapons\projectiles\massdriverProjectile.tscn') "[gd_scene format=2]`n`n[node name=`"massdriverProjectile`" type=`"Node2D`"]`n"
+# The game's tooltip node (menu\sfx\PlaySoundsOnTheseButtons.tscn), which CombatSimulator instances to show its
+# buttons' tooltip: the game's script, paths and nodes, without the sounds and theme (as the Hire and Dealer entries'
+# stubs have it inline).
+Write-Utf8Lf (Join-Path $project 'menu\sfx\PlaySoundsOnTheseButtons.tscn') @'
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://menu/sfx/PlaySoundsOnTheseButtons.gd" type="Script" id=1]
+
+[node name="PlaySoundsOnTheseButtons" type="Node"]
+pause_mode = 2
+script = ExtResource( 1 )
+tooltipLabelPath = NodePath("Separation/Tooltip/MarginContainer/PanelContainer/TooltipLabel")
+tooltipContainerPath = NodePath("Separation/Tooltip/MarginContainer")
+tooltipPositionPath = NodePath("Separation/Tooltip")
+
+[node name="focus" type="AudioStreamPlayer" parent="."]
+
+[node name="hover" type="AudioStreamPlayer" parent="."]
+
+[node name="select" type="AudioStreamPlayer" parent="."]
+
+[node name="Separation" type="Node" parent="."]
+
+[node name="Tooltip" type="Node2D" parent="Separation"]
+visible = false
+
+[node name="MarginContainer" type="MarginContainer" parent="Separation/Tooltip"]
+mouse_filter = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="Separation/Tooltip/MarginContainer"]
+mouse_filter = 2
+
+[node name="TooltipLabel" type="Label" parent="Separation/Tooltip/MarginContainer/PanelContainer"]
+'@
+# TheRing.gd preloads the ring's maps (ring\ring-map.png: chaos in red, size bias in green and density in blue, a pixel
+# per km; ring\ring-veins.png), and CombatSimulator's CombatMap.gd extends it. The game's map is a 4 MB lossy texture;
+# here each is a small ImageTexture in a text resource that the PNG's .import file points to, so it loads without an
+# import step, as an imported texture does. The map's red grows across it (the depth), its blue down it (the way around
+# the ring), and its green changes from pixel to pixel; the veins are a pattern. The combat suite reads what they hold.
+function Write-StandInTexture([string] $Png, [int] $Width, [int] $Height, [scriptblock] $Pixel)
+{
+	$bytes = [Collections.Generic.List[string]]::new()
+	for ($y = 0; $y -lt $Height; $y++)
+	{
+		for ($x = 0; $x -lt $Width; $x++) { foreach ($b in (& $Pixel $x $y)) { $bytes.Add([string]$b) } }
+	}
+	$tres = $Png -replace '\.png$', '.tres'
+	Write-Utf8Lf (Join-Path $project $tres) "[gd_resource type=`"ImageTexture`" load_steps=2 format=2]`n`n[sub_resource type=`"Image`" id=1]`ndata = {`n`"data`": PoolByteArray( $($bytes -join ', ') ),`n`"format`": `"RGBA8`",`n`"height`": $Height,`n`"mipmaps`": false,`n`"width`": $Width`n}`n`n[resource]`nflags = 0`nimage = SubResource( 1 )`nsize = Vector2( $Width, $Height )`n"
+	Write-Utf8Lf (Join-Path $project "$Png.import") "[remap]`n`nimporter=`"texture`"`ntype=`"StreamTexture`"`npath=`"res://$($tres.Replace('\', '/'))`"`n"
+}
+New-Item -ItemType Directory -Force (Join-Path $project 'ring') | Out-Null
+Write-StandInTexture 'ring\ring-map.png' 64 48 { param($x, $y) @(($x * 4), (($x * 37 + $y * 53) % 256), ($y * 5), 255) }
+Write-StandInTexture 'ring\ring-veins.png' 8 8 { param($x, $y) @((($x * 32) % 256), (($y * 32) % 256), ((($x + $y) * 16) % 256), 255) }
 
 # 2. The mods: each suite's own (or -Mods), packaged once each, or the release zip given for it.
 $suiteMods = @{
@@ -1151,6 +1254,7 @@ $suiteMods = @{
 	skip = @('DiveSkipTransit')
 	dealer = @('DealerNotifier')
 	transponder = @('TransponderAltCodes')
+	combat = @('CombatSimulator')
 }
 $given = @{}
 foreach ($z in $ModZip)

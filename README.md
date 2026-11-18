@@ -13,6 +13,7 @@ in its folder, has the details for modders.
 | [ArmAltPullBehavior](../../wiki/ArmAltPullBehavior) | Changes how the ship's AR-1500 arm brings a target in: through the opening of the grinder or excavator, clear of the rotors, claws and hull. |
 | [ArmAltTargetSelection](../../wiki/ArmAltTargetSelection) | Changes how the ship's AR-1500 arm chooses its target: only what it can reach, preferring targets lined up with its intake. |
 | [BootSkipLogos](../../wiki/BootSkipLogos) | The game starts on the title screen, where the save slots are, without the logo sequence first. |
+| [CombatSimulator](../../wiki/CombatSimulator) | Shift+Click on the simulator's button runs a fight at the station instead, against the enemy ships, distance, rocks and remass you pick, with nothing carried over to the save. Its wiki page explains every ship and weapon in a fight. |
 | [CrewCheapHireNotifier](../../wiki/CrewCheapHireNotifier) | Marks the Crew entry of the Enceladus Prime menu while someone cheap is for hire, and shows who on the Hire screen. |
 | [CrewHighlightJobAndSalary](../../wiki/CrewHighlightJobAndSalary) | Makes the job and the salary of every crew entry (hired and unhired) stand out on the crew screens, and dims the rest. |
 | [CrewPerfectSort](../../wiki/CrewPerfectSort) | Sorts the crew lists at Enceladus Prime: the Hire screen by salary, then occupation; Your crew by occupation, then salary. |

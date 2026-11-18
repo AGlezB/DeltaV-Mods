@@ -3,7 +3,8 @@ extends Node
 # Stub of the game's CurrentGame autoload: what DockingArm.gd, CabinLight.gd, Tool.gd, TuningFloatValue.gd,
 # Hud.gd, PriceLabel.gd, HireableCrew.gd, CrewBio.gd, SystemBuyUI.gd, SystemShipUpgradeUI.gd, Dealer.gd, Game.gd,
 # Enceladus.gd, TransponderOnIntro.gd, story/body.gd, menu/NewGamePlus.gd, CrewCheapHireNotifier, GeologyByMass,
-# ShipCopyPaste, DiveSkipTransit, DealerNotifier and TransponderAltCodes reach.
+# ShipCopyPaste, DiveSkipTransit, DealerNotifier, TransponderAltCodes and CombatSimulator reach (with TheRing.gd and
+# PauseLayer.gd, which connect inGameTimePassed and pauseGame).
 
 signal dayPassed()
 signal employmentChanged()
@@ -15,6 +16,9 @@ signal gameOver()
 signal plotCourseTo(to, vector)
 signal pointOfNoReturn()
 signal moodChange(mood, delta)
+signal inventoryModeChange(state)
+signal pauseGame(how)
+signal inGameTimePassed(delta)
 
 # The game's crew occupations and level keys (CurrentGame.gd), for the Hire screen's entries.
 var occupations = ["CREW_OCCUPATION_PILOT", "CREW_OCCUPATION_MECHANIC", "CREW_OCCUPATION_GEOLOGIST", "CREW_OCCUPATION_ASTROGATOR"]
@@ -116,6 +120,16 @@ func freeShipInstanceCache():
 
 func setGlobalOffset(offset):
 	globalOffset = offset
+
+# As the game's: the tanks filled (the simulator's ships start full).
+func resupplyThisCfg(cfg):
+	if "fuel" in cfg:
+		cfg.fuel.initial = cfg.fuel.get("capacity", 0)
+	if "ammo" in cfg:
+		cfg.ammo.initial = cfg.ammo.get("capacity", 0)
+	if "drones" in cfg:
+		cfg.drones.initial = cfg.drones.get("capacity", 0)
+	return cfg
 
 func globalCoords(localPosition):
 	return localPosition + globalOffset

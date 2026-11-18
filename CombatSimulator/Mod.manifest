@@ -1,0 +1,23 @@
+[mod_information]
+
+name="CombatSimulator"
+id="AGlezB.CombatSimulator"
+description="Shift+Click on the simulator's button, or Shift plus its key, runs a hostile encounter in a stretch of ring at the station, against the enemy ships, distance, rocks and remass you pick."
+author="AGlezB"
+
+[version]
+
+version_major=1
+version_minor=0
+version_bugfix=0
+
+[tags]
+
+group={
+"type": "string",
+"value": "Simulator"
+}
+
+[manifest_definitions]
+
+manifest_version=2.2

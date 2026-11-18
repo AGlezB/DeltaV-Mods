@@ -6,10 +6,68 @@
 # itself).
 # shot|<view>|x,y,w,h saves that part of the 1600x900 window (without x,y,w,h, the whole window) as
 # _wiki\images\<Mod>-<view>-without.png and -with.png. A step starting with with: runs only with the mod (its settings,
-# its dialog), and a view shot that way is saved once, as <Mod>-<view>.png.
+# its dialog), and a view shot that way is saved once, as <Mod>-<view>.png. ship|<model>|<view> and
+# weapon|<system>|<model>|<slots>|<view> draw a ship model, or a weapon mounted on one, alone, and are saved as shot's.
 # Also: other mods loaded in both runs, when the view needs them. TimeoutSeconds: seconds before each of the mod's runs
 # is stopped, where they take longer than shots.ps1's default.
 @{
+	# The dialog (Shift+Click on the Tuning screen's simulator button), its first tab and its ship tab. Then, drawn
+	# alone (ShotRenderer's ship and weapon steps, which need no screen): every ship model of Shipyard.ships but the
+	# habitat (OBONTO, no ship), with where hits damage its reactors; and every weapon, mounted on a ship and hardpoint
+	# that take it (the TNTRL's high-stress main hardpoint, its side one for the SPC), with its cone and reach; the
+	# Tsukuyomi's built-in turrets (ships/modules/PDT.tscn, never on a hardpoint) as its scene mounts them.
+	CombatSimulator = @{
+		TimeoutSeconds = 480
+		Steps = @(
+			'load', 'wait|10'
+			'press|{menu}/ShipTuning', 'wait|3'
+			'with:shiftclick|{screens}/Tuning/VB/WindowMargin/Window/VBoxContainer/MarginContainer2/LaunchVR', 'wait|2'
+			'with:shot|dialog|545,15,1055,875'
+			'with:tab|CombatSimulatorDialog/Popup/Root/TabHintContainer/Tabs|1', 'wait|4'
+			'with:shot|ships|545,15,1055,875'
+			'with:ship|HYBRID|ship-hybrid'
+			'with:ship|TRTL|ship-trtl'
+			'with:ship|TRTL-LCB|ship-trtl-lcb'
+			'with:ship|TRTL-R|ship-trtl-r'
+			'with:ship|TRTL-T|ship-trtl-t'
+			'with:ship|TRTL-44|ship-trtl-44'
+			'with:ship|MADCERF|ship-madcerf'
+			'with:ship|PROSPECTOR|ship-prospector'
+			'with:ship|PROSPECTOR-LUX|ship-prospector-lux'
+			'with:ship|PROSPECTOR-VP|ship-prospector-vp'
+			'with:ship|PROSPECTOR-FAT|ship-prospector-fat'
+			'with:ship|PROSPECTOR-BALD|ship-prospector-bald'
+			'with:ship|TSUKUYOMI|ship-tsukuyomi'
+			'with:ship|DRONE|ship-drone'
+			'with:ship|ATLAS|ship-atlas'
+			'with:ship|EIME|ship-eime'
+			'with:ship|COTHON|ship-cothon'
+			'with:ship|COTHON-CHK|ship-cothon-chk'
+			'with:ship|COTHON-LND|ship-cothon-lnd'
+			'with:ship|COTHON-V|ship-cothon-v'
+			'with:ship|AT225|ship-at225'
+			'with:ship|AT225-R|ship-at225-r'
+			'with:ship|AT225-B|ship-at225-b'
+			'with:ship|OCP209|ship-ocp209'
+			'with:ship|KITSUNE|ship-kitsune'
+			'with:weapon|SYSTEM_EMD14|TRTL|main|weapon-emd14'
+			'with:weapon|SYSTEM_EMD17RF|TRTL|main|weapon-emd17rf'
+			'with:weapon|SYSTEM_RAILTOR|TRTL|main|weapon-railtor'
+			'with:weapon|SYSTEM_ACTEMD14|TRTL|main|weapon-actemd14'
+			'with:weapon|SYSTEM_CL150|TRTL|main|weapon-cl150'
+			'with:weapon|SYSTEM_CL600P|TRTL|main|weapon-cl600p'
+			'with:weapon|SYSTEM_ACL200P|TRTL|main|weapon-acl200p'
+			'with:weapon|SYSTEM_MWG|TRTL|main|weapon-mwg'
+			'with:weapon|SYSTEM_PDMWG|TRTL|main|weapon-pdmwg'
+			'with:weapon|SYSTEM_SYNCHRO-L|TRTL|left|weapon-synchro'
+			'with:weapon|SYSTEM_PDT|TRTL|main|weapon-pdt'
+			'with:weapon|SYSTEM_PDTL|TRTL|main|weapon-pdtl'
+			'with:weapon|SYSTEM_EINAT|TRTL|main|weapon-einat'
+			'with:weapon|SYSTEM_NANI|TRTL|main|weapon-nani'
+			'with:weapon|SYSTEM_IROH|TRTL|main|weapon-iroh'
+			'with:weapon|-|TSUKUYOMI|pdt,pdt-sec,pdt-emp|weapon-tsukuyomi'
+		)
+	}
 	CrewCheapHireNotifier = @{
 		Steps = @(
 			'load', 'wait|10'

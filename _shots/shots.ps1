@@ -34,7 +34,8 @@ param(
 	[string[]] $Mod = @(),
 	# Build the fixture save again (otherwise it is built only when missing).
 	[switch] $NewFixture,
-	# Run these steps once instead of shots.psd1; shot|<name> saves TempDir\shots\out\<name>.png.
+	# Run these steps once instead of shots.psd1; shot|<name> saves TempDir\shots\out\<name>.png (and so do ship and
+	# weapon steps, whose last field is the name).
 	[string[]] $Steps = @(),
 	# With -Steps: the mods to load (besides BootSkipLogos).
 	[string[]] $WithMods = @(),
@@ -58,6 +59,10 @@ $placeholders = [ordered]@{
 	'{screens}' = 'EnceladusMenu/MenuContainer/MarginContainer/CanvasLayer/MarginContainer'
 	'{oms}' = 'ship:Hud/Inventory/MarginContainer/VBoxContainer/TabHintContainer/TabContainer'
 }
+# The steps that save a picture, and the field of each that names its view (ShotRenderer's steps):
+# shot|<view>[|x,y,w,h], ship|<model>|<view>, weapon|<system>|<model>|<slots>|<view>.
+$viewField = @{ shot = 1; ship = 2; weapon = 4 }
+$pictureStep = '^(shot|ship|weapon)\|'
 
 
 $pathsFile = Join-Path $repo 'paths.local.psd1'
@@ -154,16 +159,18 @@ function Invoke-Game([string[]] $Mods, [string[]] $JobSteps, [int] $Seconds)
 	if ($run.TimedOut) { throw "The run took more than $Seconds s and was stopped" }
 	if (@($lines | Where-Object { $_ -match '^SHOTRENDERER userdir=.*/shots/' }).Count -eq 0) { throw 'ShotRenderer never confirmed the isolated user folder' }
 	if (@($errors | Where-Object { $_ -match '^SHOTRENDERER: ' }).Count) { throw 'ShotRenderer could not do every step (above)' }
+	if (@($lines | Where-Object { $_ -match '^SHOTRENDERER done' }).Count -eq 0) { throw 'The game ended before its last step' }
 }
 
-# A step with its placeholders filled in, and a shot's view turned into its file.
+# A step with its placeholders filled in, and a picture's view turned into its file.
 function Resolve-Step([string] $Step, [string] $Prefix)
 {
 	foreach ($key in $placeholders.Keys) { $Step = $Step.Replace($key, $placeholders[$key]) }
 	$parts = $Step.Split('|')
-	if ($parts[0] -eq 'shot')
+	$field = $viewField[$parts[0]]
+	if ($null -ne $field -and $parts.Count -gt $field)
 	{
-		$parts[1] = (Join-Path $out "$Prefix$($parts[1]).png").Replace('\', '/')
+		$parts[$field] = (Join-Path $out "$Prefix$($parts[$field]).png").Replace('\', '/')
 	}
 	return $parts -join '|'
 }
@@ -227,15 +234,18 @@ try
 					elseif ($variant -eq 'with') { $step.Substring('with:'.Length) }
 				}
 				# A run with nothing to shoot (every view only the mod has) isn't started.
-				if (-not @($runSteps | Where-Object { $_ -match '^shot\|' }).Count) { continue }
+				if (-not @($runSteps | Where-Object { $_ -match $pictureStep }).Count) { continue }
 				$mods = if ($variant -eq 'with') { @($name) + @($def.Also) } else { @($def.Also) }
+				# Pictures of an earlier run must not pass for this one's.
+				Remove-Item -Path (Join-Path $out "$name-*-$variant.png") -Force -ErrorAction SilentlyContinue
 				Invoke-Game @($mods | Where-Object { $_ }) @($runSteps | ForEach-Object { Resolve-Step $_ "$name-" } | ForEach-Object {
-					if ($_ -match '^shot\|') { $_ -replace '\.png(\||$)', "-$variant.png`$1" } else { $_ }
+					if ($_ -match $pictureStep) { $_ -replace '\.png(\||$)', "-$variant.png`$1" } else { $_ }
 				}) $seconds
 			}
-			foreach ($step in @($def.Steps | Where-Object { $_ -match '^(with:)?shot\|' }))
+			foreach ($step in @($def.Steps | Where-Object { $_ -match '^(with:)?(shot|ship|weapon)\|' }))
 			{
-				$view = $step.Split('|')[1]
+				$parts = ($step -replace '^with:', '').Split('|')
+				$view = $parts[$viewField[$parts[0]]]
 				$targets = if ($step -match '^with:') { @(@{ From = 'with'; To = "$name-$view.png" }) } else { @(@{ From = 'without'; To = "$name-$view-without.png" }, @{ From = 'with'; To = "$name-$view-with.png" }) }
 				foreach ($t in $targets)
 				{

@@ -10,8 +10,9 @@
 	- every constant and text listed still has the value written there;
 	- every number in a page's text is listed, and every listed value is shown, in the text or an image;
 	- every setting a mod describes (its Settings.gd, a Tuning entry it registers) is listed;
-	- every mod has a page, linked from Home and the sidebar, and every page a mod; a page explains how the mod changes
-	  the game exactly when its README has a Warning;
+	- every mod at 1.0.0 or later has a page, linked from Home and the sidebar, and every page such a mod (a mod below
+	  1.0.0 gets its page at 1.0.0, and has none before); a page explains how the mod changes the game exactly when its
+	  README has a Warning;
 	- links between pages resolve, and every image exists, is used, and is a PNG of at most 2 MB.
 	It reads only the repository, so it also runs in CI (.github\workflows\wiki.yml), and package.ps1 runs it for the
 	mod it packages. Problems are listed, then thrown as one error; nothing is written to the output stream.
@@ -924,14 +925,32 @@ function Test-LinksTo([string] $Special, [string] $Name)
 
 #region The check
 
+# Whether a mod is below 1.0.0 ([version] version_major of its Mod.manifest is 0): such a mod gets its page, its lines
+# in Home and the sidebar, and its README at 1.0.0, and has none before.
+function Test-BeforeV1([string] $ModName)
+{
+	$manifest = Join-Path (Join-Path $repo $ModName) 'Mod.manifest'
+	if (-not (Test-Path -LiteralPath $manifest)) { return $false }
+	$major = [regex]::Match((Get-Content -LiteralPath $manifest -Raw), '(?m)^version_major\s*=\s*(\d+)')
+	return $major.Success -and [int]$major.Groups[1].Value -eq 0
+}
+
 $mods = @(Get-ChildItem -LiteralPath $repo -Directory | Where-Object { $_.Name -notmatch '^[_.]' -and (Test-Path -LiteralPath (Join-Path $_.FullName 'ModMain.gd')) } | ForEach-Object { $_.Name })
+$beforeV1 = @($mods | Where-Object { Test-BeforeV1 $_ })
 $checked = [System.Collections.Generic.List[object]]::new()
 if ($Mod)
 {
 	if ($mods -cnotcontains $Mod) { throw "No mod folder with ModMain.gd: $Mod" }
-	$page = Test-ModPage $Mod
-	if ($page) { $checked.Add($page) }
-	foreach ($special in 'Home', '_Sidebar') { Test-LinksTo $special $Mod }
+	if ($beforeV1 -ccontains $Mod)
+	{
+		if (Test-ExactPath $wiki "$Mod.md") { Add-Problem (Join-Path $wiki "$Mod.md") 0 "$Mod is below 1.0.0: its page comes at 1.0.0" }
+	}
+	else
+	{
+		$page = Test-ModPage $Mod
+		if ($page) { $checked.Add($page) }
+		foreach ($special in 'Home', '_Sidebar') { Test-LinksTo $special $Mod }
+	}
 }
 else
 {
@@ -943,7 +962,7 @@ else
 		foreach ($link in Get-ImageLinks $page) { Test-ImageTarget $file $link.Line $link.Target }
 		Test-PageLinks $page
 	}
-	foreach ($name in $mods)
+	foreach ($name in $mods | Where-Object { $beforeV1 -cnotcontains $_ })
 	{
 		$page = Test-ModPage $name
 		if ($page) { $checked.Add($page) }
@@ -959,6 +978,7 @@ else
 		$name = [IO.Path]::GetFileNameWithoutExtension($item.Name)
 		if ($item.Extension -cne '.md') { Add-Problem $item.FullName 0 "only pages (.md) and images/ go in _wiki/: everything there is published to the wiki" }
 		elseif ($specialPages -cnotcontains $name -and $mods -cnotcontains $name) { Add-Problem $item.FullName 0 "a page for $name, which isn't a mod folder" }
+		elseif ($beforeV1 -ccontains $name) { Add-Problem $item.FullName 0 "$name is below 1.0.0: its page comes at 1.0.0" }
 	}
 	if (Test-Path -LiteralPath $imagesDir)
 	{
@@ -997,6 +1017,11 @@ if (Test-Path -LiteralPath $pathsFile)
 if ($script:problems.Count)
 {
 	throw "The wiki has $($script:problems.Count) problem(s), listed above (MODDING.md, The users' wiki)"
+}
+if ($Mod -and $beforeV1 -ccontains $Mod)
+{
+	Write-Host "wiki: $Mod is below 1.0.0, so it has no page yet" -ForegroundColor Green
+	return
 }
 $what = if ($Mod) { "the page of $Mod is" } else { "all $($checked.Count) mod pages are" }
 Write-Host "wiki: $what up to date" -ForegroundColor Green

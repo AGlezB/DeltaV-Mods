@@ -12,7 +12,8 @@ a Godot project in `TempDir\tests\project` from `_tests\`; the game's own `Docki
 `HireableCrew.gd`, `CrewBio.gd`, `CurrentCrewManagement.gd`, `PlaySoundsOnTheseButtons.gd`, `SystemBuyUI.gd`,
 `SystemShipUpgradeUI.gd`, `Dealer.gd`, `Game.gd`, `Enceladus.gd`, `TransponderOnIntro.gd`, `ship-ctrl.gd`, `Reactor.gd`,
 `FusionReactor.gd`, `CurrentGame.gd`, `body.gd`, `ClaimOwner.gd`, `ClaimBeacon-1.gd`, `ClaimBeaconForeign.gd`,
-`NewGamePlus.gd`, `WeaponSlot.gd`,
+`NewGamePlus.gd`, `WeaponSlot.gd`, `PauseLayer.gd`, `PDT.gd`, `Video.gd`, `GravimetricReadout.gd`, `massdriver.gd`,
+`TheRing.gd`, `MarginViewportUpscale.gd`, `ViewportWithProxy.gd`, `NoBulletTime.gd`, `CanvasHidding.gd`, `MouseLayer.gd`,
 `Tool.gd`, `gdunzip.gd`, `Shower.tscn`, audio buses (`default_bus_layout.tres`), the skill
 icons `CrewBio.gd` preloads and a Fleet entry's Use icon (`enceladus/Upgrades/switch.png`; their `.png.import` and
 imported `.stex`, so they load without an import step), copied from the decompiled source on every run and never
@@ -41,7 +42,20 @@ built from the game's: its root node with `Game.gd` and the scene's values, the 
 autoplay, process mode and `intro`, `exit`, `helpless`, `gameover` and `fasttravel` animations, a node at every path
 those drive (the game's type where the scene declares one, the transponder label with `TransponderOnIntro.gd`) and an
 asteroid field that records the `despawnAllAsteroids` calls of `exit` and the rescue ship's spawn
-(`harness/skip_field.gd`); the method keys on the root call `Game.gd`'s own. Also bare stubs of the two scenes
+(`harness/skip_field.gd`), the masks the scene gives that field, and the cursor's layer with the game's `MouseLayer.gd`
+and the scene's fade time (CombatSimulator reads both from the scene's state); the method keys on the root call
+`Game.gd`'s own. For CombatSimulator: the simulator's button (`enceladus/Simulator/LaunchVRButton.tscn`, the game's
+root with its theme and shortcut, without the key hint), stubs of what its arena instances (`AsteroidField.tscn` on
+`harness/combat_field.gd`, `BulletTimer.tscn` on `harness/combat_bullet_timer.gd` with its notifications layer,
+`music/Music.tscn` with the game's pause mode, a bare `WESpace.tscn`), a ship scene under `ships/`
+(`ships/CombatTestShip.tscn`, `harness/combat_ship.gd`, in the ships group and without gravity, with what the ship list
+asks of a ship whose picture it draws, as the Dealer screen stub's ship has), the pirate event at
+its game path (`story/PirateCombat.gd`, a copy of `harness/combat_pirate.gd`: the game's preloads its loot), the game's
+tooltip node (`menu/sfx/PlaySoundsOnTheseButtons.tscn`: its script, paths and nodes, without the sounds and theme), a
+bare stub of the projectile `massdriver.gd` preloads, and stand-ins of the two maps `TheRing.gd` preloads
+(`ring/ring-map.png`, `ring-veins.png`): small ImageTextures in text resources that the PNGs' `.import` files point to,
+so they load without an import step (the game's map is a 4 MB lossy texture), the map's red growing across it, its blue
+down it and its green changing from pixel to pixel. Also bare stubs of the two scenes
 `ship-ctrl.gd` preloads (`sfx/WeldingSparks.tscn`, `ships/modules/EVAflight.tscn`) and of the three the story claim
 beacons preload (`ships/drone/ClaimBeacon.tscn`, `ClaimBeaconForeign.tscn`, `story/DummyBeacon.tscn`), the game's
 ship models (`harness/transponder_models.gd`, written from the keys of `ships` in `ships/Shipyard.gd`), and the
@@ -49,8 +63,10 @@ station's fade-in (`Enceladus.tscn`'s `FadeInCRT`) as an Animation resource of i
 The game's `Shipyard` (which makes the rescue ship, recorded; for the `dealer` suite, the ship models' scenes,
 aliases and default configs (`getDefaultConfigByName`, falling back to the base model's, as the game's), and a
 `createShipByConfig` that records each config, keeps it and its `config` by reference and, as the game's, registers a
-transponder for a config without one; and, as the game's, the build `stripEmpheralsFromConfig` keys codes by),
-`K2RGB`, `Factions`, `Namer` (fixed names: "Ann Bell", a ship name from its seed), `Agenda` (which the game's
+transponder for a config without one; and, as the game's, the build `stripEmpheralsFromConfig` keys codes by,
+`getBuildConfigByName`, `createShipBuildByName`, and a `createShipByName` that makes a model with a scene from its
+default config),
+`K2RGB`, `Factions` (with the game's `frozenFactions`), `Namer` (fixed names: "Ann Bell", a ship name from its seed), `Agenda` (which the game's
 `CurrentGame.gd` names) and `Achivements` autoloads are stubs (`harness/stubs/`), in the game's order, so the game's
 scripts that name them compile. A script compiled once the autoloads exist has its calls on them checked against the
 stubs' scripts, arguments included, so the stubs take the game's arguments (`Shipyard.createShipByName`); one compiled
@@ -73,11 +89,11 @@ Call it from a pwsh prompt or `pwsh -Command`: under `pwsh -File`, list argument
 not parsed as arrays. Exit code 0 = every run passed; a script error fails its run even if every check passed.
 
 The suites are ported from the claude.ai harness (DVModTestHarness 1.0.0; the original was deleted once ported),
-except `boot`, `lidar`, `hud`, `crew`, `geology`, `fleet`, `skip`, `dealer` and `transponder`. `units`, `still` and
-`moving` load the two arm mods by default, `dive` loads DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos,
-`lidar` loads LidarLouderPing, `hud` loads HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology` loads
-GeologyByMass, `fleet` loads ShipCopyPaste, `skip` loads DiveSkipTransit, `dealer` loads DealerNotifier,
-`transponder` loads TransponderAltCodes.
+except `boot`, `lidar`, `hud`, `crew`, `geology`, `fleet`, `skip`, `dealer`, `transponder` and `combat`. `units`,
+`still` and `moving` load the two arm mods by default, `dive` loads DiveDisableAdrenalineBooster, `boot` loads
+BootSkipLogos, `lidar` loads LidarLouderPing, `hud` loads HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology`
+loads GeologyByMass, `fleet` loads ShipCopyPaste, `skip` loads DiveSkipTransit, `dealer` loads DealerNotifier,
+`transponder` loads TransponderAltCodes, `combat` loads CombatSimulator.
 
 - `units`: the claude.ai unit tests (`arm/main.gd`) nearly verbatim, on synthetic arms around the game's
   `DockingArm.gd`. TargetSelection: area geometry on turned, scaled and offset arms, reach, the strip, the weighted
@@ -392,6 +408,93 @@ GeologyByMass, `fleet` loads ShipCopyPaste, `skip` loads DiveSkipTransit, `deale
   the tree, one per `DRONE_CODES` type (the format and the code it makes), another format and a dock under something
   that isn't a ship untouched; the story claim beacons' format. The control checks (a vanilla prefix; a body's code
   and a dock's format unchanged) run on the game's own scripts.
+- `combat` (`suites/combat.gd`): a station built in code around the game's `Enceladus.gd` (given its script once in
+  the tree, as in `skip`; the extension's `_ready` called and its input processing switched on, as the engine would),
+  with the nodes of `Enceladus.tscn` the mod reads: `Background` and `EnceladusMenu` (the game's `CanvasHidding.gd`),
+  the music players, the right-hand screens with a Tuning screen (its description window nested as `Tuning.tscn` nests
+  it) and a Fleet screen, each with the simulator's button where the game's has it and a stand-in of its script
+  (`harness/combat_station.gd`: `previewedConfig` or `currentConfig`, `_on_LaunchVR_pressed`, Esc closing it from its
+  `_input`), wired to a stand-in of the simulator's layer that records `startSimulation`, as the scene wires them; the
+  dive target's ring (the game's `TheRing.gd`, with the stand-in maps); the cursor's layer (the game's
+  `MouseLayer.gd`); the station's pause menu (the game's `PauseLayer.gd`, with the nodes it reaches); `NoBulletTime`
+  (the game's script). The game's `CurrentGame.gd`, with the extension, is instanced under the suite, and the
+  `CurrentGame` stub hands it `_csArena`, as in `transponder`. The arena runs on stub ships, a stub field (which records
+  its spawns, moods and placements, and can refuse a spot) and a stub BulletTimer; its TRTLs come from the stub pirate
+  event. Keys and buttons are real input events with the game's bindings, pressed in one idle frame and released in the
+  next; clicks go through the scene tree's input. Checks:
+  - The settings model: one shared instance; the models offered (a scene under `ships/`, so not the habitat; each
+    series together, in the game's order); a model's name (its scene's `shipName`, or the mod's text for one the game
+    leaves unnamed) and description; defaults for a save without the entry; nothing stored or signalled for an
+    unchanged value; each slider kept in its range and snapped to its step; a change stored in `state.ui` under the
+    manifest's id with the format and mod versions and every setting, signalled once; the ship one of the models
+    offered, a switch a bool; a JSON round trip; a hand-edited entry, and one that isn't a dictionary. The texts of
+    `i18n/en.po` (the tooltip with its four `%s`, the title, groups and buttons, every setting's name and description,
+    the unnamed models' names and descriptions).
+  - The HUD: the ring map (the game's `hud/Video.gd`) and the gravimetric readout (`hud/GravimetricReadout.gd`), under
+    a HUD stand-in, show on the arena's ship outside the rings, stay hidden on another ship there and show in the rings;
+    the readout stays hidden without the scanner. Disabled weapons: on a disarmed ship a hardpoint (the game's
+    `WeaponSlot.gd`) passes 0 to its weapon and a turret (`PDT.gd`) fires with 0 and keeps 0 as its power, their
+    switches on; another ship's fire as the game's.
+  - The map (`CombatMap.gd` on the station ring's images): a pixel's red and blue are the dialog's, its green the ring's;
+    `getChaosAt` and `getRawDensityAt` read them; the density is the game's `getTargetDensityAt` for those values (the
+    game's `TheRing.gd` on a ring of that pixel, in floats); no oddity, no event; no ships counted without a field; the
+    spot is the closest of its `SPOT_SAMPLES` samples (the sampling replayed with the same seed), at a pixel's centre
+    away from the edges.
+  - The dialog: the arena's layer right after the simulator's, on its layer, and the dialog's last; both buttons found;
+    the tooltip, held by the game's tooltip node on the dialog's layer and shown on focus, a hidden button's once it
+    shows, after the key is rebound and after a language change; a plain click and J start the simulator and open
+    nothing; Shift+Click and Shift+J open the dialog and start nothing; J and Shift+J with it open start nothing; it pops
+    up over the screen, at least as big as its parts need; Esc, Cancel and the controller's Start close it, the screen
+    staying open, the station's pause menu shut and the focus back on the button; a disabled button, or the simulator
+    showing, opens nothing; from the Fleet screen it takes `currentConfig`. Its screen: opening it stores nothing; two
+    tabs, the settings then the ship, the second titled by the Ship setting's label, opening on the first (a plain
+    `TabContainer`: the harness has neither the Crew screen's tab hints nor its theme); the first holding the window,
+    the groups and the buttons, the second the window, the ship list and the buttons; Tuning's theme on both and its
+    window frame copied; a group per `GROUPS` entry with a game's row per setting but the ship, named by its label; each
+    slider's range, step, unit and value in the units shown, each switch's state; the first row focused and its
+    description shown, then each row's on focus; the window keeping its height with a long text, which scrolls, and
+    with none; a slider and a switch stored when changed, the switch not switched back on focus. The ship list (its
+    pictures drawn from the combat ship stub): a row per model offered, only the current one on; the models alone in
+    their series under Others, last; the tab focusing the current ship and showing its description; another ship
+    switched on picked, the previous one switched off, the tab's title kept, the value stored; the current one switched
+    off back on; focusing another row changing nothing; Esc cancelling from the ship tab; reopened on the first tab with
+    the last choices, the ship's row switched on.
+  - A run from Start (TRTL, `number` at its most, grouped): the layer running, known to `CurrentGame`, processing while
+    paused, its viewport's container stopping and not forwarding, the simulator's scale, the viewport's own world and
+    mouse proxy; the field, BulletTimer (without its notifications layer, deaf to `gameOver`), the music and WESpace in
+    the viewport; the field tracing nothing, in the `sim` zone, with the ring scene's masks (from its state) and the
+    arena's map (the dialog's chaos and density), not processing; the prefill (the ring scene's arrival over
+    `spawnEvery`, at the cutscene's radius, then restored); the player's ship built as the simulator builds it, marked,
+    the field's focus and `CurrentGame`'s player ship, its remass at the share set and its other tanks full, the screen's
+    config untouched; `number` enemies, pirates with the AI on, preheated, armed, from the pirate event without the
+    civilian or loot, placed by the field (`spawnByBlueprint`, `PLACEMENT_RANDOMNESS`) at Distance or more, side by side
+    `GROUP_SPACING` apart across one bearing; every ship cleaned up (`exitedToEnceladus`, the zone, not hailable, empty
+    dialog trees, no talking); the map counting the arena's ships; the pirates frozen; the global offset a pixel's centre
+    away from the edges; at the station `NoBulletTime` stopped, the music paused, the cursor's fade the ring scene's, the
+    focus let go; once faded in, the background and menu hidden, and the layer sending the mood; a ship entering later
+    cleaned up and a story flag cleared, a ship outside the arena left alone; `giveXp` keeping talent and dropping
+    experience, story flags and fleet ships dropped; the Shipyard's new transponders written. Input: J and Shift+J go
+    into the viewport (a probe there) and start nothing at the station; with the OMS open, Esc goes in too; with it
+    closed, Esc asks, pausing the game and filtering the music, the station's pause menu shut, the arena standing still;
+    Esc, No and the controller's Start answer No; the pause menu's `pauseGame(true)`, `CurrentGame`'s `pauseGame` and
+    losing the window's focus ask instead of opening the menu, and `pauseGame(false)` changes nothing; the arena's time
+    scale left alone; Yes ends it, unpaused, the background and menu shown at once. Then: the layer hidden, `_csArena`
+    cleared; the player ship, `inventoryMode` (signalled once) and `targetTimeScale` back; `NoBulletTime` running and
+    the time scale 1 again; the music, the cursor's fade, the pirates' faction, the global offset and the focus back;
+    the five save tables as at Start (the same dictionaries; one missing at Start missing again); `giveXp` giving
+    experience again; the viewport emptied, `node_added` no longer watched. A second run (a model the game builds new,
+    two ungrouped at the least Distance, Disabled weapons, all the remass): a refused spot drawn again; each enemy from
+    Distance to Distance + `SPAWN_SPREAD`, marked disarmed, made by `createShipByName` with the pirate faction; full
+    tanks; the enemy's hardpoint and turret firing nothing; losing the ship (`removal`) ends it without asking.
+
+  Not run here, since they need the game: its asteroid field, AI and HUD, the camera's OMS, BulletTimer's bullet time,
+  the other builders (MAD-CERF, Hybrid, the Tsukuyomi with the Big Bad Wolf's values from `story/TheRing.tscn`), the
+  mass driver's reload sound (`MassDriver.gd` is installed, not run) and the station's own processing (its time and
+  wages while paused). With another extension of `Enceladus.gd` loaded too (DiveSkipTransit), the extension `_ready`
+  the suite calls is the last one's only, so the suite runs with CombatSimulator alone or with TransponderAltCodes. The
+  control checks (with `-Mods @()`): a click starts the simulator, Shift held or not; Shift+J starts nothing and J does
+  (a button's shortcut matches its key exactly); the ring map and the readout hide outside the rings; a hardpoint and a
+  turret fire with the power given; the station's pause menu pauses.
 - `_tests\harness\rig.gd` builds the arm's node tree as the game nests it, with the values in
   `_tests\harness\vp_data.gd`; each cites its scene file and line, so re-check them after a game update. The ship
   is a stub moved by hand (it takes the arm's impulses and torque; inertia from the hull); the rotors don't collide.
@@ -404,7 +507,9 @@ GeologyByMass, `fleet` loads ShipCopyPaste, `skip` loads DiveSkipTransit, `deale
   CrewCheapHireNotifier too, the same with DealerNotifier as well; 13 control checks with `-Mods @()`), `dealer` 92
   (95 with CrewCheapHireNotifier and DiveSkipTransit too, in every load order; the same 92 with ShipCopyPaste,
   ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too; 2 control checks with `-Mods @()`), `transponder` 48 (3
-  control checks with `-Mods @()`), all passing; `-Matrix` gives 16 of 16 in every combination.
+  control checks with `-Mods @()`; the same 48 with CombatSimulator too), `combat` 129 (the same with
+  TransponderAltCodes too; 7 control checks with `-Mods @()`), all passing; `skip` gives its 109 with CombatSimulator
+  too; `-Matrix` gives 16 of 16 in every combination.
   Feeding, a chunk beside the hull is in after 4.4–4.8 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.4.0 (the claude.ai results, case for case)
   took 5.9–6.3 s there, fails the 8 time limits, and `-Matrix` gave 16, 15, 16, 16 (feeding while turning with a 5 t

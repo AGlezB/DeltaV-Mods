@@ -1,0 +1,149 @@
+# CombatSimulator: its texts, in English. Godot shows English for any language without its own file (its fallback
+# locale), so another language only needs a copy of this file with its Language and msgstr lines translated, loaded in
+# ModMain.gd. Keep each %s: the code fills them in.
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+# The simulator's button's tooltip (Code.gd): the key to hold while clicking, the same key again, the simulator's key,
+# the mod's name.
+msgid "COMBATSIMULATOR_TOOLTIP"
+msgstr "%s+Click or %s+%s: %s, a fight against the enemy ships you pick, in a stretch of ring."
+
+# The dialog (SettingsUI.gd): its first tab (the second is titled by the Ship setting's name), its groups and its
+# buttons; the ship list's group of the ships alone in their series (ShipList.gd).
+msgid "COMBATSIMULATOR_TITLE"
+msgstr "Combat simulation"
+
+msgid "COMBATSIMULATOR_OTHERS"
+msgstr "Others"
+
+msgid "COMBATSIMULATOR_GROUP_ENEMIES"
+msgstr "Enemies"
+
+msgid "COMBATSIMULATOR_GROUP_AREA"
+msgstr "Area"
+
+msgid "COMBATSIMULATOR_GROUP_SHIP"
+msgstr "Your ship"
+
+msgid "COMBATSIMULATOR_START"
+msgstr "Start"
+
+msgid "COMBATSIMULATOR_CANCEL"
+msgstr "Cancel"
+
+# Each setting has its name and, under the same key followed by SettingsUI.gd's DESCRIPTION_SUFFIX, the description the
+# dialog shows while it is selected, written as the game's Tuning descriptions are. The ship's is followed by the
+# description of the ship picked.
+msgid "COMBATSIMULATOR_SHIP"
+msgstr "Ship"
+
+msgid "COMBATSIMULATOR_SHIP_DESC"
+msgstr ""
+"The model of the enemy ships. They are pirates, hostile on sight, built and fitted as the game builds that model "
+"when it attacks you."
+
+msgid "COMBATSIMULATOR_NUMBER"
+msgstr "Number"
+
+msgid "COMBATSIMULATOR_NUMBER_DESC"
+msgstr "How many enemy ships come."
+
+msgid "COMBATSIMULATOR_GROUPED"
+msgstr "Grouped"
+
+msgid "COMBATSIMULATOR_GROUPED_DESC"
+msgstr ""
+"On: the enemy ships come together, side by side from one direction.\n"
+"\n"
+"Off: each one comes from a direction of its own."
+
+msgid "COMBATSIMULATOR_DISTANCE"
+msgstr "Distance"
+
+msgid "COMBATSIMULATOR_DISTANCE_DESC"
+msgstr ""
+"How close the enemy ships appear, at least.\n"
+"\n"
+"Each one appears a little farther than that, never so far that it can't find you."
+
+msgid "COMBATSIMULATOR_DISABLED_WEAPONS"
+msgstr "Disabled weapons"
+
+msgid "COMBATSIMULATOR_DISABLED_WEAPONS_DESC"
+msgstr ""
+"On: the enemies' weapons fire nothing.\n"
+"\n"
+"They still come for you and aim, and their turrets still follow you."
+
+msgid "COMBATSIMULATOR_CHAOS"
+msgstr "Chaos"
+
+msgid "COMBATSIMULATOR_CHAOS_DESC"
+msgstr ""
+"How restless the rocks around you are, as in a part of the rings with this much chaos: the more chaos, the faster "
+"they drift and spin.\n"
+"\n"
+"With enough of it, the music turns western, as in the rings."
+
+msgid "COMBATSIMULATOR_DENSITY"
+msgstr "Density"
+
+msgid "COMBATSIMULATOR_DENSITY_DESC"
+msgstr "How many rocks there are around you, as in a part of the rings this dense."
+
+msgid "COMBATSIMULATOR_REMASS"
+msgstr "Initial remass"
+
+msgid "COMBATSIMULATOR_REMASS_DESC"
+msgstr "How full your ship's remass tanks are at the start. Remass is your ship's propellant."
+
+# The confirmation Esc opens during a run (CombatLayer.gd).
+msgid "COMBATSIMULATOR_END_QUESTION"
+msgstr "End the combat simulation?"
+
+msgid "COMBATSIMULATOR_END_YES"
+msgstr "Yes"
+
+msgid "COMBATSIMULATOR_END_NO"
+msgstr "No"
+
+# The ships the game leaves without a name or a description of their own (Settings.gd MODEL_NAME_PREFIX, then the
+# model's key in Shipyard.ships).
+msgid "COMBATSIMULATOR_MODEL_MADCERF"
+msgstr "MAD-CERF"
+
+msgid "COMBATSIMULATOR_MODEL_MADCERF_DESC"
+msgstr ""
+"A rescue ship with docking clamps, the one that comes for stranded ships. Pirates fly it too, to abduct crews: "
+"armed with mass drivers and microwave emitters, as here."
+
+msgid "COMBATSIMULATOR_MODEL_TSUKUYOMI"
+msgstr "Tsukuyomi"
+
+msgid "COMBATSIMULATOR_MODEL_TSUKUYOMI_DESC"
+msgstr ""
+"A frigate with three reactors and turrets all around: the Big Bad Wolf, the mobile headquarters of Vilcy, the only "
+"one of its kind in the rings."
+
+msgid "COMBATSIMULATOR_MODEL_HYBRID"
+msgstr "Hybrid"
+
+msgid "COMBATSIMULATOR_MODEL_HYBRID_DESC"
+msgstr ""
+"A ship that matches no known model, with a Singularity Core in its reactor, a microwave emitter, and shielding "
+"that stops any microwave emitter."
+
+msgid "COMBATSIMULATOR_MODEL_DRONE"
+msgstr "Racing drone"
+
+msgid "COMBATSIMULATOR_MODEL_DRONE_DESC"
+msgstr "A small drone without crew, the kind the ring races are flown to chase."
+
+msgid "COMBATSIMULATOR_MODEL_ATLAS"
+msgstr "ATLAS"
+
+msgid "COMBATSIMULATOR_MODEL_ATLAS_DESC"
+msgstr "An autonomous drone that hunts rogue AI, armed with two microwave emitters."

@@ -38,6 +38,8 @@ These pages explain what each mod does, for players. The code, and the notes for
 
 ### Ships
 
+- [CombatSimulator](CombatSimulator): try your ship in a fight at the station, against the enemy ships you pick,
+  without risking it. Its page also explains every ship and weapon in a fight.
 - [DealerNotifier](DealerNotifier): the station menu tells you when a ship you are waiting for is for sale, and the
   Dealer shows you which one.
 - [ShipCopyPaste](ShipCopyPaste): copies one ship's setup onto another ship of the same model.

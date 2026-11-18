@@ -19,6 +19,7 @@
 - [LidarLouderPing](LidarLouderPing)
 
 **Ships**
+- [CombatSimulator](CombatSimulator)
 - [DealerNotifier](DealerNotifier)
 - [ShipCopyPaste](ShipCopyPaste)
 - [ShipHighlightTypeAndPrice](ShipHighlightTypeAndPrice)

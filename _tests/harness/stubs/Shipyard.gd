@@ -1,9 +1,9 @@
 extends Node
 
-# Stub of the game's Shipyard autoload (ships/Shipyard.gd): what Game.gd, DealerNotifier and the game's CurrentGame.gd
-# (the transponder suite's) reach. sendHelp has it make the rescue ship, here a harness/skip_ship.gd, recorded in
-# `created` as [name, faction]. DealerNotifier reads the models' scenes and their variants' base models, and makes ships
-# of them to draw.
+# Stub of the game's Shipyard autoload (ships/Shipyard.gd): what Game.gd, DealerNotifier, CombatSimulator and the
+# game's CurrentGame.gd (the transponder suite's) reach. sendHelp has it make the rescue ship, here a
+# harness/skip_ship.gd, recorded in `created` as [name, faction]. DealerNotifier reads the models' scenes and their
+# variants' base models, and makes ships of them to draw; CombatSimulator lists the models and builds its ships.
 
 var created = []
 var ships = {} # each model's scene, by its key, as the game's (the dealer suite fills it)
@@ -11,9 +11,16 @@ var configAlias = {} # the base model of each variant, as the game's (the dealer
 var configs = [] # a copy of each config createShipByConfig was given, in order
 var defaults = {} # each model's default config ({"config": …}), as the game's defaultShipConfig (the dealer suite's)
 
-# The game's arguments, so the game's CurrentGame.gd, which passes them all, compiles against this stub.
+# The game's arguments, so the game's CurrentGame.gd, which passes them all, compiles against this stub. A model with a
+# scene in `ships` is made as the game's makes it, from its default config (the combat suite's); any other is a
+# harness/skip_ship.gd (the skip suite's rescue ship).
 func createShipByName(shipName, faction = null, _new = true, _age = 0, _sd = 0):
 	created.append([shipName, faction])
+	if shipName in ships:
+		var cfg = getDefaultConfigByName(shipName)
+		if faction != null:
+			cfg.faction = faction
+		return createShipByConfig(cfg)
 	var ship = load("res://harness/skip_ship.gd").new()
 	ship.shipName = shipName
 	return ship
@@ -24,6 +31,21 @@ func getShipAlias(s: String):
 # The game's gives the NPC builds of a model (usedShipConfigs); this one, none.
 func getBuildsFor(_s):
 	return null
+
+# As the game's: one of the model's NPC builds, else its default config.
+func getBuildConfigByName(name):
+	var builds = getBuildsFor(name)
+	if builds:
+		return {"config": builds[randi() % builds.size()].duplicate(true), "model": name}
+	return getDefaultConfigByName(name)
+
+# As the game's: a ship of one of the model's NPC builds, else of its default config.
+func createShipBuildByName(name: String, faction = null, _new = true):
+	var builds = getBuildsFor(name)
+	if builds:
+		var cfg = builds[randi() % builds.size()].duplicate(true)
+		return createShipByConfig({"config": cfg, "model": name, "faction": faction}, true)
+	return createShipByName(name, faction, true)
 
 # As the game's: a copy of the model's default config, else its base model's, else one without systems (the game's
 # defaultConfig has some).
