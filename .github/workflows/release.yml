@@ -27,7 +27,7 @@ jobs:
         shell: pwsh
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Release the updated mods
         env:

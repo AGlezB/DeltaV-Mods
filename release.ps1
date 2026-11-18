@@ -178,11 +178,19 @@ foreach ($name in $mods.Name)
 try
 {
 	$expected = @($bundle | ForEach-Object { "$($_.Tag).zip" } | Sort-Object)
-	$headers = @{ Accept = 'application/vnd.github+json' }
-	if ($env:GH_TOKEN) { $headers.Authorization = "Bearer $($env:GH_TOKEN)" }
-	$latest = Invoke-RestMethod -Uri "$apiUrl/repos/$repoPath/releases/latest" -Headers $headers -SkipHttpErrorCheck -StatusCodeVariable status
-	if ($status -eq 404) { $latest = $null }
-	elseif ($status -ne 200) { throw "Couldn't read the latest release: HTTP $status" }
+	# With curl, not Invoke-RestMethod: pwsh's own web access trips some machines' firewalls. PowerShell 7 has no curl
+	# alias, so this is the curl program on Windows and Linux alike.
+	$headers = @('-H', 'Accept: application/vnd.github+json')
+	if ($env:GH_TOKEN) { $headers += '-H', "Authorization: Bearer $($env:GH_TOKEN)" }
+	$body = Join-Path $OutDir 'latest-release.json'
+	$status = curl -sS -o $body -w '%{http_code}' @headers "$apiUrl/repos/$repoPath/releases/latest"
+	if ($LASTEXITCODE -ne 0) { throw "Couldn't read the latest release: curl exit code $LASTEXITCODE" }
+	$latest = switch ($status)
+	{
+		'200' { Get-Content -LiteralPath $body -Raw | ConvertFrom-Json }
+		'404' { $null }
+		default { throw "Couldn't read the latest release: HTTP $status" }
+	}
 
 	if (-not $expected)
 	{
