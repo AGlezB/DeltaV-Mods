@@ -2,14 +2,14 @@
 
 name="ArmAltTargetSelection"
 id="AGlezB.ArmAltTargetSelection"
-description="Salvage arm target selection: the arm targets only what it can reach, and prefers targets lined up with its intake."
+description="Changes how the ship's AR-1500 arm chooses its target: only what it can reach, preferring targets lined up with its intake."
 author="AGlezB"
 
 [version]
 
 version_major=1
 version_minor=2
-version_bugfix=4
+version_bugfix=5
 
 [tags]
 

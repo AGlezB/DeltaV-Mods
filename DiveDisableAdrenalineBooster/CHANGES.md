@@ -1,5 +1,8 @@
 # DiveDisableAdrenalineBooster - Changes
 
+## 1.0.4
+- The description in `Mod.manifest` is worded for players, as the root README's summary.
+
 ## 1.0.3
 - The README's *Disclaimer* no longer names the author.
 

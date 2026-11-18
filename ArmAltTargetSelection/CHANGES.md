@@ -1,5 +1,8 @@
 # ArmAltTargetSelection - Changes
 
+## 1.2.5
+- The description in `Mod.manifest` is worded for players, as the root README's summary.
+
 ## 1.2.4
 - The README's *Disclaimer* no longer names the author.
 
