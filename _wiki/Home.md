@@ -73,7 +73,9 @@ developers: the problem may be the mod's, not the game's.
 
 ## Installing mods
 
-You get each mod as a zip file, from whoever shared it with you. There are no downloads on this site yet.
+Each mod comes as a zip file. Download the zips of the mods you want from the
+[newest release](https://github.com/AGlezB/DeltaV-Mods/releases/latest), named *All mods*: it holds the newest
+version of every mod, at the bottom under *Assets*.
 
 1. Find the game's folder: the one with `Delta-V.exe` in it.
 2. In it, make a new folder named `mods`.

@@ -8,8 +8,10 @@ themselves, and how to install them, are in the [README](README.md); how the gam
 ## The repository
 
 The mods are written in GDScript for the game's engine, Godot 3. Each top-level folder not starting with `_` or `.`
-is one independent mod and ships as one zip. There is no build system: `package.ps1` builds a mod's release zip (see
-*Packaging and releasing*), `_tests\` is a test harness for most mods (see *Testing*), and `_wiki\` is the users'
+is one independent mod and ships as one zip. There is no build system: `package.ps1` builds a mod's release zip, and
+`release.ps1`, run by `.github\workflows\release.yml` on every push to `main`, publishes the mods' new versions as
+GitHub Releases (see *Packaging and releasing*), `_tests\` is a test harness for most mods (see *Testing*), and
+`_wiki\` is the users'
 wiki, checked by `wiki.ps1`, published by `.github\workflows\wiki.yml`, with its screenshots of the station, the OMS
 and the HUD taken by `_shots\shots.ps1` (see *The users' wiki*). The source has been in git since 14 Nov 2026, and `.gitignore` keeps out
 every zip, so the versions
@@ -20,7 +22,7 @@ mod's `CHANGES.md`.
 
 The folders outside the repo differ per machine, so they are set in `paths.local.psd1` at the repo root, which is
 git-ignored: copy `paths.example.psd1` to it and set yours. These docs name them by its keys: `TempDir\gdre` means
-the `gdre` folder under `TempDir`. `_tests\run.ps1` and `package.ps1` read the file, and in PowerShell
+the `gdre` folder under `TempDir`. `_tests\run.ps1`, `package.ps1` and `release.ps1` read the file, and in PowerShell
 `$paths = Import-PowerShellDataFile .\paths.local.psd1` (from the repo root) gives `$paths.GameDir` and the others.
 Never write their values into a committed file.
 
@@ -174,7 +176,7 @@ at its root, with a copy of the repository's `LICENSE` in it: the GPL asks for o
 
 ```powershell
 .\package.ps1 <ModName>                # builds the zip and prints its path
-.\package.ps1 <ModName> -VersionOnly   # prints the version the zip would have
+.\package.ps1 <ModName> -VersionOnly   # prints the manifest's version, without checking CHANGES.md
 ```
 
 The version comes from `[version]` of `Mod.manifest`. The script refuses to overwrite a zip, refuses a mod whose
@@ -188,6 +190,22 @@ A release gets a new version, picked by semver (see *Conventions*) from the chan
 `[version]` of `<ModName>\Mod.manifest`. From 1.0.0 on, those changes are the `## NEXT` section of
 `<ModName>\CHANGES.md`, which is then renamed to that number. Before 1.0.0 there is no `CHANGES.md`, and the git
 history is the only record of them. A new mod's first release is its manifest version as it is.
+
+**Publishing.** A push to `main` publishes: `.github\workflows\release.yml` runs `release.ps1` on every push to `main`
+(and by hand: Actions, Release, Run workflow). Each mod at 1.0.0 or later whose manifest version has no tag
+`<ModName>-<version>` on GitHub gets a GitHub Release of that name, never marked Latest, with the tag at the push's
+commit, the zip `package.ps1` builds (so its checks stop a release there too) and, as notes, links to the mod's wiki
+page and Home's *Installing mods*, then the version's section of `CHANGES.md` ("First release." for 1.0.0, which has
+none). Then the *All mods* release, the only one marked Latest (so `…/releases/latest`, which Home and the README link,
+leads to it), holds the newest published zip of every mod in the repo, downloaded from the mod's release and never
+rebuilt, with a line per mod (its wiki page, its release and its manifest's `description`). Whenever that set
+changes, a new All mods (tag `all-mods-<commit>`) replaces it, and the old one is deleted with its tag. A mod below
+1.0.0 is never published: its first release on GitHub is its 1.0.0. Building a zip and trying it in the game publishes
+nothing; the push does. A version pushed to `main` is final: it is never rolled back, and the workflow fails for a mod
+whose version is below its newest release. One mod failing doesn't stop the others. `.\release.ps1 -DryRun` shows what
+the next push would release: it builds the zips in a new folder in `TempDir` and prints their notes, and publishes
+nothing (publishing runs only in the workflow). The tags and the releases' names carry the version, as the zip's name
+does.
 
 Keep exactly one zip per mod in the game's `mods` folder: the game loads every file there, so two versions of one mod
 would both load (see *How the game loads a mod*). The running game keeps every zip in `mods` open, so close it before

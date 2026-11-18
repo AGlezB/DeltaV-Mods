@@ -18,7 +18,8 @@
 
 .EXAMPLE
 	.\package.ps1 ShipCopyPaste -VersionOnly
-	Prints the version the zip would have, after the same checks of Mod.manifest and CHANGES.md.
+	Prints the manifest's version, the one the zip would have, without checking CHANGES.md: between releases its top
+	section is NEXT (release.ps1 reads every mod's version this way).
 #>
 [CmdletBinding()]
 param(
@@ -52,6 +53,8 @@ $numbers = foreach ($key in 'version_major', 'version_minor', 'version_bugfix')
 	$value.Groups[1].Value
 }
 $version = $numbers -join '.'
+if ($VersionOnly) { return $version }
+
 $changes = Join-Path $folder 'CHANGES.md'
 if (Test-Path -LiteralPath $changes)
 {
@@ -61,7 +64,6 @@ if (Test-Path -LiteralPath $changes)
 		throw "The top section of $changes is '$($top.Groups[1].Value)', not the manifest's version $version"
 	}
 }
-if ($VersionOnly) { return $version }
 
 # The mod's page in the users' wiki must be there and up to date from 1.0.0 on, and absent before (MODDING.md, The
 # users' wiki): wiki.ps1 throws if not.

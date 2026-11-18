@@ -54,10 +54,11 @@ Before reporting a bug in those parts of the game to the game's developers, chec
 mods.
 
 ## Install
-1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.
-2. Put the zip of each mod you want in it, and keep only one version of each mod there: they would all load. Do not
-   unzip them.
-3. Launch the game with `--enable-mods`.
+1. Download the zip of each mod you want from the [newest release](../../releases/latest), *All mods*, which holds the
+   newest version of every mod.
+2. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.
+3. Put the zips in it, and keep only one version of each mod there: they would all load. Do not unzip them.
+4. Launch the game with `--enable-mods`.
 
 Mods are unofficial and can break after game updates. Keep a backup of your save.
 

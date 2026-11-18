@@ -1,0 +1,35 @@
+# Publishes the mods on GitHub (MODDING.md, Packaging and releasing). On every push to main, and when run by hand
+# (Actions, Release, Run workflow), release.ps1 releases each mod at 1.0.0 or later whose Mod.manifest version has no
+# tag <ModName>-<version> yet: package.ps1 builds its zip, with its checks, and a GitHub Release gets it, with the tag
+# at this commit. A mod already released at its version is skipped; one below its newest release fails the run. Then
+# the All mods release, the only one marked Latest, holding the newest published zip of every mod, is made anew when
+# that set has changed, and the previous one is deleted.
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# One run at a time, so two pushes never race for the same tag.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Release the updated mods
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./release.ps1 -OutDir "$env:RUNNER_TEMP/release"
