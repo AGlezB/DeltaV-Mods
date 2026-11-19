@@ -11,6 +11,8 @@
 	1.0.0, a mod that has a page already (it gets one at 1.0.0). Checks that
 	every entry is <Mod>/... with forward slashes, as the game needs for the res:// paths (Windows PowerShell 5.1's
 	Compress-Archive writes '\', hence PowerShell 7). Prints the zip's path.
+	A test build, whose [version] has a version_prerelease ("next-<n>": the version is <x.y.z>-next-<n>), is built
+	without the CHANGES.md and wiki checks: the release brings those up to date (MODDING.md, Packaging and releasing).
 
 .EXAMPLE
 	.\package.ps1 ShipCopyPaste
@@ -20,6 +22,11 @@
 	.\package.ps1 ShipCopyPaste -VersionOnly
 	Prints the manifest's version, the one the zip would have, without checking CHANGES.md: between releases its top
 	section is NEXT (release.ps1 reads every mod's version this way).
+
+.EXAMPLE
+	.\package.ps1 ShipCopyPaste -CheckOnly
+	Runs the release's checks (CHANGES.md, the wiki page) and builds nothing: a release runs it before committing.
+	Fails for a test build's version, which a release replaces.
 #>
 [CmdletBinding()]
 param(
@@ -29,7 +36,9 @@ param(
 	# Where the zip goes. Default: TempDir of paths.local.psd1 (git-ignored; paths.example.psd1 is its template).
 	[string] $OutDir = '',
 	# Print the version and stop.
-	[switch] $VersionOnly
+	[switch] $VersionOnly,
+	# Run the release's checks and stop, building nothing.
+	[switch] $CheckOnly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -53,21 +62,42 @@ $numbers = foreach ($key in 'version_major', 'version_minor', 'version_bugfix')
 	$value.Groups[1].Value
 }
 $version = $numbers -join '.'
+# A test build's prerelease (MODDING.md, Packaging and releasing): version_prerelease="next-<n>" makes the version
+# <x.y.z>-next-<n>. Semver's prerelease characters only, as they also end up in the zip's name.
+$prerelease = [regex]::Match($section.Groups[1].Value, '(?m)^version_prerelease[ \t]*=(.*?)\r?$')
+if ($prerelease.Success)
+{
+	$label = [regex]::Match($prerelease.Groups[1].Value, '^[ \t]*"([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)"[ \t]*$')
+	if (-not $label.Success)
+	{
+		throw "version_prerelease in $manifest isn't a quoted prerelease such as `"next-1`": $($prerelease.Groups[1].Value.Trim())"
+	}
+	$version += '-' + $label.Groups[1].Value
+}
 if ($VersionOnly) { return $version }
 
-$changes = Join-Path $folder 'CHANGES.md'
-if (Test-Path -LiteralPath $changes)
+if ($prerelease.Success)
 {
-	$top = [regex]::Match((Get-Content -LiteralPath $changes -Raw), '(?m)^## (.+?)[ \t]*\r?$')
-	if (-not $top.Success -or $top.Groups[1].Value -ne $version)
-	{
-		throw "The top section of $changes is '$($top.Groups[1].Value)', not the manifest's version $version"
-	}
+	# A test build: CHANGES.md and the wiki page wait for the release.
+	if ($CheckOnly) { throw "$Mod $version is a test build's version: a release sets the new version first" }
 }
+else
+{
+	$changes = Join-Path $folder 'CHANGES.md'
+	if (Test-Path -LiteralPath $changes)
+	{
+		$top = [regex]::Match((Get-Content -LiteralPath $changes -Raw), '(?m)^## (.+?)[ \t]*\r?$')
+		if (-not $top.Success -or $top.Groups[1].Value -ne $version)
+		{
+			throw "The top section of $changes is '$($top.Groups[1].Value)', not the manifest's version $version"
+		}
+	}
 
-# The mod's page in the users' wiki must be there and up to date from 1.0.0 on, and absent before (MODDING.md, The
-# users' wiki): wiki.ps1 throws if not.
-& (Join-Path $repo 'wiki.ps1') -Mod $Mod
+	# The mod's page in the users' wiki must be there and up to date from 1.0.0 on, and absent before (MODDING.md, The
+	# users' wiki): wiki.ps1 throws if not.
+	& (Join-Path $repo 'wiki.ps1') -Mod $Mod
+	if ($CheckOnly) { return "${Mod} ${version}: ready to release" }
+}
 
 if (-not $OutDir)
 {

@@ -30,5 +30,6 @@ keep these docs up to date as they ask.
   entry stays short: what the term is, its key, where it lives in the game. How it works goes in GAME.md, in a section
   of the same name that the entry links.
 - A change to anything a mod's page in the users' wiki says (behaviour, settings, a value or text its values block
-  lists, a screen its pictures show) updates `_wiki\<ModName>.md` in the same change, written for players as MODDING.md
-  *The users' wiki* says; then run `.\wiki.ps1`.
+  lists, a screen its pictures show) updates `_wiki\<ModName>.md` in the release that ships it, written for players as
+  MODDING.md *The users' wiki* says; then run `.\wiki.ps1`. A test build changes only what the mod needs to work, with
+  a prerelease version; the release brings everything else up to date (MODDING.md *Packaging and releasing*).

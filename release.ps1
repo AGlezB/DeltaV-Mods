@@ -7,6 +7,8 @@
 .DESCRIPTION
 	For each mod folder at the repo root, reads the version of its Mod.manifest (package.ps1 -VersionOnly) and compares
 	it with origin's tags, one per release:
+	- a test build's version (a prerelease, <x.y.z>-next-<n>): an error, since test builds are never committed, let
+	  alone published (MODDING.md, Packaging and releasing);
 	- below 1.0.0: skipped, since a mod's first release is its 1.0.0;
 	- below the mod's newest tag: an error, since a pushed version is never rolled back;
 	- a tag <Mod>-<version> exists: skipped, already released;
@@ -132,7 +134,11 @@ foreach ($name in $mods.Name)
 		$version = & $package -Mod $name -VersionOnly
 		$tag = "$name-$version"
 		$newest = Get-NewestRelease $name
-		if ([version] $version -lt [version] '1.0.0')
+		if ($version.Contains('-'))
+		{
+			throw "$version is a test build's version, never published: release the mod, then push"
+		}
+		elseif ([version] $version -lt [version] '1.0.0')
 		{
 			$results.Add("${name} ${version}: skipped, below 1.0.0")
 		}

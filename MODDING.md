@@ -177,6 +177,7 @@ at its root, with a copy of the repository's `LICENSE` in it: the GPL asks for o
 ```powershell
 .\package.ps1 <ModName>                # builds the zip and prints its path
 .\package.ps1 <ModName> -VersionOnly   # prints the manifest's version, without checking CHANGES.md
+.\package.ps1 <ModName> -CheckOnly     # runs the release's checks, builds nothing
 ```
 
 The version comes from `[version]` of `Mod.manifest`. The script refuses to overwrite a zip, refuses a mod whose
@@ -186,10 +187,21 @@ none yet. It checks
 that every entry is `<ModName>/…` with forward slashes: the game needs them for the `res://` paths, and Windows
 PowerShell 5.1's `Compress-Archive` writes `\` instead, hence PowerShell 7.
 
+**Test builds.** A change is tried in the game before it is released, often over several builds, so a build only
+changes what the mod needs to work: the README, `CHANGES.md`, the wiki page and the repository's docs wait for the
+release, which brings them all up to date at once. Each build has a prerelease version of the last release,
+`x.y.z-next-<n>`: `version_prerelease = "next-<n>"` in `[version]`, after `version_bugfix`, with `x.y.z` unchanged and
+`n` going up by one with every build, from 1 after a release. `package.ps1` builds it as `<ModName>-x.y.z-next-<n>.zip`
+without the `CHANGES.md` and wiki checks, and `-CheckOnly` fails for it. A test build is never committed, so never
+pushed: `release.ps1` fails for a mod whose version is a prerelease. (The mods' `Settings.gd` read only
+`x.y.z` as the version they save.)
+
 A release gets a new version, picked by semver (see *Conventions*) from the changes since the last release, set in
-`[version]` of `<ModName>\Mod.manifest`. From 1.0.0 on, those changes are the `## NEXT` section of
-`<ModName>\CHANGES.md`, which is then renamed to that number. Before 1.0.0 there is no `CHANGES.md`, and the git
-history is the only record of them. A new mod's first release is its manifest version as it is.
+`[version]` of `<ModName>\Mod.manifest`, with the test builds' `version_prerelease` removed. From 1.0.0 on, those
+changes are the `## NEXT` section of `<ModName>\CHANGES.md`, which is then renamed to that number. Before 1.0.0 there
+is no `CHANGES.md`, and the git history is the only record of them. A new mod's first release is its manifest version
+as it is. The release also brings up to date everything else its changes touch (the README, the wiki page, the docs,
+the harness), and `package.ps1 <ModName> -CheckOnly` passes before it is committed.
 
 **Publishing.** A push to `main` publishes: `.github\workflows\release.yml` runs `release.ps1` on every push to `main`
 (and by hand: Actions, Release, Run workflow). Each mod at 1.0.0 or later whose manifest version has no tag
@@ -328,8 +340,9 @@ anything is built), and in the workflow before anything is published (so a push 
 there).
 
 **Keeping it up to date.** A change to anything a mod's page says (behaviour, settings, a listed value or text, a
-screen its pictures show) updates the page, its values block and its pictures in the same change. A release reviews
-the page against the mod's `## NEXT` bullets, since no check catches a change of behaviour. A picture `wiki.ps1` names
+screen its pictures show) updates the page, its values block and its pictures in the release that ships it (test
+builds leave them for the release, see *Packaging and releasing*). A release reviews the page against the mod's
+`## NEXT` bullets, since no check catches a change of behaviour. A picture `wiki.ps1` names
 to re-take is taken again with `.\_shots\shots.ps1 -Mod <ModName>`, or by hand for one of the info boxes. After a game
 update, every page's `game:` lines and "without" pictures are checked against the new version (the station's with
 `.\_shots\shots.ps1 -NewFixture`) before its `game-checked` changes.
@@ -458,7 +471,8 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
 - Versions follow [semver](https://semver.org): **major** for a change that breaks what players or modders rely on
   (a feature removed or changed incompatibly, saved settings that no longer load), **minor** for new behaviour or
   settings that keep the old working, **patch** for fixes and for changes with no visible effect (a file renamed,
-  code moved between files). Every zip released gets a new version, and a released version is never changed.
+  code moved between files). Every zip released gets a new version, and a released version is never changed; a test
+  build's zip gets a prerelease of the last release, `x.y.z-next-<n>` (see *Packaging and releasing*).
   A new mod always starts at **0.0.0**, except a renamed one (below). Going to 1.0.0 comes with a clean-up: all
   logging removed, the code simplified, and the what and why of each feature documented in the README for other
   modders.
@@ -473,10 +487,11 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
 - **The version lives only in `[version]` of `Mod.manifest` and in `CHANGES.md`**. It never appears anywhere else in
   the mod: not in the README (whose *Install* step says "the mod's zip" and names neither the mod nor the zip), the
   code, comments or images. Godot's and the game's own versions may be mentioned. The version is bumped only at
-  release (see *Packaging and releasing*).
+  release, and between releases only the test builds' prerelease changes (see *Packaging and releasing*).
 - **`CHANGES.md`**: a mod at 1.0.0 or later gets one in its folder (so it ships in the zip) as soon as it changes
-  after 1.0.0. Changes not yet released accumulate in a `## NEXT` section at the top: every change to the mod adds its
-  bullets there, while the manifest keeps the released version. At release the section is renamed to the new version
+  after 1.0.0. Changes not yet released are listed in a `## NEXT` section at the top, by the release at the latest
+  (test builds leave it for the release), while the manifest keeps the released version (with a test build's
+  prerelease). At release the section is renamed to the new version
   (see *Packaging and releasing*), so below it there is one section per released version above 1.0.0, newest on top.
   1.0.0 is the baseline and gets no section, nor do the versions before it: only changes from 1.0.0 on matter.
   Entries are short bullets on what changed for a player or a modder (behaviour, fixes, files, constants and members
@@ -507,7 +522,8 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
   Keep a backup of your save." line; *About* (made with the help of Claude; GPLv3); *Disclaimer* (the game belongs to
   Kodera Software, the author has no tie to it or to the company, the mod is provided as is, for free, without
   warranty; the same text in every README, ending with the GPLv3's sections 15 and 16). When the behaviour changes,
-  update the README's text, *Warning* and figures too, and the mod's page in the users' wiki.
+  the release that ships it updates the README's text, *Warning* and figures too, and the mod's page in the users'
+  wiki.
 - The root `README.md`, this file, `GAME.md`, `_tests/README.md` and `_wiki\` are the repository's own (they ship in
   no zip, and `CHANGES.md` doesn't list their changes). Update the README's *Mods* table when a mod reaches 1.0.0 or is
   removed or a mod's summary changes, and its *Mods that change how the game plays* when a mod gains or loses its
