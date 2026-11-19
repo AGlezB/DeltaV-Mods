@@ -57,7 +57,9 @@ mods.
 1. Download the zip of each mod you want from the [newest release](../../releases/latest), *All mods*, which holds the
    newest version of every mod.
 2. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.
-3. Put the zips in it, and keep only one version of each mod there: they would all load. Do not unzip them.
+3. Put the zips in it. Do not unzip them. A mod's newer zip has the same name as the older one, and replaces it. Keep
+   only one zip of each mod there: they would all load. Zips from older releases have the version in their names:
+   take those out.
 4. Launch the game with `--enable-mods`.
 
 Mods are unofficial and can break after game updates. Keep a backup of your save.

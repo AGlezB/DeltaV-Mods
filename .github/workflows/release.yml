@@ -1,9 +1,10 @@
 # Publishes the mods on GitHub (MODDING.md, Packaging and releasing). On every push to main, and when run by hand
 # (Actions, Release, Run workflow), release.ps1 releases each mod at 1.0.0 or later whose Mod.manifest version has no
-# tag <ModName>-<version> yet: package.ps1 builds its zip, with its checks, and a GitHub Release gets it, with the tag
-# at this commit. A mod already released at its version is skipped; one below its newest release fails the run. Then
-# the All mods release, the only one marked Latest, holding the newest published zip of every mod, is made anew when
-# that set has changed, and the previous one is deleted.
+# tag <ModName>-<version> yet: package.ps1 builds its zip, with its checks, and a GitHub Release gets it as
+# <ModName>.zip, without the version, with the tag at this commit. A mod already released at its version is skipped;
+# one below its newest release fails the run. Then the All mods release, the only one marked Latest, holding the newest
+# published zip of every mod, is made anew when those zips or their versions have changed, and the previous one is
+# deleted.
 name: Release
 
 on:

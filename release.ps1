@@ -16,10 +16,15 @@
 	  Release named "<Mod> <version>" gets the zip and, as notes, links to the mod's page in the users' wiki and to
 	  Home's Installing mods, then the version's section of CHANGES.md ("First release." for 1.0.0, which has none).
 	  The release creates the tag at the commit being run (GITHUB_SHA), and is never marked Latest.
+	On GitHub a mod's zip is <Mod>.zip, without the version package.ps1 puts in its name: a player's newer zip then
+	overwrites the older one in the game's mods folder, where two zips of one mod would both load. The zips built here
+	keep it in their folder's name, <OutDir>\<Mod>-<version>\<Mod>.zip. Mod releases made before that hold
+	<Mod>-<version>.zip.
 	Then the All mods release, the only one marked Latest (so .../releases/latest leads to it): the newest published zip
 	of every mod still in the repo, downloaded from its release (never rebuilt: a mod with changes under NEXT must not
-	ship them), with a list of the mods. When the Latest release isn't an All mods release holding exactly those zips,
-	a new one is made, tagged all-mods-<commit>, and every other all-mods-* release is deleted with its tag.
+	ship them) and named <Mod>.zip, with a list of the mods and their versions as notes. When the Latest release isn't
+	an All mods release holding exactly those zips and those notes (the zips' names carry no version, the notes do), a
+	new one is made, tagged all-mods-<commit>, and every other all-mods-* release is deleted with its tag.
 	One mod failing doesn't stop the others. Prints a line per mod and one for All mods; exit code 1 if any failed.
 	Publishing (gh) runs only in the workflow. -DryRun does everything else, builds the zips and prints the notes: it
 	shows what the next push to main would release.
@@ -152,7 +157,10 @@ foreach ($name in $mods.Name)
 		}
 		else
 		{
-			$zip = & $package -Mod $name -OutDir $OutDir
+			# The zip as GitHub gets it, <Mod>.zip, in a folder named for the version (see the description).
+			$built = & $package -Mod $name -OutDir (Join-Path $OutDir $tag)
+			$zip = Join-Path (Split-Path -Parent $built) "$name.zip"
+			Move-Item -LiteralPath $built -Destination $zip
 			$notes = Get-Notes $name $version
 			$notesFile = Join-Path $OutDir "$tag.md"
 			Set-Content -LiteralPath $notesFile -Value $notes -NoNewline
@@ -183,7 +191,8 @@ foreach ($name in $mods.Name)
 # The All mods release, the only one marked Latest.
 try
 {
-	$expected = @($bundle | ForEach-Object { "$($_.Tag).zip" } | Sort-Object)
+	$expected = @($bundle | ForEach-Object { "$($_.Name).zip" } | Sort-Object)
+	$notes = Get-BundleNotes $bundle
 	# With curl, not Invoke-RestMethod: pwsh's own web access trips some machines' firewalls. PowerShell 7 has no curl
 	# alias, so this is the curl program on Windows and Linux alike.
 	$headers = @('-H', 'Accept: application/vnd.github+json')
@@ -203,13 +212,13 @@ try
 		$results.Add('All mods: no mod released yet')
 	}
 	elseif ($latest -and $latest.tag_name -clike 'all-mods-*' -and
-		((@($latest.assets.name) | Sort-Object) -join '|') -ceq ($expected -join '|'))
+		((@($latest.assets.name) | Sort-Object) -join '|') -ceq ($expected -join '|') -and
+		"$($latest.body)".Replace("`r`n", "`n").Trim() -ceq $notes.Trim())
 	{
 		$results.Add("All mods: up to date ($($latest.tag_name))")
 	}
 	else
 	{
-		$notes = Get-BundleNotes $bundle
 		if ($DryRun)
 		{
 			Write-Host "--- The notes of All mods ---`n$notes"
@@ -222,8 +231,9 @@ try
 			New-Item -ItemType Directory -Force $dir | Out-Null
 			foreach ($entry in $bundle)
 			{
-				gh release download $entry.Tag --pattern "$($entry.Tag).zip" --dir $dir
-				if ($LASTEXITCODE -ne 0) { throw "Couldn't download $($entry.Tag).zip: gh exit code $LASTEXITCODE" }
+				# <Mod>.zip, or <Mod>-<version>.zip in the older releases, saved as <Mod>.zip.
+				gh release download $entry.Tag --pattern "$($entry.Name).zip" --pattern "$($entry.Tag).zip" --output (Join-Path $dir "$($entry.Name).zip")
+				if ($LASTEXITCODE -ne 0) { throw "Couldn't download the zip of $($entry.Tag): gh exit code $LASTEXITCODE" }
 			}
 			$notesFile = Join-Path $OutDir 'all-mods.md'
 			Set-Content -LiteralPath $notesFile -Value $notes -NoNewline
@@ -234,7 +244,7 @@ try
 				gh release delete $bundleTag --cleanup-tag --yes
 				if ($LASTEXITCODE -ne 0) { throw "Couldn't delete $bundleTag before making it anew: gh exit code $LASTEXITCODE" }
 			}
-			$zips = @($bundle | ForEach-Object { Join-Path $dir "$($_.Tag).zip" })
+			$zips = @($bundle | ForEach-Object { Join-Path $dir "$($_.Name).zip" })
 			gh release create $bundleTag @zips --target $env:GITHUB_SHA --title 'All mods' --notes-file $notesFile --latest
 			if ($LASTEXITCODE -ne 0) { throw "gh release create failed with exit code $LASTEXITCODE" }
 			foreach ($old in $bundleTags | Where-Object { $_ -cne $bundleTag })

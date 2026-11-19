@@ -170,9 +170,10 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
 
 ## Packaging and releasing
 
-A mod ships as `<ModName>-<version>.zip`, which holds the whole mod folder (README, `CHANGES.md` and images included)
-at its root, with a copy of the repository's `LICENSE` in it: the GPL asks for one with every copy given out.
-`package.ps1` (PowerShell 7) builds it in `TempDir`, or in `-OutDir`:
+A mod ships as a zip that holds the whole mod folder (README, `CHANGES.md` and images included) at its root, with a
+copy of the repository's `LICENSE` in it: the GPL asks for one with every copy given out. `package.ps1` (PowerShell 7)
+builds it as `<ModName>-<version>.zip`, in `TempDir` or in `-OutDir`; on GitHub it is `<ModName>.zip` (see
+*Publishing*):
 
 ```powershell
 .\package.ps1 <ModName>                # builds the zip and prints its path
@@ -208,22 +209,27 @@ the harness), and `package.ps1 <ModName> -CheckOnly` passes before it is committ
 `<ModName>-<version>` on GitHub gets a GitHub Release of that name, never marked Latest, with the tag at the push's
 commit, the zip `package.ps1` builds (so its checks stop a release there too) and, as notes, links to the mod's wiki
 page and Home's *Installing mods*, then the version's section of `CHANGES.md` ("First release." for 1.0.0, which has
-none). Then the *All mods* release, the only one marked Latest (so `…/releases/latest`, which Home and the README link,
-leads to it), holds the newest published zip of every mod in the repo, downloaded from the mod's release and never
-rebuilt, with a line per mod (its wiki page, its release and its manifest's `description`). Whenever that set
-changes, a new All mods (tag `all-mods-<commit>`) replaces it, and the old one is deleted with its tag. A mod below
-1.0.0 is never published: its first release on GitHub is its 1.0.0. Building a zip and trying it in the game publishes
-nothing; the push does. A version pushed to `main` is final: it is never rolled back, and the workflow fails for a mod
-whose version is below its newest release. One mod failing doesn't stop the others. `.\release.ps1 -DryRun` shows what
-the next push would release: it builds the zips in a new folder in `TempDir` and prints their notes, and publishes
-nothing (publishing runs only in the workflow). The tags and the releases' names carry the version, as the zip's name
-does.
+none). On GitHub the zip is named `<ModName>.zip`, without the version, so that a player's newer zip overwrites the
+older one in the game's `mods` folder instead of loading next to it; the zips built locally (test builds, the ones
+installed, the backups) keep the version in their names, to tell them apart. The older mod releases, published
+before this naming, hold `<ModName>-<version>.zip`, which `release.ps1` takes too. Then the *All mods* release, the
+only one marked Latest (so `…/releases/latest`, which Home and the README link, leads to it), holds the newest
+published zip of every mod in the repo, downloaded from the mod's release and never rebuilt, as `<ModName>.zip`, with a
+line per mod (its wiki page, its release and version, and its manifest's `description`). Whenever those zips or those
+lines change, a new All mods (tag `all-mods-<commit>`) replaces it, and the old one is deleted with its tag. A mod
+below 1.0.0 is never published: its first release on GitHub is its 1.0.0. Building a zip and trying it in the game
+publishes nothing; the push does. A version pushed to `main` is final: it is never rolled back, and the workflow fails
+for a mod whose version is below its newest release. One mod failing doesn't stop the others. `.\release.ps1 -DryRun`
+shows what the next push would release: it builds the zips in a new folder in `TempDir`, each as `<ModName>.zip` in
+a folder `<ModName>-<version>`, and prints their notes, and publishes nothing (publishing runs only in the workflow).
+The tags and the releases' names carry the version; the zips on GitHub don't.
 
 Keep exactly one zip per mod in the game's `mods` folder: the game loads every file there, so two versions of one mod
-would both load (see *How the game loads a mod*). The running game keeps every zip in `mods` open, so close it before
-replacing one: otherwise the old zip can't be moved out, while the new one can still be moved in. A renamed mod's
-first release also takes the zips of its old name out of `mods` (see *Conventions*): they have another name, and
-would load next to it.
+would both load (see *How the game loads a mod*). A zip from GitHub overwrites only the one of the same name: a zip
+with a version in its name (a local build, or one from an older release) stays, and must be taken out. The running
+game keeps every zip in `mods` open, so close it before replacing one: otherwise the old zip can't be moved out, while
+the new one can still be moved in. A renamed mod's first release also takes the zips of its old name out of `mods`
+(see *Conventions*): they have another name, and would load next to it.
 
 ## Testing
 
