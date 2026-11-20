@@ -14,18 +14,31 @@ msgstr "%s (*)"
 msgid "DEALERNOTIFIER_SETTINGS_TOOLTIP"
 msgstr "Click while pressing %s to open the %s settings."
 
-# The settings screen: the tooltip of every ship's switch, and the note above the ships.
+# The settings screen: the title of the group above the ships, and its switches, for the ships the Dealer marks new and
+# for the others.
+msgid "DEALERNOTIFIER_CONDITION"
+msgstr "Condition"
+
+msgid "DEALERNOTIFIER_NEW"
+msgstr "New"
+
+msgid "DEALERNOTIFIER_USED"
+msgstr "Used"
+
+# The settings screen: the tooltip of every ship's switch.
 msgid "DEALERNOTIFIER_WATCHED"
 msgstr "Mark Dealer when this ship comes up for sale"
-
-msgid "DEALERNOTIFIER_WATCHED_DESC"
-msgstr ""
-"Switch on the ships you are waiting for: the station menu marks Dealer when one of them comes up for sale, until "
-"you open it. On the Dealer screen, those ships get a badge until you leave the station."
 
 # The title of the group of the ships whose series has no other ship in the list.
 msgid "DEALERNOTIFIER_OTHERS"
 msgstr "Others"
+
+# The settings screen: the buttons under the ships, which switch every switch on the screen on, or off.
+msgid "DEALERNOTIFIER_SELECT_ALL"
+msgstr "Select all"
+
+msgid "DEALERNOTIFIER_SELECT_NONE"
+msgstr "Select none"
 
 # The tooltip of the badge on a Dealer screen entry.
 msgid "DEALERNOTIFIER_BADGE_TOOLTIP"

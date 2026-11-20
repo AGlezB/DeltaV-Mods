@@ -3,9 +3,10 @@ extends "res://enceladus/Dealer.gd"
 # The station's Dealer screen (enceladus/Dealer.gd). The game builds the dealer's stock anew on every refresh
 # (CurrentGame.gd getShipsAvailableForSale, which only doAddShips calls: when the station loads, every in-game hour and
 # when the screen opens) and tells nobody what changed. So once each refresh is done, this tells the settings model what
-# the dealer has, read from the screen's entries; and when the screen opens, that the player has seen it all. The ships
-# that marked the station menu's Dealer entry when the screen opened get a badge on their entry, until the station is
-# left. Fleet (enceladus/Owned.tscn) is this script too, with showAvailable off: it is left alone.
+# the dealer has, read from the screen's entries, each ship new or used as the Dealer marks it; and when the screen
+# opens, that the player has seen it all. The ships that marked the station menu's Dealer entry when the screen opened
+# get a badge on their entry, until the station is left. Fleet (enceladus/Owned.tscn) is this script too, with
+# showAvailable off: it is left alone.
 
 # The stock, the ships seen and the rule: their model, shared with the station menu and the settings screen.
 const DealerNotifier = preload("res://DealerNotifier/Settings.gd")
@@ -14,6 +15,10 @@ const DealerNotifier = preload("res://DealerNotifier/Settings.gd")
 const _DN_BADGE_TOOLTIP = "DEALERNOTIFIER_BADGE_TOOLTIP"
 # The badge's node name in an entry's name, so that a refresh finds the badge it made.
 const _DN_BADGE = "DealerNotifierBadge"
+# The age under which a Dealer entry marks its ship NEW, in seconds (enceladus/SystemBuyUI.gd checkPrice, with the ship
+# not owned and pristine: a ship that young always is, as CurrentGame.gd ageToDamageWithSeed damages none under ten
+# years).
+const _DN_GAME_NEW_AGE = 24 * 3600 * 365
 
 # The transponders of the ships that marked the Dealer entry when the screen was opened. The station's screens are
 # built anew on every visit, so they last until the station is left.
@@ -54,8 +59,13 @@ func _dnStock() -> Array:
 	var out = []
 	for entry in items.get_children():
 		if _dnIsOffer(entry):
-			out.append({"model": entry.ship.model, "transponder": entry.ship.transponder})
+			out.append({"model": entry.ship.model, "transponder": entry.ship.transponder, "used": not _dnIsNew(entry.ship)})
 	return out
+
+# New as the entry marks it: the dealer's weekly new ships, and a used one only when it was made less than a year ago.
+# The ship's making time comes with the ship (Shipyard.gd createShipByConfig), before its entry has set it up.
+func _dnIsNew(ship) -> bool:
+	return CurrentGame.getInGameTimestamp() - ship.madeTimestamp < _DN_GAME_NEW_AGE
 
 func _dnIsOffer(entry) -> bool:
 	return "ship" in entry and "owned" in entry and not entry.owned and not entry.is_queued_for_deletion() \

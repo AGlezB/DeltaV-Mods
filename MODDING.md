@@ -424,8 +424,9 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
       bool gives its default; the screen shows it with the game's Tuning switch. Where a mod's settings mix switches and
       sliders (DiveSkipTransit's transit speed), each has a `type` (`"bool"` or `"float"`), and a slider its `min`,
       `max`, `step`, `unit` and the `format` of the value shown; `group` puts it in one of the screen's groups, and
-      `dimmedWhen` names the switch while which it doesn't apply. `perModel` (DealerNotifier's switch) is `perJob` for
-      the ship models the dealer can offer. `var cfg`: the current values by key (a dictionary by job or model key for
+      `dimmedWhen` names the switch while which it doesn't apply. `perModel` (DealerNotifier's ship switch) is `perJob`
+      for the ship models the dealer can offer; DealerNotifier's other switches, New and Used, aren't per model and have
+      a `group`. `var cfg`: the current values by key (a dictionary by job or model key for
       a per-job or per-model setting), set to the defaults in `_init`. `const FORMAT_VERSION`.
     - `jobs()`: the jobs a per-job setting has values for, the game's `CurrentGame.occupations`; `isPerJob(key)`.
       DealerNotifier's `models()` and `isPerModel(key)` are the same for its ship models, and its `getValue` /
@@ -454,9 +455,10 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
     `i18n/en.po`. It is set on every `tuningChanged`, which a row emits when it changes and when it gets the focus
     (`Tuning.gd` `tuningChanged` does the same with `<key>_DESC`). Every setting has one, written as the game's
     `TUNE_*_DESC` are: what it does, a blank line, then the details. DiveSkipTransit has it; CrewCheapHireNotifier
-    doesn't yet, to add when it next changes. DealerNotifier's rows are ship models, all of one setting: its window,
-    framed as the Dealer screen's, shows the game's own description of the selected ship, as the Dealer does
-    (`<shipName>_DESC`), and its setting's description is a note between the window and the list.
+    doesn't yet, to add when it next changes. DealerNotifier is the exception: its switches (New and Used, then one
+    per ship model) are explained by its README and its wiki page, not on the screen, at the author's choice. Its
+    window, framed as the Dealer screen's, shows the game's own description of the selected ship, as the Dealer does
+    (`<shipName>_DESC`), and nothing for New and Used.
   - A mod without a settings UI has no `Settings.gd`, and no constants file either: that would only add a prefix to
     every use.
   - Settings that belong to a ship system go in the game's Tuning screen instead (`registerSubsystem` from the
@@ -636,7 +638,8 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
 - **Dealer** (`ENCELADUS_SHIP_MARKET`, `enceladus/Dealer.tscn`): the station's ship market. Its entries are
   `enceladus/SystemBuyUI.gd` (the ship-list mods change them); its Examine tab can launch the simulator. The stock is
   stored nowhere: `CurrentGame.getShipsAvailableForSale` builds it anew on every call, and only `Dealer.gd`
-  `doAddShips` asks for it. Details: [GAME.md](GAME.md#dealer).
+  `doAddShips` asks for it. An entry marks a new ship NEW, a ribbon on its picture (`SystemBuyUI.gd` `checkPrice`), by
+  its age; DealerNotifier's New and Used follow that mark. Details: [GAME.md](GAME.md#dealer).
 
   **Fleet** (`ENCELADUS_OWNED_SHIPS`): the ships the player owns, and the station screen listing them
   (`enceladus/Owned.tscn`, an instance of `Dealer.tscn` with the same entries, the current ship first), where the

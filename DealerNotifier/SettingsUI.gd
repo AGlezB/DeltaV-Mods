@@ -2,18 +2,21 @@ extends PanelContainer
 
 # DealerNotifier's settings screen: one more of the station's right-hand screens, opened from the menu's Dealer entry
 # (Code.gd). It copies the Dealer screen's frame and place, and is laid out as that screen is (enceladus/Dealer.tscn):
-# the header, a window with the description of the selected ship (the game's own, as the Dealer shows it), the note
-# that explains the switches, then the ships, each in a row like a Dealer entry: the ship's picture, its name, and its
-# switch where the Dealer has Buy. The rows are the game's Tuning switches in Tuning groups, as enceladus/Tuning.tscn
-# nests them, one group per series. It behaves like the game's screens (enceladus/Dealer.gd, enceladus/Tuning.gd): the
-# Shower fades it in and out, Esc or the controller's back button closes it, and so does focusing another entry of the
-# menu (the screens container's `hidefoka`).
+# the header, a window with the description of the selected ship (the game's own, as the Dealer shows it), then the
+# switches: first the group of New and Used, then the ships, each in a row like a Dealer entry: the ship's picture, its
+# name, and its switch where the Dealer has Buy. The rows are the game's Tuning switches in Tuning groups, as
+# enceladus/Tuning.tscn nests them, one group per series. Under them, Select all and Select none switch every switch on
+# or off. It behaves like the game's screens (enceladus/Dealer.gd, enceladus/Tuning.gd): the Shower fades it in and out,
+# Esc or the controller's back button closes it, and so does focusing another entry of the menu (the screens container's
+# `hidefoka`).
 
 const DealerNotifier = preload("res://DealerNotifier/Settings.gd")
 
 const GAME_SHOWER = "res://enceladus/Shower.tscn"
 const GAME_HEADER = "res://enceladus/HeaderWithMoney.tscn"
 const GAME_TUNING_ITEMS = "res://enceladus/Tuning/TuningItems.tscn"
+# What gives the game's buttons their sounds and tooltips; it takes over the buttons beside it.
+const GAME_BUTTON_SOUNDS = "res://menu/sfx/PlaySoundsOnTheseButtons.tscn"
 # A Dealer entry (enceladus/SystemBuyUI.tscn, never added to the tree): the size of its picture and the sprite that
 # shows it, the width of its Buy button, and the viewport its ship is drawn in (camera, lights, environment).
 const GAME_ENTRY = "res://enceladus/SystemBuyUI.tscn"
@@ -41,8 +44,10 @@ const GAME_HARDPOINT_SCRIPT = "res://ships/WeaponSlot.gd"
 const GAME_HARDPOINT_SCENE = "res://weapons/WeaponSlot.tscn"
 # The title of the group of the ships whose series has no other ship in the list: a translation key of i18n/en.po.
 const OTHERS_LABEL = "DEALERNOTIFIER_OTHERS"
-# Ends a translation key to make that of its description: a setting's label, as the game's Tuning screen makes them
-# (Tuning.gd tuningChanged), and a ship's name, as the Dealer does (Dealer.gd displayShip).
+# The buttons under the ships: translation keys of i18n/en.po.
+const SELECT_ALL = "DEALERNOTIFIER_SELECT_ALL"
+const SELECT_NONE = "DEALERNOTIFIER_SELECT_NONE"
+# Ends a ship's name key to make that of its description, as the Dealer does (Dealer.gd displayShip).
 const DESCRIPTION_SUFFIX = "_DESC"
 # How long a ship is drawn before its picture is taken, in seconds, so its looks have settled. The Dealer takes its
 # entries' pictures at the end of a flicker (enceladus/Flicker.tscn).
@@ -52,11 +57,14 @@ var lastFocus
 var _settings = DealerNotifier.shared()
 var _base = null # the description of the selected ship's series, shown for a variant
 var _description = null
-var _note = null
 var _scroll = null
 var _items = null
 var _rows = {} # each row's dictionary by the row's name (its ship's name key): the same one the row holds as its `tune`
 var _models = {} # the model of each row, by the row's name
+var _switches = {} # each row's switch (a CheckButton), by the row's name, in the screen's order
+var _keyRows = {} # each row's dictionary for a setting that isn't per model, by the row's name (the setting's label)
+var _keys = {} # the setting of each of those rows, by the row's name
+var _bulk = false # Select all or Select none is switching every switch
 var _pictures = {} # each row's picture (a Sprite), by model
 var _entry = null # what is read from a Dealer entry
 var _drawing = false
@@ -84,17 +92,31 @@ func setup(dealer: Control, title: String):
 	header.get_node("MarketLabel").text = title
 	vb.add_child(header)
 	vb.add_child(_descriptionWindow(dealer))
-	_note = Label.new()
-	_note.name = "Note"
-	_note.autowrap = true
-	_note.size_flags_horizontal = SIZE_EXPAND_FILL
-	vb.add_child(_note)
 	_scroll = ScrollContainer.new()
 	_scroll.name = "ScrollContainer"
 	_scroll.size_flags_horizontal = SIZE_EXPAND_FILL
 	_scroll.size_flags_vertical = SIZE_EXPAND_FILL
 	_scroll.follow_focus = true
 	vb.add_child(_scroll)
+	vb.add_child(_buttons())
+
+# Select all and Select none, side by side under the list, as CombatSimulator's dialog has its own, with the game's
+# button sounds.
+func _buttons() -> HBoxContainer:
+	var buttons = HBoxContainer.new()
+	buttons.name = "Buttons"
+	buttons.alignment = BoxContainer.ALIGN_CENTER
+	for entry in [["SelectAll", SELECT_ALL, true], ["SelectNone", SELECT_NONE, false]]:
+		var button = Button.new()
+		button.name = entry[0]
+		button.text = entry[1]
+		button.size_flags_horizontal = SIZE_EXPAND_FILL
+		button.connect("pressed", self, "_selectAll", [entry[2]])
+		buttons.add_child(button)
+	var sounds = load(GAME_BUTTON_SOUNDS)
+	if sounds is PackedScene:
+		buttons.add_child(sounds.instance())
+	return buttons
 
 # The description's window, nested as Dealer.tscn nests its own (WindowMargin > Window > MarginContainer > the box of
 # the series' description and the ship's), without the tabs and the ship's view behind the texts, with the live Dealer
@@ -172,15 +194,13 @@ func unfocus():
 		lastFocus.grab_focus()
 		lastFocus = null
 
-# Tuning groups as Tuning.gd fillTuneableSystems builds them, in an Items box as Tuning.tscn has: one per series
-# (_groups), titled by it, with a switch (TuningBoolValue) per ship model, named by the model's name key, which the
-# game's Labels and Buttons translate. Each row is then dressed as a Dealer entry (_dressRow). The screen is filled each
-# time it opens, so the order follows a language change; the description is empty until the first row takes the focus.
+# Tuning groups as Tuning.gd fillTuneableSystems builds them, in an Items box as Tuning.tscn has: first those of the
+# settings that aren't per model (_keyGroups), then one per series (_groups), titled by it, with a switch
+# (TuningBoolValue) per ship model, named by the model's name key, which the game's Labels and Buttons translate. Each
+# ship row is then dressed as a Dealer entry (_dressRow). The screen is filled each time it opens, so the order follows
+# a language change; the description is empty until a ship's row takes the focus.
 func _fill():
-	_note.text = DealerNotifier.SETTINGS.watched.label + DESCRIPTION_SUFFIX
-	_base.text = ""
-	_base.visible = false
-	_description.text = ""
+	_describe(null)
 	if _items != null:
 		_scroll.remove_child(_items)
 		_items.queue_free()
@@ -190,8 +210,30 @@ func _fill():
 	_scroll.add_child(_items)
 	_rows = {}
 	_models = {}
+	_switches = {}
+	_keyRows = {}
+	_keys = {}
 	_pictures = {}
 	var first = null
+	for entry in _keyGroups():
+		var tuning = {}
+		for key in entry[1]:
+			var desc = DealerNotifier.SETTINGS[key]
+			var row = {"type": "bool", "default": desc.default, "current": _settings.getValue(key), "testProtocol": ""}
+			tuning[desc.label] = row
+			_keyRows[desc.label] = row
+			_keys[desc.label] = key
+		var group = load(GAME_TUNING_ITEMS).instance()
+		group.system = entry[0]
+		group.key = null
+		group.tuning = tuning
+		_items.add_child(group)
+		group.connect("tuningChanged", self, "_onTuningChanged")
+		for row in group.get_children():
+			if "tuningItem" in row and _keys.has(row.tuningItem):
+				_switches[row.tuningItem] = _alignSwitch(row)
+		if first == null:
+			first = group
 	var order = []
 	for entry in _groups():
 		var tuning = {}
@@ -221,6 +263,21 @@ func _fill():
 	if first != null:
 		Tool.deferCallWhenIdle(first, "focus")
 	_drawPictures(order)
+
+# The groups of the settings that aren't per model, each [its title (the settings' `group`), their keys], in the order
+# of Settings.gd SETTINGS.
+func _keyGroups() -> Array:
+	var out = []
+	var byTitle = {}
+	for key in DealerNotifier.SETTINGS:
+		if _settings.isPerModel(key):
+			continue
+		var title = DealerNotifier.SETTINGS[key].group
+		if not byTitle.has(title):
+			byTitle[title] = []
+			out.append([title, byTitle[title]])
+		byTitle[title].append(key)
+	return out
 
 # The groups, in display order, each [its title, its models]: the models of each series (Settings.gd series), titled by
 # the series' name (the name of the model the others are variants of), in alphabetical order of the series' names; then
@@ -255,8 +312,8 @@ func _isGroupBefore(a, b) -> bool:
 	return tr(a[0]).nocasecmp_to(tr(b[0])) < 0
 
 # A Tuning switch dressed as a Dealer entry: the ship's picture first, in a frame of the size of the entry's picture and
-# with a sprite placed, scaled and flipped as the entry's; the switch's slot as wide as the entry's Buy button, at the
-# row's right end, where Buy is; no reset button. The switch's tooltip is the setting's label.
+# with a sprite placed, scaled and flipped as the entry's; the switch's slot as the entry's Buy button (_alignSwitch).
+# The switch's tooltip is the setting's label.
 func _dressRow(row, model):
 	var entry = _gameEntry()
 	var hbox = row.get_node("HBoxContainer")
@@ -273,13 +330,21 @@ func _dressRow(row, model):
 	picture.add_child(sprite)
 	hbox.add_child(picture)
 	hbox.move_child(picture, 0)
+	var value = _alignSwitch(row)
+	value.hint_tooltip = DealerNotifier.SETTINGS.watched.label
+	_switches[row.tuningItem] = value
+	_pictures[model] = sprite
+
+# Every row's switch where a Dealer entry has Buy, so the switches line up: its slot as wide as the entry's Buy button,
+# at the row's right end; no reset button. Returns the switch.
+func _alignSwitch(row) -> Control:
+	var hbox = row.get_node("HBoxContainer")
 	var reset = hbox.get_node_or_null("Reset")
 	if reset is Control:
 		reset.visible = false
 	var value = hbox.get_node("Value")
-	value.rect_min_size.x = max(value.rect_min_size.x, entry.buyWidth)
-	value.hint_tooltip = DealerNotifier.SETTINGS.watched.label
-	_pictures[model] = sprite
+	value.rect_min_size.x = max(value.rect_min_size.x, _gameEntry().buyWidth)
+	return value
 
 # What the rows take from a Dealer entry, read once from an instance of its scene that never enters the tree.
 func _gameEntry() -> Dictionary:
@@ -303,17 +368,37 @@ func _gameEntry() -> Dictionary:
 
 # A row emits this when it changes, and also when it gets the focus. A switch then sends the `current` of its
 # dictionary (TuningBoolValue.gd _focus), which it never updates itself; setting it here keeps a switch from going
-# back when it is focused again. setValue stores nothing when the value is unchanged. The window shows the row's ship.
+# back when it is focused again. setValue stores nothing when the value is unchanged. The window shows the row's ship,
+# and nothing for a row that isn't a ship's; Select all and Select none leave it as it is.
 func _onTuningChanged(_group, item, to, _protocol):
-	if not _models.has(item):
-		return
-	_rows[item].current = to
-	_settings.setValue("watched", to, _models[item])
-	_describe(_models[item])
+	if _keys.has(item):
+		_keyRows[item].current = to
+		_settings.setValue(_keys[item], to)
+		if not _bulk:
+			_describe(null)
+	elif _models.has(item):
+		_rows[item].current = to
+		_settings.setValue("watched", to, _models[item])
+		if not _bulk:
+			_describe(_models[item])
+
+# Select all and Select none: every switch, New and Used and the ships', each changing as if clicked (toggled, then
+# _onTuningChanged).
+func _selectAll(on: bool):
+	_bulk = true
+	for item in _switches:
+		if is_instance_valid(_switches[item]):
+			_switches[item].pressed = on
+	_bulk = false
 
 # What Dealer.gd displayShip shows of a ship: its series' description, only where it differs from the ship's own, then
-# the ship's. The Labels translate the keys, so the texts follow the game's language.
+# the ship's. The Labels translate the keys, so the texts follow the game's language. No model empties the window.
 func _describe(model):
+	if model == null:
+		_base.text = ""
+		_base.visible = false
+		_description.text = ""
+		return
 	var key = _settings.shipNameKey(model)
 	var base = _settings.baseShipNameKey(model)
 	_base.text = base + DESCRIPTION_SUFFIX if base != "" else ""
@@ -322,10 +407,10 @@ func _describe(model):
 
 # The ships' pictures, the way the Dealer makes its entries' (SystemBuyUI.gd addShip, checkPrice, stopUpdating): every
 # model at once, each ship drawn in a viewport of its own (a Dealer entry's) and a picture taken once it has settled;
-# then the ship is removed and the viewport freed, with anything the ship put beside itself. The ships set up together,
-# sharing the game's budget for that (Tool.gd's idle queue), and wait for their pictures together. Each picture shows as
-# soon as it is taken, so the screen opens at once. Kept for the whole game session, in this script's metadata: the
-# ships look the same in every save game.
+# then the viewport is freed with the ship still in it, and anything the ship put beside itself. The ships set up
+# together, sharing the game's budget for that (Tool.gd's idle queue), and wait for their pictures together. Each
+# picture shows as soon as it is taken, so the screen opens at once. Kept for the whole game session, in this script's
+# metadata: the ships look the same in every save game.
 func _drawPictures(order: Array):
 	if _drawing:
 		return
@@ -371,9 +456,12 @@ func _drawPicture(model, holder):
 		timer.start(PICTURE_DELAY)
 		yield(timer, "timeout")
 		var picture = _picture(viewport)
-		viewport.remove_child(ship)
-		Tool.remove(ship)
-		Tool.remove(viewport)
+		# The viewport goes with the ship still in it, so the ship's areas are freed before the viewport's physics
+		# space. A ship taken out first leaves its monitoring areas pointing into that space, and freeing them after it
+		# writes into freed memory: an intermittent crash (Godot 3's CollisionObject2DSW _set_space, fixed only in
+		# Godot 4.3, PR #81809).
+		holder.remove_child(viewport)
+		viewport.queue_free()
 		timer.queue_free()
 		if picture != null:
 			_pictureCache()[model] = picture

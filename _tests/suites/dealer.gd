@@ -2,9 +2,10 @@ extends "res://harness/suite.gd"
 
 # DealerNotifier: the station menu's Dealer entry (the `ShipMarket` Button of the game's enceladus/EnceladusMenu.tscn,
 # with no script and the translation key ENCELADUS_SHIP_MARKET as its text) shows the mod's alert text while the dealer
-# has a ship of a model switched on in its settings that came after the switch went on and after the Dealer screen was
-# last open, and that the player didn't sell. Opening the Dealer screen clears it, and gives the entries of those ships
-# a badge until the station is left.
+# has a ship of a model switched on in its settings, new or used (as the Dealer marks it NEW) with that condition's
+# switch on too, that came after the switches went on and after the Dealer screen was last open, and that the player
+# didn't sell. Opening the Dealer screen clears it, and gives the entries of those ships a badge until the station is
+# left.
 #
 # The station is built in code as enceladus/Enceladus.tscn nests it: the menu, and the right-hand screens' container
 # (the game's HidingMarginContainer.gd) with the station's Dealer screen (harness/station_dealer.tscn: the stub of
@@ -31,6 +32,8 @@ const DEALER_SCRIPT = "res://enceladus/Dealer.gd"
 const SHIP_SCRIPT = "res://harness/dealer_ship.gd"
 const STOCK_SHIP = "res://harness/fleet_ship.gd"
 const WATCHED = "watched"
+const WATCH_NEW = "watchNew"
+const WATCH_USED = "watchUsed"
 
 # The suite's ship models: the game's keys, the suite's scenes. Two series with a variant each (TRTL-R of TRTL,
 # PROSPECTOR-VP of PROSPECTOR), two models alone in their series. AT225 (in the mod's NEW_STOCK) and NOSCENE (in the
@@ -111,6 +114,33 @@ func offer(model, transponder):
 	ship.useConfig({"config": {}, "model": model, "transponder": transponder, "faction": "dealer"})
 	made.append(ship)
 	return ship
+
+# The age under which the Dealer marks a ship NEW, as the mod reads it (DealerScreen.gd, which now loads by the game
+# script's path: loaded again by its own, it would extend itself).
+func newAge():
+	return load(DEALER_SCRIPT).get_script_constant_map()._DN_GAME_NEW_AGE
+
+# A ship for sale made `age` seconds ago (offer() makes them now).
+func agedOffer(model, transponder, age):
+	var ship = offer(model, transponder)
+	ship.madeTimestamp = CurrentGame.getInGameTimestamp() - age
+	return ship
+
+# The stock as the settings model has it, each "<transponder>:new" or "<transponder>:used", sorted.
+func stockConditions() -> Array:
+	var out = []
+	for ship in settings.stock:
+		out.append("%s:%s" % [ship.transponder, "used" if ship.used else "new"])
+	out.sort()
+	return out
+
+# The transponders of the ships that mark the Dealer entry, sorted.
+func marking() -> Array:
+	var out = []
+	for ship in settings.newShips():
+		out.append(ship.transponder)
+	out.sort()
+	return out
 
 # A new in-game hour, with the dealer's stock as `ships`: the game's refreshes the Dealer and Fleet screens on it.
 func hour(ships):
@@ -295,15 +325,49 @@ func rowsOf(group) -> Array:
 			out.append(row)
 	return out
 
-func allRows(screen) -> Array:
+# The groups of the settings that aren't per model (New and Used), as the screen should show them first: [their
+# `group`, [their labels]], in the order of the mod's SETTINGS.
+func keyGroups() -> Array:
+	var descriptions = load(SETTINGS_SCRIPT).SETTINGS
 	var out = []
-	for group in groups(screen):
-		out += rowsOf(group)
+	var byTitle = {}
+	for key in descriptions:
+		if descriptions[key].get("perModel", false):
+			continue
+		var title = descriptions[key].group
+		if not byTitle.has(title):
+			byTitle[title] = []
+			out.append([title, byTitle[title]])
+		byTitle[title].append(descriptions[key].label)
 	return out
 
-# The groups the screen should show: [title, [row names]], from the suite's expectations in the language set.
-func expectedGroups(spec, others) -> Array:
+func isKeyRow(row) -> bool:
+	for g in keyGroups():
+		if row.tuningItem in g[1]:
+			return true
+	return false
+
+# The rows of the settings that aren't per model, and the ships' rows.
+func keyRows(screen) -> Array:
 	var out = []
+	for group in groups(screen):
+		for row in rowsOf(group):
+			if isKeyRow(row):
+				out.append(row)
+	return out
+
+func shipRows(screen) -> Array:
+	var out = []
+	for group in groups(screen):
+		for row in rowsOf(group):
+			if not isKeyRow(row):
+				out.append(row)
+	return out
+
+# The groups the screen should show: [title, [row names]], those of keyGroups(), then the ships' from the suite's
+# expectations in the language set.
+func expectedGroups(spec, others) -> Array:
+	var out = keyGroups()
 	for g in spec:
 		var names = []
 		for model in g[1]:
@@ -321,7 +385,7 @@ func shownGroups(screen) -> Array:
 	return out
 
 func rowOf(screen, model):
-	for row in allRows(screen):
+	for row in shipRows(screen):
 		if row.tuningItem == NAMES[model][0]:
 			return row
 	return null
@@ -350,6 +414,7 @@ func run():
 		return
 	yield(model(), "completed")
 	yield(rule(), "completed")
+	yield(conditions(), "completed")
 	yield(screen(), "completed")
 	yield(together(), "completed")
 	freeMade()
@@ -408,6 +473,7 @@ func model():
 	for m in settings.models():
 		off = off and settings.getValue(WATCHED, m) == false
 	check("every model starts switched off (the setting's default)", off and script.SETTINGS[WATCHED].default == false)
+	check("New and Used start on (their defaults), so every ship of a model switched on counts", settings.getValue(WATCH_NEW) == true and settings.getValue(WATCH_USED) == true and script.SETTINGS[WATCH_NEW].default == true and script.SETTINGS[WATCH_USED].default == true)
 	changes = 0
 	var id = manifestValue("mod_information", "id")
 	settings.setValue(WATCHED, "yes", "TRTL")
@@ -418,16 +484,20 @@ func model():
 	check("switching a model on stores it in the save game, under the manifest's id, signalling once", changes == 1 and saved.get(WATCHED, {}).get("TRTL") == true and saved.get(WATCHED, {}).get("EIME") == false, saved)
 	var version = "%d.%d.%d" % [manifestValue("version", "version_major"), manifestValue("version", "version_minor"), manifestValue("version", "version_bugfix")]
 	check("with the format and mod versions and the ships seen", saved.get("formatVersion") == script.FORMAT_VERSION and saved.get("modVersion") == version and saved.get("known") is Array, saved)
+	check("and New and Used, under their keys", saved.get(WATCH_NEW) == true and saved.get(WATCH_USED) == true, saved)
 	settings.setValue(WATCHED, true, "TRTL")
 	check("setting it again signals nothing", changes == 1)
 	settings.cfg[WATCHED]["EIME"] = true
 	check("the saved entry is a copy", saved[WATCHED].get("EIME") == false)
 	settings.cfg[WATCHED]["EIME"] = false
+	settings.setValue(WATCH_USED, false)
+	check("switching Used off stores it, signalling once", changes == 2 and CurrentGame.state.ui.get(id, {}).get(WATCH_USED) == false, CurrentGame.state.ui)
 	# Read back after a JSON round trip, as the game saves and loads.
 	CurrentGame.state = parse_json(to_json(CurrentGame.state))
 	settings.cfg[WATCHED]["TRTL"] = false
+	settings.cfg[WATCH_USED] = true
 	settings.loadFromState()
-	check("a save game's switches are read back", settings.getValue(WATCHED, "TRTL") == true and settings.getValue(WATCHED, "EIME") == false)
+	check("a save game's switches are read back", settings.getValue(WATCHED, "TRTL") == true and settings.getValue(WATCHED, "EIME") == false and settings.getValue(WATCH_USED) == false and settings.getValue(WATCH_NEW) == true)
 	# A hand-edited entry can't break it.
 	CurrentGame.state.ui[id] = {WATCHED: {"TRTL": "on", "EIME": true}, "known": ["A", 5, "A", null, "B"]}
 	settings.loadFromState()
@@ -435,6 +505,11 @@ func model():
 	CurrentGame.state.ui[id] = {WATCHED: "all", "known": "A"}
 	settings.loadFromState()
 	check("and switches or ships seen that aren't a dictionary or a list give the defaults", settings.getValue(WATCHED, "EIME") == false and settings.known.empty())
+	CurrentGame.state.ui[id] = {WATCH_NEW: false, WATCH_USED: false}
+	settings.loadFromState()
+	CurrentGame.state.ui[id] = {WATCH_NEW: "off"}
+	settings.loadFromState()
+	check("a save without New or Used (one made before them), or with a value that isn't a switch's, gives their defaults", settings.getValue(WATCH_NEW) == true and settings.getValue(WATCH_USED) == true)
 	CurrentGame.state.ui = {}
 	settings.loadFromState()
 	yield(frames(1), "completed")
@@ -563,6 +638,33 @@ func rule():
 	yield(freeStation(s), "completed")
 	CurrentGame.state.erase("soldShips")
 
+# New and Used, on a station: the stock tells each ship's condition as the Dealer marks it NEW (younger than the mod's
+# _DN_GAME_NEW_AGE), and a watched model's ship marks the entry only while its condition is switched on. Switching a
+# condition on doesn't mark the ships of it the dealer has already, as switching a model on doesn't.
+func conditions():
+	CurrentGame.state.ui = {}
+	settings.loadFromState()
+	var age = newAge()
+	CurrentGame.forSale = [agedOffer("TRTL", "N-1", age - 1), agedOffer("TRTL", "U-1", age)]
+	var s = station()
+	yield(settle(), "completed")
+	check("the stock tells a new ship (younger than the age the Dealer marks NEW under) from a used one", stockConditions() == ["N-1:new", "U-1:used"], stockConditions())
+	settings.setValue(WATCHED, true, "TRTL")
+	settings.setValue(WATCH_USED, false)
+	yield(hour([offer("TRTL", "N-1"), agedOffer("TRTL", "U-1", age), agedOffer("TRTL", "U-2", age), offer("TRTL", "N-2")]), "completed")
+	check("with Used off, a later new ship of a model switched on marks the entry, and a later used one doesn't", marking() == ["N-2"] and entry(s) == marked(s), [marking(), entry(s)])
+	settings.setValue(WATCH_NEW, false)
+	check("with New off too, nothing marks it", marking().empty() and entry(s) == KEY, [marking(), entry(s)])
+	settings.setValue(WATCH_USED, true)
+	check("switching Used on doesn't mark the used ships the dealer has already", marking().empty() and entry(s) == KEY and "U-2" in settings.known, settings.known)
+	yield(hour([offer("TRTL", "N-1"), agedOffer("TRTL", "U-1", age), agedOffer("TRTL", "U-2", age), offer("TRTL", "N-2"), agedOffer("TRTL", "U-3", age)]), "completed")
+	check("a used ship that comes later marks it", marking() == ["U-3"] and entry(s) == marked(s), marking())
+	settings.setValue(WATCH_NEW, true)
+	check("switching New on doesn't mark the new ships the dealer has already", marking() == ["U-3"] and "N-2" in settings.known, [marking(), settings.known])
+	yield(freeStation(s), "completed")
+	CurrentGame.state.ui = {}
+	settings.loadFromState()
+
 # The settings screen.
 func screen():
 	var script = load(SETTINGS_SCRIPT)
@@ -602,7 +704,7 @@ func screen():
 	var order = []
 	for child in screen.get_node("VB").get_children():
 		order.append(child.name)
-	check("under the header, the description's window, then the note, then the groups", order == ["HeaderWithMoney", "WindowMargin", "Note", "ScrollContainer"], order)
+	check("under the header, the description's window, then the groups, then the buttons: no note", order == ["HeaderWithMoney", "WindowMargin", "ScrollContainer", "Buttons"], order)
 	# The window copies the Dealer's.
 	var margin = screen.get_node("VB/WindowMargin")
 	var window = screen.get_node("VB/WindowMargin/Window")
@@ -617,18 +719,27 @@ func screen():
 	copied = copied and texts.get_constant("separation") == s.dealer.get_node(ui.GAME_WINDOW_TEXTS).get_constant("separation")
 	check("the description's window copies the Dealer's: theme, margins around and inside, panel, least height, the texts' spacing", copied)
 	check("and clips its texts, as the Dealer's", inside.rect_clip_content and texts.get_node("Base").autowrap and texts.get_node("Description").autowrap)
-	var note = screen.get_node("VB/Note")
-	var noteKey = script.SETTINGS[WATCHED].label + ui.DESCRIPTION_SUFFIX
-	check("the note is the setting's description (its label and DESCRIPTION_SUFFIX), in i18n/en.po", note.text == noteKey and tr(noteKey) != noteKey and note.autowrap, note.text)
-	# The groups: one per series, titled by its base model's name, then the models alone in their series, under Others.
+	# The groups: first New and Used, under their `group`; then one per series, titled by its base model's name, then
+	# the models alone in their series, under Others.
 	var others = ui.OTHERS_LABEL
-	check("one Tuning group per series, titled by its name, in alphabetical order of the names; the models alone in their series last, under Others", shownGroups(screen) == expectedGroups(GROUPS_EN, others), shownGroups(screen))
+	check("first New and Used, in a group titled by their `group`; then one Tuning group per series, titled by its name, in alphabetical order of the names; the models alone in their series last, under Others", shownGroups(screen) == expectedGroups(GROUPS_EN, others) and keyGroups().size() == 1 and keyGroups()[0][1].size() == 2, shownGroups(screen))
 	check("in an Items box in the scroll, as the Tuning screen's", screen.get_node_or_null("VB/ScrollContainer/Items") is VBoxContainer)
-	check("Others is in i18n/en.po", tr(others) != others)
-	var rows = allRows(screen)
-	var first = rows[0] if rows.size() > 0 else null
-	check("the first switch has the focus", first != null and first.get_node("HBoxContainer/Value").has_focus())
+	var titled = true
+	for g in keyGroups():
+		titled = titled and tr(g[0]) != g[0]
+		for label in g[1]:
+			titled = titled and tr(label) != label
+	check("Others, and the title and names of New and Used, are in i18n/en.po", tr(others) != others and titled)
+	var rows = shipRows(screen)
+	var conditionRows = keyRows(screen)
+	var first = conditionRows[0] if conditionRows.size() > 0 else null
+	check("the first switch (New's) has the focus", first != null and first.get_node("HBoxContainer/Value").has_focus())
 	check("each switch shows its model's setting", rowOf(screen, "TRTL").get_node("HBoxContainer/Value").pressed == false and rowOf(screen, "EIME").get_node("HBoxContainer/Value").pressed == false)
+	var conditionsShown = conditionRows.size() == 2
+	for row in conditionRows:
+		var key = WATCH_NEW if row.tuningItem == script.SETTINGS[WATCH_NEW].label else WATCH_USED
+		conditionsShown = conditionsShown and row.get_node("HBoxContainer/Value").pressed == settings.getValue(key)
+	check("and New and Used theirs", conditionsShown)
 	# Each row dressed as a Dealer entry.
 	var entry = load("res://enceladus/SystemBuyUI.tscn").instance()
 	var gamePicture = entry.get_node(ui.GAME_ENTRY_PICTURE)
@@ -649,6 +760,13 @@ func screen():
 		atEnd = atEnd and is_equal_approx(value.rect_position.x + value.rect_size.x, hbox.rect_size.x) and value.rect_size.x >= buyWidth
 	check("each row: the ship's picture first, as a Dealer entry's (size, sprite), no reset, the switch's tooltip the setting's label", dressed and buyWidth > 0, [pictureSize, spriteProps, buyWidth])
 	check("the switch at the row's right end, as wide as the entry's Buy button at least", atEnd)
+	var lined = conditionRows.size() == 2
+	for row in conditionRows:
+		var hbox = row.get_node("HBoxContainer")
+		var value = hbox.get_node("Value")
+		lined = lined and hbox.get_node_or_null("Picture") == null and not hbox.get_node("Reset").visible and value.hint_tooltip == ""
+		lined = lined and is_equal_approx(value.rect_position.x + value.rect_size.x, hbox.rect_size.x) and value.rect_size.x >= buyWidth
+	check("New's and Used's switches line up with the ships' (no reset, at the row's right end, as wide as the Buy button at least), with no picture and no tooltip", lined)
 	check("the switch's tooltip is in i18n/en.po", tr(script.SETTINGS[WATCHED].label) != script.SETTINGS[WATCHED].label)
 	# The window: the focused ship's description, as Dealer.gd displayShip shows it.
 	var base = texts.get_node("Base")
@@ -660,6 +778,14 @@ func screen():
 		var differs = NAMES[m][1] != "" and NAMES[m][1] != NAMES[m][0]
 		described = described and description.text == NAMES[m][0] + ui.DESCRIPTION_SUFFIX and base.visible == differs and (not differs or base.text == NAMES[m][1] + ui.DESCRIPTION_SUFFIX)
 	check("focusing a row shows its ship's description, after its series' where that differs", described, [base.text, base.visible, description.text])
+	var emptied = true
+	for row in conditionRows:
+		rowOf(screen, "TRTL-R").get_node("HBoxContainer/Value").grab_focus()
+		yield(frames(1), "completed")
+		row.get_node("HBoxContainer/Value").grab_focus()
+		yield(frames(1), "completed")
+		emptied = emptied and description.text == "" and not base.visible
+	check("focusing New or Used empties the window: no ship is selected", emptied and conditionRows.size() == 2, [base.text, description.text])
 	# Switching a model on stores it; a ship of it the dealer has now doesn't mark.
 	var kitsune = rowOf(screen, "KITSUNE").get_node("HBoxContainer/Value")
 	kitsune.pressed = true
@@ -672,6 +798,38 @@ func screen():
 	check("focusing it again doesn't switch it back", settings.getValue(WATCHED, "KITSUNE") == true and kitsune.pressed)
 	yield(hour([offer("TRTL", "T-1"), offer("KITSUNE", "K-1"), offer("KITSUNE", "K-2")]), "completed")
 	check("a later ship of it marks the entry", entry(s) == marked(s), entry(s))
+	# Select all and Select none: every switch, New's and Used's too, each as if clicked; the window stays.
+	var usedSwitch = conditionRows[1].get_node("HBoxContainer/Value")
+	usedSwitch.pressed = false
+	check("switching Used off on the screen stores it", settings.getValue(WATCH_USED) == false and CurrentGame.state.ui.get(manifestValue("mod_information", "id"), {}).get(WATCH_USED) == false)
+	var selectAll = screen.get_node_or_null("VB/Buttons/SelectAll")
+	var selectNone = screen.get_node_or_null("VB/Buttons/SelectNone")
+	check("under the groups, Select all and Select none, their texts in i18n/en.po", selectAll is Button and selectNone is Button and selectAll.text == ui.SELECT_ALL and selectNone.text == ui.SELECT_NONE and tr(ui.SELECT_ALL) != ui.SELECT_ALL and tr(ui.SELECT_NONE) != ui.SELECT_NONE)
+	if not selectAll is Button or not selectNone is Button:
+		yield(freeStation(s), "completed")
+		return
+	rowOf(screen, "EIME").get_node("HBoxContainer/Value").grab_focus()
+	yield(frames(1), "completed")
+	var shown = description.text
+	var marks = marking()
+	selectAll.emit_signal("pressed")
+	var allOn = settings.getValue(WATCH_NEW) == true and settings.getValue(WATCH_USED) == true
+	for m in settings.models():
+		allOn = allOn and settings.getValue(WATCHED, m) == true
+	for row in shipRows(screen) + conditionRows:
+		allOn = allOn and row.get_node("HBoxContainer/Value").pressed and row.tune.current == true
+	check("Select all switches every switch on, New's and Used's too, on the screen and in the settings", allOn, settings.cfg)
+	check("the ships the dealer has already don't mark the entry", marking() == marks and "T-1" in settings.known, [marking(), marks])
+	check("and the window stays as it was", description.text == shown and shown != "", [description.text, shown])
+	selectNone.emit_signal("pressed")
+	var allOff = settings.getValue(WATCH_NEW) == false and settings.getValue(WATCH_USED) == false
+	for m in settings.models():
+		allOff = allOff and settings.getValue(WATCHED, m) == false
+	for row in shipRows(screen) + conditionRows:
+		allOff = allOff and not row.get_node("HBoxContainer/Value").pressed and row.tune.current == false
+	var saved = CurrentGame.state.ui.get(manifestValue("mod_information", "id"), {})
+	check("Select none switches every switch off, on the screen, in the settings and in the save game", allOff and saved.get(WATCH_NEW) == false and saved.get(WATCH_USED) == false and saved.get(WATCHED, {}).get("KITSUNE") == false, saved)
+	check("which unmarks the entry, and leaves the window as it was", entry(s) == KEY and description.text == shown, [entry(s), description.text])
 	# The pictures: one ship of each model, each in a Dealer entry's viewport of its own, nothing written to the save
 	# game; made from the dealer's config, with every hardpoint emptied before it enters the tree.
 	var waited = yield(_waitForPictures(screen), "completed")
@@ -725,7 +883,7 @@ func screen():
 
 func _screenModels(screen) -> Array:
 	var out = []
-	for row in allRows(screen):
+	for row in shipRows(screen):
 		for m in NAMES:
 			if NAMES[m][0] == row.tuningItem:
 				out.append(m)
@@ -762,7 +920,7 @@ func _asSold(configs: Array) -> bool:
 	return not configs.empty()
 
 func _allPictures(screen) -> bool:
-	var rows = allRows(screen)
+	var rows = shipRows(screen)
 	if rows.empty():
 		return false
 	for row in rows:

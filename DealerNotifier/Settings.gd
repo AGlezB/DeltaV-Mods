@@ -14,9 +14,25 @@ signal stockChanged()
 # can't be read). The used ones it draws every day come from CurrentGame.usedShipsPool.
 const NEW_STOCK = ["TRTL", "PROSPECTOR", "EIME", "AT225"]
 
-# One description per setting. `label` is a translation key of i18n/en.po. A switch has only its label and default. A
-# setting with `perModel` holds one value for each ship model the dealer can offer (models()), all sharing its default.
+# One description per setting, in display order. `label` is a translation key of i18n/en.po. A switch has only its
+# label and default, and, unless it is per model, its `group`: the translation key of the title of the settings
+# screen's group it shows in. A setting with `perModel` holds one value for each ship model the dealer can offer
+# (models()), all sharing its default.
 const SETTINGS = {
+	# Whether a watched model's new ships (those the Dealer marks NEW, DealerScreen.gd) mark the Dealer entry.
+	"watchNew": {
+		"label": "DEALERNOTIFIER_NEW",
+		"type": "bool",
+		"default": true,
+		"group": "DEALERNOTIFIER_CONDITION",
+	},
+	# Whether a watched model's used ships (all the others) mark the Dealer entry.
+	"watchUsed": {
+		"label": "DEALERNOTIFIER_USED",
+		"type": "bool",
+		"default": true,
+		"group": "DEALERNOTIFIER_CONDITION",
+	},
 	# Whether a ship of this model marks the station menu's Dealer entry when it comes up for sale.
 	"watched": {
 		"label": "DEALERNOTIFIER_WATCHED",
@@ -28,14 +44,15 @@ const SETTINGS = {
 
 # The layout of the saved entry. Renaming a saved key without a migration is a major version.
 # 1: the switches as a dictionary by model, and `known`, the transponders already seen.
-const FORMAT_VERSION = 1
+# 2: adds watchNew and watchUsed; a save without them gets their defaults.
+const FORMAT_VERSION = 2
 
 var cfg = {}
 # Transponders of the ships in the dealer that never mark: those it had while the Dealer screen was open, and those it
 # had when their model was switched on. Kept down to what the dealer has (setStock), and saved.
 var known = []
-# What the dealer had at its last refresh, one {model, transponder} per ship for sale (DealerScreen.gd). Not saved: the
-# station rebuilds it as it loads, and loadFromState empties it.
+# What the dealer had at its last refresh, one {model, transponder, used} per ship for sale (DealerScreen.gd). Not
+# saved: the station rebuilds it as it loads, and loadFromState empties it.
 var stock = []
 var _names = {} # each model's [shipName, baseShipName], read from its scene once
 var _manifest = null
@@ -83,19 +100,22 @@ func getValue(key, model = null):
 		return cfg[key].get(model, SETTINGS[key].default)
 	return cfg[key]
 
-# Switching a model on makes the ships of it the dealer has now known: only ships that come later mark.
+# Switching something on (a model, New or Used) makes the ships it lets in that the dealer has now known: only ships
+# that come later mark.
 func setValue(key, value, model = null):
 	value = _clamped(key, value)
 	if value == getValue(key, model):
 		return
+	var before = []
+	for ship in _watchedShips():
+		before.append(ship.transponder)
 	if isPerModel(key):
 		cfg[key][model] = value
 	else:
 		cfg[key] = value
-	if key == "watched" and value:
-		for ship in stock:
-			if ship.model == model and not ship.transponder in known:
-				known.append(ship.transponder)
+	for ship in _watchedShips():
+		if not ship.transponder in before and not ship.transponder in known:
+			known.append(ship.transponder)
 	saveToState()
 	emit_signal("settingsChanged")
 
@@ -116,15 +136,23 @@ func baseShipNameKey(model) -> String:
 
 # The rule the settings define, shared by the station menu and the Dealer screen.
 
-# The ships the dealer has now that mark the Dealer entry: of a model switched on, not known, and not one the player
+# The ships the dealer has now that mark the Dealer entry: watched (_watchedShips), not known, and not one the player
 # sold (the dealer offers those again for a while, CurrentGame.gd getShipsAvailableForSale).
 func newShips() -> Array:
 	var sold = []
 	if CurrentGame.has_method("getSoldTransponders"):
 		sold = CurrentGame.getSoldTransponders()
 	var out = []
+	for ship in _watchedShips():
+		if not ship.transponder in known and not ship.transponder in sold:
+			out.append(ship)
+	return out
+
+# The ships the dealer has now of a model switched on, new with New on or used with Used on.
+func _watchedShips() -> Array:
+	var out = []
 	for ship in stock:
-		if getValue("watched", ship.model) and not ship.transponder in known and not ship.transponder in sold:
+		if getValue("watched", ship.model) and getValue("watchUsed" if ship.used else "watchNew"):
 			out.append(ship)
 	return out
 

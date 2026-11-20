@@ -141,7 +141,15 @@ its thrusters and its reactor's turbine burn remass, and in-game time passes.
 - The stock is stored nowhere: `CurrentGame.getShipsAvailableForSale` builds it anew on every call from the in-game
   day, the week and the save's `state.seed`. It holds a few models new every week (named in its code), one used ship a
   day kept 10 days (its model drawn from `CurrentGame.usedShipsPool`, by weight), and the ships the player sold
-  (`state.soldShips`), for 10 days; ships the player owns are left out.
+  (`state.soldShips`), for 10 days; ships the player owns are left out. The weekly models are TRTL, PROSPECTOR, EIME
+  and AT225; all but the EIME are in the pool too, so the same model can be for sale new and used (game 1.93.1).
+- An entry marks its ship NEW, a green ribbon on its picture (`SystemBuyUI.gd` `checkPrice`, the `NewMark` sprite,
+  `enceladus/Dealer/new-marker.png`), when the ship isn't owned, is pristine (every system at 99 % or more) and is
+  younger than a year (the in-game time less `madeTimestamp`). A ship under ten years old is always pristine
+  (`CurrentGame.gd` `ageToDamageWithSeed` gives it no damage), so the age alone decides. The weekly ships are made at
+  most a week old (`createShipInstanceWithCache`, kept for the week); a used one gets a random share of its pool entry's
+  age (15 to 200 years; `Shipyard.gd` `createShipByConfig`, `madeTimestamp` never before the model's
+  `startProductionYear`), so it is NEW only in the rare case that falls under a year.
 - Only `Dealer.gd` `doAddShips` asks for it: when the station loads, every in-game hour (`hourPassed`) and when the
   screen opens; a dive doesn't, and nothing signals a change.
 - A ship's transponder is the same from one refresh, visit or save to the next (`getNewTransponder` is seeded), so it

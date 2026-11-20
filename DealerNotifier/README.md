@@ -7,16 +7,21 @@ the Dealer screen. You pick the ships with Shift+Click on Dealer.
 - **What:** in the settings, every ship model the dealer can offer has a switch, all off at first. When the dealer gets
   a ship of a model you switched on, the station menu's Dealer entry gets a mark: it reads as the
   `DEALERNOTIFIER_ALERT` text says, with the entry's own text (in the game's language) in place of `%s`.
-- **Only new ships:** a ship marks the entry only if it came after you last opened the Dealer screen, and after you
-  switched its model on. Switching a model on never marks the entry by itself, even with a ship of it already for sale.
-  Opening the Dealer screen clears the mark, and it comes back only when another such ship arrives. A ship you sold
-  yourself, which the dealer offers again for a while, never marks it.
+- **New and used:** two more switches, New and Used, both on at first, say which of those ships count. New is a ship
+  the Dealer marks NEW: the dealer's weekly new ones, and a used one only in the rare case it was made less than a
+  year ago. Used is every other. With New off, a used ship of a model you switched on still marks the entry, but a new
+  one doesn't; with Used off, the other way round. So you can wait for a used K37 TNTRL without the mark coming back for
+  the new one the dealer gets every week.
+- **Only ships that just arrived:** a ship marks the entry only if it came after you last opened the Dealer screen, and
+  after you switched on its model and its condition. Switching any of them on never marks the entry by itself, even
+  with such a ship already for sale. Opening the Dealer screen clears the mark, and it comes back only when another
+  such ship arrives. A ship you sold yourself, which the dealer offers again for a while, never marks it.
 - **On the Dealer screen:** the ships that set the mark get a badge at the right end of their name, until you
   leave the station: the capitals of the mod's name in the game's button frame, outlined and lettered in the green of
   the Fleet screen's Owned label. Hovering it shows the `DEALERNOTIFIER_BADGE_TOOLTIP` text in the game's own tooltip.
 - **When it updates:** whenever the game refreshes the dealer's stock: as you arrive at the station, every in-game hour
   you spend there, and when you open the Dealer screen. A dive doesn't refresh it, so ships that arrived meanwhile mark
-  the entry as you get back. Also when you switch a model on or off, and when the game's language changes.
+  the entry as you get back. Also when you switch something on or off, and when the game's language changes.
 - **Why:** so you know when a ship you want is for sale without opening the Dealer screen every hour, and which entry
   it is once there.
 - **Settings:**
@@ -24,8 +29,11 @@ the Dealer screen. You pick the ships with Shift+Click on Dealer.
     screen. They open where the Dealer screen does, with the same frame, and close the way the game's screens do: Esc,
     the controller's B or Start button, or picking another entry of the menu.
   - Laid out as the Dealer screen: a window with the description of the selected ship (the game's own, as the Dealer
-    shows it), a note on what the switches do, then one row per ship model: its picture, its name and its switch,
-    where the Dealer has Buy. Hovering a switch shows the `DEALERNOTIFIER_WATCHED` text.
+    shows it), then the switches. First New and Used, in a group of their own, then one row per ship model: its
+    picture, its name and its switch, where the Dealer has Buy. Hovering a ship's switch shows the
+    `DEALERNOTIFIER_WATCHED` text. The screen has no note on what the switches do: this README and the mod's page in
+    the users' wiki explain them. Under the list, Select all and Select none switch every switch on or off, New and
+    Used too.
   - The ships are grouped by series, each group titled by the series' name; series and ships in alphabetical order of
     their names in the game's language. Ships alone in their series (in game 1.92.5: the Eon Interstellar Model E, the
     ND-LIS Kitsune and the OCP-209) are grouped last, under *Others*.
@@ -33,10 +41,10 @@ the Dealer screen. You pick the ships with Shift+Click on Dealer.
     time you open the settings, all at once, as the Dealer draws its own, and kept until you quit the game.
   - Your switches are kept in your save game, each save with its own, and written to disk the next time the game saves
     (when you launch a dive, or quit through the pause menu). A new game, or a save made before the mod, starts with
-    every switch off.
+    every ship's switch off and New and Used on, as does a save made before New and Used for those two.
   - Opening them needs a mouse and a keyboard; a controller can use and close them.
-  - The mod's texts (the mark, the tooltips, the note, the *Others* title) are in `DealerNotifier/i18n/en.po`, inside
-    the zip.
+  - The mod's texts (the mark, the tooltips, the titles of the groups, New and Used, the buttons) are in
+    `DealerNotifier/i18n/en.po`, inside the zip.
 
 ## For modders
 - Five scripts: `Code.gd` (the station menu's script extension: the Dealer entry, opening the settings),
@@ -46,7 +54,8 @@ the Dealer screen. You pick the ships with Shift+Click on Dealer.
 - **The dealer's stock** is stored nowhere. `CurrentGame.gd` `getShipsAvailableForSale` builds it anew on every call
   from the in-game day and week and `state.seed`: a few ships new every week (named in its code: the mod's
   `NEW_STOCK`), one used ship a day kept 10 days (drawn from `CurrentGame.usedShipsPool`),
-  and the ships the player sold (`state.soldShips`), for 10 days; ships the player owns are left out. Only `Dealer.gd`
+  and the ships the player sold (`state.soldShips`), for 10 days; ships the player owns are left out. Some of the weekly
+  models are in the pool too, so the dealer can have the same model new and used. Only `Dealer.gd`
   `doAddShips` calls it: when the station loads (`_ready`), on `CurrentGame`'s `hourPassed`, and from `show()`. The
   game signals no change. A ship's transponder is the same from one refresh, visit or save to the next (seeded:
   `getNewTransponder`), so it is what tells ships apart; `shipHashFromConfig` is not (it holds the moment the ship was
@@ -69,8 +78,15 @@ the Dealer screen. You pick the ships with Shift+Click on Dealer.
     and for an idle physics frame per ship while the screen is hidden; the end is when its first
     `GDScriptFunctionState` emits `completed`). A call made while another runs returns at once with `shipAddFlag`
     still set; then the running one reports. It reads the stock from the screen's entries
-    (`enceladus/SystemBuyUI.gd`: each entry's `ship`, its `model` and `transponder`) and calls the model's
-    `setStock(entries, seen)`, `seen` while the screen is visible.
+    (`enceladus/SystemBuyUI.gd`: each entry's `ship`, its `model` and `transponder`, and whether it is used) and calls
+    the model's `setStock(entries, seen)`, `seen` while the screen is visible.
+  - **New or used** (`_dnIsNew()`) is the rule of an entry's NEW mark (`SystemBuyUI.gd` `checkPrice`): not owned,
+    pristine (every system at 99 % or more) and younger than `_DN_GAME_NEW_AGE`. A ship that young is always pristine
+    (`CurrentGame.gd` `ageToDamageWithSeed` damages none under ten years), so the age alone decides: the in-game time
+    less the ship's `madeTimestamp`, set as the ship is made (`Shipyard.gd` `createShipByConfig`), before its entry has
+    set it up and run `checkPrice`. The weekly ships are made a week old at most; a used one gets a random age up to its
+    pool entry's (`CurrentGame.usedShipsPool`), so it is new only in the rare case that falls under the limit, and the
+    Dealer marks it NEW too.
   - Overrides `show()`: calls the parent's, then keeps the transponders of `newShips()` in `_dnFresh` (the ships that
     get a badge; the screen is built anew on every visit, so they last until the station is left) and calls
     `markSeen()`, which clears the mark at once. The game's `show()` refreshes the stock, and that refresh, done while
@@ -93,12 +109,14 @@ the Dealer screen. You pick the ships with Shift+Click on Dealer.
     tooltip (`tr(_DN_BADGE_TOOLTIP)`) goes through the entry's `PlaySoundsOnTheseButtons` (`connectSounds`), as
     CrewCheapHireNotifier's badge does, since the released game shows no Godot tooltips. The game keeps an entry from
     one refresh to the next and never touches the badge, so `_dnMarkFresh()` only shows or hides it.
-- **The rule** (`Settings.gd`): `stock` is the last refresh's `{model, transponder}` list (not saved; `loadFromState`
-  empties it, since it is another save's or the last visit's). `known` is the transponders that never mark: those the
-  dealer had while the Dealer screen was open, and those it had when their model was switched on (`setValue`). Every
-  refresh drops from `known` the ships no longer for sale. `newShips()` is the stock's ships of a model switched on,
-  not in `known`, and not in `CurrentGame.getSoldTransponders()`. `setStock` and `markSeen` save `known` when it
-  changes and emit `stockChanged`.
+- **The rule** (`Settings.gd`): `stock` is the last refresh's `{model, transponder, used}` list (not saved;
+  `loadFromState` empties it, since it is another save's or the last visit's). `_watchedShips()` is the stock's ships of
+  a model switched on whose condition is switched on too (`watchUsed` for a used one, `watchNew` for a new one).
+  `known` is the transponders that never mark: those the dealer had while the Dealer screen was open, and those a
+  switch let in when it went on (`setValue`: the ships `_watchedShips()` gives after the change and not before, for a
+  model, New or Used alike). Every refresh drops from `known` the ships no longer for sale. `newShips()` is
+  `_watchedShips()` less those in `known` and in `CurrentGame.getSoldTransponders()`. `setStock` and `markSeen` save
+  `known` when it changes and emit `stockChanged`.
 - **The models** (`models()`): `NEW_STOCK` (the weekly ones, a constant because the game names them only in its code),
   then the names in `CurrentGame.usedShipsPool`, each once, keeping those `Shipyard.ships` has a scene for, so a model a
   game update adds to the pool gets its own switch by itself. `series(model)` is `Shipyard.getShipAlias(model)` (the
@@ -109,13 +127,16 @@ the Dealer screen. You pick the ships with Shift+Click on Dealer.
   `ships/ship-ctrl.gd`'s default (`RA-TRTL.tscn`'s `shipName`), one ship is instanced, never added to the tree, read and
   freed. The names are kept for the session.
 - **The settings model** follows CrewCheapHireNotifier's (`shared()`, `SETTINGS`, `cfg`, `getValue` / `setValue`,
-  `loadFromState` / `saveToState`, `modId()`, `modName()`, `modVersion()`), with one switch, `watched`, that has
-  `perModel`: a value for each model, a dictionary by model key in `cfg`, all sharing its default. Anything that isn't
-  a bool gives the default, so a save edited by hand can't break anything. The autoloads are read with `get()`
+  `loadFromState` / `saveToState`, `modId()`, `modName()`, `modVersion()`), with three switches: `watched`, that has
+  `perModel` (a value for each model, a dictionary by model key in `cfg`, all sharing its default), then `watchNew`
+  and `watchUsed`, which aren't per model and have a `group`, the translation key of the title of the screen's group
+  they show in. `SETTINGS` lists New and Used first, in display order. Anything that isn't a bool gives the default, so
+  a save edited by hand can't break anything. The autoloads are read with `get()`
   (`CurrentGame.get("usedShipsPool")`, `Shipyard.get("ships")`): the mod's scripts are compiled while the autoloads
   after `ModLoader` are still null, and Godot would work out `"key" in CurrentGame` then, failing.
 - **The save:** in `CurrentGame.state.ui` under the mod's id from `Mod.manifest`: `formatVersion` (`FORMAT_VERSION`),
-  `modVersion`, `watched` (a copy of the dictionary by model) and `known` (a copy of the list).
+  `modVersion`, `watchNew`, `watchUsed`, `watched` (a copy of the dictionary by model) and `known` (a copy of the
+  list). A save without `watchNew` or `watchUsed` (one made before them) gets their defaults.
 - **The settings screen** (`SettingsUI.gd`) is built as CrewCheapHireNotifier's and DiveSkipTransit's, but copies the
   live **Dealer** screen's theme, panel, minimum size and size flags, so it opens in the Dealer's place with its frame.
   Under the header (the Dealer entry's key):
@@ -123,27 +144,40 @@ the Dealer screen. You pick the ships with Shift+Click on Dealer.
     `GAME_WINDOW_INSIDE`, `GAME_WINDOW_TEXTS`), without the tabs and the ship's view behind the text, with the Dealer's
     theme, margins, panel, least size and spacing, its texts clipped. For the focused row it shows what `Dealer.gd`
     `displayShip` shows: `baseShipName` + `DESCRIPTION_SUFFIX` where it differs from `shipName`, then `shipName` +
-    `DESCRIPTION_SUFFIX`, keys the Labels translate.
-  - The note: the setting's description, its `label` + `DESCRIPTION_SUFFIX`.
-  - An `Items` box in the scroll with one `enceladus/Tuning/TuningItems.tscn` group per series, of
-    `TuningBoolValue.tscn` switches named by each model's `shipName` key (`_groups()`): series with two or more models,
-    titled by the base model's `shipName`, sorted by the titles' translated names, each one's models by theirs (case
-    ignored); then the models alone in their series, under `OTHERS_LABEL`. Filled each time it opens, so the order
-    follows a language change. On `tuningChanged` (a change, or a row taking the focus) it sets the row's
-    `tune.current` (DiveSkipTransit's fix: a switch doesn't update it itself), calls `setValue` and shows the row's
-    description.
-  - Each row is dressed as a Dealer entry (`_dressRow()`): a `Picture` Control first, of the size of the entry's
+    `DESCRIPTION_SUFFIX`, keys the Labels translate. A row that isn't a ship's empties it.
+  - No note: unlike the game's Tuning settings, the switches have no description on the screen. This README and the
+    mod's page in the users' wiki explain them.
+  - An `Items` box in the scroll of `enceladus/Tuning/TuningItems.tscn` groups of `TuningBoolValue.tscn` switches.
+    First one group per `group` of the settings that aren't per model (`_keyGroups()`, New and Used), its switches
+    named by their `label`s. Then one group per series, its switches named by each model's `shipName` key
+    (`_groups()`): series with two or more models, titled by the base model's `shipName`, sorted by the titles'
+    translated names, each one's models by theirs (case ignored); then the models alone in their series, under
+    `OTHERS_LABEL`. Filled each time it opens, so the order follows a language change; New's switch takes the focus.
+    On `tuningChanged` (a change, or a row taking the focus) it sets the row's `tune.current` (DiveSkipTransit's fix:
+    a switch doesn't update it itself), calls `setValue` and shows the row's description, or empties the window for New
+    and Used.
+  - Each ship's row is dressed as a Dealer entry (`_dressRow()`): a `Picture` Control first, of the size of the entry's
     picture (`GAME_ENTRY_PICTURE`), with a Sprite placed, scaled and flipped as the entry's (`GAME_ENTRY_SPRITE`); the
-    reset button hidden; the switch's slot at least as wide as the entry's Buy button (`GAME_ENTRY_BUY`), at the row's
-    right end; the switch's tooltip the setting's `label`. Those are read once from an instance of
+    switch's tooltip the setting's `label`. Every row's switch, New's and Used's too, sits where the entry has Buy
+    (`_alignSwitch()`): the reset button hidden, the switch's slot at least as wide as the entry's Buy button
+    (`GAME_ENTRY_BUY`), at the row's right end, so the switches line up. Those are read once from an instance of
     `enceladus/SystemBuyUI.tscn` that never enters the tree. No picture is stretched behind the row (the Dealer's `BG`,
     which ShipHighlightTypeAndPrice hides).
+  - Under the scroll, a `Buttons` box with Select all and Select none (`SELECT_ALL`, `SELECT_NONE`), side by side as
+    CombatSimulator's dialog has its buttons, with an instance of the game's `PlaySoundsOnTheseButtons`
+    (`GAME_BUTTON_SOUNDS`) for their sounds (`_buttons()`). Both call `_selectAll(on)`, which sets `pressed` on every
+    switch (`_switches`: New's and Used's, then the ships'). Each switch then takes its own path (`toggled`, then
+    `tuningChanged`, then `setValue`), so the rows' `tune.current`, the save, `known` and the mark stay right; `_bulk`
+    keeps the window as it was meanwhile.
   - **The pictures** (`_drawPictures()`) are made the way the Dealer makes its entries' (`SystemBuyUI.gd` `addShip`,
     `checkPrice`, `stopUpdating`): every model at once (`_drawPicture()`), each ship drawn in a viewport of its own (the
     entry's, `GAME_ENTRY_VIEWPORT`: camera, lights, environment, taken out of a new instance of the entry's scene) under
     a hidden Node2D, for `PICTURE_DELAY` once set up, then `get_texture().get_data()` into an `ImageTexture`; then the
-    ship is removed and its viewport freed (`Tool.remove`), with anything the ship put beside itself (a cradle lets its
-    drone go into the ship's parent, `ships/modules/ClaimOwner.gd` `_ready`). The ships set themselves up together,
+    viewport is freed with the ship still in it, and anything the ship put beside itself (a cradle lets its drone go
+    into the ship's parent, `ships/modules/ClaimOwner.gd` `_ready`). That way the ship's areas are freed before the
+    viewport's physics space: a ship taken out first leaves its monitoring areas pointing into that space, and freeing
+    them afterwards writes into freed memory, an intermittent crash (Godot 3's `CollisionObject2DSW` `_set_space`, fixed
+    only in Godot 4.3, PR #81809). The ships set themselves up together,
     sharing the game's budget for that (`Tool.gd`'s idle queue, at most half of every frame), and wait for their
     pictures together: drawn one after another, the waits would add up to seconds. Each picture shows as soon as it is
     taken. They are kept in the script's metadata for the session. Every ship is made with
@@ -175,8 +209,8 @@ the Dealer screen. You pick the ships with Shift+Click on Dealer.
   `_DN_SETTINGS_TOOLTIP` (translation keys), `_dnMarketButton`, `_dnMarketKey`, `_dnSettingsScreen`, `_dnScreens`,
   `_dnDealer`, `_dnSettings`, `_dnUpdate()`, `_dnOnMarketInput()` and `_dnOpenSettings()`.
 - Members of the Dealer screen's extension (`DealerScreen.gd`): `DealerNotifier` (preload), `_DN_BADGE_TOOLTIP`
-  (translation key), `_DN_BADGE`, `_dnFresh`, `_dnStock()`, `_dnIsOffer()`, `_dnMarkFresh()`,
-  `_dnBadge()` and `_dnInitials()`.
+  (translation key), `_DN_BADGE`, `_DN_GAME_NEW_AGE`, `_dnFresh`, `_dnStock()`, `_dnIsNew()`, `_dnIsOffer()`,
+  `_dnMarkFresh()`, `_dnBadge()` and `_dnInitials()`.
 - Tested only outside the game, in a headless Godot 3.6 with the game's `EnceladusMenu.gd`, `HidingMarginContainer.gd`,
   `Dealer.gd`, `SystemBuyUI.gd`, `WeaponSlot.gd`, `TuningItems.gd`, `TuningBoolValue.gd`, `PlaySoundsOnTheseButtons.gd`
   and `Shower.tscn`: the station built in code as its scene nests it, with stubs of the Dealer screen's, its entries'

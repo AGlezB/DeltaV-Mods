@@ -351,9 +351,11 @@ GeologyByMass.
   Clicks go through the scene tree's input, keys as real input events with the game's bindings. The settings model:
   one shared instance; the models (the mod's `NEW_STOCK`, then the pool, each once, only those with a scene); a
   variant's series; each model's names, read from its scene, the scene it inherits from, or (made once) an instance,
-  and no ship made for the others; every switch off by default; a value that isn't a switch's giving the default and
-  storing nothing; storing under the manifest's id with the format and mod versions and the ships seen, signalling once,
-  a copy; a JSON round trip; a hand-edited entry (switches, ships seen) read safely. The rule: the stock reaches the
+  and no ship made for the others; every ship's switch off by default, New and Used on; a value that isn't a switch's
+  giving the default and storing nothing; storing under the manifest's id with the format and mod versions, the ships
+  seen, New and Used, signalling once, a copy; switching Used off stored; a JSON round trip; a hand-edited entry
+  (switches, ships seen) read safely, and one without New or Used, or with a value that isn't a switch's, giving their
+  defaults. The rule: the stock reaches the
   model at the game's refresh; switching a model on with a ship of it for sale doesn't mark the entry; a new ship of a
   model switched off, or one the player sold, doesn't; a new ship of a model switched on does, also in a second
   language, with the tooltip; switching the model off unmarks it, and on again doesn't mark it; a later ship does;
@@ -365,17 +367,25 @@ GeologyByMass.
   the right margin around its text, centred from top to bottom, at its least size, its tooltip registered with the
   entry's `PlaySoundsOnTheseButtons`);
   ships no longer for sale forgotten; badges kept through hourly refreshes and reopening; after a JSON round trip, a new
-  station with the saved switches and ships seen, no mark for the same stock, and no badges. The screen: Shift+Click on
+  station with the saved switches and ships seen, no mark for the same stock, and no badges. New and Used: the stock
+  tells a ship younger than the mod's `_DN_GAME_NEW_AGE` (new) from one that old (used); with Used off a later new ship
+  marks and a later used one doesn't; with both off nothing does; switching Used, then New, on doesn't mark the ships
+  of that condition already for sale, and a later used ship marks. The screen: Shift+Click on
   a disabled entry does nothing, on the entry opens the settings and not the Dealer; opening stores nothing; the Dealer
-  screen's theme, frame, size and size flags; the entry's title; under the header the window, the note and the groups;
-  the window copies the Dealer's (theme, margins around and inside, panel, least height, the texts' spacing, clipping);
-  the note is the setting's description, in `i18n/en.po`; one group per series titled by its name, the series and their
-  rows in alphabetical order of the names whatever the case, the models alone in their series last under `OTHERS_LABEL`,
-  in an `Items` box; the first switch focused; each switch showing its setting; each row dressed as a Dealer entry (the
-  picture first, of the entry's picture's size, its sprite placed as the entry's; no reset; the switch at the row's
-  right end, at least as wide as the entry's Buy button; its tooltip the setting's label); focusing a row shows its
-  ship's description after its series' where that differs; switching a model on stores it, describes it, and doesn't
-  mark for a ship of it for sale, and focusing it again doesn't switch it back; a later ship marks; the pictures drawn
+  screen's theme, frame, size and size flags; the entry's title; under the header the window, the groups and the
+  buttons, with no note; the window copies the Dealer's (theme, margins around and inside, panel, least height, the
+  texts' spacing, clipping); first New and Used in a group titled by their `group`, then one group per series titled
+  by its name, the series and their rows in alphabetical order of the names whatever the case, the models alone in their
+  series last under `OTHERS_LABEL`, in an `Items` box, the titles and names in `i18n/en.po`; New's switch focused; each
+  switch showing its setting; each ship's row dressed as a Dealer entry (the picture first, of the entry's picture's
+  size, its sprite placed as the entry's; no reset; the switch at the row's right end, at least as wide as the entry's
+  Buy button; its tooltip the setting's label); New's and Used's switches lined up with them, with no picture and no
+  tooltip; focusing a row shows its ship's description after its series' where that differs, and focusing New or Used
+  empties the window; switching a model on stores it, describes it, and doesn't mark for a ship of it for sale, and
+  focusing it again doesn't switch it back; a later ship marks; switching Used off on the screen stores it; Select all
+  and Select none under the groups, in `i18n/en.po`: Select all switches every switch on (New's and Used's too) on the
+  screen and in the settings, marking nothing already for sale and leaving the window as it was, Select none every
+  switch off, saved, unmarking the entry; the pictures drawn
   all at once, a viewport for each model; one ship of each model made to draw, in the screen's order, from the dealer's
   config, with a transponder, a name and a making time, nothing written to `state.transponders`, each in a viewport of
   its own; each entering the tree with every hardpoint empty (`PICTURED`: the dealer's, its other settings kept; the
@@ -533,8 +543,8 @@ GeologyByMass.
   `crew` 148 (149 with CrewPerfectSort too, in both load orders; the same 148 with DealerNotifier too, in both; 3
   control checks with `-Mods @()`), `geology` 60 (3 control checks with `-Mods @()`), `fleet` 70 (the same with
   ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too; 3 control checks with `-Mods @()`), `skip` 109 (112 with
-  CrewCheapHireNotifier too, the same with DealerNotifier as well; 13 control checks with `-Mods @()`), `dealer` 92
-  (95 with CrewCheapHireNotifier and DiveSkipTransit too, in every load order; the same 92 with ShipCopyPaste,
+  CrewCheapHireNotifier too, the same with DealerNotifier as well; 13 control checks with `-Mods @()`), `dealer` 111
+  (114 with CrewCheapHireNotifier and DiveSkipTransit too, in every load order; the same 111 with ShipCopyPaste,
   ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too; 2 control checks with `-Mods @()`), `transponder` 48 (3
   control checks with `-Mods @()`; the same 48 with CombatSimulator too), `combat` 129 (the same with
   TransponderAltCodes too; 7 control checks with `-Mods @()`), `drones` 63 (the same in both load orders and with
