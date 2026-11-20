@@ -16,9 +16,20 @@ by the chunks) are taken by hand, with bloom off as in the runs.
 
 Each mod runs twice from the same save, without the mod and with it, about half a minute each, a minute with a dive
 (HudHideLabels dives once per HUD, so each of its runs takes several minutes); a run with nothing to shoot (every view
-only the mod has) is skipped. The game's window opens on a screen other than the main one, where there is one, and plays
-without sound. ShotRenderer is what moves it there, so before each run the copy starts once without a window, for a
-single frame: if a script doesn't load (ShotRenderer's or a mod's), the run stops there, before any window opens.
+only the mod has) is skipped. The game plays without sound, and never shows on screen or takes the focus, so the runs
+can go on while you work: see *Hidden runs*. Before each run the copy starts once for a single frame: if a script
+doesn't load (ShotRenderer's or a mod's), the run stops there, in a few seconds, instead of waiting for its timeout.
+
+## Hidden runs
+
+An automated run has no reason to show a window: the pictures come from what the game draws, not from the screen. So
+`shots.ps1` starts every copy with `--no-window`. In Godot 3 on Windows the game's window is then created hidden, never
+shown or given the focus, and still drawn, at the settings' size, so the pictures are the same as from a visible
+window. The game's own window calls change nothing there: in windowed mode `Settings.gd` sets the size, switches off
+fullscreen and borderless and allows resizing, all as they are already, and Godot leaves a window alone when a value
+doesn't change. As a safeguard, `shots.ps1` checks a running copy every `$windowCheckMs` milliseconds and stops it at
+once, failing the run, if its window becomes visible all the same. Mouse steps work without a visible window too
+(`click`, `clickfind`, `shiftclick`: input events the game takes as a player's).
 
 ## Which mods
 
@@ -38,7 +49,7 @@ ShipSortByTypeAndPrice); the arm mods have their diagrams.
   3. ShotRenderer stops the game at once if its user folder is anywhere else;
   4. `shots.ps1` records the names, sizes and times of the files in `%APPDATA%\dV` before and after, and fails if
      anything changed. It refuses to run while the game is running.
-- **The copy's settings** (`appdata\dV-shots\settings.cfg`, written at every run): a 1600x900 window, no bloom (the
+- **The copy's settings** (`appdata\dV-shots\settings.cfg`, written at every run): a 1600x900 window (hidden), no bloom (the
   game's default is full bloom), no tutorial, English, no sound, and the game's streaming mode, without which the game
   pauses whenever its window loses the focus (`PauseLayer.gd` `_notification`). BootSkipLogos is loaded in every run, to skip the logos.
 - **The fixture** (`newgame`, ShotRenderer's `_newGame`): a new game with a fixed seed, money, one hire per job, and

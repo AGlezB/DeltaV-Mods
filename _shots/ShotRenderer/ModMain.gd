@@ -181,7 +181,6 @@ func _init(modLoader = null):
 		OS.kill(OS.get_process_id())
 		return
 	_job = job
-	_toOtherScreen()
 
 func _ready():
 	if _job == null:
@@ -189,7 +188,6 @@ func _ready():
 	pause_mode = PAUSE_MODE_PROCESS
 	while not _scene():
 		yield(get_tree().create_timer(POLL), "timeout")
-	_toOtherScreen()
 	yield(get_tree().create_timer(SETTLE), "timeout")
 	for step in _job.get_value("job", "steps", []):
 		print("SHOTRENDERER step ", step)
@@ -293,16 +291,6 @@ func _ready():
 				printerr("SHOTRENDERER: unknown step ", step)
 	print("SHOTRENDERER done")
 	get_tree().quit()
-
-# Centres the window on a screen other than the main one (the one at the desktop's origin), where there is one, so the
-# runs stay out of the way of whoever works on the main screen. The game's own screen setting applies only outside a
-# window (Settings.gd applySettings), and its window settings change only the size (scaleWindow), not the place.
-func _toOtherScreen():
-	for screen in OS.get_screen_count():
-		if OS.get_screen_position(screen) != Vector2.ZERO:
-			OS.window_position = OS.get_screen_position(screen) + (OS.get_screen_size(screen) - OS.window_size) / 2
-			print("SHOTRENDERER window on screen ", screen, " at ", OS.window_position)
-			return
 
 # The scene the game's Loader switched to last (it doesn't use the tree's current scene), or null.
 func _scene():
