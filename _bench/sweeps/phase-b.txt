@@ -1,0 +1,26 @@
+# Phase B: one parameter set per line for candidates\dap.gd (bench.ps1 -ParamsFile). Phase A found the speed term
+# harmful at the weights it tried and value and intake the best single criteria, so: value against intake at several
+# ratios, mass added (positive: more ore; negative: lighter, quicker to bring in), the speed term small or reversed
+# (negative: slow chunks first), the exponent formula, and the extras on value and intake.
+f=points,wv=1,wi=0.25
+f=points,wv=1,wi=0.5
+f=points,wv=1,wi=1
+f=points,wv=1,wi=2
+f=points,wv=1,wi=4
+f=points,wv=1,wm=0.5
+f=points,wv=1,wm=0.5,wi=1
+f=points,wv=1,wm=-0.5,wi=1
+f=points,wm=-1
+f=points,spd=rel,ws=0.25,wv=1,wi=1
+f=points,spd=exit,ws=0.25,wv=1,wi=1
+f=points,spd=rel,ws=-0.5,wv=1,wi=1
+f=points,spd=rel,ws=-0.5,wv=1
+f=points,spd=rel,ws=-1
+f=points,wv=1,wi=1,margin=0.25
+f=points,wv=1,wi=1,margin=1
+f=points,wv=1,wi=1,scan=1
+f=points,wv=1,margin=0.5
+f=exp,wv=1,wi=1
+f=exp,wv=1,wm=1
+f=exp,wv=1,wm=1,wi=1
+f=points

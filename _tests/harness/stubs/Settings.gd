@@ -2,13 +2,18 @@ extends Node
 
 # Stub of the game's Settings autoload: what Arm.gd (cfg.display.lights, settingsChanged), Tool.gd (getFps),
 # Boot.gd (firstBoot), AnalogControlSlider.gd (getControlDeviceNr, while a slider has the focus), Hud.gd instance()
-# (cfg.gameplay.tutorial) and DiveSkipTransit (focused, cfg.gameplay.streaming: the game's mute rule) read.
+# (cfg.gameplay.tutorial) and DiveSkipTransit (focused, cfg.gameplay.streaming: the game's mute rule) read, and the
+# game scripts the bench runs (_bench\): DroneLaunchManager.gd and asteroid.gd (cfg.display.particlesExplosion, the
+# particle signals), the dust cloud (particlesForbidden).
 
 signal settingsChanged
+signal particlesSettingsChanged
+signal removeGpuParticles
 
-var cfg = {"display": {"lights": 1.0}, "gameplay": {"tutorial": false, "streaming": false}}
+var cfg = {"display": {"lights": 1.0, "particlesExplosion": 1.0}, "gameplay": {"tutorial": false, "streaming": false}}
 var firstBoot = false # the game's is true only until user://settings.cfg exists (loadFromFile)
 var focused = true # the game's follows the window's focus (_notification), and mutes the master bus without it
+var particlesForbidden = false
 
 # The game sets this when it applies its fps setting (Settings.gd, 16 at 60 fps). Not every engine build has it.
 func _ready():

@@ -10,8 +10,8 @@ themselves, and how to install them, are in the [README](README.md); how the gam
 The mods are written in GDScript for the game's engine, Godot 3. Each top-level folder not starting with `_` or `.`
 is one independent mod and ships as one zip. There is no build system: `package.ps1` builds a mod's release zip, and
 `release.ps1`, run by `.github\workflows\release.yml` on every push to `main`, publishes the mods' new versions as
-GitHub Releases (see *Packaging and releasing*), `_tests\` is a test harness for most mods (see *Testing*), and
-`_wiki\` is the users'
+GitHub Releases (see *Packaging and releasing*), `_tests\` is a test harness for most mods (see *Testing*), `_bench\` simulates the
+nanodrones at work to tune DroneAltPriorities (see *The drone bench*), and `_wiki\` is the users'
 wiki, checked by `wiki.ps1`, published by `.github\workflows\wiki.yml`, with its screenshots of the station, the OMS
 and the HUD taken by `_shots\shots.ps1` (see *The users' wiki*). The source has been in git since 14 Nov 2026, and `.gitignore` keeps out
 every zip, so the versions
@@ -105,6 +105,8 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
      station's fade-in and launch sequence); `StationMenu.gd` → `enceladus/EnceladusMenu.gd` (Shift+Click on the dive
      entry opens its settings screen, as CrewCheapHireNotifier's Crew entry does); `Ship.gd` → `ships/ship-ctrl.gd`
      (astrogation).
+   - DroneAltPriorities: `Code.gd` → `weapons/drone-plant.gd` (the nanodrone plants' choice of target); `OmsScreen.gd`
+     → `hud/Hud.gd` (its OMS tab, added right after the Geologist tab as GeologyByMass adds its own).
    - GeologyByMass: `Code.gd` → `hud/Hud.gd` (it also adds its tab to the OMS, right after the Geologist tab, from
      `instance()`).
    - LidarLouderPing: `Code.gd` → `hud/LIDAR.gd`.
@@ -163,6 +165,12 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
   (CombatSimulator `giveXp`, `setStory`, `recordEncounter`, `setDestinationHighlight` and `addShip`;
   TransponderAltCodes `_ready`, `getNewTransponder`, `getTransponder`, `validateState` and `createPlayerShip`). Their
   member names must stay distinct.
+- DroneAltPriorities (`OmsScreen.gd`) and GeologyByMass (`Code.gd`) both extend `hud/Hud.gd` and both add an OMS
+  tab right after the Geologist tab, each from its own override of `instance()`, which calls the parent's first and
+  defers the tab: by path the chain is game ← DroneAltPriorities ← GeologyByMass, so DroneAltPriorities's deferred call
+  runs first and GeologyByMass's tab ends up between the Geologist tab and DroneAltPriorities's (the other order swaps
+  the two). Both keep their entries in the HUD's `mineralConfig`, each under its own mod id. Their member names must
+  stay distinct. Loaded together in `drones` (every order).
 - ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice find the ship entries by `node.get_script().resource_path`;
   ShipCopyPaste extends that script, and `take_over_path` keeps the path, so they still find them (loaded together in
   `fleet`). DealerNotifier reads the stock from the Dealer screen's entries in any order and hangs its badge in each
@@ -237,6 +245,14 @@ the new one can still be moved in. A renamed mod's first release also takes the 
 decompiled game; `.\_tests\run.ps1` runs every suite. What each suite checks, the options and the baseline results are
 in [`_tests/README.md`](_tests/README.md). The harness doesn't replace the game: the real check is playing the game
 with the mods.
+
+## The drone bench
+
+`_bench\bench.ps1` (PowerShell 7) runs deterministic simulations of the nanodrones at work, in a headless Godot 3.6,
+to choose from data how DroneAltPriorities ranks chunks: its control scenario is unattended mining in an
+Antonoff-Titan K225, with the game's own drone, PDW, excavator, chunk and roid scripts, and the game's scenes and maps
+read from the newest decompiled game at run time. It reuses the harness's autoload stubs and mod loader. The scenario,
+the modes, what a run measures and how it stays deterministic are in [`_bench/README.md`](_bench/README.md).
 
 ## The users' wiki
 
@@ -456,7 +472,10 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
     signal when the game re-reads by itself): the descriptions as constants, getters that never write and give the
     defaults where nothing is stored (clamped, snapped to the step), setters that write only a change, an entry with
     `formatVersion` and `modVersion`, and `modId()` / `modName()` / `modVersion()`. GeologyByMass: the HUD's
-    `mineralConfig` (the ship's `hud.config`), next to the Geologist tab's settings.
+    `mineralConfig` (the ship's `hud.config`), next to the Geologist tab's settings. DroneAltPriorities keeps its
+    settings there too, for the whole ship, so its `Settings.gd` is made from the ship rather than the HUD
+    (`ship.getConfig("hud.config")`): each drone plant and the OMS tab make their own instance, and all read the same
+    entry, so a change applies at once with no signal.
   - `i18n/<locale>.po` (`i18n/en.po`, …), in a subfolder named as the game's own `i18n/`: the mod's texts in that
     language, loaded by `ModMain.gd` (see *How the game loads a mod*). English is Godot's fallback language, so
     `en.po` covers every language until it gets its own file.
@@ -564,6 +583,11 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   (`adrenalineBoost`, `adrenalineCooldown`); fired again during the cooldown, it cuts the burst short. Switched off
   in the OMS's Mechanic tab, it pushes adrenaline down every frame instead, which also damps bullet time from the
   other sources. DiveDisableAdrenalineBooster starts the player's booster switched off at every dive.
+- **Antonoff Ore Purifier** (`SYSTEM_CARGO_MPUDRY`; `ships/modules/MineralProcessingUnit_DRY.tscn`, on
+  `MineralProcessingUnit.gd`): an MPU whose processing area covers the whole hold of the Antonoff-Titan K225
+  (`ships/ATK225.tscn` overrides it). It strips each chunk's water into remass (`remassEfficiency`), extracts no ore
+  (`mineralEfficiency` 0) and never removes a chunk (`removeChunks` false): chunks taken in stay in the hold. Its walls
+  line the hold (the scene's root polygon, part of the ship's collision).
 - **Arm**: the AR-1500 Manipulator (`SYSTEM_SALVAGE_ARM`, `ships/modules/DockingArm.gd`), the ship's arm that grabs
   chunks and brings them to the intake (see *Salvage arm facts*).
 - **Astrogation** (fast travel): travel inside the ring to a known destination, picked in the Astrogator tab and
@@ -619,6 +643,10 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   player switches ships (`GARAGE_SWITCH`, `Dealer.gd` `use`) and sells them (`GARAGE_SELL`). Each owned ship keeps its
   own config (`CurrentGame.state.ship`, the others in `state.garage`). The crew itself belongs to the player, not to
   a ship. Details: [GAME.md](GAME.md#fleet).
+- **Density** (roid density; no text of its own in `en.po`): how many roids a spot of the rings holds, from the ring
+  map's blue and green channels (see *Chaos*; `TheRing.gd` `getTargetDensityAt`), filled in ahead of the ship by
+  `AsteroidSpawner.gd` `spawnProperThings`. Chunks come only from roids breaking. Details:
+  [GAME.md](GAME.md#density).
 - **Depth** (`HUD_DEPTH`): how far into the rings the ship is.
 - **Derelict**: an abandoned ship with its reactor off, in the `helpless` faction (`story/RescueOperation.gd`,
   `story/FlightForRescue.gd`, `story/AgendaSpecificDerelict.gd`). It talks once when the player's ship comes close,
@@ -640,7 +668,7 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   (`SYSTEM_CLAIM`, `ships/drone/ClaimBeacon.tscn`) holds the player's excavation claim on a spot of the rings. The
   External Impact Absorber (`SYSTEM_HUNK`, `ships/modules/Hunk.tscn`) hangs in a cradle too, but is a block, with no
   transponder. Not drones in this sense: the nanodrones (`SYSTEM_DND_*`, the MPI Tug, MLF Haul and OME Maintenance
-  drones, `weapons/drone-plant.gd`), which the drone plant draws and which aren't objects of their
+  drones, `weapons/drone-plant.gd`; see *Nanodrones*), which the drone plant draws and which aren't objects of their
   own; and the NPC drones (the racing drone and ATLAS, built by the Shipyard; locusts, berserk drones and mines in some
   events).
 - **E$**: the game's currency.
@@ -730,6 +758,12 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   unpaid wages. Details: [GAME.md](GAME.md#morale).
 - **MPU** (`SYSTEM_CARGO_MPU*`, `ships/modules/MineralProcessingUnit.gd`): the Mineral Processing Unit, which turns
   the chunks taken in into processed ore and, in most models, their water into remass.
+- **Nanodrones** (the word is in their descriptions, `SYSTEM_DND_TS_DESC`): drones a plant on a hardpoint assembles as
+  it launches them (`weapons/drone-plant.gd`, `weapons/drone-plant.tscn`), from parts in the ship's nanodrone storage
+  (`SYSTEM_DND_1000` and up; `droneWeightKg` each): the MPI Tug drones (`SYSTEM_DND_TS`, `droneFunction` "tug"), the
+  MLF Haul Drones (`SYSTEM_DND_HAUL`, "haul") and the OME Maintenance drones (`SYSTEM_DND_FIX`, "repair"). Each plant
+  works on one target at a time, picked by `scanForTarget`; DroneAltPriorities changes the choice among the eligible
+  objects for the player's tug and haul plants. Details: [GAME.md](GAME.md#nanodrones).
 - **Oddity**: an object worth a reward of its own (`specialPrice`, named by its `specialName`): a lifepod, a frozen
   body, an AI core and others. One the arm holds when the dive ends goes into the cargo (`ship-ctrl.gd`
   `handleExitToEnceladus`) and is sold for its reward (`CurrentGame.gd` `getMarketPrice`).
@@ -743,6 +777,12 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   (`menu/SettingsLayer.tscn`). With Dynamic Temporal Simulation Simplification on (`SETTINGS_ADAPTIVE_FPS`,
   `cfg.display.adaptiveFps`, the default), it follows the real frame rate. Weapons and damage that count physics
   frames change with it. Details: [GAME.md](GAME.md#physics-rate).
+- **Point Defence Turret** (players call them PDWs; the name is in the Tuning descriptions, `TUNE_SAFETY_DESC`): a
+  turret that aims and fires a weapon by itself (`ships/modules/PDT.gd`). The player can buy two: the ONMWG-650
+  (`SYSTEM_PDMWG`, `-L`, `-R`; a microwave emitter, `weapons/emp.gd`, firing on its own) and the NDPT-4205
+  (`SYSTEM_PDT`, `-L`, `-R`; a minigun, `weapons/massdriver.gd`, which "Fires on human command only": while the fire
+  command is held, `autoFire` false). Each targets hostile ships and roids, never a chunk. Details:
+  [GAME.md](GAME.md#point-defence-turret).
 - **Racing drone** (its scene's `SHIP_DRONE` is a key the game's texts lack; CombatSimulator names it,
   `COMBATSIMULATOR_MODEL_DRONE`): the small crewless drone the ring races are flown to chase (`story/RingRace.gd`,
   faction `racedrone`), scene `ships/drone/Drone.tscn` (Shipyard model `DRONE`), built new (`createShipByName`, age 0).

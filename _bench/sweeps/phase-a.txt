@@ -1,0 +1,26 @@
+# Phase A: one parameter set per line for candidates\dap.gd (bench.ps1 -ParamsFile). Single criteria, pairs and
+# triples, both speed measures, the exponent formula, then the extras on a reference set.
+f=points,spd=rel,ws=1
+f=points,spd=exit,ws=1
+f=points,wv=1
+f=points,wm=1
+f=points,wi=1
+f=points,spd=rel,ws=1,wv=1
+f=points,spd=exit,ws=1,wv=1
+f=points,spd=exit,ws=2,wv=1
+f=points,spd=exit,ws=1,wv=2
+f=points,spd=exit,ws=1,wv=1,wm=1
+f=points,spd=exit,ws=1,wv=1,wi=0.5
+f=points,spd=exit,ws=1,wv=1,wi=1
+f=points,spd=rel,ws=1,wv=1,wi=1
+f=exp,spd=exit,ws=1,wv=1
+f=exp,spd=exit,ws=2,wv=1
+f=exp,spd=rel,ws=2,wv=1,wm=1
+f=points,spd=exit,ws=1,wv=1,margin=0.25
+f=points,spd=exit,ws=1,wv=1,margin=0.5
+f=points,spd=exit,ws=1,wv=1,margin=1
+f=points,spd=exit,ws=1,wv=1,scan=1
+f=points,spd=exit,ws=1,wv=1,scan=0.5
+f=points,spd=exit,ws=1,wv=1,scan=0.5,margin=0.5
+f=points,spd=exit,ws=1,wv=1,scan=1,margin=0.5
+f=points

@@ -1,0 +1,7 @@
+# Unidentified first: one parameter set per line for candidates\dap.gd (bench.ps1 -ParamsFile), run on the be-chaos
+# spot with an inexperienced geologist (-Geologist 0.1,0.1) and the NDPT-4205. The rule alone (vanilla order
+# otherwise), with the current target kept, Stop 2's pick (value times mass, half intake, margin 1), and both.
+f=points,unid=1
+f=points,unid=1,margin=1
+f=exp,wv=1,wm=1,wi=0.5,margin=1
+f=exp,wv=1,wm=1,wi=0.5,margin=1,unid=1

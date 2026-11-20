@@ -1,0 +1,20 @@
+# Phase C: one parameter set per line for candidates\dap.gd (bench.ps1 -ParamsFile). Phase B's best: the exponent
+# formula on value and mass (the chunk's ore value, price times kg), and value with intake kept on their target
+# (margin 1). Here: the margin from 0.5 to 4 on both, the value to mass ratio, a little intake on the first, the
+# intake ratio and mass on the second, the speed term once more on the new base, and the two best again (same seeds:
+# how much a repeat moves).
+f=exp,wv=1,wm=1,margin=0.5
+f=exp,wv=1,wm=1,margin=1
+f=exp,wv=1,wm=1,margin=2
+f=exp,wv=1,wm=1,margin=4
+f=exp,wv=1,wm=0.5,margin=1
+f=exp,wv=1,wm=2,margin=1
+f=exp,wv=1,wm=1,wi=0.25,margin=1
+f=exp,wv=1,wm=1,wi=0.5,margin=1
+f=exp,spd=rel,ws=0.25,wv=1,wm=1,margin=1
+f=points,wv=1,wi=1,margin=2
+f=points,wv=1,wi=1,margin=4
+f=points,wv=1,wi=0.5,margin=1
+f=points,wv=1,wm=0.5,wi=0.5,margin=1
+f=exp,wv=1,wm=1
+f=points,wv=1,wi=1,margin=1

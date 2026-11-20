@@ -4,7 +4,8 @@ extends Node
 # Hud.gd, PriceLabel.gd, HireableCrew.gd, CrewBio.gd, SystemBuyUI.gd, SystemShipUpgradeUI.gd, Dealer.gd, Game.gd,
 # Enceladus.gd, TransponderOnIntro.gd, story/body.gd, menu/NewGamePlus.gd, CrewCheapHireNotifier, GeologyByMass,
 # ShipCopyPaste, DiveSkipTransit, DealerNotifier, TransponderAltCodes and CombatSimulator reach (with TheRing.gd and
-# PauseLayer.gd, which connect inGameTimePassed and pauseGame).
+# PauseLayer.gd, which connect inGameTimePassed and pauseGame), and the game scripts the bench runs (_bench\:
+# asteroid.gd isInSimulatiorRange, the PDWs' weapons ageToDamageWithSeed).
 
 signal dayPassed()
 signal employmentChanged()
@@ -166,6 +167,23 @@ func changeMoney(by, _insurance = false):
 
 func logEvent(type, details = {}):
 	logs.append([type, details.duplicate(true)])
+
+# As the game's: within 1.2 km of the player's ship, or anywhere without one (asteroid.gd: a rock farther away breaks
+# into nothing).
+func isInSimulatiorRange(v: Vector2):
+	if Tool.claim(playerShip):
+		var inside = playerShip.is_inside_tree()
+		var gp = playerShip.global_position
+		Tool.release(playerShip)
+		return v.distance_to(gp) < 12000 if inside else true
+	return true
+
+# The game's ages a used ship's equipment; nothing the harness or the bench builds is aged.
+func ageToDamageWithSeed(_years, _seed, count, _limit):
+	var out = []
+	for i in range(count):
+		out.append(0.0)
+	return out
 
 func getInGameTimestamp():
 	return time

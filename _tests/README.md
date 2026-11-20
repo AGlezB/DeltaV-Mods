@@ -14,7 +14,7 @@ a Godot project in `TempDir\tests\project` from `_tests\`; the game's own `Docki
 `FusionReactor.gd`, `CurrentGame.gd`, `body.gd`, `ClaimOwner.gd`, `ClaimBeacon-1.gd`, `ClaimBeaconForeign.gd`,
 `NewGamePlus.gd`, `WeaponSlot.gd`, `PauseLayer.gd`, `PDT.gd`, `Video.gd`, `GravimetricReadout.gd`, `massdriver.gd`,
 `TheRing.gd`, `MarginViewportUpscale.gd`, `ViewportWithProxy.gd`, `NoBulletTime.gd`, `CanvasHidding.gd`, `MouseLayer.gd`,
-`Tool.gd`, `gdunzip.gd`, `Shower.tscn`, audio buses (`default_bus_layout.tres`), the skill
+`drone-plant.gd`, `Tool.gd`, `gdunzip.gd`, `Shower.tscn`, audio buses (`default_bus_layout.tres`), the skill
 icons `CrewBio.gd` preloads and a Fleet entry's Use icon (`enceladus/Upgrades/switch.png`; their `.png.import` and
 imported `.stex`, so they load without an import step), copied from the decompiled source on every run and never
 committed, since they are the game's; a stub mineral scene with the chunk radius read from the game's; bare stubs of
@@ -68,7 +68,9 @@ transponder for a config without one; and, as the game's, the build `stripEmpher
 default config),
 `K2RGB`, `Factions` (with the game's `frozenFactions`), `Namer` (fixed names: "Ann Bell", a ship name from its seed), `Agenda` (which the game's
 `CurrentGame.gd` names) and `Achivements` autoloads are stubs (`harness/stubs/`), in the game's order, so the game's
-scripts that name them compile. A script compiled once the autoloads exist has its calls on them checked against the
+scripts that name them compile. The drone bench (`_bench\README.md`) reuses these stubs and the mod loader, so they
+also hold what its game scripts read (`Settings` particle settings, `Factions.noFaction`,
+`CurrentGame.isInSimulatiorRange`). A script compiled once the autoloads exist has its calls on them checked against the
 stubs' scripts, arguments included, so the stubs take the game's arguments (`Shipyard.createShipByName`); one compiled
 while they are being created, from a `ModMain`'s `_init`, isn't checked (found with the game's `CurrentGame.gd`). It
 packages each mod as a release zip is laid out (MODDING.md *Packaging and releasing*, without the `LICENSE` copy) and
@@ -89,11 +91,12 @@ Call it from a pwsh prompt or `pwsh -Command`: under `pwsh -File`, list argument
 not parsed as arrays. Exit code 0 = every run passed; a script error fails its run even if every check passed.
 
 The suites are ported from the claude.ai harness (DVModTestHarness 1.0.0; the original was deleted once ported),
-except `boot`, `lidar`, `hud`, `crew`, `geology`, `fleet`, `skip`, `dealer`, `transponder` and `combat`. `units`,
-`still` and `moving` load the two arm mods by default, `dive` loads DiveDisableAdrenalineBooster, `boot` loads
+except `boot`, `lidar`, `hud`, `crew`, `geology`, `fleet`, `skip`, `dealer`, `transponder`, `combat` and `drones`.
+`units`, `still` and `moving` load the two arm mods by default, `dive` loads DiveDisableAdrenalineBooster, `boot` loads
 BootSkipLogos, `lidar` loads LidarLouderPing, `hud` loads HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology`
 loads GeologyByMass, `fleet` loads ShipCopyPaste, `skip` loads DiveSkipTransit, `dealer` loads DealerNotifier,
-`transponder` loads TransponderAltCodes, `combat` loads CombatSimulator.
+`transponder` loads TransponderAltCodes, `combat` loads CombatSimulator, `drones` loads DroneAltPriorities and
+GeologyByMass.
 
 - `units`: the claude.ai unit tests (`arm/main.gd`) nearly verbatim, on synthetic arms around the game's
   `DockingArm.gd`. TargetSelection: area geometry on turned, scaled and offset arms, reach, the strip, the weighted
@@ -495,6 +498,32 @@ loads GeologyByMass, `fleet` loads ShipCopyPaste, `skip` loads DiveSkipTransit, 
   control checks (with `-Mods @()`): a click starts the simulator, Shift held or not; Shift+J starts nothing and J does
   (a button's shortcut matches its key exactly); the ring map and the readout hide outside the rings; a hardpoint and a
   turret fire with the power given; the station's pause menu pauses.
+- `drones` (`suites/drones.gd`): drone plants from `harness/drones_plant.tscn` (the game's `drone-plant.gd`, with a
+  stub launch manager, `harness/drones_launcher.gd`, and bare pickup area and sound nodes) in hardpoints
+  (`harness/weapon_slot.gd`) of `harness/drones_ship.gd`, the geology suite's ship stub plus what a plant reaches (its
+  Tuning, the USV-GOT's queue, a target bus and a Geologist-tab filter that refuse what the suite lists, the excavator,
+  `harness/drones_excavator.gd`, and damaged systems for the maintenance drones); chunks are rigid bodies in the
+  plants' space, identified by the ship's `identifiedObjects` as the geology suite's are; the suite calls
+  `scanForTarget` itself. HUDs as in `geology`. The mod's settings descriptions and `Code.gd`'s constants (through a
+  plant) come from the mod. Checks the ranking on three identified chunks the same distance from the gathering spot,
+  beyond the slow zone (a light, slow Be one worth the most; a heavy, fast Fe one, the game's pick; a Pt one): the
+  switch off, another ship's plants and every weight at 0 pick as the game; value and mass alike pick the chunk worth
+  the most, each alone its own best, haul and tug; only ore counts as mass; a chunk not yet identified comes after;
+  intake alone picks the chunk nearest the gathering spot, and tug plants ignore it; the current target kept up to
+  `KEEP_TARGET_MARGIN` and given up past it; the USV-GOT's queue first; a chunk the filter or the target bus refuses,
+  beyond reach, in the hold or outside the space never picked, nor a still one by tug plants; the target kept between
+  scans and dropped there once in the hold; the maintenance drones and a ship without `hud.config` as the game. The
+  tab: right after the Geologist tab (with GeologyByMass, both tabs there), titled by its key, added once, opening it
+  storing nothing; the switch; one row per weight in `WEIGHTS` order with the Geologist tab's parts, the range, step,
+  unit, tooltip and bar width in the units shown, and the stored weight; the switch and a slider store what they show
+  and the switch dims the rows; the reset button puts the switch and every weight back to their defaults, on the tab
+  too, and leaves no entry; choosing the tab focuses the switch; a plant follows the tab's switch at once; a HUD
+  without mineral targeting gets no tab; a preheated ship's tab shows the stored values. The settings model: defaults
+  without the entry; reading, unchanged sets and a reset store nothing; clamping and snapping, an unknown weight
+  ignored, the units shown; the entry in `hud.config` under the manifest's id with the format and mod versions, the
+  switch and every weight, the game's keys untouched; a JSON round trip; hand-edited entries. And the texts of
+  `i18n/en.po`, also in a language without them. The control checks (both plants pick by the game's rule; the OMS
+  keeps its four tabs) run on the game's own scripts.
 - `_tests\harness\rig.gd` builds the arm's node tree as the game nests it, with the values in
   `_tests\harness\vp_data.gd`; each cites its scene file and line, so re-check them after a game update. The ship
   is a stub moved by hand (it takes the arm's impulses and torque; inertia from the hull); the rotors don't collide.
@@ -508,7 +537,8 @@ loads GeologyByMass, `fleet` loads ShipCopyPaste, `skip` loads DiveSkipTransit, 
   (95 with CrewCheapHireNotifier and DiveSkipTransit too, in every load order; the same 92 with ShipCopyPaste,
   ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too; 2 control checks with `-Mods @()`), `transponder` 48 (3
   control checks with `-Mods @()`; the same 48 with CombatSimulator too), `combat` 129 (the same with
-  TransponderAltCodes too; 7 control checks with `-Mods @()`), all passing; `skip` gives its 109 with CombatSimulator
+  TransponderAltCodes too; 7 control checks with `-Mods @()`), `drones` 63 (the same in both load orders and with
+  DroneAltPriorities alone; 3 control checks with `-Mods @()`), all passing; `skip` gives its 109 with CombatSimulator
   too; `-Matrix` gives 16 of 16 in every combination.
   Feeding, a chunk beside the hull is in after 4.4–4.8 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.4.0 (the claude.ai results, case for case)

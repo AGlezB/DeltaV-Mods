@@ -1,0 +1,9 @@
+# Holdout: one parameter set per line for candidates\dap.gd (bench.ps1 -ParamsFile), run on fresh seeds with both PDW
+# types against vanilla. Phase C's best (value times mass, half intake, margin 1), the same without intake and with
+# full intake, Phase B's best by chunk count (points on value and intake, margin 1), and value times mass with no
+# margin (what keeping the target adds).
+f=exp,wv=1,wm=1,wi=0.5,margin=1
+f=exp,wv=1,wm=1,margin=1
+f=exp,wv=1,wm=1,wi=1,margin=1
+f=points,wv=1,wi=1,margin=1
+f=exp,wv=1,wm=1

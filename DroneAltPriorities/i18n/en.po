@@ -1,0 +1,44 @@
+# DroneAltPriorities: the texts of its OMS tab, in English. Godot shows English for any language without its own file
+# (its fallback locale), so another language only needs a copy of this file with its Language and msgstr lines
+# translated, loaded in ModMain.gd.
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "DRONEALTPRIORITIES_TAB"
+msgstr "DAP"
+
+msgid "DRONEALTPRIORITIES_ENABLED"
+msgstr "Tug and haul drones pick the most valuable chunks first"
+
+msgid "DRONEALTPRIORITIES_HINT"
+msgstr ""
+"DroneAltPriorities mod: while this is on, your MPI Tug drones and MLF Haul Drones work first on the chunks your "
+"geologist found the most valuable ore in, and stay on a chunk until it is done or a much better one comes. Which "
+"chunks they may take is still set in the Geologist tab. The sliders set how much each figure counts; at 0 % it "
+"doesn't count."
+
+msgid "DRONEALTPRIORITIES_VALUE"
+msgstr "Ore value"
+
+msgid "DRONEALTPRIORITIES_VALUE_DESC"
+msgstr "How much the price per kg of the best ore in a chunk counts, as your geologist found it. Chunks not yet identified come after."
+
+msgid "DRONEALTPRIORITIES_MASS"
+msgstr "Ore mass"
+
+msgid "DRONEALTPRIORITIES_MASS_DESC"
+msgstr "How much the mass of ore in a chunk counts, as your geologist estimates it. With Ore value at the same level, the drones go for the chunks worth the most."
+
+msgid "DRONEALTPRIORITIES_INTAKE"
+msgstr "Intake"
+
+msgid "DRONEALTPRIORITIES_INTAKE_DESC"
+msgstr "How much it counts that a chunk is close to where the haul drones gather chunks, ahead of the excavator. Higher brings in more chunks, lower more value. Tug drones ignore it."
+
+msgid "DRONEALTPRIORITIES_RESET"
+msgstr "Reset to defaults"
+
+msgid "DRONEALTPRIORITIES_RESET_DESC"
+msgstr "Puts the switch and every slider of this tab back to their default values."

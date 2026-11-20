@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://weapons/drone-plant.gd" type="Script" id=1]
+[ext_resource path="res://harness/drones_launcher.gd" type="Script" id=2]
+
+[node name="Plant" type="Sprite"]
+script = ExtResource( 1 )
+
+[node name="DroneLaunchManager" type="Node2D" parent="."]
+script = ExtResource( 2 )
+
+[node name="DronePickupArea" type="Area2D" parent="."]
+
+[node name="Laser" type="AudioStreamPlayer2D" parent="."]
+
+[node name="AudioFire" type="AudioStreamPlayer2D" parent="."]

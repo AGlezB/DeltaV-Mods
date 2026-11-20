@@ -1,0 +1,23 @@
+[mod_information]
+
+name="DroneAltPriorities"
+id="AGlezB.DroneAltPriorities"
+description="Changes which chunk the tug and haul nanodrones work on first: the most valuable, as set on a new tab of the OMS."
+author="AGlezB"
+
+[version]
+
+version_major=0
+version_minor=0
+version_bugfix=0
+
+[tags]
+
+group={
+"type": "string",
+"value": "DronePlant"
+}
+
+[manifest_definitions]
+
+manifest_version=2.2

@@ -154,6 +154,16 @@ the others in `state.garage`), and a crew list (`preferredCrew`), which the game
 while that ship is flown (hiring, firing, who dives) and puts aboard when the player switches to it (`CurrentGame.gd`
 `validateEmployment`); a ship without one keeps whoever is aboard.
 
+## Density
+
+The ring map's blue channel (`ring/ring-map.png`) is the mass to share out and its green channel the bias towards big
+or small roids; `TheRing.gd` `getTargetDensityAt` turns them into a target per size class, capped by `maxDensity`, and
+`AsteroidSpawner.gd` `spawnProperThings` fills each 1 km cell with ceil(target / `cellDensity`) roids of each class,
+1.5 to 3 km ahead of the ship. A typical spot holds about 10 roids per km², the densest 28 (game 1.92.5), nearly all
+small. Chunks come only from roids breaking (`asteroid.gd`): a roid of the smallest class gives one chunk, the bigger
+classes 2, 6, 24 and 96 (`splitsTo` over the classes below it), fewer when a hit makes one skip a class
+(`obliterating`), and none beyond 1.2 km of the player's ship (`CurrentGame.isInSimulatiorRange`).
+
 ## EMP
 
 Sources: the MWG microwave emitter (`SYSTEM_MWG`, `weapons/emp.gd`; the ONMWG-650 turret, `SYSTEM_PDMWG`, is built on
@@ -364,6 +374,30 @@ sad one below minus that. The dive HUD's crew faces (`hud/CrewFaceOnDive.tscn`) 
   every 30 days, that member loses 0.05 every in-game hour at the station (`payWages`, called from `Enceladus.gd`).
   At 45 days past due (`baseCrewPatience`) they are fired.
 
+## Nanodrones
+
+- Picking (`scanForTarget`, every `scanEvery`: 1 s for tug, 2 s for haul, `weapons/WeaponSlot.tscn`): first the
+  priority queue of the Obonto USV-GOT recon drone (`SYSTEM_RD_GUIDING`, the ship's `droneQueue`), then the
+  pickable objects within the plant's reach (`DronePickupArea`, 400 m around it, and the Tuning range
+  `TUNE_RANGE_MIN` / `TUNE_RANGE_MAX`) that pass the plant's own row of the Geologist tab (its `mineralConfig`,
+  `weaponSlot.<slot>.config`; `ship-ctrl.gd` `isValidMineralTarget`) and that no other system of the ship has taken
+  (the ship's target bus, `addSystemTarget` / `isValidSystemTarget`). Tug takes the one with the most
+  `mass × speed²`, speed relative to the rings; haul the most `mass × |desired − velocity|² / distance`; both only
+  above `minEnergyToTarget`. The bias meant to keep a plant on its target (`currentTargetBias`) never applies:
+  `scanForTarget` clears `target` before reading it.
+- Work (`_on_DroneLaunchManager_droneHit`): tug drones push the target against its velocity, to a stop relative to
+  the rings. Haul drones push it towards the velocity `desiredVelicityFor` wants: towards a gathering spot ahead of
+  the excavator (`haulGatherSpot`), slower inside the slow zone (`TUNE_SLOW_ZONE`), away from the hull inside the
+  keep-away distance (`TUNE_RANGE_KEEP_AWAY`, from the ship's `haulMinDistance`), and into the excavator once lined
+  up with it while it is open (`haulAccurancy`, `getPower() > 0.5`); a ship without an excavator (no "x" system)
+  gets them pushing to a stop, as tug drones do. The push per second is `dronesPerSecond × droneTugPower`, so a
+  light chunk changes speed faster.
+- Flight (`weapons/drones/DroneLaunchManager.gd`): the drones reach the target about 2 × √(distance /
+  `acceleration`) after launch, 1.4 s at 100 m and 2.8 s at 400 m, and a plant that changes target throws away the
+  drones in flight (`_setTargetNode`).
+- Maintenance drones fix the most damaged system of the ship, or of a friendly ship within reach, up to
+  `repairLimit`.
+
 ## Physics rate
 
 With Dynamic Temporal Simulation Simplification on, `Settings.gd` `_process` moves the rate once a second towards the
@@ -372,6 +406,19 @@ frame for `timeFire` (`weapons/massdriver.gd`), so at 30 its slugs carry more en
 pulse a step; the per-hit floors of roids (`asteroid.gd` `applyKineticDamage`, `hardness`) and reactors (`Reactor.gd`
 `_on_impact`, `damageLeakThreshold`) scale with the step. Godot 3 seems to work the step's length out in 32 bits,
 which puts 1/60 s a hair over (CombatSimulator's wiki page relies on it for a few figures; not measured).
+
+## Point Defence Turret
+
+Each targets hostile ships in its `DefendArea` and roids in its `RockArea`, but nothing of `massLimit` or less, so never
+a chunk (`_on_DefendArea_body_entered`), taking the one with the lowest score of angle, distance and threat (the
+NDPT-4205's weights are Tuning settings, `TUNE_WEIGHT_*`), turning at `rotationPerSecond`. Tuning: the ONMWG-650's
+Power (`TUNE_EMP_POWER`, more damage and a wider beam) and Water resonance (`TUNE_EMP_RESONANCE`, the share of its
+output that heats roids); the NDPT-4205's mass driver power (`TUNE_MASSDRIVER_POWER`, faster and harder bullets). A hit
+that carries a roid well past its threshold makes it skip a size class (`asteroid.gd` `obliterating`), so its chunks
+come straight from a heavier roid and fly faster: the ONMWG-650's beam never overshoots, the NDPT-4205's bullets do
+from just above its lowest power (measured by the drone bench, `_bench\README.md`). On the Antonoff-Titan K225's middle
+hardpoints the ONMWG-650s are turned 60° outward (`weapons/WeaponSlot.tscn` `SYSTEM_PDMWG-L` / `-R`), and their rock
+areas leave a strip straight ahead that neither covers.
 
 ## Reactor
 
@@ -419,7 +466,7 @@ its class's mass (`AsteroidSpawner.gd`). Its damage adds up for good (`totalEner
 (`hardness`, scaled with the physics step, see *Physics rate*), heat at `energyDamageScale`; EMP does nothing to it.
 Once past `splitEnergyThreshold` (`baseEnergyThreshold` times its mass) it splits into two roids of the next class, the
 smallest class into chunks; for each further doubling the damage went past, it skips a class (`obliterating`), so its
-pieces hold half the ore each time.
+pieces hold half the ore each time (see *Density*).
 
 ## Salvage
 
@@ -539,7 +586,7 @@ By family, as CombatSimulator's wiki page explains them:
 
 - mass drivers (`weapons/massdriver.gd`): the EMD-14 (`SYSTEM_EMD14`), ERFMD-17 (`SYSTEM_EMD17RF`), MPI Railgun MkI
   (`SYSTEM_RAILTOR`), AEMD-14 (`SYSTEM_ACTEMD14`, on a mount of `ships/modules/PDT.gd` that aims it within its
-  `gimbalLimit`, `ships/modules/act-massdriver.tscn`) and the NDPT-4205's. A shot
+  `gimbalLimit`, `ships/modules/act-massdriver.tscn`) and the NDPT-4205's (see *Point Defence Turret*). A shot
   pushes its slug frame by frame for `timeFire`, takes ammunition (`SLOT_AMMO`) and recoils on the ship; slugs
   (`weapons/projectile.gd`) have no lifetime, and the AI aims within the boresight's range;
 - lasers (`weapons/laser.gd`): the CL-150 (`SYSTEM_CL150`, a steady beam), the pulse lasers CL-600P
