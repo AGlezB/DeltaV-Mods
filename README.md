@@ -2,6 +2,9 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
+**WARNING**: Mods might break or work in unexpected ways if another mod or a DLC touches the same parts or changes the
+behavior of the base game functions the mod uses.
+
 Mods for ΔV: Rings of Saturn. Each folder is one independent mod and ships as one zip. The
 [wiki](../../wiki) explains each mod for players, with pictures: the links below go to its pages. Each mod's README,
 in its folder, has the details for modders.

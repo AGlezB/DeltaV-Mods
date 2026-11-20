@@ -36,7 +36,7 @@ stand out. It also works with [ShipCopyPaste](ShipCopyPaste).
 See [Installing mods](Home#installing-mods).
 
 <!-- wiki-values (checked by wiki.ps1)
-game-checked: 1.92.5
+game-checked: 1.93.1
 ShipHighlightTypeAndPrice/Code.gd TYPE_COLOR = Color(1.0, 0.75, 0.35) -> amber | images/ShipHighlightTypeAndPrice-dealer-with.png, images/ShipHighlightTypeAndPrice-fleet-with.png
 ShipHighlightTypeAndPrice/Code.gd DIM_COLOR = Color(0.6, 0.6, 0.6) -> grey | images/ShipHighlightTypeAndPrice-dealer-with.png, images/ShipHighlightTypeAndPrice-fleet-with.png
 -->

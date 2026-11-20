@@ -1,6 +1,9 @@
 <!-- This wiki is published from the _wiki folder of the repository (MODDING.md, The users' wiki): edit it there.
 Changes made on the website are overwritten at the next publish. -->
 
+**WARNING**: Mods might break or work in unexpected ways if another mod or a DLC touches the same parts or changes the
+behavior of the base game functions the mod uses.
+
 Mods for **ΔV: Rings of Saturn**. Each mod is a small add-on that changes one thing in the game.
 Pick the ones you like: every mod works on its own.
 

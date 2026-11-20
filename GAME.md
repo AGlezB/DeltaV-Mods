@@ -62,7 +62,7 @@ by their talent (see *Crew stats*).
 Random events of the rings need a minimum chaos where they spawn (each event's `chaosLimit` in `story/TheRing.tscn`;
 see *Salvage*). The dive entry point's Environmental damages fee (`MAP_FEE_ENVIRONMENT`) grows with chaos × density
 (`DiveTarget.gd` `getPrices`, `chaosPricePerChaos`), less the geologist's cut (see *Crew stats*), so of two spots of
-the same density the dearer is the more chaotic. By depth, on the 1.92.5 map: under 0.35 in the first 10 km; from 10
+the same density the dearer is the more chaotic. By depth, on the 1.93.1 map: under 0.35 in the first 10 km; from 10
 to 600 km about 0.35–0.4 on average, 0.4 or more in 20–60 % of spots and 0.5 or more in under 10 %; deeper, 0.45–0.5
 on average, 0.5 or more in 20–50 % of spots.
 

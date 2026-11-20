@@ -48,7 +48,7 @@ its own.
 See [Installing mods](Home#installing-mods).
 
 <!-- wiki-values (checked by wiki.ps1)
-game-checked: 1.92.5
+game-checked: 1.93.1
 ArmAltTargetSelection/Code.gd BUFFER_AREA_FACTOR = 0.10 -> 4.5 m | images/ArmAltTargetSelection-area.png
 ArmAltTargetSelection/Code.gd BALANCE = 0.75 -> three times as much
 ArmAltTargetSelection/Code.gd AREA_SEGMENTS = 16 | images/ArmAltTargetSelection-area.png

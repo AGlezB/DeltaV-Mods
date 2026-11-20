@@ -103,7 +103,7 @@ Don't use it together with *AltTransponderCodes*, its old name: both would load.
 See [Installing mods](Home#installing-mods).
 
 <!-- wiki-values (checked by wiki.ps1)
-game-checked: 1.92.5
+game-checked: 1.93.1
 game: four digits picked at random after a place of registry, like MRS-3127 (CurrentGame.gd getNewTransponder)
 TransponderAltCodes/Code.gd MODEL_CODES.TRTL = "TK37" -> TK37
 TransponderAltCodes/Code.gd MODEL_CODES.TRTL-LCB = "TX37" -> TX37

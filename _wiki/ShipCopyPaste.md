@@ -55,7 +55,7 @@ It works with [ShipHighlightTypeAndPrice](ShipHighlightTypeAndPrice) and
 See [Installing mods](Home#installing-mods).
 
 <!-- wiki-values (checked by wiki.ps1)
-game-checked: 1.92.5
+game-checked: 1.93.1
 ShipCopyPaste/i18n/en.po SHIPCOPYPASTE_CONFIRM = "Make %s like %s?" | images/ShipCopyPaste-dialog.png
 ShipCopyPaste/i18n/en.po SHIPCOPYPASTE_COPIED = "Copied" | images/ShipCopyPaste-dialog.png
 ShipCopyPaste/i18n/en.po SHIPCOPYPASTE_NOT_COPIED = "Not copied" | images/ShipCopyPaste-dialog.png

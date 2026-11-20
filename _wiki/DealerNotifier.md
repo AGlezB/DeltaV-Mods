@@ -43,7 +43,7 @@ Shift and a click on their menu entries.
 See [Installing mods](Home#installing-mods).
 
 <!-- wiki-values (checked by wiki.ps1)
-game-checked: 1.92.5
+game-checked: 1.93.1
 DealerNotifier/i18n/en.po DEALERNOTIFIER_ALERT = "%s (*)" -> Dealer (*)
 DealerNotifier/Settings.gd SETTINGS.watched.default = false -> off
 DealerNotifier/i18n/en.po DEALERNOTIFIER_WATCHED = "Mark Dealer when this ship comes up for sale"

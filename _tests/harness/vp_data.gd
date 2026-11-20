@@ -6,7 +6,7 @@ extends Reference
 
 # The decompiled game version these values were checked against; run.ps1 warns when it tests against another one.
 # Update it after re-checking the values against a newer game.
-const CHECKED_AGAINST = "1.92.5"
+const CHECKED_AGAINST = "1.93.1"
 
 # ships/Eagle-Prospector-VP.tscn:28, the hull (`Collider`). The MineralProcessingUnit polygons depend on the cargo
 # configuration and are left out, as in the claude.ai tests.

@@ -103,7 +103,7 @@ See [Installing mods](Home#installing-mods).
 ## Ships
 
 The ships you can fight, with what matters in a fight. The figures are worked out from the game's own files, for game
-version 1.92.5: a game update can change them.
+version 1.93.1: a game update can change them.
 
 - **Enemy remass**: what an enemy of that model carries in the fight.
 - **Reactor Core**: how big the enemy's reactor core is. A bigger core takes longer to melt down (see
@@ -302,7 +302,7 @@ reactors are where those series' pictures, above, show them.
 
 Every weapon a ship can carry, by family: what it costs, where it fits, what it does to ships and to rocks, and how to
 tune it. The figures are at the default Tuning, with the game's physics at 60 steps a second, its default (see
-[Slower physics](#slower-physics)), for game version 1.92.5.
+[Slower physics](#slower-physics)), for game version 1.93.1.
 
 ### How weapons do damage
 
@@ -821,7 +821,7 @@ like 3.3 MJ, and at 200 MW it skips sizes on 64 t rocks too.
   17.0 GW, low-stress hardpoints only), the SPC Gungnir's charge (11.2 GJ), and the fuel rods' failure point (4,500 K).
 
 <!-- wiki-values (checked by wiki.ps1)
-game-checked: 1.92.5
+game-checked: 1.93.1
 CombatSimulator/i18n/en.po COMBATSIMULATOR_TOOLTIP = "%s+Click or %s+%s: %s, a fight against the enemy ships you pick, in a stretch of ring." -> Shift+Click or Shift+J: CombatSimulator, a fight against the enemy ships you pick, in a stretch of ring.
 CombatSimulator/i18n/en.po COMBATSIMULATOR_TITLE = "Combat simulation" | images/CombatSimulator-dialog.png, images/CombatSimulator-ships.png
 CombatSimulator/i18n/en.po COMBATSIMULATOR_GROUP_ENEMIES = "Enemies" | images/CombatSimulator-dialog.png

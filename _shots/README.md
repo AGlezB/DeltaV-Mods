@@ -106,7 +106,9 @@ the wiki to say what it measures.
   mods (something over the lower entries; not looked into further). The mods' own buttons (ShipCopyPaste's) need
   `click`, which also gives them the focus as a player's click does. A mod's settings screen opened with `shiftclick`
   closes only with a real `click` on another entry, so each run opens it last.
-- After a game update, run it with `-NewFixture`: the "without" pictures show the game's own screens. When
+- After a game update, run it, with `-NewFixture`, only for a mod whose pictures the update makes wrong: where it
+  changes what the mod acts on (a title HudHideLabels hides is gone, renamed or already hidden by the game itself),
+  not where it changes anything else on screen (MODDING.md *The users' wiki*, *Keeping it up to date*). When
   `wiki.ps1` names a rendered picture to re-take, run the mod's shots again.
 - A new view: find its place with `-Steps`, full-window shots in `TempDir\shots\out`, then add the steps and the crop
   to `shots.psd1`. Ship and weapon pictures are tried the same way:

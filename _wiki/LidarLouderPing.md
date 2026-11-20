@@ -31,7 +31,7 @@ again, so you can hear how it will sound in flight.
 See [Installing mods](Home#installing-mods).
 
 <!-- wiki-values (checked by wiki.ps1)
-game-checked: 1.92.5
+game-checked: 1.93.1
 LidarLouderPing/Code.gd LOUDER_PING_DB_DEFAULT = 20.0 -> 20 dB | images/LidarLouderPing-tuning-with.png
 LidarLouderPing/Code.gd LOUDER_PING_DB_MIN = 0.0 -> 0 dB
 LidarLouderPing/Code.gd LOUDER_PING_DB_MAX = 50.0 -> 50 dB

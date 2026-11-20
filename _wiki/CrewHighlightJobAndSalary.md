@@ -24,7 +24,7 @@ It works with the other crew mods, [CrewCheapHireNotifier](CrewCheapHireNotifier
 See [Installing mods](Home#installing-mods).
 
 <!-- wiki-values (checked by wiki.ps1)
-game-checked: 1.92.5
+game-checked: 1.93.1
 CrewHighlightJobAndSalary/Code.gd JOB_COLOR = Color(1.0, 0.95, 0.5) -> bright yellow | images/CrewHighlightJobAndSalary-yourcrew-with.png, images/CrewHighlightJobAndSalary-hire-with.png
 CrewHighlightJobAndSalary/Code.gd SALARY_COLOR = Color(1.0, 0.75, 0.35) -> amber | images/CrewHighlightJobAndSalary-yourcrew-with.png, images/CrewHighlightJobAndSalary-hire-with.png
 CrewHighlightJobAndSalary/Code.gd DIM_COLOR = Color(0.6, 0.6, 0.6) -> grey | images/CrewHighlightJobAndSalary-yourcrew-with.png, images/CrewHighlightJobAndSalary-hire-with.png

@@ -61,7 +61,7 @@ people), and with [CrewHighlightJobAndSalary](CrewHighlightJobAndSalary).
 See [Installing mods](Home#installing-mods).
 
 <!-- wiki-values (checked by wiki.ps1)
-game-checked: 1.92.5
+game-checked: 1.93.1
 CrewCheapHireNotifier/i18n/en.po CREWCHEAPHIRENOTIFIER_ALERT = "%s (*)" -> Crew (*) | images/CrewCheapHireNotifier-menu-with.png
 CrewCheapHireNotifier/i18n/en.po CREWCHEAPHIRENOTIFIER_BADGE = "%s %d/%d" | images/CrewCheapHireNotifier-hire-with.png
 CrewCheapHireNotifier/i18n/en.po CREWCHEAPHIRENOTIFIER_GROUP = "Cheap hire alert" | images/CrewCheapHireNotifier-settings.png

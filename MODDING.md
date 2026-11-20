@@ -29,7 +29,7 @@ Never write their values into a committed file.
 | Key or path | What |
 |---|---|
 | `GameDir` | The game (`Delta-V.exe`, `mods\`) |
-| `TempDir\gdre\Delta-V-<version>\` | The decompiled game, one folder per game version (1.91.61 and 1.92.5 so far) |
+| `TempDir\gdre\Delta-V-<version>\` | The decompiled game, one folder per game version (1.91.61, 1.92.5 and 1.93.1 so far) |
 | `GodotDir` | Godot 3.6 (the game's engine) and GDRE Tools 2.7.4 |
 | `TempDir` | Generated and temporary files: zips being packaged, test runs, the wiki's screenshot runs (`shots\`), scratch scripts; never the repo |
 
@@ -250,10 +250,11 @@ overwritten at the next publish, so edit `_wiki\` only. The wiki's settings rest
 
 **Files.** `_wiki\` holds only pages and images, since everything in it is published:
 
-- `Home.md`: what the mods are, every mod in groups with a plain one-line summary, *Mods that change how the game
-  plays*, *Installing mods* (where a zip comes from, the `mods` folder, `--enable-mods`, a backup of the save), and
-  *Disclaimer* (the game belongs to Kodera Software, the author has no tie to it or to the company, and everything in
-  the repository is given as is, for free, without warranty).
+- `Home.md`: the warning that a mod might break, or work in unexpected ways, alongside another mod or a DLC that
+  touches the same parts of the game; what the mods are, every mod in groups with a plain one-line summary, *Mods that
+  change how the game plays*, *Installing mods* (where a zip comes from, the `mods` folder, `--enable-mods`, a backup
+  of the save), and *Disclaimer* (the game belongs to Kodera Software, the author has no tie to it or to the company,
+  and everything in the repository is given as is, for free, without warranty).
 - `_Sidebar.md` (Home and every mod page, in Home's groups) and `_Footer.md` (on every page: the mods are unofficial,
   the short disclaimer with its link to Home's, the source code, the license, the AI credit).
 - `<ModName>.md`, one per mod: the page's name is the mod's, so its link is `…/wiki/<ModName>`.
@@ -350,8 +351,10 @@ screen its pictures show) updates the page, its values block and its pictures in
 builds leave them for the release, see *Packaging and releasing*). A release reviews the page against the mod's
 `## NEXT` bullets, since no check catches a change of behaviour. A picture `wiki.ps1` names
 to re-take is taken again with `.\_shots\shots.ps1 -Mod <ModName>`, or by hand for one of the info boxes. After a game
-update, every page's `game:` lines and "without" pictures are checked against the new version (the station's with
-`.\_shots\shots.ps1 -NewFixture`) before its `game-checked` changes.
+update, every page's `game:` lines are checked against the new version, then its `game-checked` changes. Its pictures
+are taken again (`.\_shots\shots.ps1 -NewFixture`) only where the update changes what the mod acts on (a title
+HudHideLabels hides is gone, renamed or already hidden by the game itself). A change to anything else on screen, such
+as the background, colours or shaders, doesn't make a pair wrong, however different it looks.
 A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; removing a mod removes them.
 
 ## Conventions
@@ -786,7 +789,7 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   the ND-LIS Kitsune, …. These docs also name some by their scenes: the Eagle-Prospector-VP (the VP) is the Vulture
   Prospector, the Eagle-Prospector-Lux the Peacock Prospector.
   - A **series** is a base model and its variants, as `Shipyard.gd` `configAlias` folds each variant into its base
-    model (`getShipAlias`); a variant's `baseShipName` is its base's name. In game 1.92.5: K37 TNTRL (KX37, Runasimi
+    model (`getShipAlias`); a variant's `baseShipName` is its base's name. In game 1.93.1: K37 TNTRL (KX37, Runasimi
     KR37 and KTA24 TNTRL, K44 MHFTR Prototype), Eagle Prospector (Vulture, Peacock and Pelican Prospector), Cothon-212
     (Cothon-211 "Chonker", -213 "Triplet", -217 "Bender"), Antonoff-Titan K225 (K225-BB, K225 (modified)); the other
     models are alone in theirs. Which models the dealer offers: see *Dealer*.

@@ -144,7 +144,7 @@ The metric mod only changes the units.
 See [Installing mods](Home#installing-mods).
 
 <!-- wiki-values (checked by wiki.ps1)
-game-checked: 1.92.5
+game-checked: 1.93.1
 HudHideLabels/Code.gd HIDDEN_KEYS = ["HUD_VISUAL_FEED", "HUD_LIDAR", "HUD_REMOTE_SCAN", "HUD_CARGO"] -> Remote scanner | images/HudHideLabels-hal-with.png, images/HudHideLabels-prospector-with.png, images/HudHideLabels-tntrl-with.png, images/HudHideLabels-at225-with.png, images/HudHideLabels-ocp209-with.png, images/HudHideLabels-cerf-with.png, images/HudHideLabels-eime-with.png, images/HudHideLabels-kitsune-with.png, images/HudHideLabels-prospector-bald-with.png
 game: the titles' texts, visual feed, Remote scanner, cargo hold (i18n/en.po HUD_VISUAL_FEED, HUD_REMOTE_SCAN, HUD_CARGO), and the LIDAR's name (hud/HardwareLabel.gd; the K37 TNTRL's, IRL-360 Infrared LIDAR, SYSTEM_LIDAR_DOPPLER)
 game: the HUDs, in the Equipment screen's Head-Up Display, in its order (enceladus/Upgrades.tscn; i18n/en.po SLOT_HUD, SYSTEM_HUD_*), each its own layout (hud/Hud.tscn Huds, hud/Display-*.tscn); the metric mod is the Eagle Prospector's layout (hud/Display-Prospector-Metric.tscn)

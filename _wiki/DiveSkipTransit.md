@@ -72,7 +72,7 @@ without the mod before you report a bug to the game's developers.
 See [Installing mods](Home#installing-mods).
 
 <!-- wiki-values (checked by wiki.ps1)
-game-checked: 1.92.5
+game-checked: 1.93.1
 DiveSkipTransit/Code.gd _DST_SPACE_SPEED = 3.0 -> 3x
 DiveSkipTransit/SettingsUI.gd REMASS_MARK = "(*)" | images/DiveSkipTransit-settings.png
 DiveSkipTransit/i18n/en.po DIVESKIPTRANSIT_REMASS_NOTE = "%s Affects remass: what the skipped cutscene would burn is charged, worked out from the game's formulas." | images/DiveSkipTransit-settings.png
