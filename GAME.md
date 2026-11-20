@@ -133,8 +133,8 @@ the transponder, the date and the transit tip (`codex/TransitTip.gd`). Holding `
 `Engine.time_scale` is above 1 and post-processing is on (`FastForward.gd`). In the arrival, the ship comes in fast
 towards the dive entry point and brakes to a crawl, turned to face into the rings (`Game.gd` `_ready` and `_process`:
 `initialSpeed` from `desiredAcceleration` and `initialCutsceneTime`, braking for `totalCutsceneTime`; `Game.tscn` sets
-the two times). The arrival, astrogation and the exit really fly the ship: its thrusters and its reactor's turbine burn
-remass, and in-game time passes.
+the two times, `totalCutsceneTime` 16 s in game 1.93.1). The arrival, astrogation and the exit really fly the ship:
+its thrusters and its reactor's turbine burn remass, and in-game time passes.
 
 ## Dealer
 

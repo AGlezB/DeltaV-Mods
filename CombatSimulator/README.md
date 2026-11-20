@@ -123,7 +123,10 @@ the save. The mod's page in the users' wiki also explains every ship and weapon 
   made as DealerNotifier makes them: every model at once, each ship in a Dealer entry's viewport (`GAME_ENTRY_VIEWPORT`)
   for `PICTURE_DELAY`, kept out of the save (`_previewShip()`: a `transponder`, a `shipName`, a `madeIn` and the
   dealer's faction, `GAME_DEALER_FACTION`), every hardpoint emptied (`_emptyHardpoints()`, `_hardpoints()`,
-  `_hardpointSceneSlot()`), kept for the session in the script's metadata (`_pictureCache()`).
+  `_hardpointSceneSlot()`), kept for the session in the script's metadata (`_pictureCache()`). Once its picture is
+  taken, each viewport is freed with its ship still in it, so the ship's physics areas go before the viewport's physics
+  space. A ship taken out of its viewport first leaves its monitoring areas pointing into that space, and Godot 3 frees
+  them after it, writing into freed memory: the game could crash (fixed only in Godot 4.3, PR #81809).
 - **The arena** (`CombatLayer.gd`, a CanvasLayer on the simulator's layer, processing while the game is paused) holds
   what the simulator's layer holds: a container on the game's `MarginViewportUpscale.gd` (`GAME_UPSCALE`, with the
   simulator's scale, stopping while paused) around a viewport on `ViewportWithProxy.gd` (`GAME_VIEWPORT`) with a world

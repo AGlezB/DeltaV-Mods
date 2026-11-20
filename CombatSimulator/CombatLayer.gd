@@ -33,7 +33,7 @@ const GAME_FIELD_MASKS = ["oddityIntersectionTest", "asteroidIntersectionTest"]
 # The ring scene's cursor layer, whose fadeTime the station's cursor takes during a run.
 const GAME_RING_MOUSE = "MouseLayer"
 # The ring scene's root value for the arrival cutscene's length (Game.gd totalCutsceneTime), for the prefill; the
-# fallback, for when the scene doesn't set it, is that scene's value in game 1.92.5.
+# fallback, for when the scene doesn't set it, is the value Game.tscn sets (GAME.md, Cutscene).
 const GAME_ARRIVAL_SECONDS = "totalCutsceneTime"
 const ARRIVAL_SECONDS_FALLBACK = 16.0
 # The simulator's container and viewport scripts.

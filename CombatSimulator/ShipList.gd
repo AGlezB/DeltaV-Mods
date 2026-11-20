@@ -257,10 +257,10 @@ func _description(model) -> String:
 
 # The ships' pictures, the way the Dealer makes its entries' (SystemBuyUI.gd addShip, checkPrice, stopUpdating): every
 # model at once, each ship drawn in a viewport of its own (a Dealer entry's) and a picture taken once it has settled;
-# then the ship is removed and the viewport freed, with anything the ship put beside itself. The ships set up together,
-# sharing the game's budget for that (Tool.gd's idle queue), and wait for their pictures together. Each picture shows as
-# soon as it is taken, so the tab opens at once. Kept for the whole game session, in this script's metadata: the ships
-# look the same in every save game.
+# then the viewport is freed with the ship still in it, and anything the ship put beside itself. The ships set up
+# together, sharing the game's budget for that (Tool.gd's idle queue), and wait for their pictures together. Each
+# picture shows as soon as it is taken, so the tab opens at once. Kept for the whole game session, in this script's
+# metadata: the ships look the same in every save game.
 func _drawPictures(order: Array):
 	if _drawing:
 		return
@@ -306,9 +306,12 @@ func _drawPicture(model, holder):
 		timer.start(PICTURE_DELAY)
 		yield(timer, "timeout")
 		var picture = _picture(viewport)
-		viewport.remove_child(ship)
-		Tool.remove(ship)
-		Tool.remove(viewport)
+		# The viewport goes with the ship still in it, so the ship's areas are freed before the viewport's physics
+		# space. A ship taken out first leaves its monitoring areas pointing into that space, and freeing them after it
+		# writes into freed memory: an intermittent crash (Godot 3's CollisionObject2DSW _set_space, fixed only in
+		# Godot 4.3, PR #81809).
+		holder.remove_child(viewport)
+		viewport.queue_free()
 		timer.queue_free()
 		if picture != null:
 			_pictureCache()[model] = picture
