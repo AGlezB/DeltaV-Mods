@@ -43,7 +43,9 @@ These pages explain what each mod does, for players. The code, and the notes for
 ### Money
 
 - [MarketAdvisor](MarketAdvisor): a Trade button at the Mineral Market keeps the cash you want at hand and puts the
-  rest in ore, and the station menu tells you when there is a trade to make, or a service worth buying.
+  rest in ore, and the station menu tells you when there is a trade to make.
+- [ServiceNotifier](ServiceNotifier): the station menu tells you when a service you pick can be bought again, such as
+  The Twins, a monthly service or paying off a side.
 
 ### Ships
 

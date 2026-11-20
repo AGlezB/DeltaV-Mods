@@ -183,8 +183,8 @@
 			'shot|tuning|560,570,1020,315'
 		)
 	}
-	# The station menu with its alert marks (the fixture's cash is above the default cash reserve, and Jameson's
-	# Insurance can be bought), the Mineral Market (its header and the mod's row at the bottom), and the settings.
+	# The station menu with its alert mark (the fixture's cash is above the default cash reserve's range), the Mineral
+	# Market (its header and the mod's row at the bottom), and the settings.
 	MarketAdvisor = @{
 		Steps = @(
 			'load', 'wait|10'
@@ -192,7 +192,16 @@
 			'press|{menu}/MineralMarket', 'wait|3'
 			'shot|market|545,15,1055,875'
 			'with:shiftclick|{menu}/MineralMarket', 'wait|2'
-			'with:shot|settings|545,15,1055,790'
+			'with:shot|settings|545,15,1055,720'
+		)
+	}
+	# The station menu with its alert mark (the fixture's cash can buy Jameson's Insurance), and the settings.
+	ServiceNotifier = @{
+		Steps = @(
+			'load', 'wait|10'
+			'shot|menu|0,115,350,457'
+			'with:shiftclick|{menu}/Services', 'wait|2'
+			'with:shot|settings|545,15,1055,700'
 		)
 	}
 	ShipCopyPaste = @{

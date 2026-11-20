@@ -1,0 +1,50 @@
+# ServiceNotifier: its texts, in English. Godot shows English for any language without its own file (its fallback
+# locale), so another language only needs a copy of this file with its Language and msgstr lines translated, loaded in
+# ModMain.gd. Keep each %s: the code fills them in.
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+# The station menu's Services entry with its alert mark, while a service whose switch is on can be bought; %s is the
+# entry's own text.
+msgid "SERVICENOTIFIER_ALERT"
+msgstr "%s (*)"
+
+# The Services entry's tooltip; the first %s is the key to hold while clicking, the second the mod's name.
+msgid "SERVICENOTIFIER_SETTINGS_TOOLTIP"
+msgstr "Click while pressing %s to open the %s settings."
+
+# The settings screen: a group per kind of service, with a switch per service, named as the game names the service.
+# Each kind has the description the screen shows while one of its services is selected, written as the game's Tuning
+# descriptions are; its first %s is the service's name, its last the game's own offer for the service, as the Services
+# screen shows it.
+
+# The tooltip of every service's switch.
+msgid "SERVICENOTIFIER_SWITCH"
+msgstr "Mark Services when this service can be bought"
+
+# The services with a cooldown, which can't be bought again until it is over.
+msgid "SERVICENOTIFIER_GROUP_COOLDOWN"
+msgstr "After a cooldown"
+
+# The second %s is the service's cooldown, as the game writes a time (30d).
+msgid "SERVICENOTIFIER_COOLDOWN_DESC"
+msgstr ""
+"Shows an alert mark on the Services entry of the station menu while %s can be bought: once its cooldown of %s is "
+"over, when you have the money.\n"
+"\n"
+"%s"
+
+# The services that pay compensation to a faction, which cost nothing once paid, until that faction is hostile to you,
+# or afraid of you, again.
+msgid "SERVICENOTIFIER_GROUP_COMPENSATION"
+msgstr "Compensation"
+
+msgid "SERVICENOTIFIER_COMPENSATION_DESC"
+msgstr ""
+"Shows an alert mark on the Services entry of the station menu while %s can be bought: while there is compensation "
+"to pay, when you have the money. Once paid, there is nothing to pay until they are hostile to you, or afraid of "
+"you, again.\n"
+"\n"
+"%s"

@@ -13,13 +13,16 @@ signal settingsChanged()
 const MAIN_MINERAL = "Be"
 # What ends a number for each power of a thousand: 10^3 is K, 10^6 M, 10^9 B.
 const THOUSANDS_SUFFIXES = ["", "K", "M", "B"]
+# The cash reserve's range as the screens write it (floorText), a translation key of i18n/en.po.
+const RANGE = "MARKETADVISOR_RANGE"
 
 # One description per setting, in the order the settings screen lists them within their group. Each default is
 # declared here only. `label` is a translation key of i18n/en.po, and so is `label` followed by SettingsUI.gd's
-# DESCRIPTION_SUFFIX: the description the screen shows while the setting is selected. Where a setting has `labelArg`
-# or `service`, both texts have a %s for it, translated; where it has `descriptionArg`, only the description has. `group`:
+# DESCRIPTION_SUFFIX: the description the screen shows while the setting is selected. Where a setting has `labelArg`,
+# both texts have a %s for it, translated; where it has `descriptionArg`, only the description has. `group`:
 # the screen's group it is in (SettingsUI.gd GROUPS). `type` "bool" is a switch; "float" a slider, with its `min`, `max`,
-# `step`, `unit` and `format` (for the value shown).
+# `step`, `unit` and `format` (for the value shown), and `shown`, the factor from the stored value to the one the screen
+# shows (toShown): a fraction is stored, and shown as a percentage.
 const SETTINGS = {
 	# The cash reserve in scientific notation (5e5) instead of thousands (500K).
 	"scientific": {
@@ -38,6 +41,7 @@ const SETTINGS = {
 		"max": 9,
 		"step": 1,
 		"unit": "",
+		"shown": 1,
 		"format": "%d",
 		"group": "cash",
 	},
@@ -50,9 +54,25 @@ const SETTINGS = {
 		"max": 9,
 		"step": 1,
 		"unit": "",
+		"shown": 1,
 		"format": "%d",
 		"group": "cash",
 		"power": true,
+	},
+	# How far the cash may stray from the cash reserve, up or down, as a fraction of it, before the Trade button trades
+	# (floorRange): small changes in the cash then don't make it sell ore at a bad price, or buy at a high one, only to
+	# match the reserve exactly.
+	"tolerance": {
+		"label": "MARKETADVISOR_CASH_TOLERANCE",
+		"default": 0.10,
+		"type": "float",
+		"min": 0.0,
+		"max": 0.20,
+		"step": 0.01,
+		"unit": "%",
+		"shown": 100,
+		"format": "%d",
+		"group": "cash",
 	},
 	# Whether cash is kept in every mineral the market trades instead of MAIN_MINERAL alone (parkingMinerals).
 	"tradeAll": {
@@ -69,26 +89,12 @@ const SETTINGS = {
 		"type": "bool",
 		"group": "trade",
 	},
-	# The alert marks on the station menu's Services entry: `service` is the serviceName of the game's row for it
-	# (enceladus/Services.tscn), and its translation key, the name the game shows.
-	"alertInsurance": {
-		"label": "MARKETADVISOR_ALERT_INSURANCE",
-		"default": true,
-		"type": "bool",
-		"group": "services",
-		"service": "SERVICE_JAMESON",
-	},
-	"alertScrapwright": {
-		"label": "MARKETADVISOR_ALERT_SCRAPWRIGHT",
-		"default": true,
-		"type": "bool",
-		"group": "services",
-		"service": "SERVICE_SALVAGE_LICENCE",
-	},
 }
 
 # The layout of the saved entry. Renaming a saved key without a migration is a major version.
-const FORMAT_VERSION = 1
+# 2: without alertInsurance and alertScrapwright, the Services entry's switches, which moved to ServiceNotifier. An
+# entry that still has them loads without them, and loses them the next time it is written.
+const FORMAT_VERSION = 2
 
 var cfg = {}
 # The tonnes the Trade button bought to keep cash in and hasn't sold back, by mineral; null for a save that has no
@@ -128,9 +134,23 @@ func setParked(tonnes: Dictionary):
 	parked = tonnes.duplicate()
 	saveToState()
 
+# A slider's value as the screen shows it (its `shown`), and back.
+func toShown(key, value):
+	return value * SETTINGS[key].shown
+
+func fromShown(key, shown):
+	return shown / float(SETTINGS[key].shown)
+
 # The cash reserve, in E$.
 func floorCash() -> float:
 	return getValue("cashAmount") * pow(10, getValue("cashPower"))
+
+# The cash reserve's range, [low, high] in whole E$: the reserve less and plus its tolerance's share of it. The Trade
+# button trades only once the cash is out of it, and brings the cash back to the reserve itself (Advisor.gd plan).
+func floorRange() -> Array:
+	var reserve = floorCash()
+	var share = getValue("tolerance")
+	return [int(round(reserve * (1.0 - share))), int(round(reserve * (1.0 + share)))]
 
 # The minerals cash is kept in, out of `minerals` (the market's, in its order): MAIN_MINERAL alone, or with tradeAll,
 # all of them, MAIN_MINERAL first.
@@ -144,20 +164,41 @@ func parkingMinerals(minerals: Array) -> Array:
 				out.append(m)
 	return out
 
-# `amount` times ten to `power` as the screens show it: "500K", or "5e5" with scientific notation on; "0" for none.
+# `amount` times ten to `power` as the screens show it (formatCash): "500K", or "5e5" with scientific notation on; "0"
+# for none.
 static func formatFloor(amount, power, scientific: bool) -> String:
-	var a = int(amount)
-	var p = int(power)
-	if a == 0:
-		return "0"
-	if scientific:
-		return "%de%d" % [a, p]
-	var thousands = int(min(p / 3, THOUSANDS_SUFFIXES.size() - 1))
-	return "%d%s" % [a * int(pow(10, p - 3 * thousands)), THOUSANDS_SUFFIXES[thousands]]
+	return formatCash(int(amount) * int(pow(10, int(power))), scientific)
 
-# The current cash reserve, as formatFloor shows it.
+# Whole E$ as the screens show them: with the largest of THOUSANDS_SUFFIXES that fits and no trailing zeros (450K,
+# 46.5K, 1.2M, 10.17B), or with scientific notation on, as a number from 1 to 10 times a power of ten (4.5e5,
+# 1.017e10); "0" for none.
+static func formatCash(value, scientific: bool) -> String:
+	var whole = int(value)
+	if whole <= 0:
+		return "0"
+	var digits = str(whole)
+	if scientific:
+		var significant = digits.rstrip("0")
+		var mantissa = significant.left(1)
+		if significant.length() > 1:
+			mantissa += "." + significant.substr(1, significant.length() - 1)
+		return "%se%d" % [mantissa, digits.length() - 1]
+	var thousands = int(min((digits.length() - 1) / 3, THOUSANDS_SUFFIXES.size() - 1))
+	var cut = digits.length() - 3 * thousands
+	var text = digits.left(cut)
+	var fraction = digits.substr(cut, digits.length() - cut).rstrip("0")
+	if fraction != "":
+		text += "." + fraction
+	return text + THOUSANDS_SUFFIXES[thousands]
+
+# The cash reserve as the screens show it: its range (floorRange) as RANGE writes it, "450K - 550K", or its one value
+# where the range has none to give (a tolerance of 0, or a reserve of 0).
 func floorText() -> String:
-	return formatFloor(getValue("cashAmount"), getValue("cashPower"), getValue("scientific"))
+	var scientific = getValue("scientific")
+	var bounds = floorRange()
+	if bounds[0] == bounds[1]:
+		return formatCash(bounds[0], scientific)
+	return tr(RANGE) % [formatCash(bounds[0], scientific), formatCash(bounds[1], scientific)]
 
 # The defaults, overlaid by what this save game holds. A save made before the mod, or a new game, has nothing: no
 # parked tonnes either (null).

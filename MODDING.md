@@ -115,8 +115,11 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
    - MarketAdvisor: `Code.gd` → `enceladus/MineralMarket.gd` (the Mineral Market: the row of advice and the Trade
      button at its bottom, which trades through the market's own slider rows, and the row under your cash in its header
      with what the ore it bought would sell for today); `StationMenu.gd` → `enceladus/EnceladusMenu.gd` (the alert
-     marks on the Mineral Market and Services entries, and Shift+Click on the Mineral Market entry opening its settings
-     screen, which copies the Mineral Market's frame and the Tuning screen's description window).
+     mark on the Mineral Market entry, and Shift+Click on it opening its settings screen, which copies the Mineral
+     Market's frame and the Tuning screen's description window).
+   - ServiceNotifier: `Code.gd` → `enceladus/EnceladusMenu.gd` (the alert mark on the Services entry, from the game's
+     own rows of the Services screen, and Shift+Click on it opening its settings screen, which copies the Services
+     screen's frame and the Tuning screen's description window).
    - ShipCopyPaste: `Code.gd` → `enceladus/SystemBuyUI.gd` (the Fleet screen's entries; it prices through the
      Equipment screen's items).
    - TransponderAltCodes: `Code.gd` → `CurrentGame.gd` (the autoload, where the game makes transponder codes, with a
@@ -158,12 +161,13 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
   and both override `fillCrew`, each calling the parent's first: by path the chain is game ← CrewCheapHireNotifier ←
   CrewPerfectSort, and CrewPerfectSort only reorders the entries, so the marks stay (both orders tested in `crew`).
   Their member names must stay distinct.
-- CrewCheapHireNotifier (`Code.gd`), DealerNotifier (`Code.gd`), DiveSkipTransit (`StationMenu.gd`) and MarketAdvisor
-  (`StationMenu.gd`) all extend `EnceladusMenu.gd`, each for its own menu entries (MarketAdvisor's: Mineral Market and
-  Services). By path the chain is game ← CrewCheapHireNotifier ← DealerNotifier ← DiveSkipTransit ← MarketAdvisor;
-  all override `_ready` and `_notification` (the game's script has neither) without calling the parent's. Their member
+- CrewCheapHireNotifier (`Code.gd`), DealerNotifier (`Code.gd`), DiveSkipTransit (`StationMenu.gd`), MarketAdvisor
+  (`StationMenu.gd`) and ServiceNotifier (`Code.gd`) all extend `EnceladusMenu.gd`, each for its own menu entry
+  (MarketAdvisor's: Mineral Market; ServiceNotifier's: Services), and each writes only its own entry's text. By path the
+  chain is game ← CrewCheapHireNotifier ← DealerNotifier ← DiveSkipTransit ← MarketAdvisor ← ServiceNotifier; all
+  override `_ready` and `_notification` (the game's script has neither) without calling the parent's. Their member
   names must stay distinct; opening one screen hides the others (`hidefoka`). Loaded together in `skip`
-  (CrewCheapHireNotifier and DiveSkipTransit) and in `dealer` (all four, every order).
+  (CrewCheapHireNotifier and DiveSkipTransit) and in `dealer` (all five, every order).
 - CombatSimulator (`Code.gd`) and DiveSkipTransit (`Station.gd`) both extend `enceladus/Enceladus.gd`, the station: by
   path the chain is game ← CombatSimulator ← DiveSkipTransit. Both override `_ready` without calling the parent's;
   CombatSimulator adds `_input` and `_notification` (the game's script has neither), DiveSkipTransit overrides
@@ -441,15 +445,19 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
       `max`, `step`, `unit` and the `format` of the value shown; `group` puts it in one of the screen's groups, and
       `dimmedWhen` names the switch while which it doesn't apply. `perModel` (DealerNotifier's ship switch) is `perJob`
       for the ship models the dealer can offer; DealerNotifier's other switches, New and Used, aren't per model and have
-      a `group`. `var cfg`: the current values by key (a dictionary by job or model key for
-      a per-job or per-model setting), set to the defaults in `_init`. `const FORMAT_VERSION`.
+      a `group`. `perService` (ServiceNotifier's switch) is the same for the services it watches, by `serviceName`.
+      `var cfg`: the current values by key (a dictionary by job, model or service key for a per-job, per-model or
+      per-service setting), set to the defaults in `_init`. `const FORMAT_VERSION`.
     - `jobs()`: the jobs a per-job setting has values for, the game's `CurrentGame.occupations`; `isPerJob(key)`.
       DealerNotifier's `models()` and `isPerModel(key)` are the same for its ship models, and its `getValue` /
-      `setValue` take a model where CrewCheapHireNotifier's take a job.
+      `setValue` take a model where CrewCheapHireNotifier's take a job. ServiceNotifier's `isPerService(key)` has no
+      list: its services are the Services screen's rows, and one with no value stored gives the default; its `getValue`
+      / `setValue` take a service.
     - `getValue(key, job = null)`; `setValue(key, value, job = null)` clamps and snaps to the step, and only on a change stores
       (`saveToState()`) and emits `settingsChanged`; `job` is only for a per-job setting. `toShown(key, value)` /
       `fromShown(key, shown)`.
-    - `loadFromState()` / `saveToState()`: settings kept per save game (CrewCheapHireNotifier's, MarketAdvisor's) live
+    - `loadFromState()` / `saveToState()`: settings kept per save game (CrewCheapHireNotifier's, MarketAdvisor's,
+      ServiceNotifier's) live
       in `CurrentGame.state.ui` (the game's per-save UI store, `setUiValue` / `getUiValue`, written with the save
       as JSON, so numbers come back as floats) under the mod's id from `Mod.manifest`, so other authors' mods can't
       collide; the entry holds `formatVersion`, `modVersion` and one value per setting (a copy of the dictionary for
@@ -475,7 +483,10 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
     doesn't yet, to add when it next changes. DealerNotifier is the exception: its switches (New and Used, then one
     per ship model) are explained by its README and its wiki page, not on the screen, at the author's choice. Its
     window, framed as the Dealer screen's, shows the game's own description of the selected ship, as the Dealer does
-    (`<shipName>_DESC`), and nothing for New and Used.
+    (`<shipName>_DESC`), and nothing for New and Used. ServiceNotifier's switches, one per service, share one `label`,
+    their tooltip; its window shows the description of the service's kind (`Settings.gd` `KINDS`), with the service's
+    name and, for a cooldown, how long it lasts, followed by the game's own offer for the service, as the Services
+    screen shows it.
   - A mod without a settings UI has no `Settings.gd`, and no constants file either: that would only add a prefix to
     every use.
   - Settings that belong to a ship system go in the game's Tuning screen instead (`registerSubsystem` from the
@@ -605,7 +616,7 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
 - **Alert mark** (not the game's: these mods' own term): the " (*)" a mod puts after the text of a station menu entry
   while something behind it is worth a look, each mod with its own text for it (`<MOD>_ALERT`, "%s (*)", whose `%s`
   is the entry's text). CrewCheapHireNotifier puts it on Crew, DealerNotifier on Dealer, MarketAdvisor on Mineral
-  Market and Services.
+  Market, ServiceNotifier on Services.
 - **Antonoff Ore Purifier** (`SYSTEM_CARGO_MPUDRY`; `ships/modules/MineralProcessingUnit_DRY.tscn`, on
   `MineralProcessingUnit.gd`): an MPU whose processing area covers the whole hold of the Antonoff-Titan K225
   (`ships/ATK225.tscn` overrides it). It strips each chunk's water into remass (`remassEfficiency`), extracts no ore
@@ -858,7 +869,11 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
 - **Services** (`ENCELADUS_SERVICES`, `enceladus/Services.tscn`): the station screen of paid services, one row each
   (`enceladus/ServiceUI.gd`, its `serviceName` the service's key): bars and hotels, which take in-game hours and lift
   the crew's morale, and monthly ones such as Jameson's Insurance (`SERVICE_JAMESON`, see *Insurance*) and Scrapwright
-  Recovery Operations (`SERVICE_SALVAGE_LICENCE`, see *Salvage*). Details: [GAME.md](GAME.md#services).
+  Recovery Operations (`SERVICE_SALVAGE_LICENCE`, see *Salvage*). Some can't be bought again for a while: those with a
+  cooldown (`cooldownHours`: The Twins, `SERVICE_BAR_TWINS`, and the monthly ones), and the compensation rows
+  (`enceladus/ServiceUIFactionChange.gd`: Local Vilcy Branch, The Miner's Guild and Obonto Habitats), which pay off a
+  faction's hostility and fear towards the player and cost nothing until it holds a grudge again. ServiceNotifier
+  marks the station menu's Services entry while one of those can be bought. Details: [GAME.md](GAME.md#services).
 - **Ship models**: the kinds of ship, each with a key in `Shipyard.ships` (`TRTL`, `PROSPECTOR-VP`, …), a scene
   (`ships/RA-TRTL.tscn`) and the translation key of its name in the ship's `shipName` (`SHIP_TRTL`). The Dealer shows
   the names: K37 TNTRL, Eagle Prospector, Vulture Prospector, EIME (Eon Interstellar Model E), OCP-209, the Cothons,

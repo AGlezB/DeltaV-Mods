@@ -25,6 +25,7 @@ const TEXT_DE = "Haendler"
 const CREW_KEY = "ENCELADUS_CREW"
 const DIVE_KEY = "ENCELADUS_RETURN_TO_RING"
 const MINERALS_KEY = "ENCELADUS_MINERAL_MARKET"
+const SERVICES_KEY = "ENCELADUS_SERVICES"
 const MANIFEST = "res://DealerNotifier/Mod.manifest"
 const SETTINGS_SCRIPT = "res://DealerNotifier/Settings.gd"
 # The scripts the mod extends: once installed, its extensions load by these paths (take_over_path).
@@ -168,9 +169,10 @@ func settingsTip(s) -> String:
 # RingDive and MineralMarket entries of the other mods loaded), and MarginContainer > CanvasLayer > MarginContainer
 # (HidingMarginContainer.gd) > the Dealer screen (wired to the entry's `pressed` as the scene does), Fleet, and the
 # Tuning screen with its description window nested as enceladus/Tuning.tscn nests it (CrewCheapHireNotifier's,
-# DiveSkipTransit's and MarketAdvisor's screens copy it), the Crew screen stub when CrewCheapHireNotifier is loaded, and
+# DiveSkipTransit's and MarketAdvisor's screens copy it), the Crew screen stub when CrewCheapHireNotifier is loaded,
 # the Mineral Market (the stub of enceladus/MineralMarket.tscn, whose frame MarketAdvisor's screen copies) when
-# MarketAdvisor is.
+# MarketAdvisor is, and the Services screen (nested as enceladus/Services.tscn nests its rows, with The Twins' row) when
+# ServiceNotifier is.
 func station(withDealer = true):
 	var root = MarginContainer.new()
 	root.name = "MarginContainer"
@@ -196,6 +198,10 @@ func station(withDealer = true):
 	if hasMod("MarketAdvisor"):
 		minerals = Button.new(); minerals.name = "MineralMarket"; minerals.text = MINERALS_KEY
 		menu.add_child(minerals)
+	var services = null
+	if hasMod("ServiceNotifier"):
+		services = Button.new(); services.name = "Services"; services.text = SERVICES_KEY
+		menu.add_child(services)
 	var logs = Button.new(); logs.name = "Logs"; logs.text = "ENCELADUS_LOGS"
 	menu.add_child(logs)
 	hbox.add_child(menu)
@@ -230,6 +236,25 @@ func station(withDealer = true):
 		mineralMarket.size_flags_horizontal = Control.SIZE_SHRINK_END
 		screens.add_child(mineralMarket)
 		minerals.connect("pressed", mineralMarket, "_on_MineralMarket_pressed")
+	if services != null:
+		var servicesScreen = PanelContainer.new(); servicesScreen.name = "Services"; servicesScreen.visible = false
+		servicesScreen.add_stylebox_override("panel", StyleBoxFlat.new())
+		servicesScreen.rect_min_size = Vector2(600, 0)
+		servicesScreen.size_flags_horizontal = Control.SIZE_SHRINK_END
+		var node = servicesScreen
+		for part in [["VB", VBoxContainer], ["MarginContainer", MarginContainer], ["ScrollContainer", ScrollContainer], ["MarginContainer", MarginContainer], ["Items", VBoxContainer]]:
+			var child = part[1].new()
+			child.name = part[0]
+			node.add_child(child)
+			node = child
+		var twins = load("res://enceladus/ServiceUI.tscn").instance()
+		twins.name = "SERVICE_BAR_TWINS"
+		twins.serviceName = "SERVICE_BAR_TWINS"
+		twins.serviceHours = 4
+		twins.cooldownHours = 24
+		twins.flatPrice = 300.0
+		node.add_child(twins)
+		screens.add_child(servicesScreen)
 	var tuning = PanelContainer.new(); tuning.name = "Tuning"; tuning.visible = false
 	tuning.theme = Theme.new()
 	tuning.add_stylebox_override("panel", StyleBoxFlat.new())
@@ -247,7 +272,7 @@ func station(withDealer = true):
 	windowVb.add_child(inside)
 	screens.add_child(tuning)
 	add_child(root)
-	return {"root": root, "menu": menu, "market": market, "owned": owned, "crew": crew, "dive": dive, "minerals": minerals, "logs": logs, "screens": screens, "dealer": dealer, "fleet": fleet, "tuning": tuning}
+	return {"root": root, "menu": menu, "market": market, "owned": owned, "crew": crew, "dive": dive, "minerals": minerals, "services": services, "logs": logs, "screens": screens, "dealer": dealer, "fleet": fleet, "tuning": tuning}
 
 func freeStation(s):
 	s.root.queue_free()
@@ -944,9 +969,10 @@ func _allPictures(screen) -> bool:
 			return false
 	return true
 
-# With CrewCheapHireNotifier, DiveSkipTransit and MarketAdvisor loaded too: four extensions of EnceladusMenu.gd, each
-# opening its own screen, which hides the others, and keeping its own tooltip. Theirs are as wide as the Tuning stub or
-# the Mineral Market, which leave the menu free to click, so they are opened first.
+# With CrewCheapHireNotifier, DiveSkipTransit, MarketAdvisor and ServiceNotifier loaded too: five extensions of
+# EnceladusMenu.gd, each opening its own screen, which hides the others, and keeping its own tooltip. Theirs are as wide
+# as the Tuning stub, the Mineral Market or the Services screen, which leave the menu free to click, so they are opened
+# first.
 func together():
 	var others = []
 	if hasMod("CrewCheapHireNotifier"):
@@ -955,6 +981,8 @@ func together():
 		others.append(["dive", "DiveSkipTransitSettings", "DiveSkipTransit"])
 	if hasMod("MarketAdvisor"):
 		others.append(["minerals", "MarketAdvisorSettings", "MarketAdvisor"])
+	if hasMod("ServiceNotifier"):
+		others.append(["services", "ServiceNotifierSettings", "ServiceNotifier"])
 	yield(frames(1), "completed")
 	if others.empty():
 		return

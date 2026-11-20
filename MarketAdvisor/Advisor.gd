@@ -16,7 +16,9 @@ extends Reference
 const WARN_BELOW_AVERAGE = 0.1
 
 # `input`:
-#   cash: the E$ in hand. floor: the cash reserve. parking: the minerals cash is kept in.
+#   cash: the E$ in hand. floor: the cash reserve. low, high: its tolerance's range (Settings.gd floorRange): cash is
+#     parked only above it, and parked tonnes sold only below it, either way back to the floor itself, so the next small
+#     change in the cash, inside the range, trades nothing. parking: the minerals cash is kept in.
 #   sellOre: whether stored ore is sold: what is held beyond the parked tonnes (all of it for a mineral that isn't a
 #     parking one). minerals: every mineral, in the market's order.
 #   held: whole tonnes by mineral. parked: the tonnes bought to keep cash in, by mineral (more than is held counts as
@@ -28,7 +30,7 @@ const WARN_BELOW_AVERAGE = 0.1
 #   now: the trades to make now, one per mineral, sales first, each {mineral, from, to} in whole tonnes held (an ore
 #     sale and a purchase of the same mineral make one trade). parked: the parked tonnes once `now` is done.
 #   waits: the trades worth waiting for, each {mineral, when, sell}. cashAfter: the cash once `now` is done.
-#   capped: there is cash to park, but every parking mineral is at maxTonnes. short: selling can't reach the floor.
+#   capped: there is cash to park, but every parking mineral is at maxTonnes. short: selling can't reach the range.
 #   warnings: the parking minerals `now` sells more than WARN_BELOW_AVERAGE below their average.
 static func plan(input: Dictionary) -> Dictionary:
 	var start = input.held
@@ -61,10 +63,10 @@ static func plan(input: Dictionary) -> Dictionary:
 				held[m] -= stored
 				cash += value
 
-	if cash > input.floor:
-		# Park the cash above the floor: the parking minerals cheapest against their average first, each taking what
-		# the ones before it leave over, up to maxTonnes, so the last fills with its tonnes. Less than a tonne of any
-		# of them to spare is nothing to do.
+	if cash > input.high:
+		# Above the range, park the cash above the floor: the parking minerals cheapest against their average first,
+		# each taking what the ones before it leave over, up to maxTonnes, so the last fills with its tonnes. Less than a
+		# tonne of any of them to spare is nothing to do.
 		var order = _byAverage(input, true)
 		var spare = cash - input.floor
 		var room = false
@@ -89,11 +91,11 @@ static func plan(input: Dictionary) -> Dictionary:
 						parked[m] += tonnes
 						spare -= tonnes * perTonne
 						cash -= tonnes * perTonne
-	elif cash + pending < input.floor:
-		# Sell parked tonnes back up to the floor, unless the ore left for a better day will: the parking minerals
-		# dearest against their average first, in whole tonnes that don't overshoot, keeping aside the one with the
-		# cheapest tonne; then that one's tonnes (and the next cheapest's, if it runs out), so the cash lands within one
-		# of its tonnes above the floor.
+	elif cash + pending < input.low:
+		# Below the range, sell parked tonnes back up to the floor, unless the ore left for a better day brings the cash
+		# into the range: the parking minerals dearest against their average first, in whole tonnes that don't
+		# overshoot, keeping aside the one with the cheapest tonne; then that one's tonnes (and the next cheapest's, if
+		# it runs out), so the cash lands within one of its tonnes above the floor.
 		var order = _byAverage(input, false)
 		var main = null
 		for m in order:
@@ -132,7 +134,7 @@ static func plan(input: Dictionary) -> Dictionary:
 				for m in order:
 					if held[m] < start.get(m, 0) and input.price[m] < input.average.get(m, input.price[m]) * (1 - WARN_BELOW_AVERAGE):
 						warnings.append(m)
-				short = need > 0
+				short = need > input.floor - input.low
 
 	var sales = []
 	var buys = []

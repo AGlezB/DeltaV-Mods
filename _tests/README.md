@@ -15,7 +15,8 @@ a Godot project in `TempDir\tests\project` from `_tests\`; the game's own `Docki
 `NewGamePlus.gd`, `WeaponSlot.gd`, `PauseLayer.gd`, `PDT.gd`, `Video.gd`, `GravimetricReadout.gd`, `massdriver.gd`,
 `TheRing.gd`, `MarginViewportUpscale.gd`, `ViewportWithProxy.gd`, `NoBulletTime.gd`, `CanvasHidding.gd`, `MouseLayer.gd`,
 `drone-plant.gd`, `MineralMarket.gd`, `MineralSellSlider.gd`, `MineralPriceChart.gd`, `MarketChartPrice.gd`,
-`InGameMoney.gd`, `ServiceUI.gd`, `ServiceUIInsurance.gd`, `Tool.gd`, `gdunzip.gd`, `Shower.tscn`, audio buses (`default_bus_layout.tres`), the skill
+`InGameMoney.gd`, `ServiceUI.gd`, `ServiceUIInsurance.gd`, `ServiceUIFactionChange.gd`, `Tool.gd`, `gdunzip.gd`,
+`Shower.tscn`, audio buses (`default_bus_layout.tres`), the skill
 icons `CrewBio.gd` preloads and a Fleet entry's Use icon (`enceladus/Upgrades/switch.png`; their `.png.import` and
 imported `.stex`, so they load without an import step), copied from the decompiled source on every run and never
 committed, since they are the game's; a stub mineral scene with the chunk radius read from the game's; bare stubs of
@@ -65,8 +66,9 @@ ship models (`harness/transponder_models.gd`, written from the keys of `ships` i
 station's fade-in (`Enceladus.tscn`'s `FadeInCRT`) as an Animation resource of its own (`harness/station_fadein.tres`).
 For MarketAdvisor: stubs of the Mineral Market (`MineralMarket.tscn`, with the menu theme), its slider rows
 (`MineralSellSlider.tscn`), their price charts (`Minerals/MineralPriceChart.tscn`) and the charts' labels
-(`MarketChartPrice.tscn`), and of a row of the Services screen and its insurance row (`ServiceUI.tscn`,
-`ServiceUIInsurance.tscn`), with the game's node paths, scripts, values and connections. The `CurrentGame` stub holds
+(`MarketChartPrice.tscn`), with the game's node paths, scripts, values and connections. For MarketAdvisor and
+ServiceNotifier: stubs of a row of the Services screen, its insurance row and its compensation row (`ServiceUI.tscn`,
+`ServiceUIInsurance.tscn`, `ServiceUIFactionChange.tscn`), likewise. The `CurrentGame` stub holds
 the game's market code: the prices drawn from a save's seed and moved by the trades in its log (`state.logs`, which
 `logEvent` keeps as the game keeps it where a suite gives the state one), the stored minerals, and the price chart's
 prediction error.
@@ -76,7 +78,9 @@ aliases and default configs (`getDefaultConfigByName`, falling back to the base 
 transponder for a config without one; and, as the game's, the build `stripEmpheralsFromConfig` keys codes by,
 `getBuildConfigByName`, `createShipBuildByName`, and a `createShipByName` that makes a model with a scene from its
 default config),
-`K2RGB`, `Factions` (with the game's `frozenFactions`), `Namer` (fixed names: "Ann Bell", a ship name from its seed), `Agenda` (which the game's
+`K2RGB`, `Factions` (with the game's `frozenFactions`, and the dispositions a suite sets, read and adjusted with the
+game's `getDispositionTowards` and `adjustFactionDisposition`, for the Services screen's compensation rows), `Namer`
+(fixed names: "Ann Bell", a ship name from its seed), `Agenda` (which the game's
 `CurrentGame.gd` names) and `Achivements` autoloads are stubs (`harness/stubs/`), in the game's order, so the game's
 scripts that name them compile. The drone bench (`_bench\README.md`) reuses these stubs and the mod loader, so they
 also hold what its game scripts read (`Settings` particle settings, `Factions.noFaction`,
@@ -101,12 +105,12 @@ Call it from a pwsh prompt or `pwsh -Command`: under `pwsh -File`, list argument
 not parsed as arrays. Exit code 0 = every run passed; a script error fails its run even if every check passed.
 
 The suites are ported from the claude.ai harness (DVModTestHarness 1.0.0; the original was deleted once ported),
-except `boot`, `lidar`, `hud`, `crew`, `geology`, `fleet`, `skip`, `dealer`, `transponder`, `combat`, `drones` and `market`.
-`units`, `still` and `moving` load the two arm mods by default, `dive` loads DiveDisableAdrenalineBooster, `boot` loads
-BootSkipLogos, `lidar` loads LidarLouderPing, `hud` loads HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology`
-loads GeologyByMass, `fleet` loads ShipCopyPaste, `skip` loads DiveSkipTransit, `dealer` loads DealerNotifier,
+except `boot`, `lidar`, `hud`, `crew`, `geology`, `fleet`, `skip`, `dealer`, `transponder`, `combat`, `drones`, `market`
+and `services`. `units`, `still` and `moving` load the two arm mods by default, `dive` loads
+DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos, `lidar` loads LidarLouderPing, `hud` loads HudHideLabels, `crew` loads CrewCheapHireNotifier,
+`geology` loads GeologyByMass, `fleet` loads ShipCopyPaste, `skip` loads DiveSkipTransit, `dealer` loads DealerNotifier,
 `transponder` loads TransponderAltCodes, `combat` loads CombatSimulator, `drones` loads DroneAltPriorities and
-GeologyByMass, `market` loads MarketAdvisor.
+GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
 
 - `units`: the claude.ai unit tests (`arm/main.gd`) nearly verbatim, on synthetic arms around the game's
   `DockingArm.gd`. TargetSelection: area geometry on turned, scaled and offset arms, reach, the strip, the weighted
@@ -363,9 +367,10 @@ GeologyByMass, `market` loads MarketAdvisor.
   card; only the transit charged; the exit, rescue and game over cutscenes play and call nothing yet; astrogation
   yields; the station's menu stays disabled) run on the game's own scripts.
 - `dealer` (`suites/dealer.gd`): stations built in code as `enceladus/Enceladus.tscn` nests the menu (the game's
-  `EnceladusMenu.gd`, with its `ShipMarket`, `OwnedShips` and `Logs` entries, and the Crew, dive and Mineral Market entries of
-  CrewCheapHireNotifier, DiveSkipTransit and MarketAdvisor when they are loaded too, with the Mineral Market stub for
-  MarketAdvisor's) and the right-hand screens (the game's
+  `EnceladusMenu.gd`, with its `ShipMarket`, `OwnedShips` and `Logs` entries, and the Crew, dive, Mineral Market and
+  Services entries of CrewCheapHireNotifier, DiveSkipTransit, MarketAdvisor and ServiceNotifier when they are loaded
+  too, with the Mineral Market stub for MarketAdvisor's and a Services screen with The Twins' row for ServiceNotifier's)
+  and the right-hand screens (the game's
   `HidingMarginContainer.gd` with the station's Dealer and Fleet, from `harness/station_dealer.tscn` and
   `station_owned.tscn`, on the game's `Dealer.gd`, wired to their entries as the scene wires them, and a Tuning stub
   with its description window). The dealer's stock is the `CurrentGame` stub's (`forSale`, `harness/fleet_ship.gd`
@@ -423,8 +428,8 @@ GeologyByMass, `market` loads MarketAdvisor.
   `VisualServer.force_draw`, the render loop being off); the drawn ships gone; Esc closes it and gives the focus back;
   reopened in the second language, its order and the pictures kept (no ship made again); focusing another entry hides
   it; without a Dealer screen no tooltip and no settings. With CrewCheapHireNotifier and DiveSkipTransit
-  (`-Mods CrewCheapHireNotifier,DealerNotifier,DiveSkipTransit`), and with MarketAdvisor as well
-  (`-Mods CrewCheapHireNotifier,DealerNotifier,DiveSkipTransit,MarketAdvisor`),
+  (`-Mods CrewCheapHireNotifier,DealerNotifier,DiveSkipTransit`), and with MarketAdvisor and ServiceNotifier as well
+  (`-Mods CrewCheapHireNotifier,DealerNotifier,DiveSkipTransit,MarketAdvisor,ServiceNotifier`),
   Shift+Click on each of their entries opens their screen, then on Dealer opens this one and hides theirs, and every
   entry keeps its own tooltip. The control checks (the entry keeps its key; the Dealer lists the stock and no entry gets
   a badge) run on the game's own scripts.
@@ -567,17 +572,25 @@ GeologyByMass, `market` loads MarketAdvisor.
 - `market` (`suites/market.gd`): stations built in code as `enceladus/Enceladus.tscn` nests them: the menu (the game's
   `EnceladusMenu.gd`, with its `MineralMarket`, `Services` and `Logs` entries) and the right-hand screens (the game's
   `HidingMarginContainer.gd` with the Mineral Market from its stub, wired to its entry as the scene wires it; a Services
-  screen with the game's rows for Jameson's Insurance, Scrapwright Recovery Operations and the simulator's
-  subscription, at the game's prices and cooldowns; a Tuning stub with its description window). Each save is loaded
-  into the `CurrentGame` stub with the game's seed, so its prices are the game's; in-game time passes with the game's
-  day and hour signals; the Trade button is pressed as a click presses it. The settings model: one shared instance;
-  defaults and no parked tonnes for a save without the entry; the cash reserve, the amount times ten to the power;
-  every amount at every power, written plain and in scientific notation, reading back as itself; an unchanged value
-  storing and signalling nothing; a change stored under the manifest's id with the format and mod versions and every
-  setting, signalled once; ranges, steps, and the defaults for what isn't a number or a bool; the parking minerals with
-  Trade all ores off and on; the parked tonnes stored as a copy, without a signal; a JSON round trip; hand-edited
-  entries. The market: the row at the bottom inside the list's side margins, its Trade button disabled with nothing to
-  trade, the advice when the cash reserve is out of reach, a new save's holdings taken as parked, the line comparing
+  screen with the rows given, by default the game's rows for Jameson's Insurance, Scrapwright Recovery Operations and
+  the simulator's subscription, at the game's prices and cooldowns; a Tuning stub with its description window). Each
+  save is loaded into the `CurrentGame` stub with the game's seed, so its prices are the game's; in-game time passes
+  with the game's day and hour signals; the Trade button is pressed as a click presses it. The settings model: one
+  shared instance; defaults and no parked tonnes for a save without the entry; the cash reserve, the amount times ten to
+  the power; every amount at every power, written plain and in scientific notation, reading back as itself; an
+  unchanged value storing and signalling nothing; a change stored under the manifest's id with the format and mod
+  versions and every setting, signalled once; ranges, steps, and the defaults for what isn't a number or a bool; the
+  parking minerals with Trade all ores off and on; the parked tonnes stored as a copy, without a signal; a JSON round
+  trip; hand-edited entries. The tolerance: any amount written by `formatCash` (the largest suffix that fits, no
+  trailing zeros, or scientific notation); the range, the reserve less and plus the tolerance's share in whole E$, shown
+  as `RANGE` writes it, in both notations; none at a tolerance of 0 (the reserve as `formatFloor` writes it) or with a
+  reserve of 0; the tolerance kept in its range and snapped to its step; `toShown` and `fromShown`. The advice alone
+  (`Advisor.gd` `plan`, around a reserve of 500,000 E$ with a 10 % range): nothing to trade inside the range, above or
+  below the reserve; above it, buying down to the reserve; below it, selling up to it; short only when everything sold
+  can't reach the range; with no tolerance, the rule as before (less than a tonne above the reserve is nothing, a tonne
+  above is bought, a shortfall sold). The market: the row at the bottom inside the list's side margins, its Trade
+  button disabled with nothing to trade, the advice when the cash reserve is out of reach, a new save's holdings taken
+  as parked, the line comparing
   today's prices with the chart's average; the parked row right under your cash, a copy of the game's insurance row
   without its script and sound, captioned by the mod's text, the game's row still hidden, worth nothing at first. With
   cash above the reserve: the advice to buy and what it leaves, the alert mark on the entry; Trade buys the main
@@ -591,20 +604,43 @@ GeologyByMass, `market` loads MarketAdvisor.
   the stay ending at the reserve with nothing left beyond the parked tonnes; a higher reserve selling parked ore down to
   within a tonne of the cheapest ore sold that has tonnes left, the record and the parked row following. Every tonne
   the market allows held: nothing to trade, the advice says so, no alert mark. The menu: the texts of `i18n/en.po`; the
-  market entry's tooltip; the Services entry's alert mark while Jameson's Insurance can be bought, following a language
-  change; none with its switch off (the simulator's row, which can be bought too, has no switch); back for Scrapwright
-  Recovery Operations; none during its cooldown or with the money below the price; without the market screen, no
+  market entry's tooltip; its alert mark while a trade is due, following a language change; the Services entry left
+  alone while Jameson's Insurance can be bought (ServiceNotifier's, in `services`); without the market screen, no
   tooltip and no settings. The screen: Shift+Click on a disabled entry does nothing, on the entry opens the settings and
   not the market, storing nothing; the market's frame; the header, then the description's window (copying the Tuning
   screen's), then the groups, one per `GROUPS` entry with a row per setting named by its label, the notation switch
-  first, each showing its setting, a slider with its range and step; the power of ten's row showing the power; the cash
-  reserve's row under the cash group, named by the mod's text, its name and reset button out of reach, its value the
-  cash reserve, right-aligned under the two sliders' values once laid out; each row's description on focus, with the
-  mineral or service it names, storing nothing; the sliders and the notation switch stored and shown as they change, a
-  switch not switched back on focus, a reset; Esc and another entry close it. A year of stays from 100,000 E$, with
-  Trade all ores off and on (ore brought back, 1 to 3 days of maintenance, Trade pressed every day of the stay, money
-  spent between stays): every stay ends at the reserve with the ore sold. The control checks (the entry keeps its key
-  and gets no tooltip; no row of the mod's in the market; Shift+Click opens the market) run on the game's own scripts.
+  first, each showing its setting, a slider with its range, step and value as the screen shows them (`toShown`); the
+  power of ten's row showing the power; the cash reserve's row under the cash group, named by the mod's text, its name
+  and reset button out of reach, its value the reserve's range, right-aligned under the values of the two sliders
+  without a unit once laid out; the tolerance's row between the power of ten's and the cash reserve's, in its unit;
+  each row's description on focus, with the mineral it names, storing nothing; the sliders and the notation switch
+  stored and shown as they change (the tolerance stored as a fraction, the range following it, the reserve alone at
+  its lowest), a switch not switched back on focus, resets; Esc and another entry close it. A year of stays from
+  100,000 E$, with Trade all ores off and on (ore brought back, 1 to 3 days of maintenance, Trade pressed every day of
+  the stay, money spent between stays): every stay ends inside the reserve's range with the ore sold. The control
+  checks (the entry keeps its key and gets no tooltip; no row of the mod's in the market; Shift+Click opens the market)
+  run on the game's own scripts.
+- `services` (`suites/services.gd`, which extends `market.gd` for its station, saves, time, clicks and translations):
+  the same station without the Mineral Market, its Services screen with the game's rows (`enceladus/Services.tscn`'s
+  values) for The Twins, a hotel, the three that cost a monthly fee and The Miner's Guild, a compensation row whose
+  price follows the miners' disposition towards the player in the `Factions` stub. The settings model: one shared
+  instance; every service's switch at its default with nothing stored; the services watched (those with a cooldown and
+  the compensations, not the hotel); an unchanged value storing and signalling nothing; a change stored under the
+  manifest's id with the format and mod versions and the service's value, signalled once, as a copy; a value that
+  isn't a bool giving the default; a JSON round trip; a hand-edited entry (only bool values kept) and one that isn't a
+  dictionary. The mark: the texts of `i18n/en.po`; the Services entry's tooltip; none with no money, for the hotel, or
+  for The Twins during their cooldown; the mark once it is over, following a language change; none with The Twins'
+  switch off; the mark for Jameson's Insurance and the simulator, none with their switches off though both can be
+  bought; the mark for Scrapwright Recovery Operations, none during its cooldown; the mark while the miners hold a
+  grudge, none once that is paid (the row costs nothing); back with a switch on; none with the money below every price;
+  a menu without the station's screens, no tooltip and no mark. The screen: Shift+Click on a disabled entry does
+  nothing, on the entry opens the settings and not the Services screen, storing nothing; the Services screen's frame;
+  the header, then the description's window (copying the Tuning screen's), then a group per kind in `KINDS` order with
+  a row per watched service in the screen's order, no hotel; each switch showing its service's setting, with the
+  setting's label as its tooltip; the first row's description, its kind's with its name and cooldown as the game
+  writes a time, another row's with its own, a compensation's; focusing stores nothing; a switch stored, and not
+  switched back on focus; Esc and another entry close it. The control checks (the entry keeps its key and gets no
+  tooltip; Shift+Click opens no settings) run on the game's own scripts.
 - `_tests\harness\rig.gd` builds the arm's node tree as the game nests it, with the values in
   `_tests\harness\vp_data.gd`; each cites its scene file and line, so re-check them after a game update. The ship
   is a stub moved by hand (it takes the arm's impulses and torque; inertia from the hull); the rotors don't collide.
@@ -616,13 +652,13 @@ GeologyByMass, `market` loads MarketAdvisor.
   checks with `-Mods @()`), `fleet` 70 (the same with ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too; 3
   control checks with `-Mods @()`), `skip` 109 (112 with
   CrewCheapHireNotifier too, the same with DealerNotifier as well; 13 control checks with `-Mods @()`), `dealer` 111
-  (114 with CrewCheapHireNotifier and DiveSkipTransit too, in every load order, 115 with MarketAdvisor as well, in every
-  load order; the same 111 with ShipCopyPaste,
+  (114 with CrewCheapHireNotifier and DiveSkipTransit too, in every load order, 116 with MarketAdvisor and
+  ServiceNotifier as well, in every load order; the same 111 with ShipCopyPaste,
   ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too; 2 control checks with `-Mods @()`), `transponder` 48 (3
   control checks with `-Mods @()`; the same 48 with CombatSimulator too), `combat` 129 (the same with
   TransponderAltCodes too; 7 control checks with `-Mods @()`), `drones` 63 (the same in both load orders and with
-  DroneAltPriorities alone; 3 control checks with `-Mods @()`), `market` 82 (3 control checks with `-Mods @()`), all
-  passing; `skip` gives its 109 with CombatSimulator
+  DroneAltPriorities alone; 3 control checks with `-Mods @()`), `market` 97 (3 control checks with `-Mods @()`),
+  `services` 42 (2 control checks with `-Mods @()`), all passing; `skip` gives its 109 with CombatSimulator
   too; `-Matrix` gives 16 of 16 in every combination.
   Feeding, a chunk beside the hull is in after 4.4–4.8 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.4.0 (the claude.ai results, case for case)

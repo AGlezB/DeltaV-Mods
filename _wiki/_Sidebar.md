@@ -21,6 +21,7 @@
 
 **Money**
 - [MarketAdvisor](MarketAdvisor)
+- [ServiceNotifier](ServiceNotifier)
 
 **Ships**
 - [CombatSimulator](CombatSimulator)

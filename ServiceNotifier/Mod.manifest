@@ -1,0 +1,23 @@
+[mod_information]
+
+name="ServiceNotifier"
+id="AGlezB.ServiceNotifier"
+description="Shows an alert mark on the station menu's Services entry when a service you pick can be bought again: one with a cooldown, or a compensation to a faction."
+author="AGlezB"
+
+[version]
+
+version_major=1
+version_minor=0
+version_bugfix=0
+
+[tags]
+
+group={
+"type": "string",
+"value": "Services"
+}
+
+[manifest_definitions]
+
+manifest_version=2.2

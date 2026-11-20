@@ -4,7 +4,8 @@ extends PanelContainer
 # entry (StationMenu.gd), built as DiveSkipTransit's is. It copies the Mineral Market screen's frame and place, and is
 # built from the game's own Tuning parts, the way enceladus/Tuning.tscn nests them: the header, a window with the
 # description of the selected setting (framed as the Tuning screen's), then groups of sliders and switches. Under the
-# cash group's rows, a row of the same layout shows the cash reserve they make, its value under theirs. It behaves like
+# cash group's rows, a row of the same layout shows the cash reserve they make, with its tolerance's range, its value
+# under theirs. It behaves like
 # the game's screens (enceladus/Tuning.gd, enceladus/Crew.gd): the Shower fades it in and out, Esc or the controller's
 # back button closes it, and so does focusing another entry of the menu (the screens container's `hidefoka`).
 
@@ -30,7 +31,6 @@ const GAME_ROW_RESET = "HBoxContainer/Reset"
 const GROUPS = [
 	["cash", "MARKETADVISOR_GROUP_CASH"],
 	["trade", "MARKETADVISOR_GROUP_TRADE"],
-	["services", "MARKETADVISOR_GROUP_SERVICES"],
 ]
 # The group whose rows make the cash reserve, and the translation key of the name of the row under them.
 const CASH_GROUP = "cash"
@@ -145,7 +145,8 @@ func unfocus():
 
 # Tuning groups as Tuning.gd fillTuneableSystems builds them, in an Items box as Tuning.tscn has: one per GROUPS entry,
 # titled by it, with a row per setting of that group, in SETTINGS order: a switch (TuningBoolValue) or a slider
-# (TuningFloatValue, with the setting's range, step, unit and format), named by its label in the game's language. The
+# (TuningFloatValue, with the setting's range, step and value as the screen shows them, toShown, and its unit and
+# format), named by its label in the game's language. The
 # screen is filled each time it opens, so the names and the description follow a language change; the description is
 # empty until the first row takes the focus.
 func _fill():
@@ -177,8 +178,11 @@ func _fill():
 				"testProtocol": "",
 			}
 			if setting.type == "float":
-				for field in ["min", "max", "step", "unit", "format"]:
-					row[field] = setting[field]
+				for field in ["min", "max", "step", "default"]:
+					row[field] = _settings.toShown(key, setting[field])
+				row.current = _settings.toShown(key, row.current)
+				row.unit = setting.unit
+				row.format = setting.format
 			tuning[rowName] = row
 			_rows[rowName] = row
 			_keys[rowName] = key
@@ -229,10 +233,9 @@ func _addCashRow(group: Node):
 		reset.mouse_filter = MOUSE_FILTER_IGNORE
 	_total = line.get_node_or_null(GAME_ROW_VALUE.get_file())
 
-# A setting's argument for its label and its description: its `labelArg` or `service` (a service's is the name the
-# game shows), "" for none.
+# A setting's argument for its label and its description: its `labelArg`, "" for none.
 func _labelArg(setting: Dictionary) -> String:
-	return setting.get("labelArg", setting.get("service", ""))
+	return setting.get("labelArg", "")
 
 # Its argument for its description: its `descriptionArg`, or its label's.
 func _descriptionArg(setting: Dictionary) -> String:
@@ -252,7 +255,7 @@ func _keepDescriptionHeight():
 	_description.rect_min_size.y = DESCRIPTION_LINES * lineHeight + (DESCRIPTION_LINES - 1) * spacing
 
 # The power of ten's row shows the power it stands for (10K … 1B, or 1e4 … 1e9), and the cash reserve's row the cash to
-# keep, both as the notation switch says.
+# keep, with its tolerance's range (floorText), both as the notation switch says.
 func _showCash():
 	var scientific = _settings.getValue("scientific")
 	for rowName in _rowNodes:
@@ -265,12 +268,13 @@ func _showCash():
 
 # A row emits this when it changes, and also when it gets the focus. A switch then sends the `current` of its
 # dictionary (TuningBoolValue.gd _focus), which it never updates itself; setting it here keeps a switch from going
-# back when it is focused again (a slider keeps its own, TuningFloatValue.gd changed). setValue stores nothing when the
-# value is unchanged. The window shows the row's description, so it follows the selection.
+# back when it is focused again (a slider keeps its own, TuningFloatValue.gd changed). A slider sends the value it
+# shows, stored as fromShown gives it back. setValue stores nothing when the value is unchanged. The window shows the
+# row's description, so it follows the selection.
 func _onTuningChanged(_group, item, to, _protocol):
 	_rows[item].current = to
 	var key = _keys[item]
-	_settings.setValue(key, to)
 	var setting = MarketAdvisor.SETTINGS[key]
+	_settings.setValue(key, _settings.fromShown(key, to) if setting.type == "float" else to)
 	_description.text = _text(setting.label + DESCRIPTION_SUFFIX, _descriptionArg(setting))
 	_showCash()

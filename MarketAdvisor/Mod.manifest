@@ -2,13 +2,13 @@
 
 name="MarketAdvisor"
 id="AGlezB.MarketAdvisor"
-description="Keeps the cash reserve you set by putting the rest of your cash in ore at the Mineral Market, and shows alert marks on the market and Services entries when a trade or a service that pays for itself is due."
+description="Keeps the cash reserve you set by putting the rest of your cash in ore at the Mineral Market, and shows an alert mark on the market's entry when a trade is due."
 author="AGlezB"
 
 [version]
 
 version_major=1
-version_minor=0
+version_minor=1
 version_bugfix=0
 
 [tags]

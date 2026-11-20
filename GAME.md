@@ -641,7 +641,18 @@ allows debt, `allowDebt`: the capsule hotel) and its story condition holds (`sto
 `storyMax`); a row whose condition fails is greyed out, or hidden with `storyHide`. Three cost a monthly fee (a
 720-hour cooldown, an hour each): Jameson's Insurance (`SERVICE_JAMESON`, 50,000 E$; see *Insurance*), Scrapwright
 Recovery Operations (`SERVICE_SALVAGE_LICENCE`, 300,000 E$: derelicts brought to the rings; see *Salvage*) and the
-simulator's Premium subscription, Minding Premium Virtual Flight Service (`SERVICE_SIMULATOR`, 4,000 E$).
+simulator's Premium subscription, Minding Premium Virtual Flight Service (`SERVICE_SIMULATOR`, 4,000 E$). The bar The
+Twins (`SERVICE_BAR_TWINS`, 300 E$ plus 300 E$ per crew member not on leave, 4 hours, morale +0.1) has a 24-hour
+cooldown; the hotels have none, and can be bought again at once.
+
+Three rows are compensations (`enceladus/ServiceUIFactionChange.gd`, at the end of the list): Local Vilcy Branch
+(`SERVICE_VILCY`, faction `vilcy`), The Miner's Guild (`SERVICE_MINERS`, `civilian`) and Obonto Habitats
+(`SERVICE_OBONTO`, `obonto`), an hour each and no cooldown. Their price (`getPrice`) is the faction's hostility towards
+the player times `hostilityPrice` plus its fear times `fearPrice` (each counted only above 0; Vilcy 100,000 and
+30,000 E$, the miners 20,000 and 50,000 E$, Obonto 60,000 and 100,000 E$), on top of the row's own price, which is
+none. Buying one (`buy`) takes both back to 0 (`Factions.adjustFactionDisposition`, see *Faction*), so the row costs
+nothing, and can't be bought, until the faction is hostile or afraid again. Local Vilcy Branch can be bought only
+until the Big Bad Wolf is destroyed (`storyLine` `vilcy.bbw.destroyed`, `storyMax` 0); then it is greyed out.
 
 ## Transit
 

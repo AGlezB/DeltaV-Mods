@@ -22,8 +22,8 @@ const _MA_AVERAGE_SAMPLES = 60
 # Translation keys of i18n/en.po. The button; a mineral's tonnes (%s the tonnes, %s the mineral); the trades to make
 # now (%s their tonnes); the cash they leave (%s); a trade to wait for (%s the mineral, %s the date); a parking
 # mineral sold well below its average (%s); the parking minerals full (%s them, %s the tonnes); the floor out of reach
-# and the floor reached (%s the cash reserve); the line comparing prices with the chart's average (%s the minerals),
-# and each mineral in it (%s the mineral, %s the percentage).
+# and the floor reached (%s the cash reserve, with its range: Settings.gd floorText); the line comparing prices with the
+# chart's average (%s the minerals), and each mineral in it (%s the mineral, %s the percentage).
 const _MA_TRADE = "MARKETADVISOR_TRADE"
 const _MA_TONNES = "MARKETADVISOR_TONNES"
 const _MA_SELL = "MARKETADVISOR_SELL"
@@ -239,9 +239,12 @@ func _maInput() -> Dictionary:
 		if clamped.hash() != parked.hash():
 			_maSettings.setParked(clamped)
 		parked = clamped
+	var bounds = _maSettings.floorRange()
 	return {
 		"cash": CurrentGame.getMoney(),
 		"floor": _maSettings.floorCash(),
+		"low": bounds[0],
+		"high": bounds[1],
 		"parking": parking,
 		"sellOre": _maSettings.getValue("sellOre"),
 		"minerals": names,

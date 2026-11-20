@@ -6,8 +6,7 @@ msgstr ""
 "Language: en\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 
-# A station menu entry with its alert mark, while there is something worth doing behind it (the Mineral Market: a
-# trade; Services: a service that pays for itself); %s is the entry's own text.
+# The station menu's Mineral Market entry with its alert mark, while a trade is due; %s is the entry's own text.
 msgid "MARKETADVISOR_ALERT"
 msgstr "%s (*)"
 
@@ -18,9 +17,10 @@ msgstr "Click while pressing %s to open the %s settings."
 
 # The settings screen. Each setting has its name and, under the same key followed by SettingsUI.gd's
 # DESCRIPTION_SUFFIX, the description the screen shows while it is selected, written as the game's Tuning descriptions
-# are. A %s is the mineral or the service the setting is about.
+# are. A %s is the mineral the setting is about.
 
-# The cash group: the notation switch, the two sliders that make the cash reserve, and the row under them.
+# The cash group: the notation switch, the two sliders that make the cash reserve, the slider of its tolerance, and the
+# row under them.
 msgid "MARKETADVISOR_GROUP_CASH"
 msgstr "Cash reserve"
 
@@ -39,8 +39,9 @@ msgid "MARKETADVISOR_CASH_AMOUNT_DESC"
 msgstr ""
 "The cash reserve is this amount times the power of ten below.\n"
 "\n"
-"The Trade button at the bottom of the Mineral Market buys ore with the cash above it, and sells that ore when your "
-"cash falls below it. Your cash ends up within one tonne's price above it. At 0, all your cash goes into ore."
+"The Trade button at the bottom of the Mineral Market buys ore when your cash rises above the tolerance's range "
+"around it, and sells that ore when your cash falls below that range. Either way, your cash ends up within one "
+"tonne's price above it. At 0, all your cash goes into ore."
 
 msgid "MARKETADVISOR_CASH_POWER"
 msgstr "Power of ten"
@@ -49,11 +50,28 @@ msgid "MARKETADVISOR_CASH_POWER_DESC"
 msgstr ""
 "The power of ten the amount above is multiplied by.\n"
 "\n"
-"Together they make the cash reserve, shown under them."
+"Together they make the cash reserve, shown under them with the tolerance's range."
 
-# The name of the row under the sliders, whose value is the cash reserve.
+msgid "MARKETADVISOR_CASH_TOLERANCE"
+msgstr "Tolerance"
+
+msgid "MARKETADVISOR_CASH_TOLERANCE_DESC"
+msgstr ""
+"How far your cash can drift above or below the cash reserve before the Trade button trades.\n"
+"\n"
+"While your cash stays in that range, a repair or a sale doesn't make it sell ore at a bad price, or buy ore at a "
+"high one, just to match the cash reserve. Once your cash leaves the range, the trade brings it back to the cash "
+"reserve. At 0, any difference of a tonne's price is traded."
+
+# The name of the row under the sliders, whose value is the cash reserve, with the tolerance's range
+# (MARKETADVISOR_RANGE) unless the tolerance is 0.
 msgid "MARKETADVISOR_CASH_TOTAL"
 msgstr "Cash reserve"
+
+# The cash reserve's range, wherever the cash reserve is shown; the first %s is the bottom of the range, the second the
+# top.
+msgid "MARKETADVISOR_RANGE"
+msgstr "%s - %s"
 
 # The trading group.
 msgid "MARKETADVISOR_GROUP_TRADE"
@@ -81,28 +99,6 @@ msgstr ""
 "\n"
 "At the end of a dive, pick Store Minerals instead of Sell all, so the ore can wait for that day. Oddities are sold "
 "either way. With Trade all ores, the cash goes back into ore."
-
-# The services group: a switch per service that pays for itself; %s is the service's name, as the game shows it.
-msgid "MARKETADVISOR_GROUP_SERVICES"
-msgstr "Services"
-
-msgid "MARKETADVISOR_ALERT_INSURANCE"
-msgstr "Alert for %s"
-
-msgid "MARKETADVISOR_ALERT_INSURANCE_DESC"
-msgstr ""
-"Shows an alert mark on the Services entry of the station menu while %s can be bought.\n"
-"\n"
-"It adds more insurance than it costs, and insurance pays for repairs before your money does."
-
-msgid "MARKETADVISOR_ALERT_SCRAPWRIGHT"
-msgstr "Alert for %s"
-
-msgid "MARKETADVISOR_ALERT_SCRAPWRIGHT_DESC"
-msgstr ""
-"Shows an alert mark on the Services entry of the station menu while %s can be bought.\n"
-"\n"
-"The derelicts it brings to the rings are worth more than it costs."
 
 # The caption of the row in the Mineral Market's header, under your cash, with what the ore the Trade button bought to
 # keep your cash in would sell for today (written like the game's "Insured for").

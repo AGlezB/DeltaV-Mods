@@ -2,17 +2,18 @@ extends "res://harness/suite.gd"
 
 # MarketAdvisor: the Mineral Market screen (the game's enceladus/MineralMarket.gd, in the stub of its scene, with a
 # slider row per mineral, the game's MineralSellSlider.gd and MineralPriceChart.gd) gets a row at its bottom with the
-# advice and a Trade button that keeps the cash reserve by buying ore with the cash above it and selling it below, and
-# a row in its header with what the ore it bought (parked) would sell for today. The station menu's Mineral Market entry
-# shows an alert mark while a trade is due, and opens the mod's settings with Shift+Click; its Services entry shows an
-# alert mark while a service whose switch is on can be bought, as the game's own row for it decides (enceladus/
-# ServiceUI.gd).
+# advice and a Trade button that keeps the cash reserve, within its tolerance's range, by buying ore with the cash above
+# the range and selling it below, back to the reserve itself, and a row in its header with what the ore it bought
+# (parked) would sell for today. The station menu's Mineral Market entry shows an alert mark while a trade is due, and
+# opens the mod's settings with Shift+Click; its Services entry is ServiceNotifier's (the services suite), which this mod
+# leaves alone.
 #
 # The station is built in code as enceladus/Enceladus.tscn nests it: MarginContainer > HBoxContainer > Options (the
 # game's EnceladusMenu.gd, with MineralMarket, Services and Logs entries), and MarginContainer > CanvasLayer >
 # MarginContainer (the game's HidingMarginContainer.gd) > the Mineral Market (wired to its entry's `pressed` as the
 # scene wires it), the Services screen (its rows nested as enceladus/Services.tscn nests them, with the game's values for
-# the three that cost a monthly fee) and a Tuning screen stub with its description window. The prices are the CurrentGame
+# the rows given, by default the three that cost a monthly fee) and a Tuning screen stub with its description window.
+# The services suite builds the same station, without the market. The prices are the CurrentGame
 # stub's port of the game's market code, drawn from a save's seed, and moved by the trades in its log. In-game time
 # passes with the game's signals. The mod's texts are its i18n/en.po, and every expected text is built with tr() from
 # the mod's keys, so any wording passes. The control checks run on the game's own scripts.
@@ -34,13 +35,14 @@ const PARKED_ROW = "Details/HeaderWithMoney/VBoxContainer/MarketAdvisorParked"
 const SCREEN = "MarketAdvisorSettings"
 const DAY = 86400
 const HOUR = 3600
-# The Services screen's rows with a monthly fee, as enceladus/Services.tscn sets them: the scene, the serviceName,
-# serviceHours, cooldownHours and flatPrice.
+# The Services screen's rows with a monthly fee, as enceladus/Services.tscn sets them: each row's scene, then the values
+# set on it (its node is named by its serviceName).
 const SERVICES = [
-	["res://enceladus/ServiceUIInsurance.tscn", "SERVICE_JAMESON", 1, 720, 50000.0],
-	["res://enceladus/ServiceUI.tscn", "SERVICE_SALVAGE_LICENCE", 1, 720, 300000.0],
-	["res://enceladus/ServiceUI.tscn", "SERVICE_SIMULATOR", 1, 720, 4000.0],
+	{"scene": "res://enceladus/ServiceUIInsurance.tscn", "serviceName": "SERVICE_JAMESON", "serviceHours": 1, "cooldownHours": 720, "flatPrice": 50000.0},
+	{"scene": "res://enceladus/ServiceUI.tscn", "serviceName": "SERVICE_SALVAGE_LICENCE", "serviceHours": 1, "cooldownHours": 720, "flatPrice": 300000.0},
+	{"scene": "res://enceladus/ServiceUI.tscn", "serviceName": "SERVICE_SIMULATOR", "serviceHours": 1, "cooldownHours": 720, "flatPrice": 4000.0},
 ]
+const ADVISOR_SCRIPT = "res://MarketAdvisor/Advisor.gd"
 
 var settings = null
 var ma = null # the settings script, for its constants
@@ -89,8 +91,8 @@ func manifestValue(section, key):
 
 # The station as enceladus/Enceladus.tscn nests the menu and the right-hand screens. The screens have the station's
 # values (hidden, shrunk to the right, a panel of their own), with a width that leaves the menu free to click in the
-# harness's window.
-func station(withMarket = true):
+# harness's window. `services`: the Services screen's rows, as SERVICES lists them.
+func station(withMarket = true, services = SERVICES):
 	var root = MarginContainer.new(); root.name = "MarginContainer"
 	root.anchor_right = 1.0
 	root.anchor_bottom = 1.0
@@ -121,25 +123,24 @@ func station(withMarket = true):
 		stationScreen(market)
 		screens.add_child(market)
 		marketEntry.connect("pressed", market, "_on_MineralMarket_pressed")
-	var services = PanelContainer.new(); services.name = "Services"
-	stationScreen(services)
-	var node = services
+	var servicesScreen = PanelContainer.new(); servicesScreen.name = "Services"
+	stationScreen(servicesScreen)
+	var node = servicesScreen
 	for part in [["VB", VBoxContainer], ["MarginContainer", MarginContainer], ["ScrollContainer", ScrollContainer], ["MarginContainer", MarginContainer], ["Items", VBoxContainer]]:
 		var child = part[1].new()
 		child.name = part[0]
 		node.add_child(child)
 		node = child
 	var rows = {}
-	for spec in SERVICES:
-		var row = load(spec[0]).instance()
-		row.name = spec[1]
-		row.serviceName = spec[1]
-		row.serviceHours = spec[2]
-		row.cooldownHours = spec[3]
-		row.flatPrice = spec[4]
+	for spec in services:
+		var row = load(spec.scene).instance()
+		row.name = spec.serviceName
+		for key in spec:
+			if key != "scene":
+				row.set(key, spec[key])
 		node.add_child(row)
-		rows[spec[1]] = row
-	screens.add_child(services)
+		rows[spec.serviceName] = row
+	screens.add_child(servicesScreen)
 	var tuning = PanelContainer.new(); tuning.name = "Tuning"
 	stationScreen(tuning)
 	tuning.theme = Theme.new()
@@ -159,7 +160,7 @@ func station(withMarket = true):
 	windowVb.add_child(inside)
 	screens.add_child(tuning)
 	add_child(root)
-	return {"root": root, "menu": menu, "marketEntry": marketEntry, "servicesEntry": servicesEntry, "logs": logs, "screens": screens, "market": market, "services": rows, "tuning": tuning}
+	return {"root": root, "menu": menu, "marketEntry": marketEntry, "servicesEntry": servicesEntry, "logs": logs, "screens": screens, "market": market, "services": rows, "servicesScreen": servicesScreen, "tuning": tuning}
 
 func stationScreen(screen):
 	screen.visible = false
@@ -276,6 +277,8 @@ func run():
 	settings = ma.shared()
 	settings.connect("settingsChanged", self, "_countChange")
 	model()
+	tolerance()
+	advisor()
 	yield(market(), "completed")
 	yield(alerts(), "completed")
 	yield(screen(), "completed")
@@ -367,6 +370,77 @@ func model():
 	CurrentGame.state.ui[settings.modId()] = "garbage"
 	settings.loadFromState()
 	check("settings: an entry that isn't a dictionary gives the defaults and no parked tonnes", settings.getValue("tradeAll") == ma.SETTINGS.tradeAll.default and settings.getParked() == null)
+
+# The cash reserve's tolerance: its range, how the screens write amounts and the range, and the slider's conversion.
+func tolerance():
+	loadSave(gameStart())
+	settings.loadFromState()
+	var written = [[450000, false, "450K"], [46500, false, "46.5K"], [1200000, false, "1.2M"], [10170000000, false, "10.17B"], [999, false, "999"], [1500, false, "1.5K"], [0, false, "0"], [450000, true, "4.5e5"], [500000, true, "5e5"], [10170000000, true, "1.017e10"], [0, true, "0"]]
+	var wrong = []
+	for w in written:
+		if ma.formatCash(w[0], w[1]) != w[2]:
+			wrong.append([w, ma.formatCash(w[0], w[1])])
+	check("tolerance: any amount written with the largest suffix that fits and no trailing zeros, or in scientific notation", wrong.empty(), wrong)
+	var t = ma.SETTINGS.tolerance
+	var reserve = settings.floorCash()
+	var bounds = [int(round(reserve * (1 - t.default))), int(round(reserve * (1 + t.default)))]
+	check("tolerance: the range is the reserve less and plus its tolerance's share, in whole E$", same(settings.floorRange(), bounds), settings.floorRange())
+	check("tolerance: the cash reserve shown as its range", settings.floorText() == tr(ma.RANGE) % [ma.formatCash(bounds[0], false), ma.formatCash(bounds[1], false)] and tr(ma.RANGE) != ma.RANGE, settings.floorText())
+	settings.setValue("scientific", true)
+	check("tolerance: and in scientific notation", settings.floorText() == tr(ma.RANGE) % [ma.formatCash(bounds[0], true), ma.formatCash(bounds[1], true)], settings.floorText())
+	settings.setValue("scientific", false)
+	settings.setValue("tolerance", t.min)
+	check("tolerance: none, the reserve alone, as formatFloor writes it", same(settings.floorRange(), [int(reserve), int(reserve)]) and settings.floorText() == ma.formatFloor(settings.getValue("cashAmount"), settings.getValue("cashPower"), false), settings.floorText())
+	settings.setValue("tolerance", t.default)
+	settings.setValue("cashAmount", 0)
+	check("tolerance: a reserve of 0 shows 0, not a range", settings.floorText() == "0", settings.floorText())
+	settings.setValue("cashAmount", ma.SETTINGS.cashAmount.default)
+	settings.setValue("tolerance", t.max + 0.5)
+	var high = settings.getValue("tolerance")
+	settings.setValue("tolerance", t.default + t.step * 0.3)
+	var snapped = settings.getValue("tolerance")
+	check("tolerance: kept in its range and snapped to its step", near(high, t.max) and near(snapped, t.default), [high, snapped])
+	check("tolerance: shown as the screen shows it, and back", near(settings.toShown("tolerance", t.default), t.default * t.shown) and near(settings.fromShown("tolerance", t.default * t.shown), t.default) and settings.toShown("cashAmount", 3) == 3)
+	settings.setValue("tolerance", t.default)
+
+func near(a, b) -> bool:
+	return abs(a - b) < 1e-9
+
+# The advice alone (Advisor.gd plan) around the cash reserve's range: 500,000 E$, from 450,000 to 550,000 E$ (10 %), in
+# Be at 10,000 E$ a tonne. Nothing inside the range; outside it, trades that bring the cash back to the reserve itself;
+# short only where selling everything can't reach the range. With no tolerance, the range is the reserve alone, and the
+# advice is as before: a tonne's price above it is bought, any shortfall sold.
+func advisor():
+	var advisorScript = load(ADVISOR_SCRIPT)
+	var some = {"Be": 100, "W": 0}
+	var few = {"Be": 10, "W": 0}
+	var p = advisorScript.plan(planInput(530000, 450000, 550000, some))
+	check("advice: inside the range, above the reserve, nothing to trade", p.now.empty() and not p.short, p)
+	p = advisorScript.plan(planInput(470000, 450000, 550000, some))
+	check("advice: inside the range, below the reserve, nothing to trade", p.now.empty() and not p.short, p)
+	p = advisorScript.plan(planInput(560000, 450000, 550000, some))
+	check("advice: above the range, buys down to the reserve", same(p.now, [{"mineral": "Be", "from": 100, "to": 106}]) and p.cashAfter == 500000, p)
+	p = advisorScript.plan(planInput(440000, 450000, 550000, some))
+	check("advice: below the range, sells up to the reserve", same(p.now, [{"mineral": "Be", "from": 100, "to": 94}]) and p.cashAfter == 500000 and not p.short, p)
+	p = advisorScript.plan(planInput(380000, 450000, 550000, few))
+	check("advice: everything sold reaches the range but not the reserve: not short", same(p.now, [{"mineral": "Be", "from": 10, "to": 0}]) and p.cashAfter == 480000 and not p.short, p)
+	p = advisorScript.plan(planInput(300000, 450000, 550000, few))
+	check("advice: everything sold doesn't reach the range: short", p.cashAfter == 400000 and p.short, p)
+	p = advisorScript.plan(planInput(505000, 500000, 500000, some))
+	var above = advisorScript.plan(planInput(515000, 500000, 500000, some))
+	var below = advisorScript.plan(planInput(495000, 500000, 500000, some))
+	check("advice: with no tolerance, less than a tonne above the reserve is nothing; a tonne above is bought, a shortfall sold", p.now.empty() and same(above.now, [{"mineral": "Be", "from": 100, "to": 101}]) and above.cashAfter == 505000 and same(below.now, [{"mineral": "Be", "from": 100, "to": 99}]) and below.cashAfter == 505000, [p, above, below])
+
+# Advisor.gd plan's input: a reserve of 500,000 E$ with the range given, Be the parking mineral at 10 E$/kg (its
+# average), every tonne of it parked, no forecast (the ship ready).
+func planInput(cash, low, high, held) -> Dictionary:
+	return {
+		"cash": float(cash), "floor": 500000.0, "low": low, "high": high,
+		"parking": ["Be"], "sellOre": true, "minerals": ["Be", "W"],
+		"held": held, "parked": {"Be": held.Be},
+		"price": {"Be": 10.0, "W": 20.0}, "average": {"Be": 10.0},
+		"future": {}, "maxTonnes": 100000, "kgPerTonne": 1000.0,
+	}
 
 # A cash reserve as formatFloor writes it, read back as a number; -1 for a text it shouldn't write.
 func floorValue(text: String, scientific: bool) -> float:
@@ -544,7 +618,7 @@ func full(at):
 	check("full: no alert mark", not marked(s, s.marketEntry, MARKET_KEY))
 	yield(freeStation(s), "completed")
 
-# The station menu: the market entry's tooltip and alert mark in two languages, and the Services entry's alert mark.
+# The station menu: the market entry's tooltip and alert mark in two languages; the Services entry left alone.
 func alerts():
 	loadSave(gameStart() + 500 * DAY)
 	var s = station()
@@ -553,29 +627,16 @@ func alerts():
 	check("menu: the mod's texts are loaded (i18n/en.po)", tr(menuKeys._MA_SETTINGS_TOOLTIP) != menuKeys._MA_SETTINGS_TOOLTIP and tr(menuKeys._MA_ALERT) != menuKeys._MA_ALERT)
 	check("menu: the market entry's tooltip tells about Shift+Click", s.marketEntry.hint_tooltip == tr(menuKeys._MA_SETTINGS_TOOLTIP) % [OS.get_scancode_string(KEY_SHIFT), manifestValue("mod_information", "name")], s.marketEntry.hint_tooltip)
 	check("menu: no alert marks with nothing to do", s.marketEntry.text == MARKET_KEY and s.servicesEntry.text == SERVICES_KEY, [s.marketEntry.text, s.servicesEntry.text])
-	CurrentGame.changeMoney(60000.0)
+	CurrentGame.changeMoney(10500000.0)
 	yield(frames(3), "completed")
-	check("menu: the Services entry has its alert mark while Jameson's Insurance can be bought", marked(s, s.servicesEntry, SERVICES_KEY), s.servicesEntry.text)
+	s.services.SERVICE_JAMESON.checkPrice()
+	check("menu: the market entry's alert mark while a trade is due", marked(s, s.marketEntry, MARKET_KEY), s.marketEntry.text)
+	check("menu: the Services entry left alone, even while Jameson's Insurance can be bought (ServiceNotifier marks it)", s.servicesEntry.text == SERVICES_KEY and not s.services.SERVICE_JAMESON.buyButton.disabled, s.servicesEntry.text)
 	TranslationServer.set_locale("de")
 	yield(frames(2), "completed")
-	check("menu: the alert mark follows a language change", s.servicesEntry.text == tr(menuKeys._MA_ALERT) % ENTRY_TEXTS.de[SERVICES_KEY], s.servicesEntry.text)
+	check("menu: the alert mark follows a language change", s.marketEntry.text == tr(menuKeys._MA_ALERT) % ENTRY_TEXTS.de[MARKET_KEY], s.marketEntry.text)
 	TranslationServer.set_locale("en")
 	yield(frames(2), "completed")
-	settings.setValue("alertInsurance", false)
-	yield(frames(2), "completed")
-	check("menu: none with its switch off (the simulator, which can be bought too, has no switch)", s.servicesEntry.text == SERVICES_KEY and not s.services.SERVICE_SIMULATOR.buyButton.disabled, s.servicesEntry.text)
-	CurrentGame.changeMoney(300000.0)
-	yield(frames(3), "completed")
-	check("menu: the alert mark while Scrapwright Recovery Operations can be bought", marked(s, s.servicesEntry, SERVICES_KEY), s.servicesEntry.text)
-	CurrentGame.setUiValue("cooldown.SERVICE_SALVAGE_LICENCE", CurrentGame.getInGameTimestamp() + DAY)
-	yield(advance(HOUR), "completed")
-	check("menu: none while it is paid for (the game's cooldown)", s.servicesEntry.text == SERVICES_KEY, s.servicesEntry.text)
-	settings.setValue("alertInsurance", true)
-	yield(frames(2), "completed")
-	check("menu: back with the insurance's switch on", marked(s, s.servicesEntry, SERVICES_KEY))
-	CurrentGame.changeMoney(-CurrentGame.getMoney())
-	yield(frames(3), "completed")
-	check("menu: none once the money is below its price", s.servicesEntry.text == SERVICES_KEY, s.servicesEntry.text)
 	yield(freeStation(s), "completed")
 	var bare = station(false)
 	yield(frames(5), "completed")
@@ -620,7 +681,7 @@ func screen():
 		copied = copied and windowMargin.get_constant("margin_" + side) == gameMargin.get_constant("margin_" + side) and inside.get_constant("margin_" + side) == gameInside.get_constant("margin_" + side)
 	check("screen: the description's window copies the Tuning screen's: theme, margins around and inside, panel", copied)
 	# The groups and rows the screen should have: each group of GROUPS, its settings in SETTINGS order, named by their
-	# label with the service's name the game shows.
+	# label.
 	var groups = []
 	for items in screen.get_node("VB/ScrollContainer").get_children():
 		if items.name == "Items" and not items.is_queued_for_deletion():
@@ -634,7 +695,7 @@ func screen():
 		for key in ma.SETTINGS:
 			var setting = ma.SETTINGS[key]
 			if setting.group == entry[0]:
-				var arg = setting.get("labelArg", setting.get("service", ""))
+				var arg = setting.get("labelArg", "")
 				labels.append(tr(setting.label) if arg == "" else tr(setting.label) % tr(arg))
 				keys.append(key)
 		expected.append([entry[1], labels])
@@ -656,26 +717,30 @@ func screen():
 			values = values and rows[i].get_node("HBoxContainer/Value").pressed == settings.getValue(keys[i])
 		else:
 			var slider = rows[i].get_node("HSlider")
-			values = values and slider.min_value == setting.min and slider.max_value == setting.max and slider.step == setting.step and slider.value == settings.getValue(keys[i])
-	check("screen: each switch and slider shows its setting, each slider with its range and step", values)
+			var key = keys[i]
+			values = values and near(slider.min_value, settings.toShown(key, setting.min)) and near(slider.max_value, settings.toShown(key, setting.max)) and near(slider.step, settings.toShown(key, setting.step)) and near(slider.value, settings.toShown(key, settings.getValue(key)))
+	check("screen: each switch and slider shows its setting, each slider with its range and step as the screen shows them", values)
 	var amountRow = rows[keys.find("cashAmount")]
 	var powerRow = rows[keys.find("cashPower")]
+	var toleranceRow = rows[keys.find("tolerance")]
 	var cashGroup = amountRow.get_parent()
 	var total = cashGroup.get_node_or_null("CashTotal")
 	check("screen: the power of ten's row shows the power it stands for", powerRow.get_node("HBoxContainer/Value").text == ma.formatFloor(1, settings.getValue("cashPower"), false), powerRow.get_node("HBoxContainer/Value").text)
 	check("screen: under the cash group's rows, the cash reserve's row", total != null and total.get_index() == cashGroup.get_child_count() - 1 and total.get_index() > powerRow.get_index())
+	var tol = ma.SETTINGS.tolerance
+	check("screen: the tolerance's row between the power of ten's and the cash reserve's, in its unit", toleranceRow.get_index() == powerRow.get_index() + 1 and total != null and total.get_index() == toleranceRow.get_index() + 1 and toleranceRow.get_node("HBoxContainer/Unit").text == tol.unit and toleranceRow.get_node("HBoxContainer/Value").text == tol.format % settings.toShown("tolerance", tol.default), toleranceRow.get_node("HBoxContainer/Value").text)
 	if total == null:
 		yield(freeStation(s), "completed")
 		return
 	var reset = total.get_node("Reset")
 	check("screen: named by its text, which can't be focused or clicked; its reset button keeps its room but can't be seen, pressed or focused", total.get_node("Name").text == tr(ui.CASH_TOTAL) and total.get_node("Name").focus_mode == Control.FOCUS_NONE and total.get_node("Name").mouse_filter == Control.MOUSE_FILTER_IGNORE and reset.modulate.a == 0.0 and reset.disabled and reset.focus_mode == Control.FOCUS_NONE and reset.mouse_filter == Control.MOUSE_FILTER_IGNORE and reset.visible)
-	check("screen: its value is the cash reserve", total.get_node("Value").text == settings.floorText(), total.get_node("Value").text)
+	check("screen: its value is the cash reserve with its tolerance's range", total.get_node("Value").text == settings.floorText() and settings.floorText() == rangeText(settings.floorCash(), false), total.get_node("Value").text)
 	yield(frames(3), "completed")
 	var rightEdges = []
 	for line in [amountRow.get_node("HBoxContainer"), powerRow.get_node("HBoxContainer"), total]:
 		var value = line.get_node("Value")
 		rightEdges.append(value.rect_global_position.x + value.rect_size.x)
-	check("screen: its value right-aligned under the two sliders' values (once laid out)", rightEdges[0] == rightEdges[1] and rightEdges[1] == rightEdges[2] and rightEdges[0] > 0, rightEdges)
+	check("screen: its value right-aligned under the values of the two sliders without a unit (once laid out)", rightEdges[0] == rightEdges[1] and rightEdges[1] == rightEdges[2] and rightEdges[0] > 0, rightEdges)
 	var description = screen.get_node("VB/WindowMargin/Window/MarginContainer/Description")
 	var described = true
 	for i in rows.size():
@@ -683,19 +748,25 @@ func screen():
 		var control = rows[i].get_node("HSlider") if setting.type == "float" else rows[i].get_node("HBoxContainer/Value")
 		control.grab_focus()
 		yield(frames(1), "completed")
-		var arg = setting.get("descriptionArg", setting.get("labelArg", setting.get("service", "")))
+		var arg = setting.get("descriptionArg", setting.get("labelArg", ""))
 		var text = tr(setting.label + ui.DESCRIPTION_SUFFIX)
 		if arg != "":
 			text = text % tr(arg)
 		described = described and description.text == text and text != setting.label + ui.DESCRIPTION_SUFFIX
-	check("screen: focusing a row, a switch or a slider, shows its description, with the mineral or service it names", described)
+	check("screen: focusing a row, a switch or a slider, shows its description, with the mineral it names", described)
 	check("screen: focusing stores nothing", to_json(CurrentGame.state.ui) == stored)
 	amountRow.get_node("HSlider").value = 3
-	check("screen: moving the amount stores it, and the cash reserve's row follows", settings.getValue("cashAmount") == 3 and total.get_node("Value").text == settings.floorText() and settings.floorText() == ma.formatFloor(3, settings.getValue("cashPower"), false), total.get_node("Value").text)
+	check("screen: moving the amount stores it, and the cash reserve's row follows", settings.getValue("cashAmount") == 3 and total.get_node("Value").text == settings.floorText() and settings.floorText() == rangeText(3 * pow(10, settings.getValue("cashPower")), false), total.get_node("Value").text)
 	powerRow.get_node("HSlider").value = ma.SETTINGS.cashPower.max
 	check("screen: moving the power stores it; its row shows the power and the cash reserve's row follows", settings.getValue("cashPower") == ma.SETTINGS.cashPower.max and powerRow.get_node("HBoxContainer/Value").text == ma.formatFloor(1, ma.SETTINGS.cashPower.max, false) and total.get_node("Value").text == settings.floorText())
 	rows[0].get_node("HBoxContainer/Value").pressed = true
-	check("screen: scientific notation on, both shown in it", settings.getValue("scientific") and powerRow.get_node("HBoxContainer/Value").text == ma.formatFloor(1, ma.SETTINGS.cashPower.max, true) and total.get_node("Value").text == ma.formatFloor(3, ma.SETTINGS.cashPower.max, true), total.get_node("Value").text)
+	check("screen: scientific notation on, both shown in it", settings.getValue("scientific") and powerRow.get_node("HBoxContainer/Value").text == ma.formatFloor(1, ma.SETTINGS.cashPower.max, true) and total.get_node("Value").text == rangeText(3 * pow(10, ma.SETTINGS.cashPower.max), true), total.get_node("Value").text)
+	toleranceRow.get_node("HSlider").value = settings.toShown("tolerance", tol.min)
+	check("screen: the tolerance at its lowest stores it, and the cash reserve's row shows the reserve alone", near(settings.getValue("tolerance"), tol.min) and total.get_node("Value").text == ma.formatFloor(3, ma.SETTINGS.cashPower.max, true), total.get_node("Value").text)
+	toleranceRow.get_node("HSlider").value = settings.toShown("tolerance", tol.max)
+	check("screen: at its highest, stored as a fraction, and the range follows", near(settings.getValue("tolerance"), tol.max) and total.get_node("Value").text == rangeText(3 * pow(10, ma.SETTINGS.cashPower.max), true), total.get_node("Value").text)
+	toleranceRow.get_node("HBoxContainer/Reset").emit_signal("pressed")
+	check("screen: its reset button puts back its default", near(settings.getValue("tolerance"), tol.default))
 	rows[1].get_node("HSlider").grab_focus()
 	rows[0].get_node("HBoxContainer/Value").grab_focus()
 	yield(frames(1), "completed")
@@ -714,13 +785,24 @@ func screen():
 	click(s.logs, false)
 	yield(frames(40), "completed")
 	check("screen: focusing another entry of the menu closes it", reopened and not screen.visible)
-	for key in ["scientific", "cashAmount", "cashPower", "tradeAll"]:
+	for key in ma.SETTINGS:
 		settings.setValue(key, ma.SETTINGS[key].default)
 	yield(freeStation(s), "completed")
 
+# The cash reserve's row's expected text for `reserve` E$ at the current tolerance: the range of the reserve less and
+# plus its share, each end written by formatCash, or the reserve alone where the range is none.
+func rangeText(reserve, scientific) -> String:
+	var share = settings.getValue("tolerance")
+	var low = int(round(reserve * (1 - share)))
+	var high = int(round(reserve * (1 + share)))
+	if low == high:
+		return ma.formatCash(low, scientific)
+	return tr(ma.RANGE) % [ma.formatCash(low, scientific), ma.formatCash(high, scientific)]
+
 # A year of station stays from a new save with 100,000 E$: ore brought back each time, 1 to 3 days of maintenance, the
-# Trade button pressed every day of the stay, money spent between stays. Every stay ends at the cash reserve with the
-# ore sold, unless the market is full or the ore doesn't reach the reserve.
+# Trade button pressed every day of the stay, money spent between stays. Every stay ends inside the cash reserve's range
+# with the ore sold (or within a tonne above the reserve, where a tonne is more than the range above it), unless the
+# market is full or the ore doesn't reach the range.
 func year(all):
 	loadSave(gameStart() + 30 * DAY)
 	settings.loadFromState()
@@ -748,7 +830,8 @@ func year(all):
 		var limit = 0.0
 		for m in settings.parkingMinerals(names(s)):
 			limit = max(limit, tonne(s, m))
-		if not plan.capped and not plan.short and (cash < settings.floorCash() or cash >= settings.floorCash() + limit):
+		var bounds = settings.floorRange()
+		if not plan.capped and not plan.short and (cash < bounds[0] or cash > max(bounds[1], settings.floorCash() + limit)):
 			bad.append([stays, cash])
 		for m in names(s):
 			if held(s, m) != parked(m):
@@ -758,6 +841,6 @@ func year(all):
 		CurrentGame.changeMoney(- rng.randf_range(0, 400000))
 		yield(frames(2), "completed")
 	note("a year with Trade all ores %s: %d stays, %s E$ in cash, %s" % ["on" if all else "off", stays, CurrentGame.formatThousands(CurrentGame.getMoney()), parkedValue(s)])
-	check("a year with Trade all ores %s: every stay ends at the cash reserve with the ore sold" % ("on" if all else "off"), bad.empty() and stays > 30, bad)
+	check("a year with Trade all ores %s: every stay ends inside the cash reserve's range with the ore sold" % ("on" if all else "off"), bad.empty() and stays > 30, bad)
 	settings.setValue("tradeAll", false)
 	yield(freeStation(s), "completed")
