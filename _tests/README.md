@@ -9,7 +9,7 @@ a Godot project in `TempDir\tests\project` from `_tests\`; the game's own `Docki
 `HidingMarginContainer.gd`, `AnalogControlSlider.gd`, `TuningFloatValue.gd`, `TuningBoolValue.gd`, `TuningItems.gd`,
 `Hud.gd`, `OMS.gd`,
 `TabsWithGamepadControl.gd`, `PriceLabel.gd`, `RepeatingHSlider.gd`, `MineralLabel.gd`, `MineralSystemToggle.gd`,
-`HireableCrew.gd`, `CrewBio.gd`, `CurrentCrewManagement.gd`, `PlaySoundsOnTheseButtons.gd`, `SystemBuyUI.gd`,
+`SystemMineralList.gd`, `HireableCrew.gd`, `CrewBio.gd`, `CurrentCrewManagement.gd`, `PlaySoundsOnTheseButtons.gd`, `SystemBuyUI.gd`,
 `SystemShipUpgradeUI.gd`, `Dealer.gd`, `Game.gd`, `Enceladus.gd`, `TransponderOnIntro.gd`, `ship-ctrl.gd`, `Reactor.gd`,
 `FusionReactor.gd`, `CurrentGame.gd`, `body.gd`, `ClaimOwner.gd`, `ClaimBeacon-1.gd`, `ClaimBeaconForeign.gd`,
 `NewGamePlus.gd`, `WeaponSlot.gd`, `PauseLayer.gd`, `PDT.gd`, `Video.gd`, `GravimetricReadout.gd`, `massdriver.gd`,
@@ -22,7 +22,8 @@ the two scenes `LIDAR.gd` preloads; and stubs of the Tuning scenes (`TuningFloat
 `TuningBoolValue.tscn`, with the game's scripts, node paths and connections, and `HeaderWithMoney.tscn`), of a Hire
 screen entry (`CrewBio.tscn`, with a portrait stub,
 `harness/crew_video.gd`, and the game's tooltip node, `PlaySoundsOnTheseButtons`), of the Geologist tab's parts
-(`MineralSystemToggle.tscn`, `MineralLabel.tscn`, `PriceLabel.tscn`), of a Fleet entry (`SystemBuyUI.tscn`, with the
+(`MineralSystemToggle.tscn`, `MineralLabel.tscn`, `PriceLabel.tscn`, `MineralSystemLabel.tscn`, `PercentLabel.tscn`),
+of a Fleet entry (`SystemBuyUI.tscn`, with the
 Use and OK icons, the confirmation's frame and margins, the confirmation animations read from the game's scene, the
 game's themes for the entry, its labels' grid and its thumbnail margin (`menu/MenuTheme.tres`, `hud/TNTRL-theme.tres`,
 `enceladus/Subwindow.theme`, and every font, stylebox and image they load, found by following their `res://` paths),
@@ -197,27 +198,45 @@ GeologyByMass.
   input events in the idle part of a frame, with the game's bindings: a bare `InputEventAction`, or one sent during
   physics, doesn't make `Input.is_action_just_pressed` true. The control checks (the entry keeps its key; a Hire
   screen entry gets no badge) run on the game's own scripts.
-- `geology` (`suites/geology.gd`): HUDs from `harness/geology_hud.tscn` (the game's `Hud.gd`, with an `Inventory`
-  placeholder of `harness/geology_oms.tscn`: the game's `OMS.gd` and `TabsWithGamepadControl.gd` over the OMS's four
-  role tabs) on `harness/geology_ship.gd`, a ship stub whose `isValidMineralTarget` records each call in place of the
-  game's rule; the OMS is built on the ship's `instance` signal, as the game builds it. The mod's settings
-  descriptions come from its `Settings.gd`. Checks that the tab comes right after the Geologist tab, titled by its
-  key, once however often the OMS is built, and that opening it stores nothing; its switch, with its label at the
-  mod's spacing (once laid out); a grid of three columns: the base row first (its name, its slider, an empty cell),
-  then one row per mineral the HUD can switch on (name, extra mass slider, total), with the Geologist tab's parts,
-  the mod's range, step, unit, format, tooltip and bar width (also once laid out), and the stored values; the switch
-  and the sliders store what they show, every total follows the base and its own slider, and the switch dims the
-  rows; choosing the tab focuses the switch. The rule: off, the game decides; on, below, at and above a mineral's base
-  plus extra mass, a mineral switched off in the Geologist tab, one of two minerals enough, the value and Minimum
-  value ignored both ways, each mineral's own extra, the base alone with no extras, the base moving every threshold;
-  the game decides a chunk not yet identified, another ship's HUD and a HUD without mineral targeting. The settings
-  model: defaults for a ship without the entry; reading and unchanged sets store nothing; the mineral list with and
-  without `onlyMinerals`; clamping and snapping of what is set or hand-edited, base and extras; the entry in the HUD's
-  `mineralConfig` (the ship's `hud.config`) under the manifest's id, with the format and mod versions, the game's keys
-  untouched; a JSON round trip; a format-1 entry (`minMass`, read as the extras) and its rewrite on the first change.
-  A preheated ship (its HUD builds the OMS before loading `mineralConfig`) gets the tab with its stored values. And
-  the texts of `i18n/en.po`, also in a language without them. The control checks (the OMS keeps its four tabs; the
-  game decides) run on the game's own script.
+- `geology` (`suites/geology.gd`): the tab on HUDs from `harness/geology_hud.tscn` (the game's `Hud.gd`, with an
+  `Inventory` placeholder of `harness/geology_oms.tscn`: the game's `OMS.gd` and `TabsWithGamepadControl.gd` over the
+  OMS's four role tabs) on `harness/geology_ship.gd`, a ship stub whose `isValidMineralTarget` records each call in
+  place of the game's rule; the OMS is built on the ship's `instance` signal, as the game builds it. The rule on ships
+  of the game's `ship-ctrl.gd` (with the mod, its extension), given their script out of the tree (their `_ready` never
+  runs), with the HUD's row as their `hud.config`; where the game decides, each answer is compared with the same ship
+  on the game's own script (the bottom of the script chain, whatever extends it). The Geologist tab: a list of the
+  game's `SystemMineralList.gd` (with the mod, its extension) added to that OMS's Geologist tab, where the game nests
+  it, building its rows on the stub ship's `systemsChanged` (`getSystems`): the HUD itself, and stubs
+  (`harness/geology_system.gd`) of an arm and of a cargo container's dock (`onlyMinerals`). The mod's settings
+  descriptions come from its `Settings.gd`. Checks that the tab comes right after the Geologist tab, titled by its key, once however
+  often the OMS is built, and that opening it stores nothing; its switch, with its label at the mod's spacing (once
+  laid out); a grid of three columns: the base row first (its name, its slider, an empty cell), then one row per
+  mineral of the market, H2O too, in the Geologist tab's order (name, extra mass slider, total), with the Geologist
+  tab's parts, the mod's range, step, unit, format, tooltip and bar width (also once laid out), and the stored values;
+  the switch and the sliders store what they show, every total follows the base and its own slider, and the switch
+  dims the rows; choosing the tab focuses the switch; a HUD without mineral targeting gets no tab. The HUD hands every
+  chunk to its ship with its own row, the switch on. The rule, with the HUD's row: off, the game decides; on, below,
+  at and above a mineral's base plus extra mass, a mineral switched off in the row, one of two minerals enough, the
+  value and Minimum value ignored both ways (a cheap chunk the game refuses passes), each mineral's own extra, the base
+  alone with no extras, the base moving every threshold. With an arm's or drone plant's row (H2O switched on, its own
+  Minimum value and albedo): H2O against the base plus its own extra, which the HUD's row refuses; each row its own
+  switches; an identified chunk the game refuses for its value and albedo passes; the game decides a chunk not yet
+  identified (by the row's albedo, both ways), a row without mineral targeting, another ship (its AI target, both
+  ways) and the switch off again. The Geologist tab: off, each row's Minimum value as the game shows it (the HUD's and
+  the arm's, not the dock's), and that column's title as the game's, taking focus; on, once the tab shows, every one
+  hidden, the Minimum Albedo controls as the game set them, the focus skipping the hidden values, the title empty and
+  taking no focus, the list narrower, nothing stored; off again, back with their values, and the title with its focus
+  and the list's width; rows built anew while on, hidden at once, the new title too; another ship's tab as the game,
+  its title too. The settings model: defaults for a ship without the entry; reading and unchanged
+  sets store nothing; the mineral list, every mineral of the market whatever the HUD's `onlyMinerals`; clamping and
+  snapping of what is set or hand-edited, base and extras; the entry in the HUD's `mineralConfig` (the ship's
+  `hud.config`) under the manifest's id, with the format and mod versions, the game's keys untouched; a JSON round
+  trip; a format-1 entry (`minMass`, read as the extras) and its rewrite on the first change. A preheated ship (its
+  HUD builds the OMS before loading `mineralConfig`) gets the tab with its stored values. And the texts of
+  `i18n/en.po`, also in a language without them. With DiveSkipTransit too, in either order (both extend
+  `ship-ctrl.gd`), the same checks pass. The control checks (the OMS keeps its four tabs; the HUD asks its ship with its
+  own row; the ship judges by value against the Minimum value; the Geologist tab shows the HUD's and the arm's Minimum
+  value, not the dock's) run on the game's own scripts.
 - `fleet` (`suites/fleet.gd`): Fleet entries built from the stub `SystemBuyUI.tscn` (the game's `SystemBuyUI.gd`) as
   `Dealer.gd` `doAddShips` makes them, under a Fleet screen stub (`harness/fleet_screen.gd`, which records
   `shipChanged` and `addShips`, and the Esc presses that reach its `_input`, once per frame, as `Dealer.gd` closes the
@@ -541,8 +560,9 @@ GeologyByMass.
   PullBehavior alone, 61 with TargetSelection alone), `still` 9, `moving` 16, `dive` 8, `boot` 5 (3 control checks
   with `-Mods @()`), `lidar` 40 (3 control checks with `-Mods @()`), `hud` 13 (3 control checks with `-Mods @()`),
   `crew` 148 (149 with CrewPerfectSort too, in both load orders; the same 148 with DealerNotifier too, in both; 3
-  control checks with `-Mods @()`), `geology` 60 (3 control checks with `-Mods @()`), `fleet` 70 (the same with
-  ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too; 3 control checks with `-Mods @()`), `skip` 109 (112 with
+  control checks with `-Mods @()`), `geology` 80 (the same with DiveSkipTransit too, in both load orders; 5 control
+  checks with `-Mods @()`), `fleet` 70 (the same with ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too; 3
+  control checks with `-Mods @()`), `skip` 109 (112 with
   CrewCheapHireNotifier too, the same with DealerNotifier as well; 13 control checks with `-Mods @()`), `dealer` 111
   (114 with CrewCheapHireNotifier and DiveSkipTransit too, in every load order; the same 111 with ShipCopyPaste,
   ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too; 2 control checks with `-Mods @()`), `transponder` 48 (3

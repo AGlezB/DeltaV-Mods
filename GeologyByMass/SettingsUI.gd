@@ -1,7 +1,7 @@
 extends Tabs
 
-# GeologyByMass's OMS tab: the switch at the top, a line on what it does, the base slider, then one row per mineral the
-# HUD can switch on in the Geologist tab: its extra mass slider and the total it gives with the base. Built from that
+# GeologyByMass's OMS tab: the switch at the top, a line on what it does, the base slider, then one row per mineral of
+# the Geologist tab's columns, Water too: its extra mass slider and the total it gives with the base. Built from that
 # tab's own parts (hud/SystemMineralList.gd): its on/off switch, its mineral names, coloured the same way, and its
 # Minimum value slider, which keeps the game's focus and controller handling (press the value to edit it, left and
 # right to change it, accept or cancel to leave). A `Tabs` node, as every page of the OMS is (hud/OMS.tscn).
@@ -34,7 +34,7 @@ var _baseSlider
 var _sliders = {} # by mineral
 var _totals = {} # by mineral
 
-# Builds the tab for `settings` (Settings.gd, one HUD's); the values are filled in once it is in the tree.
+# Builds the tab for `settings` (Settings.gd, one ship's); the values are filled in once it is in the tree.
 func setup(settings):
 	_settings = settings
 	var margin = MarginContainer.new()

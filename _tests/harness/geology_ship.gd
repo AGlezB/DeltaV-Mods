@@ -4,7 +4,8 @@ extends Node2D
 # signals and members), its config with the game's dotted keys (getConfig / setConfig: "hud.config" is the HUD's
 # mineralConfig), the identified chunks (identifiedObjects: [kg by mineral, value, position, object] by the object's
 # hash, as addIdentifiedObject stores them), and isValidMineralTarget, which records each call and returns `answer`
-# instead of the game's rule.
+# instead of the game's rule. For the Geologist tab (hud/SystemMineralList.gd): the signals it connects
+# (systemsChanged, setup) and its systems (getSystems: {key: {"ref", "name"}}, as ship-ctrl.gd lists them).
 
 signal damageImpact(power, point, delta)
 signal damageThermal(power, point, delta)
@@ -12,6 +13,8 @@ signal damageEMP(power, point, delta)
 signal instance()
 signal playerControllChanged(how)
 signal frozen(how)
+signal systemsChanged(to)
+signal setup()
 
 var shipConfig = {}
 var identifiedObjects = {}
@@ -21,6 +24,7 @@ var frozen = false
 var forceHud = false
 var fullSimulation = false
 var ageWithSeed = 0
+var mineralSystems = {} # what getSystems returns
 
 var answer = true # what isValidMineralTarget returns
 var calls = [] # each isValidMineralTarget call: [object, config]
@@ -48,3 +52,6 @@ func setConfig(key, value):
 func isValidMineralTarget(object, config):
 	calls.append([object, config])
 	return answer
+
+func getSystems():
+	return mineralSystems

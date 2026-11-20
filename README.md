@@ -48,8 +48,8 @@ These change how something works in a dive, compared to vanilla. Each one's wiki
 - [DiveSkipTransit](../../wiki/DiveSkipTransit#changes-how-the-game-plays): a dive's cutscenes are skipped, with their remass and in-game
   time charged from the game's formulas (the switches marked in its settings affect remass); the burn away from the
   ring is an estimate. The transit, when played, can run faster than the game's own fast-forward, without sound.
-- [GeologyByMass](../../wiki/GeologyByMass#changes-how-the-game-plays): with its switch on, which chunks keep a full info box depends
-  on ore mass instead of value.
+- [GeologyByMass](../../wiki/GeologyByMass#changes-how-the-game-plays): with its switch on, which chunks keep a full info box, and
+  which ones the arm and the drones go for, depends on ore mass instead of value.
 - [TransponderAltCodes](../../wiki/TransponderAltCodes#changes-how-the-game-plays): a ship's model shows in its
   transponder code, on the LIDAR and in the Pilot tab, before the ship is in sight.
 

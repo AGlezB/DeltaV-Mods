@@ -281,6 +281,45 @@ one up gives the achievement `DISCOVER_FROZEN_BODY`.
 
 ## Geologist
 
+The Geologist tab's mineral targeting (`hud/SystemMineralList.gd` `updateSystems`) has one row per system of the ship
+with `mineralTargetting` (a hardpoint's through its `system`), named as the system:
+
+- Columns: Minimum Albedo (`CARGO_UNKNOWN_ALBEDO`, in %), a switch for each mineral of `CurrentGame.mineralPrices`
+  (H2O first, as that dictionary lists them), and Minimum value (`HUD_MIN_PRICE`, in E$). A system with `onlyMinerals`
+  can switch on only `CurrentGame.traceMinerals` (not H2O), and its Minimum Albedo is disabled; its Minimum value is
+  disabled too unless it has `oreValueFilter` on. Both are the same control (`hud/components/PriceLabel.gd`; the
+  Minimum Albedo's scene, `PercentLabel.tscn`, only changes its format and range), which, disabled, hides its slider
+  and its value, leaving the cell empty (`_setDisabled`).
+- The list is a `GridContainer` (a container that lays its children out in a fixed number of columns, leaving out the
+  hidden ones, so hiding a cell shifts every cell after it). Its first row is the header: an empty label, a
+  `hud/components/MineralLabel.tscn` (a flat button that takes focus) for the Minimum Albedo and for each mineral,
+  then one titled `HUD_MIN_PRICE`; each system's row follows, its name first. `updateSystems` builds every row anew,
+  the old ones freed at the end of the frame (`queue_free`), on the ship's `systemsChanged` and `setup` signals.
+- The rows: the HUD (`hud/Hud.gd`: `mineralTargetting`, `onlyMinerals` and `oreValueFilter` all on), the AR-1500 arm
+  (`ships/modules/SalvageArm.tscn`: `mineralTargetting`, `pickupOnlyMineralTargets`), the MPI Tug and MLF Haul drone
+  plants (`weapons/drone-plant.gd`; not the OME Maintenance drones, `weapons/drone-fix-plant.tscn`), the NT Mining
+  Companion's cradle (`ships/modules/CargoScoopDock-R.tscn`, which `-L` instances) and the THI cargo containers' docks
+  (`ships/modules/StorageContainerDock.tscn`, `StorageContainerDockMono.tscn`, with `onlyMinerals`).
+- Each row is the system's `mineralConfig`, `{minerals, minValue, albedo}`, kept in the ship's config at
+  `getSlotName("config")`: `hud.config` for the HUD, `weaponSlot.<slot>.config` for a hardpoint's system. A system
+  without one makes it with every trace mineral switched on, 0 and 0 (`Hud.gd`, `DockingArm.gd` and `drone-plant.gd`
+  `_ready`). So the game saves it with the ship, per row.
+- The rule (`ships/ship-ctrl.gd` `isValidMineralTarget(object, config)`, which every system asks with its own row): a
+  ship that isn't the player's passes only its AI target (anything, without AI); a row without `minerals` and
+  `minValue` passes anything. An identified object (`identifiedObjects`, see below) is refused when its estimated
+  value is below `minValue`, except that a value of 0 (the masses known, the value not yet) gets through when the
+  object's LIDAR return reaches `albedo` (`lidarResponse` / 4, or 1/4 without one, against `albedo` / 100); then it
+  passes when it holds a mineral switched on in `minerals`. An object not identified passes when its LIDAR return
+  reaches `albedo`.
+- Who asks: the HUD for its info boxes (`Hud.gd` `isValidMineralTarget`, which each `hud/MineralMark.gd` asks about
+  once a second, `mineralConfigReexamine`; a "no" shrinks the box, `diminish`, hiding its kg list and price); the arm,
+  for each body in its queue (`DockingArm.gd` `isValidTarget`, with `pickupOnlyMineralTargets`); the tug and haul
+  plants, for each chunk in reach at each scan (`drone-plant.gd` `scanForTarget`; the USV-GOT recon drone's queue,
+  `droneQueue`, comes first and isn't asked); the NT Mining Companion's AI, which wants the chunks passing its cradle's
+  row more the more they are worth (`ship-ctrl.gd`, `aiHomeCradle`); and a ship's AI catching a chunk with its haul
+  drones (`AI.catch`). The cargo containers' docks don't ask: their row picks which processed ore they take from the
+  ship (`DockingArm.gd` `hasMineralEnabled`, in the transfer).
+
 The Geologist tab's mineral map (`MineralMapVoronoi`, `hud/components/MineralMap.tscn`; no text of its own), under the
 tab's LIDAR picture at the same scale, shows where the mineral picked in the tab's list has been found around the ship,
 in that mineral's colour.

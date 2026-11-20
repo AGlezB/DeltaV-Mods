@@ -1,5 +1,25 @@
 # GeologyByMass - Changes
 
+## 1.3.0
+- With the switch on, the masses now decide for every row of the Geologist tab, not only the HUD's: the AR-1500 arm,
+  the MPI Tug drones, the MLF Haul Drones and the NT Mining Companion go for a chunk your geologist has identified when
+  it holds enough of a mineral switched on in their row, whatever it is worth. Each row keeps its own mineral
+  switches; one set of masses serves them all.
+- New H2O row on the mod's OMS tab, for the rows that can switch H2O on (the arm's and the drones').
+- `Code.gd` now holds the rule, as a script extension of `ships/ship-ctrl.gd` (`isValidMineralTarget(object,
+  config)`), which every system asks with its own row. The HUD extension, now only the tab, is renamed `OmsScreen.gd`,
+  and no longer overrides `isValidMineralTarget(body)`; it adds the tab only to a HUD with mineral targeting.
+- `Settings.gd` is made from the ship (it reads the ship's `hud.config`, new `HUD_CONFIG`) instead of the HUD;
+  `minerals()` lists every mineral of the market. The saved entry is unchanged.
+- Texts `GEOLOGYBYMASS_HINT`, `GEOLOGYBYMASS_BASE_MASS_DESC` and `GEOLOGYBYMASS_EXTRA_MASS` reworded for every row.
+- While the switch is on, the Geologist tab hides the *Minimum value* of the rows the masses replace it in (the HUD,
+  the arm, the drones, the NT Mining Companion), as the game hides it for the cargo containers' rows, and the title of
+  that column; switched off, the title and the sliders are back, with their values.
+- New script extension `GeologistTab.gd`, of `hud/SystemMineralList.gd` (the Geologist tab's rows): overrides
+  `updateSystems`, adds `_process`.
+- README: the *Warning*, the rows, the callers of the rule, the hidden Minimum values and their title, the three
+  extensions and their members.
+
 ## 1.2.1
 - The README's *Disclaimer* no longer names the author.
 

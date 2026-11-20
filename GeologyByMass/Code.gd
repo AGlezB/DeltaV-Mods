@@ -1,80 +1,49 @@
-extends "res://hud/Hud.gd"
+extends "res://ships/ship-ctrl.gd"
 
-# GeologyByMass: judges an identified chunk by the mass of each mineral in it instead of its value, when the switch on
-# the mod's OMS tab is on.
+# GeologyByMass: judges an identified chunk by the mass of each mineral in it instead of its value, for every row of
+# the Geologist tab, when the switch on the mod's OMS tab is on.
 #
-# Each chunk the geologist identifies gets an info box (hud/MineralMark.gd). About once a second the box asks its
-# overlay (hud/AutopilotOverlay.gd isValidMineralTarget), which asks this HUD, which asks the ship with the Geologist
-# tab's settings for the HUD (ships/ship-ctrl.gd isValidMineralTarget(body, mineralConfig)). A "no" plays the box's
-# `diminish` animation: it shrinks, and its kg list and price are hidden. The game's rule: the chunk's estimated value
-# is at least the Minimum value, and it holds a mineral switched on in that tab. Nothing else asks this HUD, so the
-# mod changes only the boxes: the drones and the salvage arm ask the ship with their own settings.
+# The Geologist tab has one row per system with mineral targeting, each kept in that system's own config: which
+# minerals it goes for and its Minimum value (hud/SystemMineralList.gd). Every system asks the ship whether a chunk
+# passes its row (ships/ship-ctrl.gd isValidMineralTarget(object, config)): the HUD for its info boxes (hud/Hud.gd
+# isValidMineralTarget, which hud/MineralMark.gd asks about once a second; a "no" shrinks the box), the AR-1500 arm
+# (ships/modules/DockingArm.gd isValidTarget), the tug and haul drone plants (weapons/drone-plant.gd scanForTarget), the
+# NT Mining Companion for its cradle's row and a ship's AI catching a chunk with its haul drones (ship-ctrl.gd). The
+# game's rule, for the player's ship: an identified chunk passes when its estimated value is at least the row's Minimum
+# value and it holds a mineral switched on in the row; a chunk not yet identified, when its LIDAR return reaches the
+# row's albedo (GAME.md, Geologist).
 #
-# With the switch on, for the player's ship, an identified chunk keeps its full box when it holds, of some mineral
-# switched on in the Geologist tab, at least the base mass plus that mineral's extra mass (Settings.gd getMinMass); its
-# value and the Minimum value no longer count.
-# The masses are the box's own (MineralMark.gd scanParent, with the geologist's error), which the box stores in the
-# ship's identifiedObjects (identifyMinerals / identifyValue -> ship-ctrl.gd addIdentifiedObject). A chunk not yet
-# identified, the switch off, or another ship's HUD: the game decides.
+# With the switch on, for the player's ship, an identified chunk passes a row when it holds, of some mineral switched
+# on in that row, at least the base mass plus that mineral's extra mass (Settings.gd getBaseMass, getExtraMass); its
+# value and the row's Minimum value no longer count. One set of masses serves every row. The masses are the info box's
+# own (MineralMark.gd scanParent, with the geologist's error), which the box stores in the ship's identifiedObjects
+# (identifyMinerals / identifyValue -> ship-ctrl.gd addIdentifiedObject). A chunk not yet identified, the switch off,
+# a row without mineral targeting or another ship: the game decides.
 #
-# Stacking: the parent's _ready etc. are never called (Godot runs every level by itself); isValidMineralTarget and
-# instance fall through to the parent with `.name()`; new members start with `_`.
+# Stacking: the parent's _ready etc. are never called (Godot runs every level by itself); isValidMineralTarget falls
+# through to the parent with `.isValidMineralTarget()`; new members start with `_`.
 
 const GeologyByMass = preload("res://GeologyByMass/Settings.gd")
-const _GEOLOGY_BY_MASS_UI = preload("res://GeologyByMass/SettingsUI.gd")
-
-# The mod's tab: its node name, which the game's TabContainer shows translated as the tab's title (as it shows the
-# OMS's own tabs, named CREW_OCCUPATION_*), and the Geologist tab it follows (hud/OMS.tscn).
-const _GEOLOGY_BY_MASS_TAB = "GEOLOGYBYMASS_TAB"
-const _GEOLOGIST_TAB = "CREW_OCCUPATION_GEOLOGIST"
 
 var _geologyByMassSettings = null
 
-func isValidMineralTarget(body: RigidBody2D) -> bool:
+func isValidMineralTarget(object: RigidBody2D, config: Dictionary) -> bool:
+	if not playerControlled or not ("minerals" in config and "minValue" in config):
+		return .isValidMineralTarget(object, config)
+	var identified = identifiedObjects.get(hash(object))
+	if identified == null or not identified[0] is Dictionary:
+		return .isValidMineralTarget(object, config)
 	var settings = _geologyByMass()
-	if ship == null or not ship.isPlayerControlled() or not settings.isEnabled():
-		return .isValidMineralTarget(body)
-	var masses = null
-	if Tool.claim(ship):
-		var identified = ship.identifiedObjects.get(hash(body))
-		if identified != null:
-			masses = identified[0]
-		Tool.release(ship)
-	if not masses is Dictionary:
-		return .isValidMineralTarget(body)
-	for mineral in mineralConfig.minerals:
-		if mineral in masses and masses[mineral] >= settings.getMinMass(mineral):
+	if not settings.isEnabled():
+		return .isValidMineralTarget(object, config)
+	var masses = identified[0]
+	var base = settings.getBaseMass()
+	for mineral in config.minerals:
+		if mineral in masses and masses[mineral] >= base + settings.getExtraMass(mineral):
 			return true
 	return false
-
-# The game builds the OMS here (the HUD's `Inventory` placeholder of hud/OMS.tscn). The tab is added once the frame
-# is idle: the HUD's _ready can call this before it loads mineralConfig from the ship (a preheated ship), and the tab
-# shows the values stored there.
-func instance():
-	.instance()
-	call_deferred("_addGeologyByMassTab")
 
 func _geologyByMass():
 	if _geologyByMassSettings == null:
 		_geologyByMassSettings = GeologyByMass.new(self)
 	return _geologyByMassSettings
-
-# Right after the Geologist tab, framed as it is; at most once per OMS. The TabContainer is the OMS's own `tabsPath`
-# (hud/OMS.gd). Nothing in the game refers to the OMS's tabs by index.
-func _addGeologyByMassTab():
-	var settings = _geologyByMass()
-	if not is_instance_valid(inventory) or not ("tabsPath" in inventory) or not settings.available():
-		return
-	var tabs = inventory.get_node_or_null(inventory.tabsPath)
-	if not tabs is TabContainer or tabs.has_node(_GEOLOGY_BY_MASS_TAB):
-		return
-	var tab = _GEOLOGY_BY_MASS_UI.new()
-	tab.name = _GEOLOGY_BY_MASS_TAB
-	var geologist = tabs.get_node_or_null(_GEOLOGIST_TAB)
-	if geologist is Control:
-		tab.theme = geologist.theme
-		tab.rect_clip_content = geologist.rect_clip_content
-	tab.setup(settings)
-	tabs.add_child(tab)
-	if geologist != null:
-		tabs.move_child(tab, geologist.get_index() + 1)

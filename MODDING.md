@@ -66,7 +66,7 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
   in path order install theirs. A scene loaded then keeps the scripts it was loaded with, so a later extension of one
   of them misses it. `ships/Shipyard.gd` preloads every ship scene: extending it would make every ship miss the later
   mods' extensions of ship scripts (DiveSkipTransit `ship-ctrl.gd`, DiveDisableAdrenalineBooster `CabinLight.gd`,
-  GeologyByMass `Hud.gd`, LidarLouderPing `LIDAR.gd`). That is why CombatSimulator has no Shipyard extension; none of
+  GeologyByMass `ship-ctrl.gd` and `Hud.gd`, LidarLouderPing `LIDAR.gd`). That is why CombatSimulator has no Shipyard extension; none of
   the game scripts the mods extend preloads a ship scene.
 - `Mod.manifest` is not read by the game's loader.
 - The loader also has `addTranslationsFromCSV`, `appendNodeInScene` and `saveScene` (unused so far; the harness's
@@ -107,8 +107,10 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
      (astrogation).
    - DroneAltPriorities: `Code.gd` → `weapons/drone-plant.gd` (the nanodrone plants' choice of target); `OmsScreen.gd`
      → `hud/Hud.gd` (its OMS tab, added right after the Geologist tab as GeologyByMass adds its own).
-   - GeologyByMass: `Code.gd` → `hud/Hud.gd` (it also adds its tab to the OMS, right after the Geologist tab, from
-     `instance()`).
+   - GeologyByMass: `Code.gd` → `ships/ship-ctrl.gd` (the rule every row of the Geologist tab is judged by,
+     `isValidMineralTarget`); `OmsScreen.gd` → `hud/Hud.gd` (its OMS tab, added right after the Geologist tab from
+     `instance()`); `GeologistTab.gd` → `hud/SystemMineralList.gd` (the Geologist tab's rows, whose Minimum values and
+     their column's title it hides while its switch is on).
    - LidarLouderPing: `Code.gd` → `hud/LIDAR.gd`.
    - ShipCopyPaste: `Code.gd` → `enceladus/SystemBuyUI.gd` (the Fleet screen's entries; it prices through the
      Equipment screen's items).
@@ -165,12 +167,18 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
   (CombatSimulator `giveXp`, `setStory`, `recordEncounter`, `setDestinationHighlight` and `addShip`;
   TransponderAltCodes `_ready`, `getNewTransponder`, `getTransponder`, `validateState` and `createPlayerShip`). Their
   member names must stay distinct.
-- DroneAltPriorities (`OmsScreen.gd`) and GeologyByMass (`Code.gd`) both extend `hud/Hud.gd` and both add an OMS
+- DroneAltPriorities (`OmsScreen.gd`) and GeologyByMass (`OmsScreen.gd`) both extend `hud/Hud.gd` and both add an OMS
   tab right after the Geologist tab, each from its own override of `instance()`, which calls the parent's first and
   defers the tab: by path the chain is game ← DroneAltPriorities ← GeologyByMass, so DroneAltPriorities's deferred call
   runs first and GeologyByMass's tab ends up between the Geologist tab and DroneAltPriorities's (the other order swaps
   the two). Both keep their entries in the HUD's `mineralConfig`, each under its own mod id. Their member names must
-  stay distinct. Loaded together in `drones` (every order).
+  stay distinct. Loaded together in `drones` (every order). DroneAltPriorities's plants still ask the ship which chunks
+  pass their row (`_dapCheck`), so with GeologyByMass's switch on, the chunks they rank are the ones its masses let
+  through; the arm mods keep the game's `isValidTarget`, which asks the same.
+- DiveSkipTransit (`Ship.gd`) and GeologyByMass (`Code.gd`) both extend `ships/ship-ctrl.gd`, every ship's script,
+  from `_init`: by path the chain is game ← DiveSkipTransit ← GeologyByMass. They override different functions
+  (DiveSkipTransit `fastTravelTo`, GeologyByMass `isValidMineralTarget`). Their member names must stay distinct. Loaded
+  together in `geology` (both orders).
 - ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice find the ship entries by `node.get_script().resource_path`;
   ShipCopyPaste extends that script, and `take_over_path` keeps the path, so they still find them (loaded together in
   `fleet`). DealerNotifier reads the stock from the Dealer screen's entries in any order and hangs its badge in each
@@ -470,14 +478,14 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
   - Settings that change what a game system's own settings already decide follow that system's pattern
     (GeologyByMass): they live in that system's config, next to the game's, under the mod's id from
     `Mod.manifest`, changed in place as the game changes its own, so the game saves, loads and carries them. Then
-    `Settings.gd` has one instance per system, made by `Code.gd` (no `shared()`, no `loadFrom…` / `saveTo…`, no
-    signal when the game re-reads by itself): the descriptions as constants, getters that never write and give the
-    defaults where nothing is stored (clamped, snapped to the step), setters that write only a change, an entry with
-    `formatVersion` and `modVersion`, and `modId()` / `modName()` / `modVersion()`. GeologyByMass: the HUD's
-    `mineralConfig` (the ship's `hud.config`), next to the Geologist tab's settings. DroneAltPriorities keeps its
-    settings there too, for the whole ship, so its `Settings.gd` is made from the ship rather than the HUD
-    (`ship.getConfig("hud.config")`): each drone plant and the OMS tab make their own instance, and all read the same
-    entry, so a change applies at once with no signal.
+    `Settings.gd` has one instance per system or ship, made by each script that reads it (no `shared()`, no
+    `loadFrom…` / `saveTo…`, no signal when the game re-reads by itself): the descriptions as constants, getters that
+    never write and give the defaults where nothing is stored (clamped, snapped to the step), setters that write only
+    a change, an entry with `formatVersion` and `modVersion`, and `modId()` / `modName()` / `modVersion()`.
+    GeologyByMass and DroneAltPriorities keep theirs in the HUD's `mineralConfig` (the ship's `hud.config`), next to
+    the Geologist tab's settings, for the whole ship, so their `Settings.gd` is made from the ship rather than the HUD
+    (`ship.getConfig("hud.config")`): GeologyByMass's ship rule and OMS tab, DroneAltPriorities's drone plants and OMS
+    tab, each make their own instance, and all read the same entry, so a change applies at once with no signal.
   - `i18n/<locale>.po` (`i18n/en.po`, …), in a subfolder named as the game's own `i18n/`: the mod's texts in that
     language, loaded by `ModMain.gd` (see *How the game loads a mod*). English is Godot's fallback language, so
     `en.po` covers every language until it gets its own file.
@@ -708,9 +716,11 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   destroyed habitat. A body's transponder is its group's plus its initials (`body.gd` `getTransponder`). Details:
   [GAME.md](GAME.md#frozen-bodies).
 - **Geologist**: the crew occupation for mining, and the OMS tab with the cargo's composition and the mineral
-  targeting: which minerals the HUD marks, and their Minimum value (`HUD_MIN_PRICE`), kept in the HUD's
-  `mineralConfig`. The tab's mineral map (`hud/components/MineralMap.gd`) colours the areas around the ship where the
-  mineral picked in its list has been found. Details: [GAME.md](GAME.md#geologist).
+  targeting (`hud/SystemMineralList.gd`): one row per system that picks by mineral (the HUD, each arm, each nanodrone
+  plant, the NT Mining Companion, the cargo containers' docks), with the minerals switched on for it, its Minimum
+  value (`HUD_MIN_PRICE`) and its Minimum Albedo (`CARGO_UNKNOWN_ALBEDO`), kept in the system's own `mineralConfig`
+  (the HUD's is the ship's `hud.config`). The tab's mineral map (`hud/components/MineralMap.gd`) colours the areas
+  around the ship where the mineral picked in its list has been found. Details: [GAME.md](GAME.md#geologist).
 - **Hardpoint**: a ship's mount for a piece of equipment: high-stress, low-stress or spinal. Only high-stress ones
   take the arm. In the ship's scene each is a `ships/WeaponSlot.gd` node, inline (some nested, the ND-LIS Kitsune's is
   `Front/WeaponSlot`) or a placeholder of `weapons/WeaponSlot.tscn`, which stores only the values it overrides

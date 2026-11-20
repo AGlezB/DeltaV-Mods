@@ -8,7 +8,8 @@
 	the decompiled game: DockingArm.gd, Arm.gd, CabinLight.gd, Boot.gd, LIDAR.gd, PitchAdjustedAudio.gd,
 	HardwareLabel.gd, EnceladusMenu.gd, HidingMarginContainer.gd, AnalogControlSlider.gd, TuningFloatValue.gd,
 	TuningBoolValue.gd, TuningItems.gd, Hud.gd, OMS.gd, TabsWithGamepadControl.gd, PriceLabel.gd, RepeatingHSlider.gd, MineralLabel.gd,
-	MineralSystemToggle.gd, HireableCrew.gd, CrewBio.gd, CurrentCrewManagement.gd, PlaySoundsOnTheseButtons.gd,
+	MineralSystemToggle.gd, SystemMineralList.gd, HireableCrew.gd, CrewBio.gd, CurrentCrewManagement.gd,
+	PlaySoundsOnTheseButtons.gd,
 	SystemBuyUI.gd, SystemShipUpgradeUI.gd, Dealer.gd, Game.gd, Enceladus.gd, TransponderOnIntro.gd, ship-ctrl.gd,
 	Reactor.gd, FusionReactor.gd, Tool.gd, gdunzip.gd, CurrentGame.gd, body.gd, ClaimOwner.gd, ClaimBeacon-1.gd,
 	ClaimBeaconForeign.gd, NewGamePlus.gd, PauseLayer.gd, PDT.gd, Video.gd, GravimetricReadout.gd, massdriver.gd,
@@ -18,7 +19,7 @@
 	(default_bus_layout.tres), the skill icons CrewBio.gd preloads and the Fleet entry's Use icon, a stub mineral scene
 	carrying the chunk radius read from the game's, stubs of the two scenes LIDAR.gd preloads, of the Tuning parts
 	CrewCheapHireNotifier's settings screen is built from, of a Hire screen entry (CrewBio.tscn), of the Geologist
-	tab's parts GeologyByMass's OMS tab is built from, and of a Fleet entry (SystemBuyUI.tscn, with the game's
+	tab's parts (its rows', which GeologyByMass's OMS tab is built from too), and of a Fleet entry (SystemBuyUI.tscn, with the game's
 	confirmation animations), an Equipment item (SystemShipUpgradeUI.tscn), the Dealer screen (Dealer.tscn, as the
 	station and Owned.tscn instance it, with a Dealer entry that has the game's tooltip node), the ring scene
 	(Game.tscn, with the game's root values and title cards, the asteroid field's masks and the cursor's fade), the two
@@ -40,7 +41,8 @@
 	- lidar: LidarLouderPing.
 	- hud: HudHideLabels.
 	- crew: CrewCheapHireNotifier.
-	- geology: GeologyByMass. Builds a HUD from harness\geology_hud.tscn, which holds the game's Hud.gd.
+	- geology: GeologyByMass. Builds a HUD from harness\geology_hud.tscn, which holds the game's Hud.gd, and ships of
+	  the game's ship-ctrl.gd.
 	- fleet: ShipCopyPaste.
 	- skip: DiveSkipTransit. Instances the ring scene stub (Game.tscn), whose root has the game's Game.gd.
 	- dealer: DealerNotifier. Instances the Dealer screen stub (Dealer.tscn), whose root has the game's Dealer.gd.
@@ -179,7 +181,7 @@ foreach ($dir in $project, $build, $logs)
 }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'project.godot'), (Join-Path $PSScriptRoot 'main.tscn') -Destination $project
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'harness'), (Join-Path $PSScriptRoot 'suites') -Destination $project -Recurse
-foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningBoolValue.gd', 'enceladus\Tuning\TuningItems.gd', 'hud\Hud.gd', 'hud\OMS.gd', 'menu\TabsWithGamepadControl.gd', 'hud\components\PriceLabel.gd', 'hud\components\RepeatingHSlider.gd', 'hud\components\MineralLabel.gd', 'hud\components\MineralSystemToggle.gd', 'enceladus\HireableCrew.gd', 'enceladus\CrewBio.gd', 'enceladus\CurrentCrewManagement.gd', 'menu\sfx\PlaySoundsOnTheseButtons.gd', 'enceladus\SystemBuyUI.gd', 'enceladus\SystemShipUpgradeUI.gd', 'enceladus\Dealer.gd', 'enceladus\Shower.tscn', 'Game.gd', 'enceladus\Enceladus.gd', 'TransponderOnIntro.gd', 'ships\ship-ctrl.gd', 'ships\Reactor.gd', 'ships\modules\FusionReactor.gd', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres', 'CurrentGame.gd', 'story\body.gd', 'ships\modules\ClaimOwner.gd', 'ships\WeaponSlot.gd', 'story\ClaimBeacon-1.gd', 'story\ClaimBeaconForeign.gd', 'menu\NewGamePlus.gd', 'PauseLayer.gd', 'ships\modules\PDT.gd', 'hud\Video.gd', 'hud\GravimetricReadout.gd', 'weapons\massdriver.gd', 'TheRing.gd', 'enceladus\MarginViewportUpscale.gd', 'enceladus\Simulator\ViewportWithProxy.gd', 'enceladus\NoBulletTime.gd', 'enceladus\CanvasHidding.gd', 'menu\MouseLayer.gd', 'weapons\drone-plant.gd')
+foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningBoolValue.gd', 'enceladus\Tuning\TuningItems.gd', 'hud\Hud.gd', 'hud\OMS.gd', 'menu\TabsWithGamepadControl.gd', 'hud\components\PriceLabel.gd', 'hud\components\RepeatingHSlider.gd', 'hud\components\MineralLabel.gd', 'hud\components\MineralSystemToggle.gd', 'hud\SystemMineralList.gd', 'enceladus\HireableCrew.gd', 'enceladus\CrewBio.gd', 'enceladus\CurrentCrewManagement.gd', 'menu\sfx\PlaySoundsOnTheseButtons.gd', 'enceladus\SystemBuyUI.gd', 'enceladus\SystemShipUpgradeUI.gd', 'enceladus\Dealer.gd', 'enceladus\Shower.tscn', 'Game.gd', 'enceladus\Enceladus.gd', 'TransponderOnIntro.gd', 'ships\ship-ctrl.gd', 'ships\Reactor.gd', 'ships\modules\FusionReactor.gd', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres', 'CurrentGame.gd', 'story\body.gd', 'ships\modules\ClaimOwner.gd', 'ships\WeaponSlot.gd', 'story\ClaimBeacon-1.gd', 'story\ClaimBeaconForeign.gd', 'menu\NewGamePlus.gd', 'PauseLayer.gd', 'ships\modules\PDT.gd', 'hud\Video.gd', 'hud\GravimetricReadout.gd', 'weapons\massdriver.gd', 'TheRing.gd', 'enceladus\MarginViewportUpscale.gd', 'enceladus\Simulator\ViewportWithProxy.gd', 'enceladus\NoBulletTime.gd', 'enceladus\CanvasHidding.gd', 'menu\MouseLayer.gd', 'weapons\drone-plant.gd')
 {
 	$target = Join-Path $project $file
 	New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
@@ -382,9 +384,10 @@ text = "PUT_HEADER_HERE"
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 '@
-# The Geologist tab's parts GeologyByMass's OMS tab is built from (hud\components\MineralSystemToggle.tscn,
-# MineralLabel.tscn, PriceLabel.tscn, as hud\SystemMineralList.gd uses them): the game's node paths, scripts, values
-# and connections, without the theme, the toggle's click sound, the slider's smooth scrolling and button sounds.
+# The Geologist tab's parts (hud\components\MineralSystemToggle.tscn, MineralLabel.tscn, PriceLabel.tscn, as
+# hud\SystemMineralList.gd uses them, and GeologyByMass's OMS tab is built from them; MineralSystemLabel.tscn and
+# PercentLabel.tscn, which the list preloads too): the game's node paths, scripts, values and connections, without the
+# theme, the toggle's click sound, the slider's smooth scrolling and button sounds.
 Write-Utf8Lf (Join-Path $project 'hud\components\MineralSystemToggle.tscn') @'
 [gd_scene load_steps=2 format=2]
 
@@ -465,6 +468,35 @@ align = 0
 [connection signal="focus_exited" from="Box/HSlider" to="Box/HSlider" method="_on_HSlider_focus_exited"]
 [connection signal="value_changed" from="Box/HSlider" to="." method="_on_HSlider_value_changed"]
 [connection signal="pressed" from="Box/MarginContainer/Label" to="Box/HSlider" method="_on_Label_pressed"]
+'@
+Write-Utf8Lf (Join-Path $project 'hud\components\MineralSystemLabel.tscn') @'
+[gd_scene format=2]
+
+[node name="MineralSystemLabel" type="Label"]
+margin_right = 40.0
+margin_bottom = 14.0
+align = 2
+uppercase = true
+'@
+Write-Utf8Lf (Join-Path $project 'hud\components\PercentLabel.tscn') @'
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://hud/components/PriceLabel.tscn" type="PackedScene" id=1]
+
+[node name="PriceLabel" instance=ExtResource( 1 )]
+format = "%s%%"
+
+[node name="HSlider" parent="Box" index="0"]
+hint_tooltip = "HINT_FILTER_ALBEDO"
+max_value = 100.0
+step = 5.0
+
+[node name="MarginContainer" parent="Box" index="1"]
+rect_min_size = Vector2( 50, 0 )
+
+[node name="Label" parent="Box/MarginContainer" index="0"]
+rect_min_size = Vector2( 60, 0 )
+align = 2
 '@
 # A Hire screen entry (enceladus\CrewBio.tscn, as enceladus\HireableCrew.gd instances it): the game's node paths,
 # script, values and connection, a stub of the portrait (faces\VideoComms.tscn), the hire animation's player without

@@ -1,28 +1,34 @@
 extends "res://harness/suite.gd"
 
-# GeologyByMass: with the switch on its OMS tab on, the HUD judges an identified chunk by the mass of each mineral
-# switched on in the Geologist tab, against the base mass plus that mineral's extra mass, instead of by its value
-# (hud/Hud.gd isValidMineralTarget, which the info boxes ask); the settings live in the HUD's mineralConfig (the ship's
-# "hud.config"), next to the Geologist tab's own, and a format-1 entry (1.0.0's minMass) still loads; the tab comes
-# right after the Geologist tab. The HUDs are harness/geology_hud.tscn (the game's Hud.gd, with an Inventory
-# placeholder of harness/geology_oms.tscn: the game's OMS.gd and TabsWithGamepadControl.gd, and the OMS's four role
-# tabs) on harness/geology_ship.gd, whose isValidMineralTarget records each call in place of the game's rule. The
-# mod's settings descriptions and constants are read from the mod, so any value of them passes. The control checks
-# run on the game's own Hud.gd.
+# GeologyByMass: with the switch on its OMS tab on, the player's ship judges an identified chunk, for every row of the
+# Geologist tab (the HUD's for the info boxes, an arm's, a drone plant's), by the mass of each mineral switched on in
+# that row, against the base mass plus that mineral's extra mass, instead of by its value (ships/ship-ctrl.gd
+# isValidMineralTarget, which every system asks with its own row); the settings live in the HUD's mineralConfig (the
+# ship's "hud.config"), next to the Geologist tab's own, and a format-1 entry (1.0.0's minMass) still loads; the tab
+# comes right after the Geologist tab, with a row for every mineral of the market, H2O too. The rule runs on ships of
+# the game's ship-ctrl.gd (with the mod, its extension), out of the tree, compared with the same ship on the game's
+# script where the game decides. The tab runs on HUDs from harness/geology_hud.tscn (the game's Hud.gd, with an
+# Inventory placeholder of harness/geology_oms.tscn: the game's OMS.gd and TabsWithGamepadControl.gd, and the OMS's
+# four role tabs) on harness/geology_ship.gd, whose isValidMineralTarget records each call in place of the game's
+# rule. While the switch is on, the Geologist tab (the game's hud/SystemMineralList.gd, with the mod its extension,
+# added to that OMS's Geologist tab) hides its rows' Minimum values and that column's title. The mod's settings
+# descriptions and constants are read from the mod, so any value of them passes. The control checks run on the game's
+# own Hud.gd, ship-ctrl.gd and SystemMineralList.gd.
 
 const MOD = "GeologyByMass"
 const SETTINGS = "res://GeologyByMass/Settings.gd"
 const UI = "res://GeologyByMass/SettingsUI.gd"
 const MANIFEST = "res://GeologyByMass/Mod.manifest"
 const HUD_SCENE = "res://harness/geology_hud.tscn"
+const SHIP = "res://ships/ship-ctrl.gd"
+const GEOLOGIST_LIST = "res://hud/SystemMineralList.gd"
 const TABS = "MarginContainer/VBoxContainer/TabHintContainer/TabContainer"
 const GEOLOGIST = "CREW_OCCUPATION_GEOLOGIST"
 const ROLE_TABS = ["CREW_OCCUPATION_MECHANIC", "CREW_OCCUPATION_ASTROGATOR", "CREW_OCCUPATION_GEOLOGIST", "CREW_OCCUPATION_PILOT"]
-const FULL = 1 # judged(): the mod kept the info box full
-const DIMINISHED = 0
-const ASKED = -1
 
 var _bodies = []
+var _ships = []
+var _gameScript # the game's own ship-ctrl.gd, under every extension
 
 func makeShip(config = {}, preheat = false):
 	var ship = Node2D.new()
@@ -80,13 +86,101 @@ func handedToGame(hud, ship, body) -> bool:
 	ship.answer = true
 	return results == [true, false] and ship.calls.size() == before + 2 and ship.calls.back()[0] == body and ship.calls.back()[1] == hud.mineralConfig
 
-# The mod's answer: FULL or DIMINISHED; ASKED when it asked the game instead.
-func judged(hud, ship, body):
-	var before = ship.calls.size()
-	var result = hud.isValidMineralTarget(body)
-	if ship.calls.size() != before:
-		return ASKED
-	return FULL if result else DIMINISHED
+# A row of the Geologist tab, as a system keeps it in its config (hud/Hud.gd, DockingArm.gd and drone-plant.gd _ready):
+# the minerals switched on, the Minimum value in E$ and the albedo in %.
+func row(minerals, minValue = 0.0, albedo = 0.0) -> Dictionary:
+	return {"minerals": minerals.duplicate(), "minValue": minValue, "albedo": albedo}
+
+# A ship of `script` (the game's ships/ship-ctrl.gd, or with the mod its extension), out of the tree (its _ready never
+# runs), with `hudConfig` as its HUD's mineralConfig (the ship's "hud.config"), where the mod's settings live.
+func gameShip(script, hudConfig, player = true):
+	var s = RigidBody2D.new()
+	s.set_script(script)
+	s.playerControlled = player
+	s.shipConfig = {"hud": {"config": hudConfig}}
+	_ships.append(s)
+	return s
+
+# Whether `ship` answers for `body` as the game does, with each of `configs`, and the game's answers are `expected`
+# (both ways where it can, so the check shows the game deciding): the same ship on the game's own script, sharing its
+# config, identified chunks and AI target.
+func asGame(ship, body, configs, expected) -> bool:
+	var twin = gameShip(_gameScript, ship.shipConfig.hud.config, ship.playerControlled)
+	twin.identifiedObjects = ship.identifiedObjects
+	twin.ai = ship.ai
+	twin.aiTarget = ship.aiTarget
+	var answers = []
+	for config in configs:
+		var answer = ship.isValidMineralTarget(body, config)
+		if answer != twin.isValidMineralTarget(body, config):
+			return false
+		answers.append(answer)
+	return answers == expected
+
+# The Geologist tab's list of rows (the game's hud/SystemMineralList.gd; with the mod, its extension), added where the
+# game nests it, in the OMS's Geologist tab: it finds the ship through the HUD (Hud.gd getShip), and builds its rows on
+# the ship's systemsChanged, as the game does.
+func makeGeologist(tabs):
+	var list = GridContainer.new()
+	list.set_script(load(GEOLOGIST_LIST))
+	tabs.get_node(GEOLOGIST).add_child(list)
+	return list
+
+# A system with mineral targeting for the Geologist tab: an arm, or with `only` a cargo container's dock.
+func system(ship, only, minValue = 0.0):
+	var s = Node.new()
+	s.set_script(load("res://harness/geology_system.gd"))
+	s.onlyMinerals = only
+	s.mineralConfig = row(CurrentGame.traceMinerals, minValue)
+	ship.add_child(s)
+	return s
+
+# The list's controls whose valueChanged reaches its `method` ("value": the Minimum values; "albedo": the Minimum
+# Albedos), by the system of their row, as SystemMineralList.gd updateSystems connects them; rows being freed left out.
+func controls(list, method) -> Dictionary:
+	var found = {}
+	for c in list.get_children():
+		if c.is_queued_for_deletion() or not c.has_signal("valueChanged"):
+			continue
+		for connection in c.get_signal_connection_list("valueChanged"):
+			if connection.target == list and connection.method == method:
+				found[connection.binds[0]] = c
+	return found
+
+# The Minimum value column's title: the last cell of the list's first row (SystemMineralList.gd updateSystems); rows
+# being freed left out.
+func header(list):
+	var live = []
+	for c in list.get_children():
+		if not c.is_queued_for_deletion():
+			live.append(c)
+	return live[list.columns - 1]
+
+# Whether a Minimum value control shows its slider and its value (PriceLabel.gd: disabled hides both).
+func shown(control) -> bool:
+	return control.box.visible and control.label.visible
+
+# Whether no control of the list has a focus neighbour on a hidden Minimum value (SystemMineralList.gd adjustFocus).
+func focusSkipsHidden(list) -> bool:
+	var hidden = []
+	for c in controls(list, "value").values():
+		if not shown(c):
+			hidden.append(c.label.get_path())
+	for c in list.get_children():
+		if c.is_queued_for_deletion():
+			continue
+		var n = c.label if "label" in c and c.label else c
+		if n is Control:
+			for side in ["focus_neighbour_left", "focus_neighbour_right", "focus_neighbour_top", "focus_neighbour_bottom"]:
+				if hidden.has(n.get(side)):
+					return false
+	return true
+
+# The game's own answer for `body` on `ship`, with `config`.
+func gameAnswer(ship, body, config) -> bool:
+	var twin = gameShip(_gameScript, ship.shipConfig.hud.config, ship.playerControlled)
+	twin.identifiedObjects = ship.identifiedObjects
+	return twin.isValidMineralTarget(body, config)
 
 func manifestVersion() -> String:
 	var manifest = ConfigFile.new()
@@ -110,10 +204,27 @@ func run():
 	var hud = makeHud(ship)
 	yield(buildOms(ship), "completed")
 	var tabs = hud.inventory.get_node(TABS)
+	var shipScript = load(SHIP)
+	# The game's script is the bottom of the chain, however many mods extend it, in whatever order.
+	_gameScript = shipScript
+	while _gameScript.get_base_script() != null:
+		_gameScript = _gameScript.get_base_script()
 	if not mod:
 		check("control: the OMS keeps the game's four tabs", names(tabs) == ROLE_TABS, names(tabs))
-		check("control: the game decides an identified chunk", handedToGame(hud, ship, chunk(ship, {"Be": 1.0}, 1.0)))
-		check("control: the game decides a chunk not yet identified", handedToGame(hud, ship, unidentified()))
+		check("control: the HUD asks its ship about an identified chunk, with its own row", handedToGame(hud, ship, chunk(ship, {"Be": 1.0}, 1.0)))
+		check("control: and about a chunk not yet identified", handedToGame(hud, ship, unidentified()))
+		var game = gameShip(shipScript, row(CurrentGame.traceMinerals))
+		var rich = chunk(game, {"Be": 1.0}, 1.0)
+		check("control: the ship judges an identified chunk by its value against the row's Minimum value", game.isValidMineralTarget(rich, row(CurrentGame.traceMinerals, 1.0)) and not game.isValidMineralTarget(rich, row(CurrentGame.traceMinerals, 2.0)))
+		var controlList = makeGeologist(tabs)
+		var controlArm = system(ship, false, 3000.0)
+		var controlDock = system(ship, true)
+		ship.mineralSystems = {"hud": {"ref": hud, "name": "SYSTEM_HUD"}, "arm": {"ref": controlArm, "name": "SYSTEM_SALVAGE_ARM"}, "dock": {"ref": controlDock, "name": "SYSTEM_EXSTORAGE"}}
+		ship.emit_signal("systemsChanged", ship.getSystems())
+		tabs.current_tab = names(tabs).find(GEOLOGIST)
+		yield(idle(), "completed")
+		var controlPrices = controls(controlList, "value")
+		check("control: the Geologist tab shows the HUD's and the arm's Minimum value, not the cargo dock's", controlPrices.size() == 3 and shown(controlPrices[hud]) and shown(controlPrices[controlArm]) and not shown(controlPrices[controlDock]))
 		_free()
 		return
 
@@ -177,7 +288,7 @@ func run():
 		var bar = slider.get_node("Box/HSlider")
 		ranges = ranges and slider.get_script().resource_path == "res://hud/components/PriceLabel.gd" and bar.min_value == extra.min and bar.max_value == extra.max and bar.step == extra.step and bar.hint_tooltip == extra.label and slider.format == tab.EXTRA_FORMAT + extra.unit
 		values = values and slider.value == settings.getExtraMass(label.mineral) and slider.label.text == slider.format % CurrentGame.formatThousands(slider.value) and total is Label and total.text == totalText(tab, extra.unit, settings.getMinMass(label.mineral))
-	check("then one row per mineral the HUD can switch on, in the Geologist tab's order", minerals == settings.minerals() and kids.size() == 3 * (minerals.size() + 1), minerals)
+	check("then one row per mineral of the market, H2O too, in the order of the Geologist tab's columns", minerals == CurrentGame.mineralPrices.keys() and minerals == settings.minerals() and minerals.has("H2O") and kids.size() == 3 * (minerals.size() + 1), minerals)
 	check("each name is the Geologist tab's, in the mineral's colour, and takes no focus", colours)
 	check("each mineral's slider is the Minimum value control with EXTRA_MASS's range, step and tooltip, and the extra mass as EXTRA_FORMAT", ranges)
 	var widths = []
@@ -222,52 +333,135 @@ func run():
 	yield(idle(), "completed")
 	check("choosing the tab focuses its switch", tabs.get_focus_owner() == toggle, tabs.get_focus_owner())
 
-	# The rule
-	settings.setEnabled(false)
-	var heavy = chunk(ship, {"Be": most}, 1.0)
-	check("switched off, the game decides", handedToGame(hud, ship, heavy))
+	# The HUD: its info boxes ask the ship, with the HUD's row, whatever the switch
 	settings.setEnabled(true)
-	settings.setBaseMass(b)
-	for m in settings.minerals():
-		settings.setExtraMass(m, e)
-	check("below a mineral's base plus extra mass: diminished", judged(hud, ship, chunk(ship, {"Be": k - 1})) == DIMINISHED)
-	check("at a mineral's base plus extra mass: full", judged(hud, ship, chunk(ship, {"Be": k})) == FULL)
-	check("above a mineral's base plus extra mass: full", judged(hud, ship, chunk(ship, {"Be": k + 1})) == FULL)
-	hud.setMineralConfig("Be", false)
-	check("a mineral switched off in the Geologist tab doesn't count, however much there is", judged(hud, ship, chunk(ship, {"Be": most})) == DIMINISHED)
-	hud.setMineralConfig("Be", true)
-	check("one of two minerals reaching its mass is enough", judged(hud, ship, chunk(ship, {"Be": k - 1, "Fe": k})) == FULL)
-	check("two minerals both below their mass: diminished", judged(hud, ship, chunk(ship, {"Be": k - 1, "Fe": k - 1})) == DIMINISHED)
-	check("only minerals not switched on: diminished", judged(hud, ship, chunk(ship, {"H2O": most})) == DIMINISHED)
-	check("no minerals: diminished", judged(hud, ship, chunk(ship, {})) == DIMINISHED)
-	hud.setMinValue(1e12)
-	check("the Minimum value no longer counts: a cheap chunk with the mass is full", judged(hud, ship, chunk(ship, {"Be": k}, 1.0)) == FULL)
-	hud.setMinValue(0)
-	check("the value no longer counts: a rich chunk without the mass is diminished", judged(hud, ship, chunk(ship, {"Be": k - 1}, 1e12)) == DIMINISHED)
-	settings.setExtraMass("Fe", extra.min)
-	check("each mineral's own extra mass counts: Fe without one needs only the base, Be still needs base plus extra", judged(hud, ship, chunk(ship, {"Fe": b + extra.min})) == FULL and judged(hud, ship, chunk(ship, {"Fe": b + extra.min - 1})) == DIMINISHED and judged(hud, ship, chunk(ship, {"Be": k - 1})) == DIMINISHED)
-	for m in settings.minerals():
-		settings.setExtraMass(m, extra.min)
+	check("the HUD hands an identified chunk to its ship, with its own row, the switch on", handedToGame(hud, ship, chunk(ship, {"Be": most}, 1.0)))
+	check("and a chunk not yet identified", handedToGame(hud, ship, unidentified()))
+	settings.setEnabled(false)
+
+	# The rule, on a ship of the game's ship-ctrl.gd: the HUD's row is its hud.config, where the settings live too
+	var hudRow = row(CurrentGame.traceMinerals)
+	var s = gameShip(shipScript, hudRow)
+	var rule = s._geologyByMass()
+	var heavy = chunk(s, {"Be": most}, 1.0)
+	check("switched off, the game decides", asGame(s, heavy, [row(CurrentGame.traceMinerals), row(CurrentGame.traceMinerals, 1e12)], [true, false]))
+	rule.setEnabled(true)
+	rule.setBaseMass(b)
+	for m in rule.minerals():
+		rule.setExtraMass(m, e)
+	check("below a mineral's base plus extra mass: refused", not s.isValidMineralTarget(chunk(s, {"Be": k - 1}), hudRow))
+	check("at a mineral's base plus extra mass: passes", s.isValidMineralTarget(chunk(s, {"Be": k}), hudRow))
+	check("above a mineral's base plus extra mass: passes", s.isValidMineralTarget(chunk(s, {"Be": k + 1}), hudRow))
+	hudRow.minerals.erase("Be")
+	check("a mineral switched off in the row doesn't count, however much there is", not s.isValidMineralTarget(chunk(s, {"Be": most}), hudRow))
+	hudRow.minerals.append("Be")
+	check("one of two minerals reaching its mass is enough", s.isValidMineralTarget(chunk(s, {"Be": k - 1, "Fe": k}), hudRow))
+	check("two minerals both below their mass: refused", not s.isValidMineralTarget(chunk(s, {"Be": k - 1, "Fe": k - 1}), hudRow))
+	check("only minerals not switched on: refused", not s.isValidMineralTarget(chunk(s, {"H2O": most}), hudRow))
+	check("no minerals: refused", not s.isValidMineralTarget(chunk(s, {}), hudRow))
+	hudRow.minValue = 1e12
+	var cheap = chunk(s, {"Be": k}, 1.0)
+	check("the Minimum value no longer counts: a cheap chunk with the mass passes, where the game refuses it", s.isValidMineralTarget(cheap, hudRow) and not gameAnswer(s, cheap, hudRow))
+	hudRow.minValue = 0
+	check("the value no longer counts: a rich chunk without the mass is refused", not s.isValidMineralTarget(chunk(s, {"Be": k - 1}, 1e12), hudRow))
+	rule.setExtraMass("Fe", extra.min)
+	check("each mineral's own extra mass counts: Fe without one needs only the base, Be still needs base plus extra", s.isValidMineralTarget(chunk(s, {"Fe": b + extra.min}), hudRow) and not s.isValidMineralTarget(chunk(s, {"Fe": b + extra.min - 1}), hudRow) and not s.isValidMineralTarget(chunk(s, {"Be": k - 1}), hudRow))
+	for m in rule.minerals():
+		rule.setExtraMass(m, extra.min)
 	var alone = true
-	for m in hud.mineralConfig.minerals:
-		alone = alone and judged(hud, ship, chunk(ship, {m: b + extra.min})) == FULL and judged(hud, ship, chunk(ship, {m: b + extra.min - 1})) == DIMINISHED
-	check("with no extra masses the base alone decides, for every switched-on mineral", alone and not hud.mineralConfig.minerals.empty())
-	var short = chunk(ship, {"Fe": b + extra.min - 1})
-	var under = judged(hud, ship, short)
-	settings.setBaseMass(base.min)
-	check("the base moves every mineral's least mass: lowered, a chunk short of it is full", under == DIMINISHED and judged(hud, ship, short) == FULL)
-	check("every slider at its minimum: any switched-on mineral keeps the box, as the game with no Minimum value", judged(hud, ship, chunk(ship, {"Fe": float(base.min + extra.min)})) == FULL and judged(hud, ship, chunk(ship, {"H2O": most})) == DIMINISHED)
-	check("a chunk not yet identified: the game decides", handedToGame(hud, ship, unidentified()))
+	for m in hudRow.minerals:
+		alone = alone and s.isValidMineralTarget(chunk(s, {m: b + extra.min}), hudRow) and not s.isValidMineralTarget(chunk(s, {m: b + extra.min - 1}), hudRow)
+	check("with no extra masses the base alone decides, for every switched-on mineral", alone and not hudRow.minerals.empty())
+	var short = chunk(s, {"Fe": b + extra.min - 1})
+	var under = s.isValidMineralTarget(short, hudRow)
+	rule.setBaseMass(base.min)
+	check("the base moves every mineral's least mass: lowered, a chunk short of it passes", not under and s.isValidMineralTarget(short, hudRow))
+	check("every slider at its minimum: any switched-on mineral passes, as the game with no Minimum value", s.isValidMineralTarget(chunk(s, {"Fe": float(base.min + extra.min)}), hudRow) and not s.isValidMineralTarget(chunk(s, {"H2O": most}), hudRow))
+
+	# An arm's or a drone plant's row: its own switches, H2O among them, its own Minimum value and albedo; the same masses
+	rule.setBaseMass(b)
+	for m in rule.minerals():
+		rule.setExtraMass(m, e)
+	var w = inside(extra) + extra.step if inside(extra) + extra.step <= extra.max else extra.min # an H2O extra other than e
+	rule.setExtraMass("H2O", w)
+	var armRow = row(["H2O", "Be"], 1e12, 50.0)
+	check("a row with H2O switched on: H2O counts, against the base plus its own extra mass", s.isValidMineralTarget(chunk(s, {"H2O": b + w}), armRow) and not s.isValidMineralTarget(chunk(s, {"H2O": b + w - 1}), armRow) and w != e)
+	check("the HUD's row, without H2O, refuses that chunk", not s.isValidMineralTarget(chunk(s, {"H2O": most}), hudRow))
+	check("each row its own switches: Fe counts in the HUD's row, not in a row without it", s.isValidMineralTarget(chunk(s, {"Fe": k}), hudRow) and not s.isValidMineralTarget(chunk(s, {"Fe": most}), armRow))
+	var poor = chunk(s, {"Be": k}, 1.0)
+	check("the row's Minimum value and albedo don't count for an identified chunk with the mass, which the game refuses", s.isValidMineralTarget(poor, armRow) and not gameAnswer(s, poor, armRow))
+	check("a chunk not yet identified: the game decides, by the row's albedo", asGame(s, unidentified(), [row(["H2O", "Be"]), row(["H2O", "Be"], 0.0, 50.0)], [true, false]))
+	check("a row without mineral targeting: the game decides", asGame(s, heavy, [{}, {"minerals": ["Be"]}], [true, true]))
+	s.playerControlled = false
+	s.ai = true
+	s.aiTarget = heavy
+	var itsTarget = asGame(s, heavy, [hudRow, armRow], [true, true])
+	s.aiTarget = null
+	check("another ship: the game decides", itsTarget and asGame(s, heavy, [hudRow, armRow], [false, false]))
+	s.ai = false
+	s.playerControlled = true
+	rule.setEnabled(false)
+	check("switched off again, the game decides the arm's row", asGame(s, poor, [armRow, row(["H2O", "Be"])], [false, true]))
+
+	# The Geologist tab: its rows' Minimum values and that column's title, hidden while the switch is on. The rows: the
+	# HUD itself, an arm and a cargo container's dock, whose Minimum value the game hides.
+	settings.setEnabled(false)
+	var list = makeGeologist(tabs)
+	var arm = system(ship, false, 3000.0)
+	var dock = system(ship, true)
+	ship.mineralSystems = {"hud": {"ref": hud, "name": "SYSTEM_HUD"}, "arm": {"ref": arm, "name": "SYSTEM_SALVAGE_ARM"}, "dock": {"ref": dock, "name": "SYSTEM_EXSTORAGE"}}
+	ship.emit_signal("systemsChanged", ship.getSystems())
+	var geologistIndex = names(tabs).find(GEOLOGIST)
+	tabs.current_tab = geologistIndex
+	yield(idle(), "completed")
+	var prices = controls(list, "value")
+	check("switched off, the Geologist tab shows each row's Minimum value as the game: the HUD's and the arm's, not the dock's", prices.size() == 3 and shown(prices[hud]) and shown(prices[arm]) and not shown(prices[dock]))
+	var priceTitle = header(list)
+	var priceTitleFocus = priceTitle.focus_mode
+	var listWidth = list.get_combined_minimum_size().x
+	check("switched off, the Minimum value column's title as the game's, taking focus", priceTitle.text == "HUD_MIN_PRICE" and priceTitleFocus != Control.FOCUS_NONE, [priceTitle.text, priceTitleFocus])
+	tabs.current_tab = index
+	yield(idle(), "completed")
+	settings.setEnabled(true)
+	var configBefore = JSON.print(ship.shipConfig)
+	tabs.current_tab = geologistIndex
+	yield(idle(), "completed")
+	check("switched on, once the Geologist tab shows: the HUD's and the arm's Minimum value hidden, the dock's still", not shown(prices[hud]) and not shown(prices[arm]) and not shown(prices[dock]))
+	var albedos = controls(list, "albedo")
+	check("the Minimum Albedo controls stay as the game set them: the arm's shown, the HUD's and the dock's hidden", albedos.size() == 3 and shown(albedos[arm]) and not shown(albedos[hud]) and not shown(albedos[dock]))
+	check("the focus skips the hidden Minimum values", focusSkipsHidden(list))
+	check("switched on: the column's title empty, taking no focus, and the column takes no room", priceTitle.text == "" and priceTitle.focus_mode == Control.FOCUS_NONE and list.get_combined_minimum_size().x < listWidth, [priceTitle.text, priceTitle.focus_mode, list.get_combined_minimum_size().x, listWidth])
+	check("the Geologist tab stores nothing", JSON.print(ship.shipConfig) == configBefore)
+	tabs.current_tab = index
+	yield(idle(), "completed")
+	settings.setEnabled(false)
+	tabs.current_tab = geologistIndex
+	yield(idle(), "completed")
+	check("switched off again: back as the game set them, with their values", shown(prices[hud]) and shown(prices[arm]) and not shown(prices[dock]) and prices[arm].value == arm.getMinValue() and prices[hud].value == hud.getMinValue())
+	check("switched off again: the title back, with the game's focus, and the column's room", priceTitle.text == "HUD_MIN_PRICE" and priceTitle.focus_mode == priceTitleFocus and list.get_combined_minimum_size().x == listWidth, [priceTitle.text, priceTitle.focus_mode, list.get_combined_minimum_size().x, listWidth])
+	settings.setEnabled(true)
+	ship.emit_signal("systemsChanged", ship.getSystems())
+	var rebuilt = controls(list, "value")
+	check("rows built anew while it is on: hidden at once", rebuilt.size() == 3 and rebuilt[hud] != prices[hud] and not shown(rebuilt[hud]) and not shown(rebuilt[arm]) and not shown(rebuilt[dock]))
+	var rebuiltTitle = header(list)
+	check("rows built anew while it is on: the new title empty, taking no focus", rebuiltTitle != priceTitle and rebuiltTitle.text == "" and rebuiltTitle.focus_mode == Control.FOCUS_NONE, [rebuiltTitle.text, rebuiltTitle.focus_mode])
 	ship.playerControlled = false
-	check("another ship's HUD: the game decides", handedToGame(hud, ship, heavy))
+	yield(idle(), "completed")
+	check("another ship's Geologist tab: as the game", shown(rebuilt[hud]) and shown(rebuilt[arm]) and not shown(rebuilt[dock]))
+	check("another ship's Geologist tab: the title as the game's", rebuiltTitle.text == "HUD_MIN_PRICE" and rebuiltTitle.focus_mode == priceTitleFocus, [rebuiltTitle.text, rebuiltTitle.focus_mode])
 	ship.playerControlled = true
-	var bare = load("res://hud/Hud.gd").new()
-	bare.ship = ship
-	bare.mineralTargetting = false
-	bare._geologyByMass().setEnabled(true)
-	bare._geologyByMass().setBaseMass(b)
-	check("a HUD without mineral targeting: the game decides, and nothing is stored", handedToGame(bare, ship, heavy) and bare.mineralConfig.empty())
-	bare.free()
+	settings.setEnabled(false)
+
+	# A HUD without mineral targeting: no tab
+	var shipBare = makeShip()
+	var hudBare = load(HUD_SCENE).instance()
+	hudBare.mineralTargetting = false
+	shipBare.add_child(hudBare)
+	hudBare.set_process(false)
+	hudBare.set_physics_process(false)
+	yield(buildOms(shipBare), "completed")
+	var tabsBare = hudBare.inventory.get_node(TABS)
+	check("a HUD without mineral targeting gets no tab", not tabsBare.has_node(tabName), names(tabsBare))
 
 	# The settings
 	var ship2 = makeShip()
@@ -282,14 +476,7 @@ func run():
 	s2.setBaseMass(base.default)
 	s2.setExtraMass("Be", extra.default)
 	check("reading, or setting a value already held, stores nothing", not config.has(modId), config.keys())
-	var trace = []
-	for m in CurrentGame.mineralPrices:
-		if CurrentGame.traceMinerals.has(m):
-			trace.append(m)
-	check("the HUD's minerals are the market's it can target (onlyMinerals)", s2.minerals() == trace, s2.minerals())
-	hud2.onlyMinerals = false
-	check("without onlyMinerals, every mineral of the market", s2.minerals() == CurrentGame.mineralPrices.keys(), s2.minerals())
-	hud2.onlyMinerals = true
+	check("the minerals are every one of the market, H2O too, whatever the HUD can switch on (onlyMinerals)", s2.minerals() == CurrentGame.mineralPrices.keys() and hud2.onlyMinerals, s2.minerals())
 	s2.setExtraMass("Be", extra.min - extra.step)
 	var low = s2.getExtraMass("Be")
 	s2.setExtraMass("Be", extra.max + extra.step)
@@ -367,3 +554,6 @@ func _free():
 	for body in _bodies:
 		body.free()
 	_bodies = []
+	for s in _ships:
+		s.free()
+	_ships = []

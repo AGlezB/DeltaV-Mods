@@ -6,4 +6,6 @@ extends Node
 func _init(modLoader = null):
 	if modLoader != null:
 		modLoader.installScriptExtension("res://GeologyByMass/Code.gd")
+		modLoader.installScriptExtension("res://GeologyByMass/OmsScreen.gd")
+		modLoader.installScriptExtension("res://GeologyByMass/GeologistTab.gd")
 		TranslationServer.add_translation(load("res://GeologyByMass/i18n/en.po"))

@@ -31,8 +31,8 @@ These pages explain what each mod does, for players. The code, and the notes for
 - [DiveDisableAdrenalineBooster](DiveDisableAdrenalineBooster): your ship's Adrenaline booster starts every dive
   switched off.
 - [DiveSkipTransit](DiveSkipTransit): skips the cutscenes of a dive, or plays the trip to and from the rings faster.
-- [GeologyByMass](GeologyByMass): your geologist judges chunks by how much of a mineral they hold, not by what they
-  are worth.
+- [GeologyByMass](GeologyByMass): your geologist, your arm and your drones judge chunks by how much of a mineral they
+  hold, not by what they are worth.
 
 ### The HUD
 
@@ -67,7 +67,8 @@ Most of these mods only change what you see on screen. These also change how som
   starts every dive switched off, and that also holds back bullet time.
 - [DiveSkipTransit](DiveSkipTransit#changes-how-the-game-plays): the cutscenes are skipped, and what they would have
   cost is worked out instead.
-- [GeologyByMass](GeologyByMass#changes-how-the-game-plays): which chunks keep a full info box.
+- [GeologyByMass](GeologyByMass#changes-how-the-game-plays): which chunks keep a full info box, and which ones the arm
+  and the drones go for.
 - [TransponderAltCodes](TransponderAltCodes#changes-how-the-game-plays): you can tell a ship's model from its code
   before you see it.
 

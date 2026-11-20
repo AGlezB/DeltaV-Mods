@@ -1,22 +1,22 @@
 extends Reference
 
-# GeologyByMass's settings for one HUD (hud/Hud.gd), shared by Code.gd and SettingsUI.gd: the switch at the top of the
-# mod's OMS tab, the base mass and each mineral's extra mass on top of it. They live where the game keeps that HUD's
-# Geologist tab settings, its mineralConfig (Hud.gd _ready: the ship's config "hud.config"), under the mod's id from
-# Mod.manifest, and are changed in place, as Hud.gd setMinValue changes the Minimum value. So they are saved, loaded
-# and carried with the ship exactly as the game's own are. Reading never writes: a ship that never had the mod's entry
-# gets the defaults.
+# GeologyByMass's settings for one ship, shared by Code.gd (the ship's rule), OmsScreen.gd and SettingsUI.gd (the
+# mod's OMS tab): the switch at the top of the tab, the base mass and each mineral's extra mass on top of it. They live
+# where the game keeps the HUD's Geologist tab settings, the ship's config "hud.config" (hud/Hud.gd _ready: its
+# mineralConfig), under the mod's id from Mod.manifest, and are changed in place, as Hud.gd setMinValue changes the
+# Minimum value. So they are saved, loaded and carried with the ship exactly as the game's own are, and the rule reads
+# the same entry the tab writes. Reading never writes: a ship that never had the mod's entry gets the defaults.
 
-# The switch: on, the masses below decide which identified chunks keep their full info box, in place of the Geologist
-# tab's Minimum value. The default is declared here only.
+# The switch: on, the masses below decide which identified chunks pass every row of the Geologist tab (the info boxes,
+# the arm, the drones), in place of each row's Minimum value. The default is declared here only.
 const ENABLED = {
 	"label": "GEOLOGYBYMASS_ENABLED",
 	"default": false,
 }
 
 # The base slider: the least mass of every mineral, in kg as the geologist estimates it, for an identified chunk to
-# keep its full info box; each mineral's extra mass is added to it. `label` names its row, and `label` + "_DESC" is its
-# tooltip. Each value is declared here only.
+# pass a row; each mineral's extra mass is added to it. `label` names its row, and `label` + "_DESC" is its tooltip.
+# Each value is declared here only.
 const BASE_MASS = {
 	"label": "GEOLOGYBYMASS_BASE_MASS",
 	"default": 0,
@@ -41,27 +41,24 @@ const EXTRA_MASS = {
 # base and kept each mineral's least mass in "minMass", which reads as its extra mass.
 const FORMAT_VERSION = 2
 
-var _hud # the HUD whose settings these are
+const HUD_CONFIG = "hud.config" # the HUD's mineralConfig in the ship's config (Hud.gd getSlotName("config"))
+
+var _ship # the ship whose settings these are
 var _manifest = null
 
-func _init(hud):
-	_hud = hud
+func _init(ship):
+	_ship = ship
 
-# Whether the HUD keeps settings: as Hud.gd setMinValue, only with mineral targeting, and once its _ready has loaded
-# mineralConfig from the ship.
+# Whether the ship keeps settings: once its HUD has made its mineralConfig (Hud.gd _ready, a HUD with mineral
+# targeting), which the mod's entry goes into.
 func available() -> bool:
-	return _hud.mineralTargetting and _hud.mineralConfig is Dictionary and _hud.mineralConfig.has("minerals")
+	return _config() != null
 
-# The minerals with a slider, in the Geologist tab's order: those the HUD can switch on there. That tab lists
-# CurrentGame.mineralPrices and disables, for a system with onlyMinerals (the HUD), every mineral not in
-# CurrentGame.traceMinerals (hud/SystemMineralList.gd updateSystems).
+# The minerals with a slider, in the order of the Geologist tab's columns: every mineral of the market
+# (CurrentGame.mineralPrices, hud/SystemMineralList.gd), Water too. The HUD's row can switch on only the ores
+# (CurrentGame.traceMinerals, for a system with onlyMinerals); the arm's and the drones' rows can switch on any.
 func minerals() -> Array:
-	var only = "onlyMinerals" in _hud and _hud.onlyMinerals
-	var list = []
-	for mineral in CurrentGame.mineralPrices:
-		if not only or CurrentGame.traceMinerals.has(mineral):
-			list.append(mineral)
-	return list
+	return CurrentGame.mineralPrices.keys()
 
 func isEnabled() -> bool:
 	var saved = _saved().get("enabled", ENABLED.default)
@@ -73,7 +70,7 @@ func setEnabled(how):
 		return
 	_entry().enabled = how
 
-# The least mass of `mineral` for a chunk to keep its full info box: the base plus the mineral's extra mass.
+# The least mass of `mineral` for a chunk to pass a row: the base plus the mineral's extra mass.
 func getMinMass(mineral) -> float:
 	return getBaseMass() + getExtraMass(mineral)
 
@@ -108,11 +105,19 @@ func modVersion() -> String:
 		_manifestValue("version", "version_minor", 0),
 		_manifestValue("version", "version_bugfix", 0)]
 
+# The ship's hud.config, or null before its HUD made it (or for a ship without one).
+func _config():
+	if not is_instance_valid(_ship) or not _ship.has_method("getConfig"):
+		return null
+	var config = _ship.getConfig(HUD_CONFIG)
+	return config if config is Dictionary and config.has("minerals") else null
+
 # The saved entry, to read from; empty when there is none.
 func _saved() -> Dictionary:
-	if not available():
+	var config = _config()
+	if config == null:
 		return {}
-	var saved = _hud.mineralConfig.get(modId())
+	var saved = config.get(modId())
 	return saved if saved is Dictionary else {}
 
 # The saved extra masses by mineral; format 1's "minMass" where the entry has no "extraMass".
@@ -122,7 +127,7 @@ func _savedExtra() -> Dictionary:
 	return masses if masses is Dictionary else {}
 
 # The entry to write to: every value as it reads now, stamped with this format and the mod's version, stored in
-# mineralConfig in place of the old one.
+# hud.config in place of the old one.
 func _entry() -> Dictionary:
 	var masses = {}
 	var saved = _savedExtra()
@@ -135,7 +140,7 @@ func _entry() -> Dictionary:
 		"baseMass": getBaseMass(),
 		"extraMass": masses,
 	}
-	_hud.mineralConfig[modId()] = entry
+	_config()[modId()] = entry
 	return entry
 
 # A saved or given mass on a step of its slider (`desc`) and inside its range; anything that is not a number gives the
