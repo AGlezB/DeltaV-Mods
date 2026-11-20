@@ -380,6 +380,17 @@ in that mineral's colour.
 - The ship has a transponder, so holding it with the arm never adds it to the fleet (`CurrentGame.isShipSalvageable`,
   see *Salvage claim*).
 
+## Insurance
+
+A new game starts with 100,000 E$ of it (`CurrentGame.gd` `initialState`), kept apart from the money
+(`state.insurance`, `getInsurance`; `getMoney()` counts it only when asked, `includeInsurance`). Repairs pay from it
+first: `enceladus/SystemShipRepairUI.gd` charges a fix or a replacement with `changeMoney(-price, true)`, which takes
+what the insurance covers and the rest from the money. The Repairs screen's header shows it (Insured for,
+`enceladus/Repairs.tscn`); the screens built on `enceladus/HeaderWithMoney.tscn` keep that row (`Insurence`) hidden.
+Jameson's Insurance
+(`SERVICE_JAMESON`, on `enceladus/ServiceUIInsurance.gd`) adds 100,000 E$ (`insuranceGain`) for 50,000 E$, at most
+once every 720 hours (see *Services*).
+
 ## Lifepod
 
 Every ship model has one but the Tsukuyomi, the racing drone and the Obonto habitat. Others float alone in the rings
@@ -395,6 +406,43 @@ The abductor comes from `makeAbductor` in `story/RescueOperation.gd` (a chance w
 on the Peaceful difficulty) and in `story/Vilcy.gd`. It is of the `pirate` faction, with 15 t of ammunition and six
 weapons asked for, of which it mounts four ERFMD-17 and two MWG: its scene has two hardpoints with the slot `right2`
 and none with `left2`. Its six hardpoints are slots the Equipment screen has no entry for.
+
+## Mineral Market
+
+- **Prices**: a mineral's price per kg is its base price (`CurrentGame.mineralPrices`, in E$/kg: H2O 0.1, Be 20.5, Fe
+  0.9, Pd 2.5, Pt 2.7, V 3.0, W 6.5) times an adjustment (`getMineralPriceAdjustmentAt`): 1, plus the average of 100
+  sines (`priceTotals`) times 0.99 (`mineralPriceFluctuationsRange`), plus the player's influence (below). Each
+  mineral's sines are drawn from the save's seed (`initializePrices`; `state.seed`, 0 in every new game, the one given
+  for a New Game+), with periods from about half a minute to a year and amplitudes that grow with the period: the slow
+  ones make the price, the fast ones barely show. So the prices are the same in every game with the same seed, and
+  set in advance for any date.
+- **The day's price**: a slider row (`enceladus/MineralSellSlider.gd`) reads the price when the screen is built and on
+  `dayPassed`, `employmentChanged` and `settingsChanged` (`updatePrices`), and every trade until then is at that
+  price, buying or selling: there is no spread, and moving the slider doesn't change it. The player's influence is
+  kept per day too (`playerInfluenceCache`, cleared on `dayPassed` by `invalidateFutureCache`).
+- **Limits**: whole tonnes (`multiplier`, 1,000 kg); the kilograms after the dot stay. The station keeps no stock: the
+  slider's maximum is the tonnes the money buys at the day's price plus the tonnes held, at most `maxOre` (10,000 t)
+  per mineral (`_onMoneyUpdated`). A move trades the difference from the tonnes held, changes the money and logs the
+  trade (`_on_HSlider_value_changed`, `LOG_EVENT_TRADE`).
+- **The player's influence** (`getPlayerInfluenceMineralMarketAt`): the trades in the log over the last 180 days
+  (`playerInfluenceLookbackDays`). The log merges a day's trades into one entry (`logEvent`), so a day's buying and
+  selling of a mineral net out. An entry counts as its kilograms (bought positive, sold negative) times the base price
+  over 2,000,000,000 (`playerInfluenceSaleDividor`), clamped to ±5, weighted by its age: nothing when new, the most at
+  90 days, nothing again at 180 (1 − √|2 × age / 180 days − 1|). Their sum moves the adjustment, clamped from −1 to
+  +0.1: buying raises the price months later, by up to a tenth of the base price, and selling lowers it. The sum of
+  their sizes enlarges every sine (`playerMeddlingInfluenceFactor`), up to 81 times, those under an hour the most and
+  those over 10 hours the least: the more ore traded, the jumpier the price for months.
+- **The chart** (`enceladus/MineralPriceChart.gd`, as the slider row sets it): a point a day (`time`, 24 h), 672 points
+  (`steps`), the last 4,608 hours of them (192 days, `lookAhead`) a forecast, the rest the past 480 days. A forecast
+  point is the true price blended into the price at the mirrored time (−t, where every sine has the opposite sign) by
+  the prediction error, `(Δt / 40 days)² / accuracy` (`CurrentGame.getMineralPricePredictionError`), where accuracy is
+  the crew's Price prediction accuracy (see *Crew stats*): 0.1 without a geologist, up to 0.9 at the highest talent.
+  Where the error reaches 1 (about 13 days ahead without a geologist, 38 at 0.9), the forecast shows the mirrored price
+  alone, which says nothing about the true one; the band drawn around it (`spread`) grows with the error.
+- **Time at the station**: the clock runs while the player is there, an in-game second per second
+  (`enceladus/Enceladus.gd` `_physics_process`), and jumps with the services that take hours (see *Services*: a night
+  at a hotel). Repairs and new equipment don't move it: they keep the ship in maintenance until a time
+  (`CurrentGame.addShipMaintanenceTime`), before which it can't dive (see *Repairs*).
 
 ## Morale
 
@@ -580,6 +628,20 @@ What decides who gets a derelict:
   `CurrentGame.addShip`; the arm's manual says so too, `SYSTEM_SALVAGE_ARM_MANUAL`). A rescue ship nearby doesn't
   prevent it. A `helpless` ship that isn't salvageable pays 10 % of its value instead (`getShipValue`). Nothing
   held is taken when the player's own ship ends the dive helpless (see *Rescue*).
+
+## Services
+
+One row per service (`enceladus/ServiceUI.gd`, nested in `enceladus/Services.tscn`), each with its price (`getPrice`:
+`flatPrice`, plus `activeMemberPrice` per active crew member and `totalMemberPrice` per crew member not on leave), the
+hours it takes (`serviceHours`, which pass at once when it is bought: `advanceTimeBySeconds`), the morale it gives
+(`moraleChange`, and `moraleStay` while those hours pass; see *Morale*) and a cooldown (`cooldownHours`, kept per save
+in the UI store as `cooldown.<serviceName>`). A row's Buy button is enabled (`checkPrice`, run on every hour, money
+change and crew change) when the row costs something, isn't in its cooldown, the money covers its price (or the row
+allows debt, `allowDebt`: the capsule hotel) and its story condition holds (`storyLine` between `storyMin` and
+`storyMax`); a row whose condition fails is greyed out, or hidden with `storyHide`. Three cost a monthly fee (a
+720-hour cooldown, an hour each): Jameson's Insurance (`SERVICE_JAMESON`, 50,000 E$; see *Insurance*), Scrapwright
+Recovery Operations (`SERVICE_SALVAGE_LICENCE`, 300,000 E$: derelicts brought to the rings; see *Salvage*) and the
+simulator's Premium subscription, Minding Premium Virtual Flight Service (`SERVICE_SIMULATOR`, 4,000 E$).
 
 ## Transit
 

@@ -2,14 +2,16 @@ extends Node
 
 # Stub of the game's CurrentGame autoload: what DockingArm.gd, CabinLight.gd, Tool.gd, TuningFloatValue.gd,
 # Hud.gd, PriceLabel.gd, HireableCrew.gd, CrewBio.gd, SystemBuyUI.gd, SystemShipUpgradeUI.gd, Dealer.gd, Game.gd,
-# Enceladus.gd, TransponderOnIntro.gd, story/body.gd, menu/NewGamePlus.gd, CrewCheapHireNotifier, GeologyByMass,
-# ShipCopyPaste, DiveSkipTransit, DealerNotifier, TransponderAltCodes and CombatSimulator reach (with TheRing.gd and
+# Enceladus.gd, TransponderOnIntro.gd, story/body.gd, menu/NewGamePlus.gd, InGameMoney.gd, MineralMarket.gd,
+# MineralSellSlider.gd, MineralPriceChart.gd, ServiceUI.gd, CrewCheapHireNotifier, GeologyByMass, ShipCopyPaste,
+# DiveSkipTransit, DealerNotifier, TransponderAltCodes, CombatSimulator and MarketAdvisor reach (with TheRing.gd and
 # PauseLayer.gd, which connect inGameTimePassed and pauseGame), and the game scripts the bench runs (_bench\:
 # asteroid.gd isInSimulatiorRange, the PDWs' weapons ageToDamageWithSeed).
 
 signal dayPassed()
 signal employmentChanged()
 signal moneyChanged(money)
+signal moneyOrInsuranceChanged()
 signal broadcast(from, to, msg, replies)
 signal playerShipChanged()
 signal hourPassed()
@@ -160,13 +162,32 @@ func adrenaline(amount):
 func getPlayerShip():
 	return playerShip
 
-# As the game's, without the money hash, the achievements and the insurance.
+# As the game's, without the money hash, the achievements and the insurance, and with moneyChanged at once (the game's
+# comes a frame later, from its _process).
 func changeMoney(by, _insurance = false):
 	money += by
+	if by != 0:
+		emit_signal("moneyOrInsuranceChanged")
 	emit_signal("moneyChanged", money)
 
+# Recorded in `logs`; where the state has a log of its own (the market suite's), also kept there as the game's keeps
+# it, since the market's prices read it: an entry per run of one type, a trade merged into the last one within a day.
 func logEvent(type, details = {}):
 	logs.append([type, details.duplicate(true)])
+	if not state.has("logs"):
+		return
+	var last = state.logs.back() if not state.logs.empty() else null
+	var now = getInGameTimestamp()
+	var old = false
+	if last != null:
+		if type == "LOG_EVENT_TRADE" and now - last.from > 24 * 3600:
+			old = true
+		last.to = now
+	if last == null or last.type != type or old:
+		last = {"type": type, "details": {}, "from": now, "to": now, "money": getMoney(), "insurance": getInsurance()}
+		state.logs.append(last)
+	for key in details:
+		last.details[String(key)] = last.details.get(String(key), 0) + details[key]
 
 # As the game's: within 1.2 km of the player's ship, or anywhere without one (asteroid.gd: a rock farther away breaks
 # into nothing).
@@ -259,3 +280,128 @@ func formatThousands(nr):
 
 func setStory(story, to, _onlyRise = true):
 	stories[story] = to
+
+func getInsurance():
+	return state.get("insurance", 0)
+
+# As the game's for a crew with nobody on leave: everyone hired is active.
+func getCrewNumbers():
+	return {"active": state.crew.size(), "total": state.crew.size(), "leave": 0}
+
+func dateToString(timestamp):
+	var dt = OS.get_datetime_from_unix_time(timestamp)
+	return "%04d/%02d/%02d" % [dt.year, dt.month, dt.day]
+
+# As the game's, with "." between the whole part and the decimals, and formatThousands's whole part.
+func formatThousandsWithDecimals(nr, dec = 2):
+	var order = int(pow(10, dec))
+	var rest = int(round(abs(nr * order))) % order
+	return ("%%s.%%0%sd" % dec) % [formatThousands(round(nr * order) / order), rest]
+
+func getShipMaintanenceTime():
+	return state.get("ship", {}).get("maintaineceUntil", 0)
+
+# The Mineral Market: the stored minerals, and the prices, as the game's code makes them (CurrentGame.gd
+# initializePrices, getMineralPriceAdjustmentAt, getPlayerInfluenceMineralMarketAt): a hundred sines per mineral drawn
+# from the save's seed, moved by the player's trades in the log (state.logs, which logEvent keeps where the state has
+# one). Prices stand still at the base price until initializePrices draws the sines (the market suite calls it).
+var priceFluctuations = {}
+var priceTotals = 100
+var mineralPriceFluctuationsRange = 0.99
+const playerMeddlingInfluenceFactor = 1400000000.0
+const mineralPriceMargin = 0.01
+var playerInfluenceLookbackDays = 180
+var playerInfluenceSaleDividor = 2000000000
+var playerInfluenceCache = {}
+# The crew's Price prediction accuracy (CREW_STATS_GEOLOGIST_PREDICTION): the game's deriveStats gives 0.1 without a
+# geologist.
+var predictionAccuracy = 0.1
+
+func _ready():
+	connect("dayPassed", self, "invalidateFutureCache")
+
+func getMinerals(m):
+	return state.get("storage", {}).get("minerals", {}).get(m, 0)
+
+func changeMinerals(m, by):
+	var minerals = state.storage.minerals
+	minerals[m] = minerals.get(m, 0) + by
+
+func srai(s: int, cnt: int):
+	var out = []
+	for i in range(cnt):
+		var o = rand_seed(s + state.get("seed", 0))
+		s = o[0]
+		out.append(abs(o[1]))
+	return out
+
+func i2f(i: int) -> float:
+	return float(i % 10000) / 10000.0
+
+func initializePrices():
+	playerInfluenceCache = {}
+	var f = srai(234232 + state.get("seed", 0), priceTotals * 2 * mineralPrices.size())
+	var nr = 0
+	for mineral in mineralPrices.keys():
+		var factors = []
+		for i in range(priceTotals):
+			var fo = pow(i2f(f[nr]), 3)
+			factors.append({"time": (1e-06 + pow(fo, 3)) * 3600 * 24 * 365, "amp": pow(fo, 2) * i2f(f[nr + 1])})
+			nr += 2
+		priceFluctuations[mineral] = factors
+
+func getMineralPriceAdjustmentAt(mineral: String, at: float):
+	var factors = priceFluctuations.get(mineral, [])
+	var price = 0
+	if factors.size() == 0:
+		return 1
+	var t = getPlayerInfluenceMineralMarketAt(mineral, abs(at))
+	var pia = t[0]
+	var pim = t[1]
+	var playerMeddlingFactor = 1 + abs(pim) * playerMeddlingInfluenceFactor
+	for f in factors:
+		price += sin(at / f.time) * f.amp * (1.0 + clamp(pow(playerMeddlingFactor / clamp(f.time, 3600, 36000), 1), 0, 80))
+	return abs(1 + (price / factors.size()) * mineralPriceFluctuationsRange + clamp(pia, - 1, 0.1) - mineralPriceMargin) + mineralPriceMargin
+
+func getPlayerInfluenceMineralMarketAt(mineral: String, at: float):
+	var atk = floor(at / (24 * 3600))
+	if atk in playerInfluenceCache:
+		return playerInfluenceCache[atk][mineral]
+	var age = playerInfluenceLookbackDays * 24 * 3600
+	var from = at - age
+	var entries = state.get("logs", [])
+	var lastLog = entries.size() - 1
+	var influence = {}
+	for m in mineralPrices:
+		influence[m] = [0.0, 0.0]
+	while lastLog >= 0:
+		var le = entries[lastLog]
+		var t = le.from
+		if t < from:
+			break
+		if t < at and le.type == "LOG_EVENT_TRADE":
+			for m in influence:
+				var sold = clamp(le.details.get(m, 0) * mineralPrices[m] / playerInfluenceSaleDividor, - 5, 5)
+				var p = 1.0 - pow(clamp(abs(clamp((at - t) / age, 0, 1) - 0.5) * 2, 0, 1), 0.5)
+				influence[m][0] += (sold * p)
+				influence[m][1] += (abs(sold * p) / playerInfluenceLookbackDays)
+		lastLog -= 1
+	playerInfluenceCache[atk] = influence
+	return influence[mineral]
+
+func invalidateFutureCache(_foo = null):
+	var now = getInGameTimestamp()
+	for i in playerInfluenceCache.keys():
+		if i < now + 24 * 3600:
+			playerInfluenceCache.erase(i)
+
+func getMineralMarketPricePerKgAt(material, at):
+	if material in mineralPrices:
+		return mineralPrices[material] * getMineralPriceAdjustmentAt(material, at)
+	return 0
+
+func getMineralMarketPricePerKg(material):
+	return getMineralMarketPricePerKgAt(material, getInGameTimestamp())
+
+func getMineralPricePredictionError(at: float) -> float:
+	return pow(at / (3600 * 24 * 40), 2) / predictionAccuracy

@@ -85,6 +85,18 @@
 			'with:shot|settings|545,15,1055,735'
 		)
 	}
+	# The mod's OMS tab (DAP), in a dive (J opens the OMS), switched on where it is stored (Settings.gd: the HUD's
+	# mineralConfig, under the mod's id), the sliders at their defaults.
+	DroneAltPriorities = @{
+		Steps = @(
+			'load', 'wait|10'
+			'dive', 'wait|5'
+			'action|jury_rig', 'wait|2'
+			'with:set|ship:Hud|mineralConfig/AGlezB.DroneAltPriorities|{"enabled": true}'
+			'with:tab|{oms}|DRONEALTPRIORITIES_TAB', 'wait|2'
+			'with:shot|settings|320,2,965,355'
+		)
+	}
 	# The mod's OMS tab (GBM), in a dive (J opens the OMS), with an example set where it is stored (Settings.gd: the
 	# HUD's mineralConfig, under the mod's id): the switch on, a base of 200 kg, and extra masses growing by 200 kg from
 	# the dearest mineral to the cheapest by the game's base prices (CurrentGame.mineralPrices: Be, W, V, Pt, Pd, Fe,
@@ -169,6 +181,18 @@
 			'press|{menu}/ShipTuning', 'wait|3'
 			'scroll|{screens}/Tuning|1300', 'wait|1'
 			'shot|tuning|560,570,1020,315'
+		)
+	}
+	# The station menu with its alert marks (the fixture's cash is above the default cash reserve, and Jameson's
+	# Insurance can be bought), the Mineral Market (its header and the mod's row at the bottom), and the settings.
+	MarketAdvisor = @{
+		Steps = @(
+			'load', 'wait|10'
+			'shot|menu|0,115,350,457'
+			'press|{menu}/MineralMarket', 'wait|3'
+			'shot|market|545,15,1055,875'
+			'with:shiftclick|{menu}/MineralMarket', 'wait|2'
+			'with:shot|settings|545,15,1055,790'
 		)
 	}
 	ShipCopyPaste = @{

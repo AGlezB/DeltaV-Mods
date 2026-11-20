@@ -31,6 +31,7 @@ These pages explain what each mod does, for players. The code, and the notes for
 - [DiveDisableAdrenalineBooster](DiveDisableAdrenalineBooster): your ship's Adrenaline booster starts every dive
   switched off.
 - [DiveSkipTransit](DiveSkipTransit): skips the cutscenes of a dive, or plays the trip to and from the rings faster.
+- [DroneAltPriorities](DroneAltPriorities): your tug and haul drones go for the most valuable chunks first.
 - [GeologyByMass](GeologyByMass): your geologist, your arm and your drones judge chunks by how much of a mineral they
   hold, not by what they are worth.
 
@@ -38,6 +39,11 @@ These pages explain what each mod does, for players. The code, and the notes for
 
 - [HudHideLabels](HudHideLabels): hides the titles on the screens of your ship's HUD.
 - [LidarLouderPing](LidarLouderPing): makes the LIDAR's ping louder, by as much as you choose.
+
+### Money
+
+- [MarketAdvisor](MarketAdvisor): a Trade button at the Mineral Market keeps the cash you want at hand and puts the
+  rest in ore, and the station menu tells you when there is a trade to make, or a service worth buying.
 
 ### Ships
 
@@ -67,6 +73,8 @@ Most of these mods only change what you see on screen. These also change how som
   starts every dive switched off, and that also holds back bullet time.
 - [DiveSkipTransit](DiveSkipTransit#changes-how-the-game-plays): the cutscenes are skipped, and what they would have
   cost is worked out instead.
+- [DroneAltPriorities](DroneAltPriorities#changes-how-the-game-plays): which chunks your tug and haul drones work on
+  first.
 - [GeologyByMass](GeologyByMass#changes-how-the-game-plays): which chunks keep a full info box, and which ones the arm
   and the drones go for.
 - [TransponderAltCodes](TransponderAltCodes#changes-how-the-game-plays): you can tell a ship's model from its code

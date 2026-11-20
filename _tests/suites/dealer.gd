@@ -24,6 +24,7 @@ const TEXT_EN = "Dealer"
 const TEXT_DE = "Haendler"
 const CREW_KEY = "ENCELADUS_CREW"
 const DIVE_KEY = "ENCELADUS_RETURN_TO_RING"
+const MINERALS_KEY = "ENCELADUS_MINERAL_MARKET"
 const MANIFEST = "res://DealerNotifier/Mod.manifest"
 const SETTINGS_SCRIPT = "res://DealerNotifier/Settings.gd"
 # The scripts the mod extends: once installed, its extensions load by these paths (take_over_path).
@@ -163,11 +164,13 @@ func settingsTip(s) -> String:
 	return tr(s.menu._DN_SETTINGS_TOOLTIP) % [OS.get_scancode_string(KEY_SHIFT), manifestValue("mod_information", "name")]
 
 # The station as enceladus/Enceladus.tscn nests the menu and the right-hand screens: MarginContainer > HBoxContainer >
-# Options (the menu, the game's EnceladusMenu.gd, with its ShipMarket, OwnedShips and Logs entries, and the Crew and
-# RingDive entries of the other mods loaded), and MarginContainer > CanvasLayer > MarginContainer (HidingMarginContainer.gd)
-# > the Dealer screen (wired to the entry's `pressed` as the scene does), Fleet, and the Tuning screen with its
-# description window nested as enceladus/Tuning.tscn nests it (CrewCheapHireNotifier's and DiveSkipTransit's screens
-# copy it), and the Crew screen stub when CrewCheapHireNotifier is loaded.
+# Options (the menu, the game's EnceladusMenu.gd, with its ShipMarket, OwnedShips and Logs entries, and the Crew,
+# RingDive and MineralMarket entries of the other mods loaded), and MarginContainer > CanvasLayer > MarginContainer
+# (HidingMarginContainer.gd) > the Dealer screen (wired to the entry's `pressed` as the scene does), Fleet, and the
+# Tuning screen with its description window nested as enceladus/Tuning.tscn nests it (CrewCheapHireNotifier's,
+# DiveSkipTransit's and MarketAdvisor's screens copy it), the Crew screen stub when CrewCheapHireNotifier is loaded, and
+# the Mineral Market (the stub of enceladus/MineralMarket.tscn, whose frame MarketAdvisor's screen copies) when
+# MarketAdvisor is.
 func station(withDealer = true):
 	var root = MarginContainer.new()
 	root.name = "MarginContainer"
@@ -189,6 +192,10 @@ func station(withDealer = true):
 	if hasMod("DiveSkipTransit"):
 		dive = Button.new(); dive.name = "RingDive"; dive.text = DIVE_KEY
 		menu.add_child(dive)
+	var minerals = null
+	if hasMod("MarketAdvisor"):
+		minerals = Button.new(); minerals.name = "MineralMarket"; minerals.text = MINERALS_KEY
+		menu.add_child(minerals)
 	var logs = Button.new(); logs.name = "Logs"; logs.text = "ENCELADUS_LOGS"
 	menu.add_child(logs)
 	hbox.add_child(menu)
@@ -216,6 +223,13 @@ func station(withDealer = true):
 		crewScreen.set_script(load("res://harness/crew_screen.gd"))
 		screens.add_child(crewScreen)
 		crew.connect("pressed", crewScreen, "_on_Crew_pressed")
+	if minerals != null:
+		var mineralMarket = load("res://enceladus/MineralMarket.tscn").instance(); mineralMarket.name = "MineralMarket"
+		mineralMarket.visible = false
+		mineralMarket.rect_min_size = Vector2(600, 0)
+		mineralMarket.size_flags_horizontal = Control.SIZE_SHRINK_END
+		screens.add_child(mineralMarket)
+		minerals.connect("pressed", mineralMarket, "_on_MineralMarket_pressed")
 	var tuning = PanelContainer.new(); tuning.name = "Tuning"; tuning.visible = false
 	tuning.theme = Theme.new()
 	tuning.add_stylebox_override("panel", StyleBoxFlat.new())
@@ -233,7 +247,7 @@ func station(withDealer = true):
 	windowVb.add_child(inside)
 	screens.add_child(tuning)
 	add_child(root)
-	return {"root": root, "menu": menu, "market": market, "owned": owned, "crew": crew, "dive": dive, "logs": logs, "screens": screens, "dealer": dealer, "fleet": fleet, "tuning": tuning}
+	return {"root": root, "menu": menu, "market": market, "owned": owned, "crew": crew, "dive": dive, "minerals": minerals, "logs": logs, "screens": screens, "dealer": dealer, "fleet": fleet, "tuning": tuning}
 
 func freeStation(s):
 	s.root.queue_free()
@@ -697,7 +711,8 @@ func screen():
 			viewports += 1
 	check("the pictures are drawn all at once, as the Dealer draws its entries': a viewport for each model", viewports == settings.models().size(), viewports)
 	var ui = screen.get_script().get_script_constant_map()
-	check("opening it stores nothing", CurrentGame.state.ui.empty(), CurrentGame.state.ui)
+	# What other mods store on their own as the station is built (MarketAdvisor's parked tonnes) isn't this screen's.
+	check("opening it stores nothing", not CurrentGame.state.ui.has(settings.modId()), CurrentGame.state.ui)
 	check("it has the Dealer screen's theme and frame", screen.theme == s.dealer.theme and screen.get_stylebox("panel") == s.dealer.get_stylebox("panel") and screen.theme != null)
 	check("and its size and size flags", screen.rect_min_size == s.dealer.rect_min_size and screen.size_flags_horizontal == s.dealer.size_flags_horizontal and screen.size_flags_vertical == s.dealer.size_flags_vertical)
 	check("its title is the Dealer entry's", screen.get_node("VB/HeaderWithMoney/MarketLabel").text == KEY)
@@ -929,15 +944,17 @@ func _allPictures(screen) -> bool:
 			return false
 	return true
 
-# With CrewCheapHireNotifier and DiveSkipTransit loaded too: three extensions of EnceladusMenu.gd, each opening its own
-# screen, which hides the others, and keeping its own tooltip. Theirs are as wide as the Tuning stub, which leaves the
-# menu free to click, so they are opened first.
+# With CrewCheapHireNotifier, DiveSkipTransit and MarketAdvisor loaded too: four extensions of EnceladusMenu.gd, each
+# opening its own screen, which hides the others, and keeping its own tooltip. Theirs are as wide as the Tuning stub or
+# the Mineral Market, which leave the menu free to click, so they are opened first.
 func together():
 	var others = []
 	if hasMod("CrewCheapHireNotifier"):
 		others.append(["crew", "CrewCheapHireNotifierSettings", "CrewCheapHireNotifier"])
 	if hasMod("DiveSkipTransit"):
 		others.append(["dive", "DiveSkipTransitSettings", "DiveSkipTransit"])
+	if hasMod("MarketAdvisor"):
+		others.append(["minerals", "MarketAdvisorSettings", "MarketAdvisor"])
 	yield(frames(1), "completed")
 	if others.empty():
 		return

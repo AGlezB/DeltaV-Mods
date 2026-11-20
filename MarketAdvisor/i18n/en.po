@@ -1,0 +1,167 @@
+# MarketAdvisor: its texts, in English. Godot shows English for any language without its own file (its fallback
+# locale), so another language only needs a copy of this file with its Language and msgstr lines translated, loaded in
+# ModMain.gd. Keep each %s, and each %% (a percent sign): the code fills them in.
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+# A station menu entry with its alert mark, while there is something worth doing behind it (the Mineral Market: a
+# trade; Services: a service that pays for itself); %s is the entry's own text.
+msgid "MARKETADVISOR_ALERT"
+msgstr "%s (*)"
+
+# The station menu's Mineral Market entry's tooltip; the first %s is the key to hold while clicking, the second the
+# mod's name.
+msgid "MARKETADVISOR_SETTINGS_TOOLTIP"
+msgstr "Click while pressing %s to open the %s settings."
+
+# The settings screen. Each setting has its name and, under the same key followed by SettingsUI.gd's
+# DESCRIPTION_SUFFIX, the description the screen shows while it is selected, written as the game's Tuning descriptions
+# are. A %s is the mineral or the service the setting is about.
+
+# The cash group: the notation switch, the two sliders that make the cash reserve, and the row under them.
+msgid "MARKETADVISOR_GROUP_CASH"
+msgstr "Cash reserve"
+
+msgid "MARKETADVISOR_SCIENTIFIC"
+msgstr "Use scientific notation"
+
+msgid "MARKETADVISOR_SCIENTIFIC_DESC"
+msgstr ""
+"Shows the cash reserve in scientific notation, such as 5e5, instead of thousands, millions and billions, such as "
+"500K."
+
+msgid "MARKETADVISOR_CASH_AMOUNT"
+msgstr "Amount"
+
+msgid "MARKETADVISOR_CASH_AMOUNT_DESC"
+msgstr ""
+"The cash reserve is this amount times the power of ten below.\n"
+"\n"
+"The Trade button at the bottom of the Mineral Market buys ore with the cash above it, and sells that ore when your "
+"cash falls below it. Your cash ends up within one tonne's price above it. At 0, all your cash goes into ore."
+
+msgid "MARKETADVISOR_CASH_POWER"
+msgstr "Power of ten"
+
+msgid "MARKETADVISOR_CASH_POWER_DESC"
+msgstr ""
+"The power of ten the amount above is multiplied by.\n"
+"\n"
+"Together they make the cash reserve, shown under them."
+
+# The name of the row under the sliders, whose value is the cash reserve.
+msgid "MARKETADVISOR_CASH_TOTAL"
+msgstr "Cash reserve"
+
+# The trading group.
+msgid "MARKETADVISOR_GROUP_TRADE"
+msgstr "Trading"
+
+msgid "MARKETADVISOR_TRADE_ALL"
+msgstr "Trade all ores"
+
+# %s: the mineral cash goes into while the switch is off.
+msgid "MARKETADVISOR_TRADE_ALL_DESC"
+msgstr ""
+"Lets the Trade button keep your cash in every ore, not only %s: it buys the ores furthest below their average on "
+"the chart, and sells those furthest above.\n"
+"\n"
+"The cheapest ores' small tonnes bring your cash close to the cash reserve. Your trading also spreads over all ores: "
+"the more of one ore you trade, the more its price swings in the months after."
+
+msgid "MARKETADVISOR_SELL_ORE"
+msgstr "Sell stored ore"
+
+msgid "MARKETADVISOR_SELL_ORE_DESC"
+msgstr ""
+"The Trade button also sells the ore you bring back from your dives, on the best day before your ship is ready, as "
+"the price charts forecast it. The ore it bought to keep your cash in isn't sold this way.\n"
+"\n"
+"At the end of a dive, pick Store Minerals instead of Sell all, so the ore can wait for that day. Oddities are sold "
+"either way. With Trade all ores, the cash goes back into ore."
+
+# The services group: a switch per service that pays for itself; %s is the service's name, as the game shows it.
+msgid "MARKETADVISOR_GROUP_SERVICES"
+msgstr "Services"
+
+msgid "MARKETADVISOR_ALERT_INSURANCE"
+msgstr "Alert for %s"
+
+msgid "MARKETADVISOR_ALERT_INSURANCE_DESC"
+msgstr ""
+"Shows an alert mark on the Services entry of the station menu while %s can be bought.\n"
+"\n"
+"It adds more insurance than it costs, and insurance pays for repairs before your money does."
+
+msgid "MARKETADVISOR_ALERT_SCRAPWRIGHT"
+msgstr "Alert for %s"
+
+msgid "MARKETADVISOR_ALERT_SCRAPWRIGHT_DESC"
+msgstr ""
+"Shows an alert mark on the Services entry of the station menu while %s can be bought.\n"
+"\n"
+"The derelicts it brings to the rings are worth more than it costs."
+
+# The caption of the row in the Mineral Market's header, under your cash, with what the ore the Trade button bought to
+# keep your cash in would sell for today (written like the game's "Insured for").
+msgid "MARKETADVISOR_PARKED"
+msgstr "Parked in ore"
+
+# The row at the bottom of the Mineral Market: the button, and the advice. A mineral is written as the market writes
+# it (Be, W, Fe…).
+msgid "MARKETADVISOR_TRADE"
+msgstr "Trade"
+
+# A mineral's tonnes; the first %s is the tonnes, the second the mineral.
+msgid "MARKETADVISOR_TONNES"
+msgstr "%s t %s"
+
+# The trades to make now; %s is their tonnes.
+msgid "MARKETADVISOR_SELL"
+msgstr "Sell %s."
+
+msgid "MARKETADVISOR_BUY"
+msgstr "Buy %s."
+
+# %s: the cash once the trades are made.
+msgid "MARKETADVISOR_LEAVES"
+msgstr "Leaves %s E$."
+
+# A trade worth waiting for, before your ship is ready; the first %s is the mineral, the second the date.
+msgid "MARKETADVISOR_WAIT_SELL"
+msgstr "Sell %s on %s: the chart forecasts a higher price."
+
+msgid "MARKETADVISOR_WAIT_BUY"
+msgstr "Buy %s on %s: the chart forecasts a lower price."
+
+# %s: a mineral the advice sells well below its average price on the chart.
+msgid "MARKETADVISOR_WARN"
+msgstr "%s sells well below its average on the chart."
+
+# The minerals cash goes into are full; the first %s is them, the second the most the market lets you hold.
+msgid "MARKETADVISOR_CAPPED"
+msgstr "No more room: %s at %s t."
+
+# %s: the cash reserve.
+msgid "MARKETADVISOR_SHORT"
+msgstr "Not enough ore to sell for a cash reserve of %s E$."
+
+msgid "MARKETADVISOR_AT_FLOOR"
+msgstr "Nothing to trade. Cash reserve: %s E$."
+
+# The line comparing today's prices with the average of each chart's history; %s is the minerals.
+msgid "MARKETADVISOR_VS_AVERAGE"
+msgstr "Today against the chart's average: %s."
+
+# A mineral in that line; the first %s is the mineral, the second the percentage.
+msgid "MARKETADVISOR_LOWER"
+msgstr "%s %s %% lower"
+
+msgid "MARKETADVISOR_HIGHER"
+msgstr "%s %s %% higher"
+
+# %s: the mineral.
+msgid "MARKETADVISOR_SAME"
+msgstr "%s the same"

@@ -12,11 +12,15 @@
 **Dives**
 - [DiveDisableAdrenalineBooster](DiveDisableAdrenalineBooster)
 - [DiveSkipTransit](DiveSkipTransit)
+- [DroneAltPriorities](DroneAltPriorities)
 - [GeologyByMass](GeologyByMass)
 
 **The HUD**
 - [HudHideLabels](HudHideLabels)
 - [LidarLouderPing](LidarLouderPing)
+
+**Money**
+- [MarketAdvisor](MarketAdvisor)
 
 **Ships**
 - [CombatSimulator](CombatSimulator)

@@ -23,9 +23,11 @@ in its folder, has the details for modders.
 | [DealerNotifier](../../wiki/DealerNotifier) | Marks the Dealer entry of the Enceladus Prime menu when a ship you are waiting for comes up for sale, and that ship on the Dealer screen. You pick the ships with Shift+Click on Dealer. |
 | [DiveDisableAdrenalineBooster](../../wiki/DiveDisableAdrenalineBooster) | The Adrenaline Booster of your ship starts every dive switched off. |
 | [DiveSkipTransit](../../wiki/DiveSkipTransit) | Skips a dive's cutscenes (the transit both ways, launch, astrogation, rescue, game over, the station's fade-in), charging the remass and in-game time they would have cost, or plays the transit faster without holding Space. Each skip has its own switch (Shift+Click Launch Ring Dive). |
+| [DroneAltPriorities](../../wiki/DroneAltPriorities) | Changes which chunk the tug and haul nanodrones work on first: the most valuable, as set on a new tab of the OMS. |
 | [GeologyByMass](../../wiki/GeologyByMass) | Judges the ore your geologist identifies by the mass of each mineral in it instead of its value, as set on a new tab of the OMS. |
 | [HudHideLabels](../../wiki/HudHideLabels) | Hides the titles on the screens of the dive HUD. |
 | [LidarLouderPing](../../wiki/LidarLouderPing) | The lidar's ping for sensor contacts plays louder, by as much as you set in the ship's Tuning. |
+| [MarketAdvisor](../../wiki/MarketAdvisor) | Keeps the cash reserve you set by putting the rest of your cash in ore at the Mineral Market, with a Trade button that trades on the best days the price charts show, and marks the Mineral Market and Services entries when a trade, or a service that pays for itself, is due. You set it with Shift+Click on Mineral Market. |
 | [ShipCopyPaste](../../wiki/ShipCopyPaste) | On the Fleet screen, copies one ship's setup onto the current ship when both are the same model: the equipment, bought at the Equipment screen's prices, the tuning, the mineral targeting and the crew aboard. |
 | [ShipHighlightTypeAndPrice](../../wiki/ShipHighlightTypeAndPrice) | Makes the type of every ship in the dealer and fleet lists stand out, and hides the ship image behind each row. |
 | [ShipSortByTypeAndPrice](../../wiki/ShipSortByTypeAndPrice) | Sorts the ship list on the dealer screen by type, then by price (cheapest first). |
@@ -48,6 +50,9 @@ These change how something works in a dive, compared to vanilla. Each one's wiki
 - [DiveSkipTransit](../../wiki/DiveSkipTransit#changes-how-the-game-plays): a dive's cutscenes are skipped, with their remass and in-game
   time charged from the game's formulas (the switches marked in its settings affect remass); the burn away from the
   ring is an estimate. The transit, when played, can run faster than the game's own fast-forward, without sound.
+- [DroneAltPriorities](../../wiki/DroneAltPriorities#changes-how-the-game-plays): with its switch on, the tug and haul drones work first
+  on the chunks with the most valuable ore (haul drones also on those near the excavator), instead of the heaviest,
+  fastest ones, and stay on a chunk until a much better one comes.
 - [GeologyByMass](../../wiki/GeologyByMass#changes-how-the-game-plays): with its switch on, which chunks keep a full info box, and
   which ones the arm and the drones go for, depends on ore mass instead of value.
 - [TransponderAltCodes](../../wiki/TransponderAltCodes#changes-how-the-game-plays): a ship's model shows in its

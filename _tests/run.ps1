@@ -14,7 +14,8 @@
 	Reactor.gd, FusionReactor.gd, Tool.gd, gdunzip.gd, CurrentGame.gd, body.gd, ClaimOwner.gd, ClaimBeacon-1.gd,
 	ClaimBeaconForeign.gd, NewGamePlus.gd, PauseLayer.gd, PDT.gd, Video.gd, GravimetricReadout.gd, massdriver.gd,
 	TheRing.gd, MarginViewportUpscale.gd, ViewportWithProxy.gd, NoBulletTime.gd, CanvasHidding.gd, MouseLayer.gd,
-	drone-plant.gd), the
+	drone-plant.gd, MineralMarket.gd, MineralSellSlider.gd, MineralPriceChart.gd, MarketChartPrice.gd, InGameMoney.gd,
+	ServiceUI.gd, ServiceUIInsurance.gd), the
 	game's ship models (harness\transponder_models.gd, read from ships\Shipyard.gd), the game's Shower.tscn, audio buses
 	(default_bus_layout.tres), the skill icons CrewBio.gd preloads and the Fleet entry's Use icon, a stub mineral scene
 	carrying the chunk radius read from the game's, stubs of the two scenes LIDAR.gd preloads, of the Tuning parts
@@ -27,6 +28,8 @@
 	(harness\station_fadein.tres), and what CombatSimulator's arena builds and loads: the simulator's button
 	(LaunchVRButton.tscn), the asteroid field, BulletTimer, the music and WESpace, a ship scene under ships\, the pirate
 	event (story\PirateCombat.gd), the scene massdriver.gd preloads and stand-ins of the ring maps TheRing.gd preloads.
+	For MarketAdvisor: the Mineral Market (MineralMarket.tscn, with its slider rows, their price charts and the charts'
+	labels) and the rows of the Services screen (ServiceUI.tscn, ServiceUIInsurance.tscn).
 	Packages each mod into <WorkDir>\build\<Mod>.zip
 	(as a release zip), and runs every suite with its mods loaded from those zips, the way the game loads them:
 	by an autoload, before the engine loads the main scene. Logs: <WorkDir>\logs. Nothing in the repo, the game folder
@@ -51,6 +54,8 @@
 	  TheRing.gd, and runs the arena on stub ships and a stub asteroid field.
 	- drones: DroneAltPriorities + GeologyByMass (both add an OMS tab). Builds drone plants from
 	  harness\drones_plant.tscn, which holds the game's drone-plant.gd, and HUDs as geology does.
+	- market: MarketAdvisor. Instances the Mineral Market stub (MineralMarket.tscn), whose root has the game's
+	  MineralMarket.gd, and rows of the game's ServiceUI.gd.
 
 .EXAMPLE
 	pwsh _tests\run.ps1
@@ -66,8 +71,8 @@
 #>
 [CmdletBinding()]
 param(
-	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones')]
-	[string[]] $Suite = @('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones'),
+	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones', 'market')]
+	[string[]] $Suite = @('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones', 'market'),
 	# Mod folders to load for every selected suite, in load order (the game's order: by path); @() = none.
 	# Default: each suite's own mods (see the description).
 	[string[]] $Mods,
@@ -181,7 +186,7 @@ foreach ($dir in $project, $build, $logs)
 }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'project.godot'), (Join-Path $PSScriptRoot 'main.tscn') -Destination $project
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'harness'), (Join-Path $PSScriptRoot 'suites') -Destination $project -Recurse
-foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningBoolValue.gd', 'enceladus\Tuning\TuningItems.gd', 'hud\Hud.gd', 'hud\OMS.gd', 'menu\TabsWithGamepadControl.gd', 'hud\components\PriceLabel.gd', 'hud\components\RepeatingHSlider.gd', 'hud\components\MineralLabel.gd', 'hud\components\MineralSystemToggle.gd', 'hud\SystemMineralList.gd', 'enceladus\HireableCrew.gd', 'enceladus\CrewBio.gd', 'enceladus\CurrentCrewManagement.gd', 'menu\sfx\PlaySoundsOnTheseButtons.gd', 'enceladus\SystemBuyUI.gd', 'enceladus\SystemShipUpgradeUI.gd', 'enceladus\Dealer.gd', 'enceladus\Shower.tscn', 'Game.gd', 'enceladus\Enceladus.gd', 'TransponderOnIntro.gd', 'ships\ship-ctrl.gd', 'ships\Reactor.gd', 'ships\modules\FusionReactor.gd', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres', 'CurrentGame.gd', 'story\body.gd', 'ships\modules\ClaimOwner.gd', 'ships\WeaponSlot.gd', 'story\ClaimBeacon-1.gd', 'story\ClaimBeaconForeign.gd', 'menu\NewGamePlus.gd', 'PauseLayer.gd', 'ships\modules\PDT.gd', 'hud\Video.gd', 'hud\GravimetricReadout.gd', 'weapons\massdriver.gd', 'TheRing.gd', 'enceladus\MarginViewportUpscale.gd', 'enceladus\Simulator\ViewportWithProxy.gd', 'enceladus\NoBulletTime.gd', 'enceladus\CanvasHidding.gd', 'menu\MouseLayer.gd', 'weapons\drone-plant.gd')
+foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningBoolValue.gd', 'enceladus\Tuning\TuningItems.gd', 'hud\Hud.gd', 'hud\OMS.gd', 'menu\TabsWithGamepadControl.gd', 'hud\components\PriceLabel.gd', 'hud\components\RepeatingHSlider.gd', 'hud\components\MineralLabel.gd', 'hud\components\MineralSystemToggle.gd', 'hud\SystemMineralList.gd', 'enceladus\HireableCrew.gd', 'enceladus\CrewBio.gd', 'enceladus\CurrentCrewManagement.gd', 'menu\sfx\PlaySoundsOnTheseButtons.gd', 'enceladus\SystemBuyUI.gd', 'enceladus\SystemShipUpgradeUI.gd', 'enceladus\Dealer.gd', 'enceladus\Shower.tscn', 'Game.gd', 'enceladus\Enceladus.gd', 'TransponderOnIntro.gd', 'ships\ship-ctrl.gd', 'ships\Reactor.gd', 'ships\modules\FusionReactor.gd', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres', 'CurrentGame.gd', 'story\body.gd', 'ships\modules\ClaimOwner.gd', 'ships\WeaponSlot.gd', 'story\ClaimBeacon-1.gd', 'story\ClaimBeaconForeign.gd', 'menu\NewGamePlus.gd', 'PauseLayer.gd', 'ships\modules\PDT.gd', 'hud\Video.gd', 'hud\GravimetricReadout.gd', 'weapons\massdriver.gd', 'TheRing.gd', 'enceladus\MarginViewportUpscale.gd', 'enceladus\Simulator\ViewportWithProxy.gd', 'enceladus\NoBulletTime.gd', 'enceladus\CanvasHidding.gd', 'menu\MouseLayer.gd', 'weapons\drone-plant.gd', 'enceladus\MineralMarket.gd', 'enceladus\MineralSellSlider.gd', 'enceladus\MineralPriceChart.gd', 'enceladus\Minerals\MarketChartPrice.gd', 'enceladus\InGameMoney.gd', 'enceladus\ServiceUI.gd', 'enceladus\ServiceUIInsurance.gd')
 {
 	$target = Join-Path $project $file
 	New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
@@ -297,7 +302,8 @@ const MODELS = [$($models -join ', ')]
 "@
 # The Tuning parts CrewCheapHireNotifier's and DiveSkipTransit's settings screens are built from: the game's node paths,
 # scripts and connections (enceladus\Tuning\TuningFloatValue.tscn, TuningBoolValue.tscn, TuningItems.tscn,
-# enceladus\HeaderWithMoney.tscn), without the theme, textures, sounds, smooth scrolling and money display.
+# enceladus\HeaderWithMoney.tscn, with your cash, enceladus\Money.tscn, and the hidden insurance row, both on the game's
+# InGameMoney.gd: MarketAdvisor's parked row copies that row), without the theme, textures, sounds and smooth scrolling.
 Write-Utf8Lf (Join-Path $project 'enceladus\Tuning\TuningFloatValue.tscn') @'
 [gd_scene load_steps=3 format=2]
 
@@ -371,8 +377,22 @@ script = ExtResource( 1 )
 text = "SYSTEM_LABEL"
 align = 1
 '@
+Write-Utf8Lf (Join-Path $project 'enceladus\Money.tscn') @'
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://enceladus/InGameMoney.gd" type="Script" id=1]
+
+[node name="Money" type="Label"]
+size_flags_horizontal = 3
+text = "0 E$"
+align = 2
+script = ExtResource( 1 )
+'@
 Write-Utf8Lf (Join-Path $project 'enceladus\HeaderWithMoney.tscn') @'
-[gd_scene format=2]
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://enceladus/Money.tscn" type="PackedScene" id=1]
+[ext_resource path="res://enceladus/InGameMoney.gd" type="Script" id=2]
 
 [node name="HeaderWithMoney" type="HBoxContainer"]
 alignment = 1
@@ -383,6 +403,27 @@ size_flags_vertical = 0
 text = "PUT_HEADER_HERE"
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
+
+[node name="Money" parent="VBoxContainer" instance=ExtResource( 1 )]
+
+[node name="Insurence" type="HBoxContainer" parent="VBoxContainer"]
+visible = false
+
+[node name="InsuranceLabel" type="Label" parent="VBoxContainer/Insurence"]
+size_flags_horizontal = 3
+text = "ENCELADUS_INSURED_FOR"
+align = 2
+
+[node name="Insurance" type="Label" parent="VBoxContainer/Insurence"]
+size_flags_horizontal = 3
+text = "0 E$"
+script = ExtResource( 2 )
+type = 1
+
+[node name="Pinger" type="AudioStreamPlayer" parent="VBoxContainer/Insurence/Insurance"]
+volume_db = -5.0
+pitch_scale = 0.8
+bus = "UI"
 '@
 # The Geologist tab's parts (hud\components\MineralSystemToggle.tscn, MineralLabel.tscn, PriceLabel.tscn, as
 # hud\SystemMineralList.gd uses them, and GeologyByMass's OMS tab is built from them; MineralSystemLabel.tscn and
@@ -1273,6 +1314,230 @@ function Write-StandInTexture([string] $Png, [int] $Width, [int] $Height, [scrip
 New-Item -ItemType Directory -Force (Join-Path $project 'ring') | Out-Null
 Write-StandInTexture 'ring\ring-map.png' 64 48 { param($x, $y) @(($x * 4), (($x * 37 + $y * 53) % 256), ($y * 5), 255) }
 Write-StandInTexture 'ring\ring-veins.png' 8 8 { param($x, $y) @((($x * 32) % 256), (($y * 32) % 256), ((($x + $y) * 16) % 256), 255) }
+# For MarketAdvisor: the Mineral Market (enceladus\MineralMarket.tscn, with the header above), a slider row
+# (enceladus\MineralSellSlider.tscn, as MineralMarket.gd instances one per mineral), its price chart
+# (enceladus\Minerals\MineralPriceChart.tscn) and the chart's labels (MarketChartPrice.tscn): the game's node paths,
+# scripts, values and connections, with the menu theme on the market (MarketAdvisor's settings screen copies it), and
+# without the fonts, sounds, smooth scrolling and the label's animation. And a row of the Services screen
+# (enceladus\ServiceUI.tscn) and its insurance row (ServiceUIInsurance.tscn): the game's node paths, scripts, texts
+# and connections, without the theme, icons, sounds and flicker.
+Write-Utf8Lf (Join-Path $project 'enceladus\MineralMarket.tscn') @'
+[gd_scene load_steps=5 format=2]
+
+[ext_resource path="res://menu/MenuTheme.tres" type="Theme" id=1]
+[ext_resource path="res://enceladus/MineralMarket.gd" type="Script" id=2]
+[ext_resource path="res://enceladus/HeaderWithMoney.tscn" type="PackedScene" id=3]
+[ext_resource path="res://enceladus/Shower.tscn" type="PackedScene" id=4]
+
+[node name="MineralMarket" type="PanelContainer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme = ExtResource( 1 )
+script = ExtResource( 2 )
+
+[node name="Details" type="VBoxContainer" parent="."]
+grow_horizontal = 2
+grow_vertical = 0
+rect_min_size = Vector2( 256, 0 )
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="HeaderWithMoney" parent="Details" instance=ExtResource( 3 )]
+
+[node name="MarketLabel" parent="Details/HeaderWithMoney" index="0"]
+text = "ENCELADUS_MINERAL_MARKET"
+
+[node name="MarginContainer" type="MarginContainer" parent="Details"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/margin_right = -16
+custom_constants/margin_top = 16
+custom_constants/margin_bottom = 0
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Details/MarginContainer"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+scroll_horizontal_enabled = false
+
+[node name="MarginContainer" type="MarginContainer" parent="Details/MarginContainer/ScrollContainer"]
+size_flags_horizontal = 3
+custom_constants/margin_right = 8
+
+[node name="Market" type="VBoxContainer" parent="Details/MarginContainer/ScrollContainer/MarginContainer"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Shower" parent="." instance=ExtResource( 4 )]
+
+[editable path="Details/HeaderWithMoney"]
+'@
+Write-Utf8Lf (Join-Path $project 'enceladus\MineralSellSlider.tscn') @'
+[gd_scene load_steps=4 format=2]
+
+[ext_resource path="res://enceladus/MineralSellSlider.gd" type="Script" id=1]
+[ext_resource path="res://enceladus/Minerals/MineralPriceChart.tscn" type="PackedScene" id=2]
+[ext_resource path="res://enceladus/AnalogControlSlider.gd" type="Script" id=3]
+
+[node name="MineralSellSlider" type="MarginContainer"]
+anchor_right = 1.0
+margin_bottom = 87.0
+script = ExtResource( 1 )
+format = "%.2f E$/t"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+size_flags_horizontal = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="VBoxContainer"]
+custom_constants/margin_bottom = 13
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer/MarginContainer"]
+size_flags_horizontal = 3
+size_flags_vertical = 8
+custom_constants/separation = 16
+alignment = 1
+
+[node name="Mineral" type="Label" parent="VBoxContainer/MarginContainer/HBoxContainer"]
+size_flags_horizontal = 3
+text = "Fe"
+
+[node name="H" type="HBoxContainer" parent="VBoxContainer/MarginContainer/HBoxContainer"]
+size_flags_horizontal = 5
+alignment = 1
+
+[node name="Owned" type="Label" parent="VBoxContainer/MarginContainer/HBoxContainer/H"]
+size_flags_horizontal = 3
+text = "0"
+align = 2
+
+[node name="Dot" type="Label" parent="VBoxContainer/MarginContainer/HBoxContainer/H"]
+self_modulate = Color( 1, 1, 1, 0.498039 )
+size_flags_horizontal = 4
+text = "."
+align = 1
+
+[node name="Reminder" type="Label" parent="VBoxContainer/MarginContainer/HBoxContainer/H"]
+self_modulate = Color( 1, 1, 1, 0.498039 )
+size_flags_horizontal = 3
+text = "000"
+
+[node name="Price" type="Label" parent="VBoxContainer/MarginContainer/HBoxContainer"]
+size_flags_horizontal = 3
+text = "0 E$/t"
+align = 2
+
+[node name="Chart" parent="VBoxContainer/MarginContainer" instance=ExtResource( 2 )]
+show_behind_parent = true
+time = 24
+lookAhead = 4608
+
+[node name="HSlider" type="HSlider" parent="VBoxContainer"]
+hint_tooltip = "TOOLTIP_SELL_SLIDE"
+scrollable = false
+tick_count = 20
+ticks_on_borders = true
+script = ExtResource( 3 )
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="VBoxContainer"]
+size_flags_horizontal = 3
+custom_constants/separation = 16
+alignment = 1
+
+[node name="Min" type="Label" parent="VBoxContainer/HBoxContainer2"]
+size_flags_horizontal = 3
+text = "0"
+
+[node name="Max" type="Label" parent="VBoxContainer/HBoxContainer2"]
+size_flags_horizontal = 3
+text = "0"
+align = 2
+
+[connection signal="visibility_changed" from="." to="." method="_on_MineralSellSlider_visibility_changed"]
+[connection signal="value_changed" from="VBoxContainer/HSlider" to="." method="_on_HSlider_value_changed"]
+'@
+Write-Utf8Lf (Join-Path $project 'enceladus\Minerals\MineralPriceChart.tscn') @'
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://enceladus/MineralPriceChart.gd" type="Script" id=1]
+[ext_resource path="res://enceladus/Minerals/MarketChartPrice.tscn" type="PackedScene" id=2]
+
+[node name="Chart" type="TextureRect"]
+rect_min_size = Vector2( 0, 64 )
+size_flags_horizontal = 3
+size_flags_vertical = 3
+expand = true
+stretch_mode = 1
+script = ExtResource( 1 )
+updateSeconds = 6
+Text = ExtResource( 2 )
+normal = 0.8
+evenMonthHighlight = 1.5
+
+[connection signal="visibility_changed" from="." to="." method="_on_Chart_visibility_changed"]
+'@
+Write-Utf8Lf (Join-Path $project 'enceladus\Minerals\MarketChartPrice.tscn') @'
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://enceladus/Minerals/MarketChartPrice.gd" type="Script" id=1]
+
+[node name="Price" type="Node2D"]
+self_modulate = Color( 5, 5, 5, 1 )
+script = ExtResource( 1 )
+
+[node name="Label" type="Label" parent="."]
+margin_left = -61.0
+margin_top = -10.0
+size_flags_horizontal = 4
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Label"]
+'@
+Write-Utf8Lf (Join-Path $project 'enceladus\ServiceUI.tscn') @'
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://enceladus/ServiceUI.gd" type="Script" id=1]
+
+[node name="ServiceUI" type="MarginContainer"]
+script = ExtResource( 1 )
+
+[node name="HBox" type="HBoxContainer" parent="."]
+
+[node name="Service" type="Button" parent="HBox"]
+text = "SERVICE_NAME"
+
+[node name="V" type="VBoxContainer" parent="HBox"]
+
+[node name="Price" type="Label" parent="HBox/V"]
+text = "%s E$"
+
+[node name="Cooldown" type="Label" parent="HBox/V"]
+text = "SERVICE_IN_COOLDOWN"
+
+[node name="Time" type="Label" parent="HBox/V"]
+text = "3d 0h"
+
+[node name="Buy" type="Button" parent="HBox"]
+
+[connection signal="visibility_changed" from="." to="." method="_on_ServiceUI_visibility_changed"]
+[connection signal="focus_entered" from="HBox/Service" to="." method="_on_Service_focus_entered"]
+[connection signal="pressed" from="HBox/Service" to="." method="_on_Service_pressed"]
+[connection signal="focus_entered" from="HBox/Buy" to="." method="_on_Buy_focus_entered"]
+[connection signal="pressed" from="HBox/Buy" to="." method="_on_Buy_pressed"]
+'@
+Write-Utf8Lf (Join-Path $project 'enceladus\ServiceUIInsurance.tscn') @'
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://enceladus/ServiceUI.tscn" type="PackedScene" id=1]
+[ext_resource path="res://enceladus/ServiceUIInsurance.gd" type="Script" id=2]
+
+[node name="ServiceUIInsurance" instance=ExtResource( 1 )]
+script = ExtResource( 2 )
+
+[node name="Service" parent="HBox" index="0"]
+text = ""
+'@
 
 # 2. The mods: each suite's own (or -Mods), packaged once each, or the release zip given for it.
 $suiteMods = @{
@@ -1291,6 +1556,7 @@ $suiteMods = @{
 	transponder = @('TransponderAltCodes')
 	combat = @('CombatSimulator')
 	drones = @('DroneAltPriorities', 'GeologyByMass')
+	market = @('MarketAdvisor')
 }
 $given = @{}
 foreach ($z in $ModZip)

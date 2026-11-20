@@ -17,9 +17,9 @@ extends "res://weapons/drone-plant.gd"
 # gathering spot ahead of the excavator (1 there, 0 at the plant's reach). Each criterion is divided by the best
 # eligible chunk's, plus SCORE_FLOOR, raised to its weight (Settings.gd), and multiplied: weight 0 ignores a criterion,
 # and with value and mass at the same weight the score follows the chunk's ore value. A chunk the geologist hasn't
-# identified has no value or mass yet: while either counts, it comes after the identified ones, by intake. The
-# current target keeps its
-# place unless another scores more than 1 + KEEP_TARGET_MARGIN times as much; equal scores go to the game's rule.
+# identified has no value or mass yet: while either counts, it comes after the identified ones, by intake. The current
+# target keeps its place unless another scores more than 1 + KEEP_TARGET_MARGIN times as much; equal scores go to the
+# game's rule.
 # The ranking, the criteria and the defaults were chosen on the drone bench (_bench\README.md), which simulates the
 # game's own drone plants.
 #

@@ -112,6 +112,11 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
      `instance()`); `GeologistTab.gd` → `hud/SystemMineralList.gd` (the Geologist tab's rows, whose Minimum values and
      their column's title it hides while its switch is on).
    - LidarLouderPing: `Code.gd` → `hud/LIDAR.gd`.
+   - MarketAdvisor: `Code.gd` → `enceladus/MineralMarket.gd` (the Mineral Market: the row of advice and the Trade
+     button at its bottom, which trades through the market's own slider rows, and the row under your cash in its header
+     with what the ore it bought would sell for today); `StationMenu.gd` → `enceladus/EnceladusMenu.gd` (the alert
+     marks on the Mineral Market and Services entries, and Shift+Click on the Mineral Market entry opening its settings
+     screen, which copies the Mineral Market's frame and the Tuning screen's description window).
    - ShipCopyPaste: `Code.gd` → `enceladus/SystemBuyUI.gd` (the Fleet screen's entries; it prices through the
      Equipment screen's items).
    - TransponderAltCodes: `Code.gd` → `CurrentGame.gd` (the autoload, where the game makes transponder codes, with a
@@ -153,11 +158,12 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
   and both override `fillCrew`, each calling the parent's first: by path the chain is game ← CrewCheapHireNotifier ←
   CrewPerfectSort, and CrewPerfectSort only reorders the entries, so the marks stay (both orders tested in `crew`).
   Their member names must stay distinct.
-- CrewCheapHireNotifier (`Code.gd`), DealerNotifier (`Code.gd`) and DiveSkipTransit (`StationMenu.gd`) all extend
-  `EnceladusMenu.gd`, each for its own menu entry. By path the chain is game ← CrewCheapHireNotifier ←
-  DealerNotifier ← DiveSkipTransit; all override `_ready` and `_notification` (the game's script has neither) without
-  calling the parent's. Their member names must stay distinct; opening one screen hides the others (`hidefoka`).
-  Loaded together in `skip` (CrewCheapHireNotifier and DiveSkipTransit) and in `dealer` (all three, every order).
+- CrewCheapHireNotifier (`Code.gd`), DealerNotifier (`Code.gd`), DiveSkipTransit (`StationMenu.gd`) and MarketAdvisor
+  (`StationMenu.gd`) all extend `EnceladusMenu.gd`, each for its own menu entries (MarketAdvisor's: Mineral Market and
+  Services). By path the chain is game ← CrewCheapHireNotifier ← DealerNotifier ← DiveSkipTransit ← MarketAdvisor;
+  all override `_ready` and `_notification` (the game's script has neither) without calling the parent's. Their member
+  names must stay distinct; opening one screen hides the others (`hidefoka`). Loaded together in `skip`
+  (CrewCheapHireNotifier and DiveSkipTransit) and in `dealer` (all four, every order).
 - CombatSimulator (`Code.gd`) and DiveSkipTransit (`Station.gd`) both extend `enceladus/Enceladus.gd`, the station: by
   path the chain is game ← CombatSimulator ← DiveSkipTransit. Both override `_ready` without calling the parent's;
   CombatSimulator adds `_input` and `_notification` (the game's script has neither), DiveSkipTransit overrides
@@ -401,7 +407,8 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
   - A script of the mod's own that isn't an extension is named for what it is: CombatSimulator's `CombatLayer.gd` (its
     arena, a layer the station's extension adds), `CombatMap.gd` (the arena's map, built on `TheRing.gd` with
     `extends` but never installed: a subclass made with `new()`, not a replacement of the game's script) and
-    `ShipList.gd` (its dialog's ship list, a tab of `SettingsUI.gd`).
+    `ShipList.gd` (its dialog's ship list, a tab of `SettingsUI.gd`); MarketAdvisor's `Advisor.gd` (the advice: static
+    functions of what the player can see, which touch neither the game nor the scene).
   - `SettingsUI.gd` is the mod's settings UI, when it has one.
   - `Settings.gd`, only in a mod with a settings UI, is the settings model `Code.gd` and `SettingsUI.gd` share, built
     like the game's own `Settings` autoload (`res://Settings.gd`: a `cfg` dict of defaults, a `ConfigFile` in
@@ -442,11 +449,13 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
     - `getValue(key, job = null)`; `setValue(key, value, job = null)` clamps and snaps to the step, and only on a change stores
       (`saveToState()`) and emits `settingsChanged`; `job` is only for a per-job setting. `toShown(key, value)` /
       `fromShown(key, shown)`.
-    - `loadFromState()` / `saveToState()`: settings kept per save game (CrewCheapHireNotifier's) live in
-      `CurrentGame.state.ui` (the game's per-save UI store, `setUiValue` / `getUiValue`, written with the save
+    - `loadFromState()` / `saveToState()`: settings kept per save game (CrewCheapHireNotifier's, MarketAdvisor's) live
+      in `CurrentGame.state.ui` (the game's per-save UI store, `setUiValue` / `getUiValue`, written with the save
       as JSON, so numbers come back as floats) under the mod's id from `Mod.manifest`, so other authors' mods can't
       collide; the entry holds `formatVersion`, `modVersion` and one value per setting (a copy of the dictionary for
-      a per-job setting). Loading starts from the defaults and clamps and snaps each saved value. A mod whose settings
+      a per-job setting). MarketAdvisor's also holds the tonnes its Trade button bought (`parked`, through `getParked`
+      / `setParked`), which aren't a setting: stored without `settingsChanged`. Loading starts from the defaults and
+      clamps and snaps each saved value. A mod whose settings
       are game-wide (DiveSkipTransit's) uses the `user://` `ConfigFile` above instead, with `loadFromFile` /
       `saveToFile`: a file of its own, `user://<the mod's id>.cfg` (in `filePath`, so a test can point it elsewhere),
       holding one section named by the mod's id with the same entry, written at every change; `shared()` loads it when
@@ -593,6 +602,10 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   (`adrenalineBoost`, `adrenalineCooldown`); fired again during the cooldown, it cuts the burst short. Switched off
   in the OMS's Mechanic tab, it pushes adrenaline down every frame instead, which also damps bullet time from the
   other sources. DiveDisableAdrenalineBooster starts the player's booster switched off at every dive.
+- **Alert mark** (not the game's: these mods' own term): the " (*)" a mod puts after the text of a station menu entry
+  while something behind it is worth a look, each mod with its own text for it (`<MOD>_ALERT`, "%s (*)", whose `%s`
+  is the entry's text). CrewCheapHireNotifier puts it on Crew, DealerNotifier on Dealer, MarketAdvisor on Mineral
+  Market and Services.
 - **Antonoff Ore Purifier** (`SYSTEM_CARGO_MPUDRY`; `ships/modules/MineralProcessingUnit_DRY.tscn`, on
   `MineralProcessingUnit.gd`): an MPU whose processing area covers the whole hold of the Antonoff-Titan K225
   (`ships/ATK225.tscn` overrides it). It strips each chunk's water into remass (`remassEfficiency`), extracts no ore
@@ -740,6 +753,9 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   name, and can't be hailed (`hailable`). Its reactor shows a Singularity Core that spins faster the hotter the
   reactor runs (`ships/Artifact.gd`). A random event of the rings brings it to look at the player's ship, then attack
   it with an MWG; destroyed, it leaves its Singularity Core, an oddity. Details: [GAME.md](GAME.md#hybrid).
+- **Insurance** (`ENCELADUS_INSURED_FOR`, "Insured for"): money kept apart from the player's (`CurrentGame.getInsurance`,
+  `state.insurance`) that pays for repairs first. Jameson's Insurance (`SERVICE_JAMESON`), at Services, adds to it.
+  Details: [GAME.md](GAME.md#insurance).
 - **Intake**: where the arm feeds chunks into the ship: a grinder, an excavator or a side bay (see *Salvage arm
   facts*).
 - **Launch sequence**: what the station plays after Launch Ring Dive (`ENCELADUS_RETURN_TO_RING`) and the dive target:
@@ -761,14 +777,17 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
 - **Mechanic**: the crew occupation for repairs, and the OMS tab listing the ship's equipment, to switch each piece
   on and off and fix it.
 - **Mineral**: what a chunk is made of, named in code by its element symbol (`mineral = "PT"`). Processed ore
-  (`HUD_CARGO_LIST_PROCESSED`) is what the MPU has extracted; it is sold or stored at the **Mineral Market**
-  (`ENCELADUS_MINERAL_MARKET`).
+  (`HUD_CARGO_LIST_PROCESSED`) is what the MPU has extracted; it is sold or stored at the Mineral Market.
+- **Mineral Market** (`ENCELADUS_MINERAL_MARKET`, `enceladus/MineralMarket.tscn`): the station screen where processed
+  ore is sold and bought, one row per mineral (`enceladus/MineralSellSlider.gd`): its tonnes held, the price for the
+  day, a slider of whole tonnes and a price chart (`enceladus/MineralPriceChart.gd`) with the past and, as the crew's
+  geologist predicts it, the coming months. Its header shows the player's money. Details:
+  [GAME.md](GAME.md#mineral-market).
 - **Morale** (crew happiness): each crew member's mood, `morale` in their entry of `CurrentGame.state.crew`, from
   -0.5 to 0.5 (`changeCrewMorale` clamps it), 0 for a new hire. It has no text in `en.po` and no number on screen;
   the crew line-up at the station (`enceladus/CrewFaceOnEnceladus.gd`) shows a happy or a sad icon. It raises or
-  lowers the member's crew stats, drifts every day towards a target, and changes with the station's **Services**
-  screen (`ENCELADUS_SERVICES`, `enceladus/ServiceUI.gd`; paid bars, hotels and other services), conversations and
-  unpaid wages. Details: [GAME.md](GAME.md#morale).
+  lowers the member's crew stats, drifts every day towards a target, and changes with the station's Services (paid
+  bars, hotels and other services), conversations and unpaid wages. Details: [GAME.md](GAME.md#morale).
 - **MPU** (`SYSTEM_CARGO_MPU*`, `ships/modules/MineralProcessingUnit.gd`): the Mineral Processing Unit, which turns
   the chunks taken in into processed ore and, in most models, their water into remass.
 - **Nanodrones** (the word is in their descriptions, `SYSTEM_DND_TS_DESC`): drones a plant on a hardpoint assembles as
@@ -836,6 +855,10 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   in sight when the derelict talks ends the conversation; a ship the arm holds when the dive ends at the station joins
   the fleet if it is salvageable (`ship-ctrl.gd` `handleExitToEnceladus`, `CurrentGame.isShipSalvageable`). Details:
   [GAME.md](GAME.md#salvage-claim).
+- **Services** (`ENCELADUS_SERVICES`, `enceladus/Services.tscn`): the station screen of paid services, one row each
+  (`enceladus/ServiceUI.gd`, its `serviceName` the service's key): bars and hotels, which take in-game hours and lift
+  the crew's morale, and monthly ones such as Jameson's Insurance (`SERVICE_JAMESON`, see *Insurance*) and Scrapwright
+  Recovery Operations (`SERVICE_SALVAGE_LICENCE`, see *Salvage*). Details: [GAME.md](GAME.md#services).
 - **Ship models**: the kinds of ship, each with a key in `Shipyard.ships` (`TRTL`, `PROSPECTOR-VP`, …), a scene
   (`ships/RA-TRTL.tscn`) and the translation key of its name in the ship's `shipName` (`SHIP_TRTL`). The Dealer shows
   the names: K37 TNTRL, Eagle Prospector, Vulture Prospector, EIME (Eon Interstellar Model E), OCP-209, the Cothons,

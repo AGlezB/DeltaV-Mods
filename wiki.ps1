@@ -688,9 +688,20 @@ function Get-Required([string] $ModName)
 	if (Test-ExactPath $repo $settings)
 	{
 		$consts = Get-Constants (Join-Path $repo $settings)
+		# A setting is a dict with a label: a constant of its own (ENABLED), or an item of a dict (SETTINGS) or of an
+		# array (WEIGHTS) of them.
 		$described = foreach ($name in $consts.Keys)
 		{
 			$node = Resolve-Ref $consts[$name] $consts
+			if ($node.Kind -ceq 'array')
+			{
+				for ($i = 0; $i -lt $node.Value.Count; $i++)
+				{
+					$item = Resolve-Ref $node.Value[$i] $consts
+					if ($item.Kind -ceq 'dict' -and $item.Value.Contains('label')) { [pscustomobject]@{ Path = "$name[$i]"; Node = $item } }
+				}
+				continue
+			}
 			if ($node.Kind -cne 'dict') { continue }
 			if ($node.Value.Contains('label'))
 			{
