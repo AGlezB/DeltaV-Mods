@@ -38,8 +38,9 @@
 	paths.local.psd1 at the repo root (git-ignored; copy paths.example.psd1 to it).
 
 	Suites and the mods they load by default:
-	- units, still, moving: ArmAltPullBehavior + ArmAltTargetSelection (unit checks; the ship standing still, 9
-	  cases; the ship held, cruising, turning, 16 cases). still and moving need ArmAltPullBehavior.
+	- units, still, moving, hold: ArmAltPullBehavior + ArmAltTargetSelection (unit checks; the ship standing still, 9
+	  cases; the ship held, cruising, turning, 16 cases; holding and feeding while the ship turns and accelerates).
+	  still, moving and hold need ArmAltPullBehavior.
 	- dive: DiveDisableAdrenalineBooster.
 	- boot: BootSkipLogos. Runs with harness\boot.tscn, which holds the game's Boot.gd, as the main scene.
 	- lidar: LidarLouderPing.
@@ -74,8 +75,8 @@
 #>
 [CmdletBinding()]
 param(
-	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones', 'market', 'services')]
-	[string[]] $Suite = @('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones', 'market', 'services'),
+	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones', 'market', 'services', 'hold')]
+	[string[]] $Suite = @('units', 'still', 'moving', 'hold', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones', 'market', 'services'),
 	# Mod folders to load for every selected suite, in load order (the game's order: by path); @() = none.
 	# Default: each suite's own mods (see the description).
 	[string[]] $Mods,
@@ -1560,6 +1561,7 @@ $suiteMods = @{
 	units = @('ArmAltPullBehavior', 'ArmAltTargetSelection')
 	still = @('ArmAltPullBehavior', 'ArmAltTargetSelection')
 	moving = @('ArmAltPullBehavior', 'ArmAltTargetSelection')
+	hold = @('ArmAltPullBehavior', 'ArmAltTargetSelection')
 	dive = @('DiveDisableAdrenalineBooster')
 	boot = @('BootSkipLogos')
 	lidar = @('LidarLouderPing')

@@ -16,8 +16,8 @@ These pages explain what each mod does, for players. The code, and the notes for
 
 - [ArmAltTargetSelection](ArmAltTargetSelection): your arm only goes for chunks it can really reach, and picks the
   one that is easiest to bring in.
-- [ArmAltPullBehavior](ArmAltPullBehavior): your arm lines each chunk up with the grinder or excavator before pulling
-  it in, so it doesn't crash into the rotors, the claws or the hull.
+- [ArmAltPullBehavior](ArmAltPullBehavior): your arm brings each chunk into the grinder or excavator along a smooth
+  curve, clear of the rotors, the claws and the hull, and holds it steady while you turn and thrust.
 
 ### Crew
 
@@ -70,7 +70,7 @@ Most of these mods only change what you see on screen. These also change how som
 
 - [ArmAltTargetSelection](ArmAltTargetSelection#changes-how-the-game-plays): which chunks the arm goes for, and which
   one first.
-- [ArmAltPullBehavior](ArmAltPullBehavior#changes-how-the-game-plays): how the arm brings a chunk in.
+- [ArmAltPullBehavior](ArmAltPullBehavior#changes-how-the-game-plays): how the arm brings a chunk in and holds it.
 - [DiveDisableAdrenalineBooster](DiveDisableAdrenalineBooster#changes-how-the-game-plays): the Adrenaline booster
   starts every dive switched off, and that also holds back bullet time.
 - [DiveSkipTransit](DiveSkipTransit#changes-how-the-game-plays): the cutscenes are skipped, and what they would have

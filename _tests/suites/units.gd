@@ -188,11 +188,14 @@ func run():
 	r[0].queue_free()
 	yield(get_tree(), "physics_frame")
 
-	# ---- no acceleration push: while the game pulls the target, the mod adds nothing when the ship accelerates
+	# ---- the ship accelerating: since 1.6.0 the mod holds the target at the dock slot against it, pushing it along with
+	# the ship, which takes the opposite push; the push never grows past what the ship does (1.3.0 counted its own push
+	# as the ship's, and flung targets away)
 	r = make_arm(0.0, Vector2(60, -20), 0.0, Vector2(1, 1), Vector2(1500, 1500), Vector2(0, 0))
 	add_child(r[0])
 	ship = r[1]; arm = r[2]
-	var tb = RigidBody2D.new(); tb.gravity_scale = 0; tb.mass = 10.0; tb.linear_damp = 0; tb.position = Vector2(10, -100); r[0].add_child(tb)
+	var tb = RigidBody2D.new(); tb.gravity_scale = 0; tb.mass = 10.0; tb.linear_damp = 0; r[0].add_child(tb)
+	tb.global_position = arm.areaDockSlot.global_position
 	yield(get_tree(), "physics_frame")
 	arm.target = tb; arm.locked = true
 	var gm = Node2D.new(); gm.set_script(load("res://harness/grinder.gd")); r[0].add_child(gm)
@@ -201,10 +204,13 @@ func run():
 	gm.grinder1node = g1; gm.grinder2node = g2
 	ship.systems = {"SYSTEM_GRINDER": {"name": "SYSTEM_GRINDER", "ref": gm}}
 	for i in range(60):
-		ship.linear_velocity += Vector2(0, -200) / 60.0
+		ship.linear_velocity += Vector2(0, -100) / 60.0
 		ship.position += ship.linear_velocity / 60.0
 		yield(get_tree(), "physics_frame")
-	check("no acceleration push: target untouched, nothing back to the ship", tb.linear_velocity.length() < 0.001 and ship.impulses.length() < 0.001, "%s %s" % [tb.linear_velocity, ship.impulses])
+	if hasP:
+		check("acceleration: the target is pushed along with the ship, never ahead of it, and the ship takes the opposite push", tb.linear_velocity.y < - 50.0 and tb.linear_velocity.length() <= ship.linear_velocity.length() * 1.05 and (ship.impulses + tb.linear_velocity * tb.mass).length() < 1.0, "target %s, ship %s, impulses on the ship %s" % [tb.linear_velocity, ship.linear_velocity, ship.impulses])
+	else:
+		check("acceleration (control): the game alone leaves the target where the arm holds it untouched", tb.linear_velocity.length() < 0.001 and ship.impulses.length() < 0.001, "%s %s" % [tb.linear_velocity, ship.impulses])
 	r[0].queue_free()
 	yield(get_tree(), "physics_frame")
 
@@ -249,9 +255,10 @@ func run():
 		check("cost: nothing to deliver, nothing drawn", arm._cost(0.0, crel, cdt) == 0.0)
 		ship.damage = {}
 		arm.feed = 1.0
+		arm.feedVelocity = VP.ARM_PROPERTIES.feedVelocity # the AR-1500's: the speed a fed target is pulled at
 		arm.queue.append(ct); arm.target = ct; arm.locked = true
 		for i in range(10): yield(get_tree(), "physics_frame")
-		check("cost: pulling forward (behind the red line) wears the arm", arm._outside() != null and ship.damage.get("wear", 0.0) > 0, str(ship.damage))
+		check("cost: pulling the target in (behind the red line) wears the arm", arm._outside() != null and ship.damage.get("wear", 0.0) > 0, str(ship.damage))
 		var done = false
 		for i in range(900):
 			yield(get_tree(), "physics_frame")
@@ -259,25 +266,23 @@ func run():
 			if arm._feedIn:
 				done = true
 				break
-		check("pull: feeding, straight to the opening: the target gets into the corridor, slows down and is pulled in", done and abs(ct.global_position.x - 10.0) <= 30.0, str(ct.global_position))
-		# a block of hull right below the target, its top edge half the clearance away: the line to the opening comes
-		# too close, so it goes straight forward first
+		check("pull: feeding from beside the opening, behind the red line: the target comes round in line with the opening and is pulled straight in", done and abs(ct.global_position.x - 10.0) <= 30.0, str(ct.global_position))
+		# a block of hull right below the target, its top edge half the clearance away: the target must never be pulled
+		# into it
 		var hb = CollisionShape2D.new(); hb.shape = RectangleShape2D.new(); hb.shape.extents = Vector2(20, 20); hb.position = ctStart + Vector2(0, 0.5 * ctClear + 20); ship.add_child(hb)
 		ct.linear_velocity = Vector2(); ct.position = ctStart; arm._lastTarget = null
 		yield(get_tree(), "physics_frame")
-		var o2 = arm._outside()
-		var wasForward = o2 != null and abs(o2.x) < 0.01
 		done = false
-		var straight = true
+		var clearance = INF
 		for i in range(900):
 			yield(get_tree(), "physics_frame")
-			var o3 = arm._outside()
+			arm._outside()
+			var q = ct.position - hb.position
+			clearance = min(clearance, Vector2(max(0.0, abs(q.x) - 20.0), max(0.0, abs(q.y) - 20.0)).length())
 			if arm._feedIn:
 				done = true
 				break
-			if o3 != null and abs(o3.x) < 0.01 and abs(ct.global_position.x - 250.0) > 0.5:
-				straight = false
-		check("pull: feeding, too close to the hull: straight forward first, then to the opening and pulled in from the corridor", wasForward and straight and done and abs(ct.global_position.x - 10.0) <= 30.0, str(ct.global_position))
+		check("pull: feeding, next to a block of hull: kept a chunk's radius off it, and pulled in from in line with the opening", clearance >= VP.CHUNK_RADIUS and done and abs(ct.global_position.x - 10.0) <= 30.0, "%s, closest to the block %.1f" % [ct.global_position, clearance])
 		hb.queue_free()
 	r[0].queue_free()
 	yield(get_tree(), "physics_frame")
@@ -344,9 +349,10 @@ func run():
 	for i in range(5): yield(get_tree(), "physics_frame")
 	arm.target = pb
 	# [label, system, tip, target position, target velocity, expected, feeding, hull]
-	#  expected: 1 = the game's pull, 2 = pulled straight to the middle of the opening (on the red line),
-	#  0 = pulled straight forward to a chunk's radius past the red line, 3 = feeding in the corridor: pulled straight in
-	#  by the mod (1.5.0; it used to be left to the game), towards the corridor's middle line
+	#  expected: 1 = held at the dock slot (since 1.6.0; it used to be the game's pull), 2 = feeding: pulled along its path
+	#  (since 1.6.0: _pathAt; it used to be pulled to the middle of the opening), 0 = pulled straight forward to a chunk's
+	#  radius past the red line (feeding: or along a path that keeps a chunk's radius off the hull), 3 = feeding in the
+	#  corridor: pulled straight in, never outwards
 	#  feeding: the excavator command is held (the arm's `feed`)
 	#  hull: a block of hull 120 wide and 40 deep, 40 behind the tip (sides at x = +-60, from 40 to 80 behind the tip)
 	# rotors/claws are 60 apart (circle radius 12): opening 60 wide, they reach 12 ahead of the tip; the red line is the
@@ -400,12 +406,23 @@ func run():
 			var side = arm._outside()
 			var axis = Vector2(0, -1).rotated(arm.global_rotation)
 			if c[5] == 1:
-				check("pull: " + c[0] + ": original pull", side == null and arm.maxThrust == arm._maxThrust and arm._maxThrust > 0, "maxThrust %s side %s" % [arm.maxThrust, side])
+				var v = arm._pullTo(side, Vector2(), 1.0 / 60.0) if side != null else Vector2()
+				var ok = side != null and arm.maxThrust == 0.0 and (pb.global_position - side).distance_to(arm.areaDockSlot.global_position) < 0.01 and v.dot(- side) > 0
+				check("pull: " + c[0] + ": held at the dock slot by the mod", ok, "maxThrust %s impulse %s side %s" % [arm.maxThrust, v, side])
+			elif c[5] == 2:
+				var v = arm._pullTo(side, Vector2(), 1.0 / 60.0) if side != null else Vector2()
+				var ok = side != null and arm._way != null and arm.maxThrust == 0.0 and v.length() > 0 and v.normalized().dot(arm._way[0]) > 0.99
+				check("pull: " + c[0] + ": pulled along its path", ok, "maxThrust %s impulse %s path %s" % [arm.maxThrust, v, arm._way[0] if arm._way != null else null])
 			elif c[5] == 3:
 				var lat = axis.rotated(PI / 2)
 				var across = (pb.global_position - c[2]).dot(lat)
 				var v = arm._pullTo(side, Vector2(), 1.0 / 60.0) if side != null else Vector2()
-				check("pull: " + c[0] + ": pulled straight in along the corridor, towards its middle line", side != null and arm._feedIn and arm.maxThrust == 0.0 and v.dot(- axis) > 0 and (abs(across) < 0.01 or v.dot(lat) * across < 0), "maxThrust %s impulse %s side %s" % [arm.maxThrust, v, side])
+				check("pull: " + c[0] + ": pulled straight in along the corridor, never outwards", side != null and arm._feedIn and arm.maxThrust == 0.0 and v.dot(- axis) > 0 and (abs(across) < 0.01 or v.dot(lat) * sign(across) <= 0.01 * v.length()), "maxThrust %s impulse %s side %s" % [arm.maxThrust, v, side])
+			elif c[6] > 0 and arm._way != null:
+				# feeding beside the hull, on a path: a chunk moved along it for the red line's clearance stays off the hull
+				var v = arm._pullTo(side, Vector2(), 1.0 / 60.0)
+				var ok = arm.maxThrust == 0.0 and not arm._hitsHull(pb.global_position, pb.global_position + arm._way[0] * arm._clearance, arm._body) and v.normalized().dot(arm._way[0]) > 0.99
+				check("pull: " + c[0] + ": pulled along a path that keeps a chunk's radius off the hull", ok, "impulse %s path %s" % [v, arm._way[0]])
 			else:
 				# red line: the front of the rotors / claws (12) plus the clearance. Forward: to a chunk's radius past it.
 				var F = redAhead
@@ -417,12 +434,9 @@ func run():
 					var dest = pb.global_position - side
 					var lat = axis.rotated(PI / 2)
 					ok = arm.maxThrust == 0.0 and v.dot(side) < 0
-					if c[5] == 0:
-						ok = ok and abs((dest - c[2]).dot(axis) - (F + VP.CHUNK_RADIUS)) < 0.01 and abs((dest - pb.global_position).dot(lat)) < 0.01
-					else:
-						ok = ok and (dest - (c[2] + axis * F)).length() < 0.01
+					ok = ok and abs((dest - c[2]).dot(axis) - (F + VP.CHUNK_RADIUS)) < 0.01 and abs((dest - pb.global_position).dot(lat)) < 0.01
 					why = "dest ahead %.2f, across %.2f" % [(dest - c[2]).dot(axis), (dest - c[2]).dot(lat)]
-				check("pull: " + c[0] + (": pulled straight forward to clear the red line" if c[5] == 0 else ": pulled straight to the middle of the opening"), ok, "maxThrust %s %s impulse %s side %s" % [arm.maxThrust, why, v, side])
+				check("pull: " + c[0] + ": pulled straight forward to clear the red line", ok, "maxThrust %s %s impulse %s side %s" % [arm.maxThrust, why, v, side])
 	if hull.get_parent() != null:
 		ship.remove_child(hull)
 	hull.free()
@@ -446,14 +460,15 @@ func run():
 		check("claws tip to tip: red line 127 ahead of the tip + the clearance", abs(en[2] - RL) < 0.01, str(en))
 		arm.feed = 1.0
 		arm._lastTarget = null
-		# hysteresis at the corridor's edge, 100 ahead of the tip (behind the red line): opening edge 48; pulling it straight in starts there and goes on until 48 + a chunk radius (58.4)
-		var steps = [[0, true], [40, true], [55, true], [62, false], [55, false], [45, true]]
+		# in line with the opening, 100 ahead of the tip (behind the red line): opening edge 48; "pulled straight in" exactly
+		# while in line with it, either way (since 1.6.0 the path doesn't switch, so it needs no hysteresis)
+		var steps = [[0, true], [40, true], [55, false], [62, false], [55, false], [45, true]]
 		for st in steps:
 			pb.linear_velocity = Vector2(); pb.position = T + Vector2(st[0], -100)
 			yield(get_tree(), "physics_frame")
 			yield(get_tree(), "idle_frame")
 			var hs = arm._outside()
-			check("hysteresis: %s sideways, behind the red line -> %s" % [st[0], "pulled straight in" if st[1] else "pulled forward"], hs != null and arm._feedIn == st[1], "%s, pulled in %s" % [hs, arm._feedIn])
+			check("in line with the opening: %s sideways, behind the red line -> %s" % [st[0], "pulled straight in" if st[1] else "pulled along its path"], hs != null and arm._feedIn == st[1], "%s, pulled in %s" % [hs, arm._feedIn])
 		# while feeding, crossing the red line outside the corridor does not hand it back (the feed would push it behind the line again)
 		var fsteps = [[-30, false], [1, false], [40, false], [-5, false]]
 		for st in fsteps:
@@ -488,7 +503,8 @@ func run():
 		arm._lastTarget = null
 		yield(get_tree(), "physics_frame")
 		yield(get_tree(), "idle_frame")
-		check("closed beak, not feeding: ahead of the red line, the game's pull", arm._outside() == null and arm.maxThrust == arm._maxThrust)
+		var nb = arm._outside()
+		check("closed beak, not feeding: ahead of the red line, held at the dock slot by the mod", nb != null and (pb.global_position - nb).distance_to(arm._parkAt) < 0.01 and arm.maxThrust == 0.0, str(nb))
 		arm.feed = 1.0
 		w1.position = T - Vector2(65, 0); w2.position = T + Vector2(65, 0)
 		# a ship without a grinder or excavator is left to the game, also when the ship type changes

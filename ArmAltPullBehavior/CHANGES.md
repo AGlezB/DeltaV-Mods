@@ -1,5 +1,29 @@
 # ArmAltPullBehavior - Changes
 
+## 1.6.0
+- While feeding, a target no longer stops at the opening: it follows a path into the grinder or excavator. Only the
+  outer half of each rotor / claw is kept clear, so a target coming in at an angle aims past the near one's outer side,
+  towards the opposite one. From in front it comes straight in; from the side or from behind the red line it curves
+  round (`TURN_FACTOR`) to where the steepest straight way in crosses the red line (`JOIN_DISTANCE_FACTOR`), then comes
+  straight in. Faster everywhere in the harness, from every start, ship still or moving.
+- While not feeding, the mod holds the target at the dock slot itself instead of leaving it to the game's pull,
+  straight forward first beside the hull as before.
+- Feeding and holding allow for the ship's motion: its acceleration (measured, leaving out the mod's own push), the
+  pull outwards of a turn and the sideways throw a turn gives a moving target, up to what the game's formula can give.
+  Beyond that the target falls behind until the ship's motion eases. New constants `RESPONSE_RATE`, `ACCEL_SMOOTHING`
+  and `BRAKE_SHARE`.
+- While the ship turns or accelerates backwards, a target lighter than `CLOSER_MASS_LIMIT` (every chunk, lifepod, AI
+  core, drone and frozen body; no ship) is held closer, up to the middle of the opening a chunk's radius past the red
+  line, in proportion (`CLOSER_FULL_SHARE`), and goes back out over `CLOSER_RELEASE_TIME`. Heavier targets stay at the
+  dock slot, so a held ship is never brought into the ship holding it.
+- Overloaded, the arm pulls the target back towards the arm base first while not feeding (the game lets go at two arm
+  lengths from it), and keeps it on its path first while feeding.
+- `APPROACH_EASE_DISTANCE` is gone. `_gamePull` is replaced by `_parking`; new members `_way`, `_body`, `_parkAt`,
+  `_closer`, `_shipSeen`, `_lastShipVelocity`, `_lastImpulse` and `_shipAccel`, and new functions `_pathAt`,
+  `_inwardSpeed`, `_roomFor`, `_shorten`, `_parkVelocity`, `_forceFor`, `_measureShip` and `_updateCloser`. `_entry`
+  also returns how far ahead of the tip the front of the rotors / claws is; `_hitsHull` takes the circle to sweep.
+- The README is rewritten, with new pictures.
+
 ## 1.5.4
 - The description in `Mod.manifest` is worded for players, as the root README's summary.
 

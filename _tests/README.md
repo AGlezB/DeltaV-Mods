@@ -105,8 +105,8 @@ Call it from a pwsh prompt or `pwsh -Command`: under `pwsh -File`, list argument
 not parsed as arrays. Exit code 0 = every run passed; a script error fails its run even if every check passed.
 
 The suites are ported from the claude.ai harness (DVModTestHarness 1.0.0; the original was deleted once ported),
-except `boot`, `lidar`, `hud`, `crew`, `geology`, `fleet`, `skip`, `dealer`, `transponder`, `combat`, `drones`, `market`
-and `services`. `units`, `still` and `moving` load the two arm mods by default, `dive` loads
+except `hold`, `boot`, `lidar`, `hud`, `crew`, `geology`, `fleet`, `skip`, `dealer`, `transponder`, `combat`, `drones`,
+`market` and `services`. `units`, `still`, `moving` and `hold` load the two arm mods by default, `dive` loads
 DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos, `lidar` loads LidarLouderPing, `hud` loads HudHideLabels, `crew` loads CrewCheapHireNotifier,
 `geology` loads GeologyByMass, `fleet` loads ShipCopyPaste, `skip` loads DiveSkipTransit, `dealer` loads DealerNotifier,
 `transponder` loads TransponderAltCodes, `combat` loads CombatSimulator, `drones` loads DroneAltPriorities and
@@ -115,17 +115,38 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
 - `units`: the claude.ai unit tests (`arm/main.gd`) nearly verbatim, on synthetic arms around the game's
   `DockingArm.gd`. TargetSelection: area geometry on turned, scaled and offset arms, reach, the strip, the weighted
   pick, keeping the current target, switch off/on, intake and entry point. PullBehavior: where the pull goes (20
-  cases: feeding or not, grinder or excavator, a block of hull; feeding in the corridor, pulled straight in by the
-  mod since 1.5.0), the EIME's claws, the hysteresis at the corridor's edge, closed beak, switching ship types,
-  cost, nothing pushed while the game pulls (the 1.3.0 bug). Plus 4 checks on the real
+  cases: feeding or not, grinder or excavator, a block of hull; since 1.6.0 held at the dock slot by the mod while not
+  feeding, and while feeding pulled along its path, kept off the hull, or straight in, never outwards, once in line
+  with the opening), the EIME's claws, the corridor's edge (pulled straight in exactly while in line with the
+  opening), closed beak, switching ship types, cost, a target held at the dock slot while the ship accelerates
+  (pushed along with it, never ahead of it, the ship taking the opposite push: the 1.3.0 bug flung it away). Plus 4
+  checks on the real
   Eagle-Prospector-VP rig, including the hull inertia `moving` uses. A group whose mod is not loaded runs "control"
   checks of the game alone.
 - `still` (9 cases, `arm/real.gd`) and `moving` (16 cases, `arm/real_move.gd`): ArmAltPullBehavior bringing a chunk
   in on a simulated Eagle-Prospector-VP, standing still, held in place, cruising at 10–40 m/s or turning, feeding
   or not; two start points are where the author's in-game logs started. Each case expects the chunk in between the
-  rotors without touching them, at the dock slot, or moved straight forward first, and prints how long it took.
-  The feeding cases behind the red line beside the hull also have a time limit (1.5.0's times + 25 %, below
-  1.4.0's), so a slow-down fails.
+  rotors, its first touch of one on the inner side (facing the gap) and never on a rotor's outer half (the harness's
+  rotors don't collide, so the case ends at that touch), held at the dock slot, or moved straight forward first and
+  then held there, the mod never handing it back to the game's pull, and prints how long it took. The feeding cases
+  behind the red line beside the hull also have a time limit (1.5.0's times + 25 %, below 1.4.0's), so a slow-down
+  fails.
+- `hold` (`suites/hold.gd`): ArmAltPullBehavior holding a chunk, and feeding it, while the simulated
+  Eagle-Prospector-VP turns and accelerates, flown by a strong autopilot (the commanded turn rate ramps up at a set
+  rate). The arm's limits are worked out from its own values (its strength, the fastest turn it can hold a target
+  through at the dock slot and held closest, the most linear and turning acceleration) and printed; each case is a
+  share of them. Holding: turning at up to 100 % of the limit (130 % held closest), spinning up faster than the arm can
+  follow, turning back and forth, accelerating forwards, backwards and sideways, turning while braking: the chunk
+  settles within a chunk's radius of where it is held (closer in while the ship turns or brakes) and is back at the
+  dock slot after, or, where the ship's motion outruns the arm for a while (spinning up too fast, turning back and
+  forth, turning while braking, 120 % of the linear limit), is kept and back at the dock slot after; an 11 t target
+  (over the mod's mass limit) is held at the dock slot, never closer. A
+  chunk grabbed ahead-left or off to the side, then the ship turning, comes to where it is held and stays there.
+  Feeding, from five starts with the ship still, turning, braking, accelerating, and turning while braking: in on a
+  rotor's inner side. Distances allow for the harness's one-frame offset (the ship is moved before the physics step,
+  the chunk during it, so the mod sees the ship a frame ahead): the ship's speed at the point times a frame; feeding
+  while turning and braking starts at 20 m/s forward to keep that offset small. Combinations beyond the arm's strength
+  even held closest, and a 15 t target turning while braking, are notes, not checks.
 - `dive` (`dive/main.gd`): the player's Adrenaline Booster (the game's `CabinLight.gd`) starts disabled; another
   ship's booster, other cabin-light systems and a light with no ship are untouched; switching it on sticks; it gives
   adrenaline only when enabled. The control check (the game alone starts it enabled) runs on the game's own script,
@@ -645,7 +666,7 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   `_tests\harness\vp_data.gd`; each cites its scene file and line, so re-check them after a game update. The ship
   is a stub moved by hand (it takes the arm's impulses and torque; inertia from the hull); the rotors don't collide.
 - **Baseline** (both arm load orders give the same results): `units` 114 checks with both arm mods (64 with
-  PullBehavior alone, 61 with TargetSelection alone), `still` 9, `moving` 16, `dive` 8, `boot` 5 (3 control checks
+  PullBehavior alone, 61 with TargetSelection alone), `still` 9, `moving` 16, `hold` 62, `dive` 8, `boot` 5 (3 control checks
   with `-Mods @()`), `lidar` 40 (3 control checks with `-Mods @()`), `hud` 13 (3 control checks with `-Mods @()`),
   `crew` 148 (149 with CrewPerfectSort too, in both load orders; the same 148 with DealerNotifier too, in both; 3
   control checks with `-Mods @()`), `geology` 80 (the same with DiveSkipTransit too, in both load orders; 5 control
@@ -660,9 +681,12 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   DroneAltPriorities alone; 3 control checks with `-Mods @()`), `market` 97 (3 control checks with `-Mods @()`),
   `services` 42 (2 control checks with `-Mods @()`), all passing; `skip` gives its 109 with CombatSimulator
   too; `-Matrix` gives 16 of 16 in every combination.
-  Feeding, a chunk beside the hull is in after 4.4–4.8 s.
-  For comparison with `-ModZip` and older release zips: PullBehavior 1.4.0 (the claude.ai results, case for case)
-  took 5.9–6.3 s there, fails the 8 time limits, and `-Matrix` gave 16, 15, 16, 16 (feeding while turning with a 5 t
+  Feeding, a chunk beside the hull is in after 3.0–3.7 s.
+  For comparison with `-ModZip` and older release zips: PullBehavior 1.5.4 (the same pull as 1.5.0) takes 4.2–4.8 s
+  there, and fails the 3 cases that move a chunk straight forward and then expect it held at the dock slot (it hands
+  the chunk back to the game's pull); 1.4.0 (the claude.ai results, case for case)
+  took 5.9–6.3 s there, now fails 17 of the 25 cases (every feeding case, since it hands the chunk to the game's feed
+  in the corridor, and those 3), and `-Matrix` gave 16, 15, 16, 16 (feeding while turning with a 5 t
   chunk touched a rotor: the game's pull measures speed against the swinging dock slot); 1.3.1, which broke in the
   game, gives 0, 0, 12, 4 of 16. This ship also takes the arm's torque reaction, as the game's does (the claude.ai
   stub dropped it), which shifts some numbers in the third decimal.

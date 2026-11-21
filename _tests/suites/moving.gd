@@ -5,8 +5,11 @@ extends "res://harness/suite.gd"
 # at 20 deg/s for 2 s; the player feeds (holds the excavator key) or not; two start points are where the user's
 # in-game logs started. The ship is moved by hand: every frame it takes the arm's impulses (with shipMass and the
 # hull's turning inertia), then a PD autopilot (acceleration limited) holds its course.
-# Expectations: "in" = goes in between the rotors without touching them; "dock" = the game takes it to the dock
-# slot; "forward-dock" = the mod first moves it straight forward, clear of the hull, then the game docks it.
+# Expectations: "in" = it first touches a rotor on its inner side (the side facing the gap between them, where the
+# grinder takes it in; the harness's rotors don't collide, so the case ends there) and never an outer half, and is in
+# within the time limit if there is one; "dock" = held at the dock slot; "forward-dock" = first straight forward, clear
+# of the hull, then held at the dock slot. Since 1.6.0 the mod holds the target itself while not feeding, so it is
+# never handed back to the game.
 
 var cruise = Vector2() # the ship's course, world units per second (10 = 1 m)
 var turn = 0.0 # turning rate while turning (frames 31-149), rad/s
@@ -64,17 +67,13 @@ func pull(label, start, feed, frameCount, expect, maxSeconds = INF):
 	arm.target = chunk
 	arm.feed = feed
 	var rotors = Rig.rotorCentres()
-	var tipY = (rotors[0].y + rotors[1].y) / 2.0
-	var gap = abs(rotors[1].x - rotors[0].x) / 2.0
 	var modFrames = 0
 	var handbacks = 0
 	var wasMod = false
 	var firstMod = null
-	var xAtRotors = null
-	var inAfter = null # seconds until the chunk crossed the rotors' line
+	var inAfter = null # seconds until the chunk first touched a rotor
+	var outer = false # that touch was on a rotor's outer half
 	var dockedAfter = null # seconds until it first came within dockLimit of the dock slot
-	var minClear = INF
-	var lastY = start.y
 	ship.linear_velocity = cruise
 	ship.angular_velocity = 0.0
 	chunk.linear_velocity = cruise
@@ -110,33 +109,32 @@ func pull(label, start, feed, frameCount, expect, maxSeconds = INF):
 			handbacks += 1
 		wasMod = offset != null
 		var local = ship.global_transform.affine_inverse().xform(chunk.global_position)
-		if xAtRotors == null and local.y >= tipY and lastY < tipY:
-			xAtRotors = local.x
-			inAfter = (i + 1) / 60.0
 		if dockedAfter == null and chunk.global_position.distance_to(arm.areaDockSlot.global_position) < dockLimit:
 			dockedAfter = (i + 1) / 60.0
-		lastY = local.y
-		# clearance to the rotors while the chunk is not in line with the gap between them
-		if abs(local.x) >= gap:
-			for centre in rotors:
-				minClear = min(minClear, local.distance_to(centre) - VP.ROTOR_RADIUS - VP.CHUNK_RADIUS)
+		# the first touch of a rotor: on its inner side when the chunk's centre is on the gap's side of the rotor's centre
+		for centre in rotors:
+			if inAfter == null and local.distance_to(centre) <= VP.ROTOR_RADIUS + VP.CHUNK_RADIUS:
+				inAfter = (i + 1) / 60.0
+				outer = sign(centre.x) * local.x > abs(centre.x)
+		if inAfter != null:
+			break
 	var end = ship.global_transform.affine_inverse().xform(chunk.global_position)
 	var docked = chunk.global_position.distance_to(arm.areaDockSlot.global_position)
 	var what = "%s, %s" % [label, "feeding" if feed > 0 else "not feeding"]
 	var timing = ""
 	if expect == "in":
-		timing = "in after %s s, " % ("%.2f" % inAfter if inAfter != null else "-")
+		timing = "in after %s s on %s, " % ["%.2f" % inAfter if inAfter != null else "-", "an OUTER HALF" if outer else "the inner side"]
 	else:
 		timing = "docked after %s s, " % ("%.2f" % dockedAfter if dockedAfter != null else "-")
-	var details = timing + "end (%.1f, %.1f), %.1f from the dock slot, mod frames %d, handed back %d, x at the rotors %s, closest to a rotor %.1f" % [end.x, end.y, docked, modFrames, handbacks, xAtRotors, minClear]
+	var details = timing + "end (%.1f, %.1f), %.1f from the dock slot, mod frames %d, handed back %d" % [end.x, end.y, docked, modFrames, handbacks]
 	match expect:
 		"in":
 			var inTime = maxSeconds == INF or (inAfter != null and inAfter <= maxSeconds)
-			check(what + ": goes in between the rotors without touching them" + ("" if maxSeconds == INF else " within %.1f s" % maxSeconds), xAtRotors != null and abs(xAtRotors) < gap and minClear > 0 and handbacks <= 1 and end.y > -50 and inTime, details)
+			check(what + ": goes in between the rotors, touching neither's outer half" + ("" if maxSeconds == INF else " within %.1f s" % maxSeconds), inAfter != null and not outer and handbacks == 0 and inTime, details)
 		"dock":
-			check(what + ": the game takes it to the dock slot", docked < dockLimit and handbacks <= 1, details)
+			check(what + ": held at the dock slot", docked < dockLimit and handbacks == 0, details)
 		"forward-dock":
-			check(what + ": straight forward clear of the hull, then the game docks it", firstMod != null and abs(firstMod.x) < forwardTolerance and docked < dockLimit and handbacks == 1, "first offset %s, %s" % [firstMod, details])
+			check(what + ": straight forward clear of the hull, then held at the dock slot", firstMod != null and abs(firstMod.x) < forwardTolerance and docked < dockLimit and handbacks == 0, "first offset %s, %s" % [firstMod, details])
 	rig.field.queue_free()
 	yield(get_tree(), "physics_frame")
 

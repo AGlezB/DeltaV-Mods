@@ -15,6 +15,28 @@ Three things raise it: the Adrenaline Booster; the smart camera (a display setti
 full adrenaline is the pilot's Adrenal slowdown (`CREW_STATS_PILOT_ADRENALINE`, `CurrentGame.getAdrenalSlowdown`), set
 by their talent (see *Crew stats*).
 
+## Arm
+
+Values are the AR-1500's (`ships/modules/SalvageArm.tscn` over `DockingArm.tscn` and `DockingArm.gd`'s defaults); all
+of it is `DockingArm.gd` `_physics_process`.
+
+- The pull: the arm wants its target moving, relative to the dock slot (`areaDockSlot`, 33.75 m ahead of the arm base),
+  towards the dock slot at `maxVelocity` (20 m/s), slowing down over the last `easeDistance` (10 m), plus, while the
+  player feeds, `feed` times `feedVelocity` (28 m/s straight back along the direction the arm faces). The force is
+  `max(thrust, mass × targetMassThrust)` (100 and 80) times the difference between that velocity and the target's, over
+  `easeDistance`, at most `maxThrust`: about 0.8 per second of speed difference for any target over 1.25 t, a weak
+  pull that acts only once the target lags, and overshoots the dock slot by several metres. Above `maxVelocity` of
+  relative speed the force grows towards `fullThrust` (1000), reached at `maxVelocityConsidered` (100 m/s). Each frame's
+  impulse is blended with the last (`response`, 0.8), costs energy (`powerDraw`, capped by the Tuning power limit) and
+  wears the arm. The speeds are measured against the dock slot's own velocity, which a turning ship swings far faster
+  than its nose.
+- When it holds on: the arm is `locked`, and pulls, only while `dv` is 0. A target more than `maxDist` (35 m) from the
+  dock slot makes it more than 0, sooner the faster the target moves relative to the dock slot (that speed's excess
+  over `maxVelocity` adds to the distance's share of `conDist` − `maxDist`, 25 m), and so does one more than two arm
+  lengths (45 m) from the arm base (`reachDv`). Then the arm lets go, and takes hold again once the target is back
+  within both; a ship target's lock and release also play the lock sounds and set its AI. `hardLock` (off on the
+  AR-1500) would pin a target within `distanceToHardLock` of the dock slot to it.
+
 ## Astrogation
 
 - The trip: the ship first speeds up to the tab's travel velocity (`HUD_VELOCITY`), flown by the autopilot while Use

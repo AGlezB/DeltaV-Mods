@@ -623,7 +623,9 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   (`mineralEfficiency` 0) and never removes a chunk (`removeChunks` false): chunks taken in stay in the hold. Its walls
   line the hold (the scene's root polygon, part of the ship's collision).
 - **Arm**: the AR-1500 Manipulator (`SYSTEM_SALVAGE_ARM`, `ships/modules/DockingArm.gd`), the ship's arm that grabs
-  chunks and brings them to the intake (see *Salvage arm facts*).
+  chunks and brings them to the intake (see *Salvage arm facts*). It pulls its target towards its dock slot
+  (`areaDockSlot`), and lets go of one that strays too far from the dock slot or the arm base. Details:
+  [GAME.md](GAME.md#arm).
 - **Astrogation** (fast travel): travel inside the ring to a known destination, picked in the Astrogator tab and
   started with PLOT A COURSE (`HUD_PLOT_COURSE`; `hud/AstrogatorPanel.gd`, `CurrentGame.fastTravelTo`): the ship
   speeds up, then jumps to the destination and brakes in a cutscene, and in-game time passes. Destinations are kept per

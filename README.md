@@ -13,7 +13,7 @@ in its folder, has the details for modders.
 
 | Mod | What it does |
 |---|---|
-| [ArmAltPullBehavior](../../wiki/ArmAltPullBehavior) | Changes how the ship's AR-1500 arm brings a target in: through the opening of the grinder or excavator, clear of the rotors, claws and hull. |
+| [ArmAltPullBehavior](../../wiki/ArmAltPullBehavior) | Changes how the ship's AR-1500 arm brings a target in and holds it: along curved paths through the opening of the grinder or excavator, clear of the rotors, claws and hull, and steady against the ship's turns and thrust. |
 | [ArmAltTargetSelection](../../wiki/ArmAltTargetSelection) | Changes how the ship's AR-1500 arm chooses its target: only what it can reach, preferring targets lined up with its intake. |
 | [BootSkipLogos](../../wiki/BootSkipLogos) | The game starts on the title screen, where the save slots are, without the logo sequence first. |
 | [CombatSimulator](../../wiki/CombatSimulator) | Shift+Click on the simulator's button runs a fight at the station instead, against the enemy ships, distance, rocks and remass you pick, with nothing carried over to the save. Its wiki page explains every ship and weapon in a fight. |
@@ -44,8 +44,8 @@ These change how something works in a dive, compared to vanilla. Each one's wiki
 *Warning* in its README.
 
 - [ArmAltTargetSelection](../../wiki/ArmAltTargetSelection#changes-how-the-game-plays): which targets the arm takes, and which one first.
-- [ArmAltPullBehavior](../../wiki/ArmAltPullBehavior#changes-how-the-game-plays): how the arm brings a chunk in, on ships with a grinder or
-  an excavator.
+- [ArmAltPullBehavior](../../wiki/ArmAltPullBehavior#changes-how-the-game-plays): how the arm brings a chunk in and holds it, on ships with a
+  grinder or an excavator.
 - [DiveDisableAdrenalineBooster](../../wiki/DiveDisableAdrenalineBooster#changes-how-the-game-plays): the Adrenaline Booster starts every
   dive switched off, which also damps the bullet time from the pilot and the smart camera.
 - [DiveSkipTransit](../../wiki/DiveSkipTransit#changes-how-the-game-plays): a dive's cutscenes are skipped, with their remass and in-game
