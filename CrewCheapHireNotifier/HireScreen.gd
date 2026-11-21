@@ -18,9 +18,13 @@ const _CHEAP_HIRE_HIRED_TOOLTIP = "CREWCHEAPHIRENOTIFIER_HIRED_TOOLTIP"
 # The badge's text, a translation key of i18n/en.po: the %s is the capitals of the mod's name, the first %d how many
 # crew members with the job you have hired (crewCount), the second its crew limit.
 const _CHEAP_HIRE_BADGE_TEXT = "CREWCHEAPHIRENOTIFIER_BADGE"
+# What follows a salary, as the game writes one (enceladus/CrewBio.gd fillData).
+const _CHEAP_HIRE_CURRENCY = " E$"
 
 # The badge's node name in an entry, so that a refresh finds the badge it made.
 const _CHEAP_HIRE_BADGE = "CrewCheapHireNotifierBadge"
+# The badges' script: their tooltip as their only interaction.
+const _CHEAP_HIRE_BADGE_SCRIPT = preload("res://CrewCheapHireNotifier/Badge.gd")
 
 # The game calls fillCrew on every new day (dayPassed), after a hire and when the screen is first shown. A hire or
 # a dismissal changes a job's limit and can fill or free the job, and so does a setting.
@@ -67,9 +71,9 @@ func _cheapHireBadgeText(settings, occupation) -> String:
 func _cheapHireTooltip(settings, occupation) -> String:
 	var text
 	if settings.isJobFull(occupation):
-		text = tr(_CHEAP_HIRE_FULL_TOOLTIP) % [tr(occupation), CurrentGame.formatThousands(floor(settings.bestPaid(occupation))) + " E$"]
+		text = tr(_CHEAP_HIRE_FULL_TOOLTIP) % [tr(occupation), CurrentGame.formatThousands(floor(settings.bestPaid(occupation))) + _CHEAP_HIRE_CURRENCY]
 	else:
-		text = tr(_CHEAP_HIRE_LIMIT_TOOLTIP) % [tr(occupation), CurrentGame.formatThousands(floor(settings.limitFor(occupation))) + " E$"]
+		text = tr(_CHEAP_HIRE_LIMIT_TOOLTIP) % [tr(occupation), CurrentGame.formatThousands(floor(settings.limitFor(occupation))) + _CHEAP_HIRE_CURRENCY]
 	return text + "\n" + tr(_CHEAP_HIRE_HIRED_TOOLTIP) % [settings.crewCount(occupation), int(settings.getValue("crewLimit", occupation))]
 
 # What the badge hangs from: the game's fullNameNode, the top value of the entry's details grid, which spans the
@@ -86,17 +90,15 @@ func _cheapHireAnchor(entry):
 # The frame is a copy of the Hire button's (menu/ButtonRoundCorners.tres in the game) with its border in the entry's
 # colorBetter: the game's border is overbright, and tinted it would clip to white. The letters are in the green the
 # entry shows for a better stat (compareStats sets colorBetter as that stat button's modulate).
-# The tooltip: the released game puts Godot's own tooltips off screen (project.godot's
-# display/mouse_cursor/tooltip_position_offset.release) and draws its own with the entry's PlaySoundsOnTheseButtons
-# (menu/sfx/PlaySoundsOnTheseButtons.gd), which registers only the buttons and sliders it finds when the entry is
-# made. Its connectSounds registers the badge too: it takes over the badge's hint_tooltip, shows it below the badge on
-# hover (with the game's hover sound) and reads it again on every hover, so _markCheapHires keeps setting it.
+# The tooltip (Badge.gd): the entry's PlaySoundsOnTheseButtons (menu/sfx/PlaySoundsOnTheseButtons.gd) shows it below the
+# badge on hover, silently, and reads it again on every hover, so _markCheapHires keeps setting it. With a gamepad, it
+# shows while the entry's Hire button has the focus, which the D-pad moves from entry to entry.
 func _cheapHireBadge(entry):
 	var anchor = _cheapHireAnchor(entry)
 	var badge = anchor.get_node_or_null(_CHEAP_HIRE_BADGE)
 	if badge != null:
 		return badge
-	badge = PanelContainer.new()
+	badge = _CHEAP_HIRE_BADGE_SCRIPT.new()
 	badge.name = _CHEAP_HIRE_BADGE
 	var gap = anchor.get_parent().get_constant("vseparation")
 	badge.set_anchors_preset(Control.PRESET_TOP_RIGHT)
@@ -115,9 +117,7 @@ func _cheapHireBadge(entry):
 	label.add_color_override("font_color", entry.hireButton.get_color("font_color") * entry.colorBetter)
 	badge.add_child(label)
 	anchor.add_child(badge)
-	var tooltips = entry.get_node_or_null("PlaySoundsOnTheseButtons")
-	if tooltips != null and tooltips.has_method("connectSounds"):
-		tooltips.connectSounds(badge)
+	badge.attachTooltip(entry.get_node_or_null("PlaySoundsOnTheseButtons"), entry.hireButton)
 	return badge
 
 # The capitals of the mod's name in Mod.manifest.

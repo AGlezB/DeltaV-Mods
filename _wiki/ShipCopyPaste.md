@@ -40,7 +40,8 @@ The list shows, side by side, what is *Copied* and what is *Not copied*:
 ![The list that opens after Paste: what is copied on the left, what isn't on the right, then the price and the OK and Cancel buttons](images/ShipCopyPaste-dialog.png)
 
 About the crew: a ship only remembers who goes aboard once you have hired, fired or changed who dives while flying it.
-If the copied ship has no crew list yet, the crew stays as it is, and the list says so.
+If the copied ship has no crew list yet, the crew stays as it is, and the list says so. People you have fired since
+are left out.
 
 The copy is forgotten when you close the Fleet screen. Nothing is saved.
 

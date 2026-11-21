@@ -47,6 +47,8 @@ game's developers, check that it also happens without the mod.
     it the total (`=` kg), the least mass that mineral needs.
   - The sliders are the Geologist tab's own controls: pick the value to change it, then left and right (or drag the
     slider), and accept or cancel to leave. While the switch is off they are dimmed, but you can still set them.
+  - Pointing at a slider, or selecting it, shows what it does. With a gamepad, the D-pad goes down from the switch
+    through *Base* and each mineral's slider and back up, and never leaves the tab.
   - They are kept with your ship, next to the Geologist tab's own settings, and saved and loaded with them. A ship
     that never had them starts from the defaults, as it does for the *Minimum value*. A ship's masses from before
     the base slider become its extra masses, over the default base.
@@ -74,12 +76,14 @@ game's developers, check that it also happens without the mod.
   plants (`weapons/drone-plant.gd` `scanForTarget`, after the USV-GOT recon drone's queue, which they take without
   asking); the NT Mining Companion's AI, for its cradle's row, and a ship's AI catching a chunk with its haul drones
   (both in `ship-ctrl.gd`). Mods that keep those calls follow the rule too (the arm mods' `isValidTarget`,
-  DroneAltPriorities). The mod's override, for the player's ship (`playerControlled`) with the
-  switch on and a row that has `minerals` and `minValue`: an identified chunk passes when some mineral in the row's
-  `minerals` has at least its least mass, the base plus its extra (`getBaseMass`, `getExtraMass`, each read once per
-  call, an extra only for a mineral the chunk holds, since the drone plants ask about every chunk in reach at each
-  scan). The masses come from the ship's `identifiedObjects[hash(object)][0]`, the kg per mineral the box stores
-  (`MineralMark.gd` `scanParent`, then `identifyMinerals` / `identifyValue` -> `ship-ctrl.gd` `addIdentifiedObject`).
+  DroneAltPriorities). The mod's override, for the player's ship (`playerControlled`) with the switch on and a row
+  that has `minerals` and `minValue`: an identified chunk passes when some mineral in the row's `minerals` has at least
+  its least mass, the base plus its extra. `Settings.gd` `massRule()` reads the saved entry once per call, and gives
+  null with the switch off, else the base and the saved extras; `extraMassIn(rule, mineral)` reads an extra from that,
+  only for a mineral the chunk holds. The drone plants ask about every chunk in reach at each scan, and every read of
+  the ship's config takes its lock. The masses come from the ship's `identifiedObjects[hash(object)][0]`, the kg per
+  mineral the box stores (`MineralMark.gd` `scanParent`, then `identifyMinerals` / `identifyValue` -> `ship-ctrl.gd`
+  `addIdentifiedObject`).
   Anything else (the switch off, another ship, a row without mineral targeting, a chunk not in `identifiedObjects`)
   falls through to the game's: by the value against `minValue` and the LIDAR return against `albedo`.
 - **The tab:** the HUD builds the OMS (`hud/OMS.tscn`) in `instance()`, replacing its `Inventory` placeholder. The
@@ -93,11 +97,17 @@ game's developers, check that it also happens without the mod.
   (`hud/SystemMineralList.gd`): `hud/components/MineralSystemToggle.tscn` for the switch,
   `hud/components/MineralLabel.tscn` for the names (coloured from `CurrentGame.specificMineralColors`, without focus;
   the base row's shows its key, uncoloured) and `hud/components/PriceLabel.tscn`, the *Minimum value* control, for
-  the sliders, with the mod's format, range, step, tooltip and bar width (`SLIDER_WIDTH` in `SettingsUI.gd`). A grid
-  of three columns: the base row first (its third cell empty), then each mineral's name, extra mass slider
-  (`EXTRA_FORMAT`) and total (`TOTAL_FORMAT`), which follows both sliders. `menu/TabsWithGamepadControl.gd` focuses
-  the switch when the tab is chosen. The values are filled in when the tab enters the tree and whenever it shows, only
-  where they differ, so opening it stores nothing.
+  the sliders, with the mod's format, range, step and bar width (`SLIDER_WIDTH` in `SettingsUI.gd`), and its tooltip
+  on both the bar (`GAME_SLIDER_BAR`) and the value (`GAME_SLIDER_VALUE`, the button the D-pad lands on). The released
+  game draws no Godot tooltips: the control's own tooltip node (`menu/sfx/PlaySoundsOnTheseButtons.tscn`) shows them
+  on hover and on focus. A grid of three columns: the base row first (its third cell empty), then each mineral's name,
+  extra mass slider (`EXTRA_FORMAT`) and total (`TOTAL_FORMAT`), which follows both sliders.
+  `menu/TabsWithGamepadControl.gd` focuses the switch when the tab is chosen. The D-pad's way from there
+  (`_linkFocus()`, set as `hud/SystemMineralList.gd` `adjustFocus` sets the Geologist tab's): down from the switch
+  through the base slider's value, then each mineral's in the rows' order, and back up (`focus_neighbour_top` and
+  `focus_neighbour_bottom`); at either end, and to the sides, a control is its own neighbour, so the focus never leaves
+  the tab, and once A turns a value into its bar, left and right are the bar's. The values are filled in when the tab
+  enters the tree and whenever it shows, only where they differ, so opening it stores nothing.
 - **The Minimum values hidden** (`GeologistTab.gd`): the list builds a row per system in `updateSystems`, each ending
   in a Minimum value control (`hud/components/PriceLabel.tscn`), which it disables for a system with `onlyMinerals`
   and without `oreValueFilter` (the cargo containers' docks); disabled, the control hides its slider and its value
@@ -118,16 +128,17 @@ game's developers, check that it also happens without the mod.
 - **The settings model** (`Settings.gd`, a `Reference`): made from the ship, since the values belong to it, by each
   script that reads them, on first use: the ship's rule (`Code.gd`), the HUD's tab (`OmsScreen.gd`) and the Geologist
   tab (`GeologistTab.gd`). They read and write the same entry, so a change on the tab applies at once, with no
-  signal. `ENABLED`, `BASE_MASS` and
-  `EXTRA_MASS` describe the switch, the base slider and the mineral sliders (label, default, and for the sliders min,
-  max, step and unit; one description for every mineral). The base's `label` names its row and `label` + `_DESC` is
-  its tooltip; a mineral slider's `label` is its tooltip. `minerals()` lists the minerals with a slider: every mineral
-  of `CurrentGame.mineralPrices`, in the order of the Geologist tab's columns, H2O too, since the arm's and the drone
-  plants' rows (without `onlyMinerals`) can switch it on. `isEnabled()` / `setEnabled(how)`, `getBaseMass()` /
-  `setBaseMass(kg)`, `getExtraMass(mineral)` / `setExtraMass(mineral, kg)`, and `getMinMass(mineral)`, the base plus
-  the mineral's extra, which the tab shows: reading never writes, and gives the defaults where nothing is stored; a
-  number is clamped and snapped to the step, anything else gives the default, so a save edited by hand can't break
-  anything; a setter writes only a change. `available()`: the ship's HUD has made its `mineralConfig` (a HUD with
+  signal. `ENABLED`, `BASE_MASS` and `EXTRA_MASS` describe the switch, the base slider and the mineral sliders (label,
+  default, and for the sliders min, max, step and unit; one description for every mineral). The base's `label` names
+  its row and `label` + `DESCRIPTION_SUFFIX` (`SettingsUI.gd`) is its tooltip; a mineral slider's `label` is its
+  tooltip. `minerals()` lists the minerals with a slider: every mineral of `CurrentGame.mineralPrices`, in the order of
+  the Geologist tab's columns, H2O too, since the arm's and the drone plants' rows (without `onlyMinerals`) can switch
+  it on. `isEnabled()` / `setEnabled(how)`, `getBaseMass()` / `setBaseMass(kg)`, `getExtraMass(mineral)` /
+  `setExtraMass(mineral, kg)`, `getMinMass(mineral)`, the base plus the mineral's extra, which the tab shows, and
+  `massRule()` / `extraMassIn(rule, mineral)`, the same reads for the rule with the entry read once (above): reading
+  never writes, and gives the defaults where nothing is stored; a number is clamped and snapped to the step, anything
+  else gives the default, so a save edited by hand can't break anything; a setter writes only a change. `available()`:
+  the ship's HUD has made its `mineralConfig` (a HUD with
   mineral targeting). `modId()`, `modName()` and `modVersion()` read `Mod.manifest`. Scripts reach it through the
   preload constant `GeologyByMass`, never `Settings`, which would hide the game's autoload.
 - **Where they are kept:** in the HUD's `mineralConfig`, the dict the ship's config holds as `hud.config`
@@ -143,20 +154,20 @@ game's developers, check that it also happens without the mod.
   in `Code.gd`, `instance()` in `OmsScreen.gd`, `updateSystems(systems)` in `GeologistTab.gd`, which also has a
   `_process` (Godot runs it at every level, so it doesn't call the parent's). None has a `_ready` of its own.
 - Members of `Code.gd`: `GeologyByMass` (preload), `_geologyByMassSettings` and `_geologyByMass()`. Of
-  `OmsScreen.gd`: `GeologyByMass` and `_GEOLOGY_BY_MASS_UI` (preloads), `_GEOLOGY_BY_MASS_TAB`, `_GEOLOGIST_TAB`,
-  `_geologyByMassSettings`, `_geologyByMass()` and `_addGeologyByMassTab()`. Of `GeologistTab.gd`: `GeologyByMass`
-  (preload), `_GEOLOGY_BY_MASS_GAME_DISABLED`, `_GEOLOGY_BY_MASS_HEADER`, `_GEOLOGY_BY_MASS_GAME_HEADER`,
-  `_geologyByMassSettings`, `_geologyByMassHidden`, `_geologyByMass()`, `_geologyByMassPrices()`,
-  `_geologyByMassHeader()` and `_geologyByMassPriceBoxes()`.
+  `OmsScreen.gd`: `GeologyByMass` and `_GEOLOGY_BY_MASS_UI` (preloads), `_GEOLOGY_BY_MASS_TAB`,
+  `_GEOLOGY_BY_MASS_AFTER`, `_geologyByMassSettings`, `_geologyByMass()` and `_addGeologyByMassTab()`. Of
+  `GeologistTab.gd`: `GeologyByMass` (preload), `_GEOLOGY_BY_MASS_GAME_DISABLED`, `_GEOLOGY_BY_MASS_HEADER`,
+  `_GEOLOGY_BY_MASS_GAME_HEADER`, `_geologyByMassSettings`, `_geologyByMassHidden`, `_geologyByMass()`,
+  `_geologyByMassPrices()`, `_geologyByMassHeader()` and `_geologyByMassPriceBoxes()`.
 - Stacks with DiveSkipTransit, which extends `ship-ctrl.gd` too (other functions), and with DroneAltPriorities, which
   extends `Hud.gd` too (another tab) and whose drone plants ask the ship's rule.
 - Tested only outside the game, in a headless Godot 3.6 (the `geology` suite of the repository's test harness): the
   rule on ships of the game's `ship-ctrl.gd`, out of the tree, with the HUD's row and an arm's or drone plant's row,
   compared with the game's own script where the game decides; the tab with the game's `Hud.gd`, `OMS.gd`,
   `TabsWithGamepadControl.gd`, `PriceLabel.gd`, `RepeatingHSlider.gd`, `MineralLabel.gd` and
-  `MineralSystemToggle.gd`, an OMS built as its scene nests the tabs, and stubs of the ship and of `CurrentGame`; the
-  Geologist tab with the game's `SystemMineralList.gd` in that OMS, with rows for the HUD, an arm and a cargo
-  container's dock. It has not been checked in a real game.
+  `MineralSystemToggle.gd`, an OMS built as its scene nests the tabs, and stubs of the ship and of `CurrentGame`, with
+  the D-pad's way through the tab; the Geologist tab with the game's `SystemMineralList.gd` in that OMS, with rows for
+  the HUD, an arm and a cargo container's dock. The real check is playing the game.
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.

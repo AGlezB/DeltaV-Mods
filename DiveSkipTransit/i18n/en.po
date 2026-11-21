@@ -6,9 +6,15 @@ msgstr ""
 "Language: en\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 
-# The station menu's dive entry's tooltip; the first %s is the key to hold while clicking, the second the mod's name.
+# The tooltip of the Shift badge beside the station menu's dive entry; the first %s is the key to hold while
+# clicking the entry, the second the mod's name.
 msgid "DIVESKIPTRANSIT_SETTINGS_TOOLTIP"
-msgstr "Click while pressing %s to open the %s settings."
+msgstr "Click the button while pressing %s to open the %s settings."
+
+# The same while the game is played with a gamepad; the first %s is the button to press on the highlighted entry, the
+# second the one to hold, the third the mod's name.
+msgid "DIVESKIPTRANSIT_SETTINGS_TOOLTIP_PAD"
+msgstr "Highlight the button and press %s while holding %s to open the %s settings."
 
 # The settings screen. Each setting has its name and, under the same key followed by SettingsUI.gd's
 # DESCRIPTION_SUFFIX, the description the screen shows while it is selected, written as the game's Tuning descriptions

@@ -112,6 +112,14 @@ func _init():
 func getValue(key):
 	return cfg[key]
 
+# A stored value as the screen shows it, and back (the settings API, MODDING.md): the same, since every setting here is
+# shown in the units it is stored in (a switch, and the transit speed as a multiple).
+func toShown(_key, value):
+	return value
+
+func fromShown(_key, shown):
+	return shown
+
 func setValue(key, value):
 	value = _valid(key, value)
 	if value == cfg[key]:

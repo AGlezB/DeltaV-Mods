@@ -1,18 +1,27 @@
 extends "res://enceladus/EnceladusMenu.gd"
 
 # The station menu (enceladus/EnceladusMenu.gd). DiveSkipTransit's settings open with Shift+Click on its dive entry,
-# the way CrewCheapHireNotifier's open from the Crew entry: the entry's tooltip says so, and a plain click still
-# launches a dive.
+# the way CrewCheapHireNotifier's open from the Crew entry: a Shift badge beside the entry says so in its tooltip, and a
+# plain click on the entry still launches a dive.
 
 # The settings (which skips are on): their model, shared with the settings screen and the skips.
 const DiveSkipTransit = preload("res://DiveSkipTransit/Settings.gd")
 const _DST_SETTINGS_UI = preload("res://DiveSkipTransit/SettingsUI.gd")
-# Translation key of i18n/en.po: the dive entry's tooltip, whose first %s is the key to hold while clicking, the second
-# the mod's name.
+# Translation key of i18n/en.po: the Shift badge's tooltip, whose first %s is the key to hold while clicking the entry,
+# the second the mod's name.
 const _DST_SETTINGS_TOOLTIP = "DIVESKIPTRANSIT_SETTINGS_TOOLTIP"
+# The same while the game is played with a gamepad (Badge.gd setShiftTooltips): the button to press, the one to hold,
+# the mod's name.
+const _DST_SETTINGS_TOOLTIP_PAD = "DIVESKIPTRANSIT_SETTINGS_TOOLTIP_PAD"
+# The station's Tuning screen among its right-hand screens (enceladus/Enceladus.tscn), whose frame and place the
+# settings screen copies.
+const _DST_TUNING_SCREEN = "Tuning"
+# The badges' script: their look, and their tooltip as their only interaction.
+const _DST_BADGE_SCRIPT = preload("res://DiveSkipTransit/Badge.gd")
 
 var _dstDiveButton = null
 var _dstDiveKey = ""
+var _dstShiftBadge = null # the Shift badge beside the dive entry
 var _dstSettingsScreen = null # the settings screen, made on first use
 var _dstScreens = null # the station's container of right-hand screens (enceladus/HidingMarginContainer.gd)
 var _dstTuning = null # the station's Tuning screen, whose frame and place the settings screen copies
@@ -23,32 +32,33 @@ var _dstTuning = null # the station's Tuning screen, whose frame and place the s
 func _ready():
 	var button = get_node_or_null("RingDive")
 	var screens = get_node_or_null("../../CanvasLayer/MarginContainer")
-	if not button is Button or screens == null or not screens.has_signal("hidefoka") \
-			or not screens.get_node_or_null("Tuning") is Control:
+	var tuning = screens.get_node_or_null(_DST_TUNING_SCREEN) if screens != null else null
+	if not button is Button or screens == null or not screens.has_signal("hidefoka") or not tuning is Control:
 		return
 	_dstDiveButton = button
 	_dstDiveKey = button.text
 	_dstScreens = screens
-	_dstTuning = screens.get_node("Tuning")
+	_dstTuning = tuning
 	_dstDiveButton.connect("gui_input", self, "_dstOnDiveInput")
-	_dstUpdateTooltip()
+	_dstShiftBadge = _dstMakeShiftBadge(_dstDiveButton)
 
-# The tooltip holds translated text, which the button can't translate again.
-func _notification(what):
-	if what == NOTIFICATION_TRANSLATION_CHANGED and _dstDiveButton != null:
-		_dstUpdateTooltip()
+# The Shift badge (Badge.gd), in the entry's own frame and font colour, to the right of the entry, the menu's gap
+# between entries away (Badge.gd hangBeside). Its tooltip, which follows a change of language by itself, is shown by
+# the menu's PlaySoundsOnTheseButtons.
+func _dstMakeShiftBadge(button):
+	var badge = _DST_BADGE_SCRIPT.new()
+	badge.dress(button, OS.get_scancode_string(KEY_SHIFT), _DST_BADGE_SCRIPT.PAD_TEXT)
+	badge.hangBeside(button, get_constant("separation"))
+	badge.attachTooltip(get_node_or_null("PlaySoundsOnTheseButtons"))
+	badge.setShiftTooltips(_DST_SETTINGS_TOOLTIP, _DST_SETTINGS_TOOLTIP_PAD, DiveSkipTransit.shared().modName())
+	return badge
 
-# The game's tooltip node (the menu's PlaySoundsOnTheseButtons, menu/sfx/PlaySoundsOnTheseButtons.gd) takes it over and
-# reads it again on every hover, so setting it again is enough.
-func _dstUpdateTooltip():
-	var modName = DiveSkipTransit.shared().modName()
-	_dstDiveButton.hint_tooltip = tr(_DST_SETTINGS_TOOLTIP) % [OS.get_scancode_string(KEY_SHIFT), modName]
-
-# Shift+Click opens the settings instead of launching. The gui_input signal comes before the button's own _gui_input,
-# and accepting the press there keeps the button from pressing.
+# Shift+Click opens the settings instead of launching, and so does its gamepad twin on the highlighted entry (Badge.gd
+# isPadShortcut). A click's gui_input signal comes before the button's own _gui_input, and accepting the press there
+# keeps the button from pressing; the gamepad's X does nothing to a button.
 func _dstOnDiveInput(event):
-	if event is InputEventMouseButton and event.pressed and event.button_index == BUTTON_LEFT and event.shift \
-			and not _dstDiveButton.disabled:
+	var shiftClick = event is InputEventMouseButton and event.pressed and event.button_index == BUTTON_LEFT and event.shift
+	if (shiftClick or _DST_BADGE_SCRIPT.isPadShortcut(event)) and not _dstDiveButton.disabled:
 		_dstDiveButton.accept_event()
 		_dstOpenSettings()
 

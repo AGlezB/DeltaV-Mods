@@ -81,18 +81,21 @@ Before reporting a bug with the arm to the game's developers, check that it also
 - Script extension of `res://ships/modules/DockingArm.gd` (`installScriptExtension` in `ModMain.gd`).
   The tag `group = DockingArm` in `Mod.manifest` names that game script.
 - Overrides: `_ready` (builds the area), `_physics_process` (switch off/on handling) and
-  `switchTarget` (the target choice). `_ready` and `_physics_process` never call the parent's: the mod loader
-  runs the base first for `_ready`, and the child first for `_physics_process`.
+  `switchTarget` (the target choice). `_ready` and `_physics_process` never call the parent's: Godot runs them at
+  every level of the script chain, the base first for `_ready`, and the child first for `_physics_process`.
   `switchTarget` calls the parent's (`.switchTarget()`) for arms the mod does not apply to.
-- Other functions are `_reach`, `_buildArea` and `_intakePosition`; members are `_targeting`,
-  `_wasEnabled` and `_rear` (how far ahead of the arm base the game's area started). If you stack another mod on `DockingArm.gd`, keep your member names different.
+- Other functions are `_reach`, `_buildArea`, `_intakePosition` and `_targetingClawsOf` (an excavator's claws, found
+  once per excavator: the game asks for a target every physics frame while the arm has none, and `find_node` searches
+  the whole excavator); members are `_targeting`, `_wasEnabled`, `_rear` (how far ahead of the arm base the game's
+  area started) and `_targetingClaws` (each excavator's claws, by its instance id). If you stack another mod on
+  `DockingArm.gd`, keep your member names different.
 - The area's `CollisionShape2D` gets a new `ConvexPolygonShape2D` in place of the game's `RectangleShape2D`;
   nothing in the game reads that shape, only the area's overlaps.
 - The mod only applies where `systemName == "SYSTEM_SALVAGE_ARM"` and the arm has a `ship`.
 - Constants at the top of `ArmAltTargetSelection/Code.gd` inside the zip:
   `BUFFER_AREA_FACTOR`, `BALANCE`, `AREA_SEGMENTS`, `INTAKES`.
-- Tested only outside the game, in a headless Godot 3.5.3 with the game's scripts (`DockingArm.gd`, `Tool.gd` ...)
-  and stub scenes. It has not been checked in a real game.
+- Tested in the harness (`_tests\`, suite `units`): a headless Godot 3.6 with the game's scripts (`DockingArm.gd`,
+  `Tool.gd` ...) and stub scenes. The real check is playing the game.
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.

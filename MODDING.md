@@ -10,19 +10,19 @@ themselves, and how to install them, are in the [README](README.md); how the gam
 The mods are written in GDScript for the game's engine, Godot 3. Each top-level folder not starting with `_` or `.`
 is one independent mod and ships as one zip. There is no build system: `package.ps1` builds a mod's release zip, and
 `release.ps1`, run by `.github\workflows\release.yml` on every push to `main`, publishes the mods' new versions as
-GitHub Releases (see *Packaging and releasing*), `_tests\` is a test harness for most mods (see *Testing*), `_bench\` simulates the
-nanodrones at work to tune DroneAltPriorities (see *The drone bench*), and `_wiki\` is the users'
-wiki, checked by `wiki.ps1`, published by `.github\workflows\wiki.yml`, with its screenshots of the station, the OMS
-and the HUD taken by `_shots\shots.ps1` (see *The users' wiki*). The source has been in git since 14 Nov 2026, and `.gitignore` keeps out
-every zip, so the versions
-released before that exist only as release zips. Later changes are in the git history and, from 1.0.0 on, in each
-mod's `CHANGES.md`.
+GitHub Releases (see *Packaging and releasing*), `_tests\` is a test harness for most mods (see *Testing*), `_bench\`
+simulates the nanodrones at work to tune DroneAltPriorities (see *The drone bench*), and `_wiki\` is the users' wiki,
+checked by `wiki.ps1`, published by `.github\workflows\wiki.yml`, with its screenshots of the station, the OMS and the
+HUD taken by `_shots\shots.ps1` (see *The users' wiki*). The source has been in git since 14 Nov 2026, and
+`.gitignore` keeps out every zip, so the versions released before that exist only as release zips. Later changes are
+in the git history and, from 1.0.0 on, in each mod's `CHANGES.md`.
 
 ## Folders outside the repo
 
 The folders outside the repo differ per machine, so they are set in `paths.local.psd1` at the repo root, which is
 git-ignored: copy `paths.example.psd1` to it and set yours. These docs name them by its keys: `TempDir\gdre` means
-the `gdre` folder under `TempDir`. `_tests\run.ps1`, `package.ps1` and `release.ps1` read the file, and in PowerShell
+the `gdre` folder under `TempDir`. `_tests\run.ps1`, `package.ps1`, `release.ps1`, `wiki.ps1`, `_shots\shots.ps1`,
+`_bench\bench.ps1` and `_bench\analyze.ps1` read the file, and in PowerShell
 `$paths = Import-PowerShellDataFile .\paths.local.psd1` (from the repo root) gives `$paths.GameDir` and the others.
 Never write their values into a committed file.
 
@@ -65,9 +65,10 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
   preloads (scenes, and the scripts their nodes hold), and the child's own preloads: all of it before the mods after it
   in path order install theirs. A scene loaded then keeps the scripts it was loaded with, so a later extension of one
   of them misses it. `ships/Shipyard.gd` preloads every ship scene: extending it would make every ship miss the later
-  mods' extensions of ship scripts (DiveSkipTransit `ship-ctrl.gd`, DiveDisableAdrenalineBooster `CabinLight.gd`,
-  GeologyByMass `ship-ctrl.gd` and `Hud.gd`, LidarLouderPing `LIDAR.gd`). That is why CombatSimulator has no Shipyard extension; none of
-  the game scripts the mods extend preloads a ship scene.
+  mods' extensions of ship scripts (CombatSimulator `WeaponSlot.gd` and `PDT.gd`, DiveSkipTransit `ship-ctrl.gd`,
+  DiveDisableAdrenalineBooster `CabinLight.gd`, DroneAltPriorities `Hud.gd`, GeologyByMass `ship-ctrl.gd` and `Hud.gd`,
+  LidarLouderPing `LIDAR.gd`). That is why CombatSimulator has no Shipyard extension; none of the game scripts the mods
+  extend preloads a ship scene.
 - `Mod.manifest` is not read by the game's loader.
 - The loader also has `addTranslationsFromCSV`, `appendNodeInScene` and `saveScene` (unused so far; the harness's
   loader offers `addTranslationsFromCSV` too). **`addTranslationsFromCSV` reads nothing from a mod's zip**: a file in
@@ -80,13 +81,14 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
 
 1. **Script extension**: each extension file `extends "res://<game script>"`, and `ModMain.gd`'s `_init` only calls
    `installScriptExtension("res://<ModName>/<file>")` for each, in the order below (for the mods that extend
-   `CurrentGame.gd`, before the engine creates the autoload). The mods, each file → the game script it extends:
+   `CurrentGame.gd`, before the engine creates the autoload), and, in a mod with texts of its own, loads its
+   `i18n/en.po` (see *How the game loads a mod*). The mods, each file → the game script it extends:
    - ArmAltPullBehavior and ArmAltTargetSelection: `Code.gd` → `ships/modules/DockingArm.gd`.
    - BootSkipLogos: `Code.gd` → `Boot.gd`.
    - CombatSimulator: `CurrentGame.gd` → `CurrentGame.gd` (the autoload, which holds the running arena and keeps what
      its ships do out of the save); `Code.gd` → `enceladus/Enceladus.gd` (the station, where Shift+Click on the
-     simulator's buttons, or Shift plus its key, opens its dialog, and Start runs its arena, a layer of the
-     station's); `PauseMenu.gd` → `PauseLayer.gd` (the pause menu, whose station copy opens the arena's end
+     simulator's buttons, or Shift plus its key, or their gamepad twins, opens its dialog, and Start runs its arena, a
+     layer of the station's); `PauseMenu.gd` → `PauseLayer.gd` (the pause menu, whose station copy opens the arena's end
      confirmation during a run); `Hardpoint.gd` → `ships/WeaponSlot.gd` and `Turret.gd` → `ships/modules/PDT.gd` (the
      hardpoints and turrets, for its disabled weapons); `HudRingMap.gd` → `hud/Video.gd`, `HudGravimetric.gd` →
      `hud/GravimetricReadout.gd` and `MassDriver.gd` → `weapons/massdriver.gd` (the HUD's ring map, its gravimetric
@@ -124,9 +126,9 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
      Equipment screen's items).
    - TransponderAltCodes: `Code.gd` → `CurrentGame.gd` (the autoload, where the game makes transponder codes, with a
      `node_added` handler, as the observers below have, for the objects whose code is built from a ship's);
-     `NewGamePlusScreen.gd` → `menu/NewGamePlus.gd` (the New Game+ screen).
+     `NewGamePlusScreen.gd` → `menu/NewGamePlus.gd` (the New Game Options screen).
 
-   Rules that let mods stack on the same script (header of `ArmAltTargetSelection/Code.gd`):
+   Rules that let mods stack on the same script (the arm mods' headers sum them up):
    - Never call the parent's `_ready`, `_process`, `_physics_process` or `_notification`. Godot 3 runs them at every
      level of the script chain by itself: `_ready` base first (so `ship` etc. are set), `_process`,
      `_physics_process` and `_notification` child first. LidarLouderPing overrides `onSetup` (an ordinary function)
@@ -152,7 +154,8 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
 - ArmAltPullBehavior and ArmAltTargetSelection both extend `DockingArm.gd` and both override `_ready` and
   `_physics_process`. `ModMain` scripts run in path order, so the chain is game ← ArmAltPullBehavior ←
   ArmAltTargetSelection. Their member names must stay distinct, and both find the intake the same way (grinder
-  rotors / excavator claws via `ship.hasSystem`): change `_entry` and `_intakePosition` together.
+  rotors / excavator claws via `ship.hasSystem`, the claws kept per excavator: `_clawsOf`, `_targetingClawsOf`): change
+  `_entry` and `_intakePosition` together.
 - CrewPerfectSort replaces `CrewSortByJobAndSalary` (the first mod, not in this folder) and must not be installed
   with it: both sort the same lists.
 - TransponderAltCodes replaces `AltTransponderCodes`, the same mod under its old name (see *Conventions*, renamed
@@ -161,17 +164,24 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
   and both override `fillCrew`, each calling the parent's first: by path the chain is game ← CrewCheapHireNotifier ←
   CrewPerfectSort, and CrewPerfectSort only reorders the entries, so the marks stay (both orders tested in `crew`).
   Their member names must stay distinct.
+- CrewHighlightJobAndSalary and CrewCheapHireNotifier (`HireScreen.gd`) both change the Hire screen's entries
+  (`enceladus/CrewBio.gd`), each in its own way: CrewHighlightJobAndSalary, an observer, colours their Labels with
+  `font_color` overrides, which a Label's children don't take; CrewCheapHireNotifier hangs its badge in the name's
+  Label with colours of its own, so the badge keeps its look under the dimmed name.
 - CrewCheapHireNotifier (`Code.gd`), DealerNotifier (`Code.gd`), DiveSkipTransit (`StationMenu.gd`), MarketAdvisor
   (`StationMenu.gd`) and ServiceNotifier (`Code.gd`) all extend `EnceladusMenu.gd`, each for its own menu entry
   (MarketAdvisor's: Mineral Market; ServiceNotifier's: Services), and each writes only its own entry's text. By path the
   chain is game ← CrewCheapHireNotifier ← DealerNotifier ← DiveSkipTransit ← MarketAdvisor ← ServiceNotifier; all
-  override `_ready` and `_notification` (the game's script has neither) without calling the parent's. Their member
-  names must stay distinct; opening one screen hides the others (`hidefoka`). Loaded together in `skip`
-  (CrewCheapHireNotifier and DiveSkipTransit) and in `dealer` (all five, every order).
+  override `_ready`, and all but DiveSkipTransit `_notification` (the game's script has neither), without calling the
+  parent's. Their member names must stay distinct; opening one screen hides the others (`hidefoka`). Loaded together
+  in `skip` (CrewCheapHireNotifier and DiveSkipTransit) and in `dealer` (all five, every order).
 - CombatSimulator (`Code.gd`) and DiveSkipTransit (`Station.gd`) both extend `enceladus/Enceladus.gd`, the station: by
   path the chain is game ← CombatSimulator ← DiveSkipTransit. Both override `_ready` without calling the parent's;
-  CombatSimulator adds `_input` and `_notification` (the game's script has neither), DiveSkipTransit overrides
-  `_on_DiveTarget_launch`. Their member names must stay distinct.
+  CombatSimulator adds `_input` (the game's script has none), DiveSkipTransit overrides `_on_DiveTarget_launch`. Their
+  member names must stay distinct.
+- CombatSimulator, CrewCheapHireNotifier, DealerNotifier, DiveSkipTransit, MarketAdvisor and ServiceNotifier each ship
+  the same `Badge.gd`, loaded from its own folder (`res://<ModName>/Badge.gd`), so the copies never clash: keep them
+  identical (see *Conventions*, the gamepad twin).
 - CombatSimulator (`CurrentGame.gd`) and TransponderAltCodes (`Code.gd`) both extend `CurrentGame.gd`, the autoload,
   from `_init`: by path the chain is game ← CombatSimulator ← TransponderAltCodes. They override different functions
   (CombatSimulator `giveXp`, `setStory`, `recordEncounter`, `setDestinationHighlight` and `addShip`;
@@ -405,14 +415,15 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
   - A second script extension next to `Code.gd` is named for the screen it changes (CrewCheapHireNotifier's
     `HireScreen.gd`, the Hire screen; DiveSkipTransit's `StationMenu.gd`, the station menu), or, for a part of the game
     that isn't a screen, for the part (CombatSimulator's `PauseMenu.gd`, the pause menu; `Hardpoint.gd`,
-    `ships/WeaponSlot.gd`). Every mod's files are listed in *The two ways these mods hook in*.
+    `ships/WeaponSlot.gd`). Every script extension is listed in *The two ways these mods hook in*.
     Code more than one of them uses goes in `Settings.gd`, which they already share (CrewCheapHireNotifier's rule,
     `limitFor` / `isCheapHire`; DiveSkipTransit's static helpers, `playThrough`, `chargeDv`, `chargeSeconds`).
   - A script of the mod's own that isn't an extension is named for what it is: CombatSimulator's `CombatLayer.gd` (its
     arena, a layer the station's extension adds), `CombatMap.gd` (the arena's map, built on `TheRing.gd` with
     `extends` but never installed: a subclass made with `new()`, not a replacement of the game's script) and
     `ShipList.gd` (its dialog's ship list, a tab of `SettingsUI.gd`); MarketAdvisor's `Advisor.gd` (the advice: static
-    functions of what the player can see, which touch neither the game nor the scene).
+    functions of what the player can see, which touch neither the game nor the scene); `Badge.gd` (the badges, see
+    *Shift badge* in the Glossary), the same file in every mod that has one.
   - `SettingsUI.gd` is the mod's settings UI, when it has one.
   - `Settings.gd`, only in a mod with a settings UI, is the settings model `Code.gd` and `SettingsUI.gd` share, built
     like the game's own `Settings` autoload (`res://Settings.gd`: a `cfg` dict of defaults, a `ConfigFile` in
@@ -453,21 +464,20 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
       `setValue` take a model where CrewCheapHireNotifier's take a job. ServiceNotifier's `isPerService(key)` has no
       list: its services are the Services screen's rows, and one with no value stored gives the default; its `getValue`
       / `setValue` take a service.
-    - `getValue(key, job = null)`; `setValue(key, value, job = null)` clamps and snaps to the step, and only on a change stores
-      (`saveToState()`) and emits `settingsChanged`; `job` is only for a per-job setting. `toShown(key, value)` /
-      `fromShown(key, shown)`.
-    - `loadFromState()` / `saveToState()`: settings kept per save game (CrewCheapHireNotifier's, MarketAdvisor's,
-      ServiceNotifier's) live
-      in `CurrentGame.state.ui` (the game's per-save UI store, `setUiValue` / `getUiValue`, written with the save
-      as JSON, so numbers come back as floats) under the mod's id from `Mod.manifest`, so other authors' mods can't
-      collide; the entry holds `formatVersion`, `modVersion` and one value per setting (a copy of the dictionary for
-      a per-job setting). MarketAdvisor's also holds the tonnes its Trade button bought (`parked`, through `getParked`
-      / `setParked`), which aren't a setting: stored without `settingsChanged`. Loading starts from the defaults and
-      clamps and snaps each saved value. A mod whose settings
-      are game-wide (DiveSkipTransit's) uses the `user://` `ConfigFile` above instead, with `loadFromFile` /
-      `saveToFile`: a file of its own, `user://<the mod's id>.cfg` (in `filePath`, so a test can point it elsewhere),
-      holding one section named by the mod's id with the same entry, written at every change; `shared()` loads it when
-      it makes the instance.
+    - `getValue(key, job = null)`; `setValue(key, value, job = null)` clamps and snaps to the step, and only on a
+      change stores (`saveToState()`) and emits `settingsChanged`; `job` is only for a per-job setting.
+      `toShown(key, value)` / `fromShown(key, shown)`.
+    - `loadFromState()` / `saveToState()`: settings kept per save game (CrewCheapHireNotifier's, CombatSimulator's,
+      DealerNotifier's, MarketAdvisor's, ServiceNotifier's) live in `CurrentGame.state.ui` (the game's per-save UI
+      store, `setUiValue` / `getUiValue`, written with the save as JSON, so numbers come back as floats) under the
+      mod's id from `Mod.manifest`, so other authors' mods can't collide; the entry holds `formatVersion`, `modVersion`
+      and one value per setting (a copy of the dictionary for a per-job setting). MarketAdvisor's also holds the tonnes
+      its Trade button bought (`parked`, through `getParked` / `setParked`), and DealerNotifier's the ships already
+      seen (`known`), which aren't settings: stored without `settingsChanged`. Loading starts from the defaults and
+      clamps and snaps each saved value. A mod whose settings are game-wide (DiveSkipTransit's) uses the `user://`
+      `ConfigFile` above instead, with `loadFromFile` / `saveToFile`: a file of its own, `user://<the mod's id>.cfg`
+      (in `filePath`, so a test can point it elsewhere), holding one section named by the mod's id with the same entry,
+      written at every change; `shared()` loads it when it makes the instance.
     - `modId()`, `modName()`, `modVersion()`: read from `Mod.manifest` (path: the script's folder) with `ConfigFile`.
 
     `SettingsUI.gd` builds the screen from `SETTINGS` through `toShown`, with the game's own UI parts, and writes back
@@ -476,11 +486,14 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
 
     Players don't open the zip, so they never read the README: the screen explains every setting itself, as the game's
     Tuning screen does. Under the title, a window framed as the Tuning screen's description shows the selected row's
-    description: the key of its `label` followed by `SettingsUI.gd`'s `DESCRIPTION_SUFFIX`, in the mod's
+    description: the key of its `label` followed by `DESCRIPTION_SUFFIX` (`SettingsUI.gd`'s; CombatSimulator's, which
+    two scripts share, in its `Settings.gd`), in the mod's
     `i18n/en.po`. It is set on every `tuningChanged`, which a row emits when it changes and when it gets the focus
     (`Tuning.gd` `tuningChanged` does the same with `<key>_DESC`). Every setting has one, written as the game's
-    `TUNE_*_DESC` are: what it does, a blank line, then the details. DiveSkipTransit has it; CrewCheapHireNotifier
-    doesn't yet, to add when it next changes. DealerNotifier is the exception: its switches (New and Used, then one
+    `TUNE_*_DESC` are: what it does, a blank line, then the details. CrewCheapHireNotifier, DiveSkipTransit and
+    MarketAdvisor have it, and so has CombatSimulator's dialog, on each of its tabs. The OMS tabs of DroneAltPriorities
+    and GeologyByMass have no room for the window: each row's description is its tooltip, which the game's tooltip
+    node shows on hover and on focus. DealerNotifier is the exception: its switches (New and Used, then one
     per ship model) are explained by its README and its wiki page, not on the screen, at the author's choice. Its
     window, framed as the Dealer screen's, shows the game's own description of the selected ship, as the Dealer does
     (`<shipName>_DESC`), and nothing for New and Used. ServiceNotifier's switches, one per service, share one `label`,
@@ -522,6 +535,18 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
   so another value of a constant still passes. Base-game values a modder would have trouble finding may be quoted
   (the arm's 45 m reach; the game shows 10 world units as 1 m). The arm diagrams, whose legends show values of their
   mods' constants, are pictures of the users' wiki, listed in their pages' values blocks.
+- **Every Shift+Click has a gamepad twin**, so a mod works with a controller as well as with a mouse: `PAD_BUTTON`
+  pressed on the highlighted control while `PAD_MODIFIER` is held (`Badge.gd` `isPadShortcut`; at the station the game
+  gives neither button a use), and for a key with Shift, its gamepad button with `PAD_MODIFIER` (CombatSimulator's twin
+  of Shift+J). The control gets a Shift badge (`Badge.gd` `dress`, `hangBeside`), whose text and tooltip follow the
+  control scheme (see the Glossary): "Shift" and `<MOD>_SETTINGS_TOOLTIP` with keyboard and mouse, the twin and
+  `<MOD>_SETTINGS_TOOLTIP_PAD` with a gamepad (`setShiftTooltips`), shown by the game's own tooltip node
+  (`attachTooltip`). The entry keeps no tooltip of its own. `Badge.gd` is the same file in each mod that has it: a
+  change to one is copied to all.
+- A mod's screen works with the D-pad and the gamepad's buttons as the game's do: the D-pad moves between its controls
+  (focus neighbours where the layout alone doesn't lead there), B and Start close it (`ui_cancel`, `pause`), LB and RB
+  switch its tabs, and the right stick scrolls a text that doesn't fit (`ui_scroll_up2` / `ui_scroll_down2`, at the
+  game's speed: `enceladus/ScrollWithAnalog.gd`). Its descriptions show when a control is highlighted, as on hover.
 - Read values from the game (the ship's nodes and collision shapes, scene files, the arm's own properties), never
   from per-ship tables. A constant is only a fallback for when the game data can't be read (`CHUNK_RADIUS_FALLBACK`).
 - Game behaviour a mod relies on is cited with the game file and function it comes from (`Game.gd`
@@ -544,8 +569,10 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
   of `mods` (see *Packaging and releasing*).
 - **The version lives only in `[version]` of `Mod.manifest` and in `CHANGES.md`**. It never appears anywhere else in
   the mod: not in the README (whose *Install* step says "the mod's zip" and names neither the mod nor the zip), the
-  code, comments or images. Godot's and the game's own versions may be mentioned. The version is bumped only at
-  release, and between releases only the test builds' prerelease changes (see *Packaging and releasing*).
+  code, comments or images. Godot's and the game's own versions may be mentioned. The harness (`_tests\`, its suites
+  and its README) may name a mod's released versions where it compares the code with their zips (`-ModZip`), since
+  that comparison needs them. The version is bumped only at release, and between releases only the test builds'
+  prerelease changes (see *Packaging and releasing*).
 - **`CHANGES.md`**: a mod at 1.0.0 or later gets one in its folder (so it ships in the zip) as soon as it changes
   after 1.0.0. Changes not yet released are listed in a `## NEXT` section at the top, by the release at the latest
   (test builds leave it for the release), while the manifest keeps the released version (with a test build's
@@ -606,9 +633,9 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
 
 - **Adrenaline**: the game's bullet time. A level from 0 to 1 (`adrenaline` in `BulletTimer.gd`, changed through
   `CurrentGame.adrenaline(delta)`) that slows game time (`CurrentGame.targetTimeScale` → `Engine.time_scale`),
-  blurs the view around the ship and muffles the sound, and drains by itself. The Adrenaline Booster, the smart camera
+  blurs the view around the ship and muffles the sound, and drains by itself. The Adrenaline booster, the smart camera
   and the pilot raise it. Details: [GAME.md](GAME.md#adrenaline).
-- **Adrenaline Booster** (`SYSTEM_ADRENALINE_BOOSTER`, `ships/CabinLight.gd`): equipment the player fires with
+- **Adrenaline booster** (`SYSTEM_ADRENALINE_BOOSTER`, `ships/CabinLight.gd`): equipment the player fires with
   the `bullet_time` action (`CONTROLS_GAMEPAD_ADRENALINE`) for a burst of adrenaline, followed by a cooldown
   (`adrenalineBoost`, `adrenalineCooldown`); fired again during the cooldown, it cuts the burst short. Switched off
   in the OMS's Mechanic tab, it pushes adrenaline down every frame instead, which also damps bullet time from the
@@ -619,9 +646,8 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   Market, ServiceNotifier on Services.
 - **Antonoff Ore Purifier** (`SYSTEM_CARGO_MPUDRY`; `ships/modules/MineralProcessingUnit_DRY.tscn`, on
   `MineralProcessingUnit.gd`): an MPU whose processing area covers the whole hold of the Antonoff-Titan K225
-  (`ships/ATK225.tscn` overrides it). It strips each chunk's water into remass (`remassEfficiency`), extracts no ore
-  (`mineralEfficiency` 0) and never removes a chunk (`removeChunks` false): chunks taken in stay in the hold. Its walls
-  line the hold (the scene's root polygon, part of the ship's collision).
+  (`ships/ATK225.tscn` overrides it), and which only strips the chunks' water into remass. Details:
+  [GAME.md](GAME.md#antonoff-ore-purifier).
 - **Arm**: the AR-1500 Manipulator (`SYSTEM_SALVAGE_ARM`, `ships/modules/DockingArm.gd`), the ship's arm that grabs
   chunks and brings them to the intake (see *Salvage arm facts*). It pulls its target towards its dock slot
   (`areaDockSlot`), and lets go of one that strays too far from the dock slot or the arm base. Details:
@@ -648,6 +674,13 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   processes and the HUD's mineral targeting marks. A `RigidBody2D` with `asteroids/mineral.gd`, one scene per
   mineral and size (`asteroids/mineral-<mineral>-<n>.tscn`); `mineral` names its mineral, `composition` its
   content. Weight: see *Salvage arm facts*.
+- **Combat capacity** (no text of its own in `en.po`): how fit a ship is to fight, from 0 to 1, from the state of its
+  equipment (`ship-ctrl.gd` `getCombatCapacity`). The AI, the HUD's ship marks and some random events read it.
+  Details: [GAME.md](GAME.md#combat-capacity).
+- **Control scheme** (`SETTINGS_CONTROLS`, "Controls": Auto, Keyboard + Mouse, Gamepad): the game setting
+  `Settings.cfg.ui.controller` (Auto by default), and what the game's control hints follow, `Settings.controlScheme`:
+  the setting, or with Auto the device last used (`menu/Mouse.gd`), with the `controlSchemeChaged` signal (the game's
+  spelling) at every change. The mods' Shift badges follow it too. Details: [GAME.md](GAME.md#control-scheme).
 - **Crew** (`ENCELADUS_CREW`): the people hired at the station, each with an occupation (`CurrentGame.occupations`:
   Pilot, Mechanic, Geologist, Astrogator, keys `CREW_OCCUPATION_*`) and a salary; the player is the captain. The
   dive crew are those aboard. Passengers (`CREW_OCCUPATION_PASSENGER`, no salary) are listed with the crew. The
@@ -670,16 +703,10 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   one setting, and charges what it would have cost; with the transit not skipped, it plays both at a speed of its own,
   without Space. Details: [GAME.md](GAME.md#cutscene).
 - **Dealer** (`ENCELADUS_SHIP_MARKET`, `enceladus/Dealer.tscn`): the station's ship market. Its entries are
-  `enceladus/SystemBuyUI.gd` (the ship-list mods change them); its Examine tab can launch the simulator. The stock is
-  stored nowhere: `CurrentGame.getShipsAvailableForSale` builds it anew on every call, and only `Dealer.gd`
+  `enceladus/SystemBuyUI.gd` (the ship-list mods change them); its Examine Ship tab can launch the simulator. The
+  stock is stored nowhere: `CurrentGame.getShipsAvailableForSale` builds it anew on every call, and only `Dealer.gd`
   `doAddShips` asks for it. An entry marks a new ship NEW, a ribbon on its picture (`SystemBuyUI.gd` `checkPrice`), by
   its age; DealerNotifier's New and Used follow that mark. Details: [GAME.md](GAME.md#dealer).
-
-  **Fleet** (`ENCELADUS_OWNED_SHIPS`): the ships the player owns, and the station screen listing them
-  (`enceladus/Owned.tscn`, an instance of `Dealer.tscn` with the same entries, the current ship first), where the
-  player switches ships (`GARAGE_SWITCH`, `Dealer.gd` `use`) and sells them (`GARAGE_SELL`). Each owned ship keeps its
-  own config (`CurrentGame.state.ship`, the others in `state.garage`). The crew itself belongs to the player, not to
-  a ship. Details: [GAME.md](GAME.md#fleet).
 - **Density** (roid density; no text of its own in `en.po`): how many roids a spot of the rings holds, from the ring
   map's blue and green channels (see *Chaos*; `TheRing.gd` `getTargetDensityAt`), filled in ahead of the ship by
   `AsteroidSpawner.gd` `spawnProperThings`. Chunks come only from roids breaking. Details:
@@ -688,18 +715,19 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
 - **Derelict**: an abandoned ship with its reactor off, in the `helpless` faction (`story/RescueOperation.gd`,
   `story/FlightForRescue.gd`, `story/AgendaSpecificDerelict.gd`). It talks once when the player's ship comes close,
   and a crew member can go over to restart it (see *EVA*); or the arm can hold it until the dive ends (see
-  *Salvage*). Details: [GAME.md](GAME.md#eva).
+  *Salvage*). Details: [GAME.md](GAME.md#derelict).
+- **Difficulty** (`SETTINGS_DIFFICULTY_0` to `_2`: "Difficulty: Peaceful", "Difficulty: Balanced", "Difficulty:
+  Challenging"): the game setting `Settings.cfg.gameplay.difficulty`, Balanced by default, also kept in the save
+  (`CurrentGame.state.settings.difficulty`). It decides which combat events of the rings may spawn. Details:
+  [GAME.md](GAME.md#difficulty).
 - **Dive** (ring dive): one trip from the station into Saturn's rings to mine, until the ship is back. Started with
   Launch Ring Dive (`ENCELADUS_RETURN_TO_RING`), at the dive entry point picked before launch
   (`ENCELADUS_DIVE_TARGET`, `enceladus/DiveTarget.tscn`); fees, licences, insurance and consumables are paid per
   dive, and on return the dive's output is stored or sold.
 - **Drones** (no key of their own; the word is in the NT Mining Companion's description, `SYSTEM_SCOOP_DESC`): small
   craft a ship launches from a cradle, equipment on a hardpoint, each a ship of its own (`ship-ctrl.gd`) with a
-  transponder made from the ship's by the cradle's `ships/modules/ClaimOwner.gd` (see *Transponder*). A physics frame
-  after the cradle enters the tree, it lets its drone go into the ship's parent (`ClaimOwner.gd` `_ready`, unless the
-  cradle has left the tree by then), so the drone outlives the ship's node: whoever takes a ship out of a scene takes
-  its drones out too (`Upgrades.gd`'s preview removes every rigid body; DealerNotifier frees each picture's whole
-  viewport). The THI Cargo Container and THI Monocargo Container (`SYSTEM_EXSTORAGE`, `SYSTEM_EXMONO`;
+  transponder made from the ship's by the cradle's `ships/modules/ClaimOwner.gd` (see *Transponder*), which lets it
+  go into the scene. The THI Cargo Container and THI Monocargo Container (`SYSTEM_EXSTORAGE`, `SYSTEM_EXMONO`;
   `ships/drone/StoragePod.tscn`, `StoragePodMono.tscn`) are storage pods that carry processed ore back to the station;
   the NT Mining Companion (`SYSTEM_SCOOP`, `ships/drone/CargoScoop.tscn`) is a mining drone; the B8 Claim Beacon
   (`SYSTEM_CLAIM`, `ships/drone/ClaimBeacon.tscn`) holds the player's excavation claim on a spot of the rings. The
@@ -707,7 +735,7 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   transponder. Not drones in this sense: the nanodrones (`SYSTEM_DND_*`, the MPI Tug, MLF Haul and OME Maintenance
   drones, `weapons/drone-plant.gd`; see *Nanodrones*), which the drone plant draws and which aren't objects of their
   own; and the NPC drones (the racing drone and ATLAS, built by the Shipyard; locusts, berserk drones and mines in some
-  events).
+  events). Details: [GAME.md](GAME.md#drones).
 - **E$**: the game's currency.
 - **EMP**: electromagnetic damage to a ship (`ship-ctrl.gd` `applyEmpDamage`); no key of its own, the word is in
   Short Circuit's tooltip (`DAMAGE_SHORT_CIRCUIT_TOOLTIP`, "Caused by EMP damage."). Its main source is the MWG
@@ -716,10 +744,9 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   reactor. Details: [GAME.md](GAME.md#emp).
 - **Enceladus**, **the station**: Enceladus Prime station (`ENCELADUS_*`, `enceladus/`), the home base at Saturn's
   moon Enceladus. Its menu (`enceladus/EnceladusMenu.gd`) opens the station's screens on its right (the children of
-  `enceladus/HidingMarginContainer.gd`). On every arrival the station fades in (`Enceladus.tscn`'s `AnimationPlayer`,
-  `FadeInCRT`), and its menu stays disabled until the animation calls `disable(false)` on it, a few seconds in;
-  DiveSkipTransit skips the fade-in.
-- **Equipment**: the parts fitted to a ship (engine, reactor, LIDAR, MPU, arm, Adrenaline Booster, …), and the
+  `enceladus/HidingMarginContainer.gd`). It fades in on every arrival, with its menu disabled meanwhile, and
+  DiveSkipTransit skips the fade-in. Details: [GAME.md](GAME.md#enceladus).
+- **Equipment**: the parts fitted to a ship (engine, reactor, LIDAR, MPU, arm, Adrenaline booster, …), and the
   station screen where they are bought and fitted to its hardpoints (`ENCELADUS_SHIP_UPGRADES`,
   `enceladus/Upgrades.tscn`; also called the Upgrades screen, after its key and scene). The code calls one piece a
   system: each has a `SYSTEM_*` key, which its script holds in `systemName` (`SYSTEM_SALVAGE_ARM`); a few texts say
@@ -730,6 +757,10 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   (`evaDirection`); the player can't order one. The game shows one with derelicts, with some crew agendas (an agenda
   is a crew member's personal story, `AGENDA_*`), with Vilcy (faction `vilcy`, bounty hunters), and as scenery at the
   station. Details: [GAME.md](GAME.md#eva).
+- **Excavator key** (`ship_excavator`; `CONTROLS_GAMEPAD_EXCAVATOR`, "Open Excavator / Grinder"): the input that
+  opens the ship's excavator or grinder (Enter, the middle mouse button or the gamepad's LT; a double press holds it
+  open), sent as the command `x` to the systems that answer it (`ship-ctrl.gd` `fireMatching`), the arm too, which
+  feeds its target in while it is held. Details: [GAME.md](GAME.md#excavator-key).
 - **Faction** (no text of its own in `en.po`): the side a ship is on, which sets how its AI treats everyone else
   (`Factions.gd`, an autoload). Ships are `civilian` (miners; `ship-ctrl.gd`'s default), `pirate`, `helper` (the
   rescue ships), `vilcy` (bounty hunters), `secret` (the Hybrid), `ai` (ATLAS), `ai.berserk`, `obonto`, `racer`,
@@ -737,6 +768,11 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   others feel something towards. What one faction feels towards another is its disposition, five values (`fear`,
   `curiosity`, `hostility`, `greed`, `support`): the faction's default, plus the save's adjustments, plus each AI
   ship's own. CombatSimulator freezes `pirate` for a run. Details: [GAME.md](GAME.md#faction).
+- **Fleet** (`ENCELADUS_OWNED_SHIPS`): the ships the player owns, and the station screen listing them
+  (`enceladus/Owned.tscn`, an instance of `Dealer.tscn` with the same entries, the current ship first), where the
+  player switches ships (`GARAGE_SWITCH`, `Dealer.gd` `use`) and sells them (`GARAGE_SELL`). Each owned ship keeps its
+  own config (`CurrentGame.state.ship`, the others in `state.garage`). The crew itself belongs to the player, not to
+  a ship. Details: [GAME.md](GAME.md#fleet).
 - **Frozen bodies** (corpses; `ODDITY_DEAD_BODY`, "Evidence gathering reward"): dead people floating in the rings,
   oddities (see *Oddity*), in groups around a talking beacon (`story/DeadBody.gd`, `story/body.gd`) or around the
   destroyed habitat. A body's transponder is its group's plus its initials (`body.gd` `getTransponder`). Details:
@@ -747,13 +783,14 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   value (`HUD_MIN_PRICE`) and its Minimum Albedo (`CARGO_UNKNOWN_ALBEDO`), kept in the system's own `mineralConfig`
   (the HUD's is the ship's `hud.config`). The tab's mineral map (`hud/components/MineralMap.gd`) colours the areas
   around the ship where the mineral picked in its list has been found. Details: [GAME.md](GAME.md#geologist).
+- **Habitat** (`POI_HABITAT`, "Habitat"; `story/habitat/Habitat.tscn`): a station of Obonto's in the rings, faction
+  `obonto`, with docking arms and a conversation of its own; six of them, SRA-02 to SRA-07, each a random event of the
+  rings until it is known. SRA-01 is the destroyed habitat (`story/habitat/DestoryedHabitat.tscn`,
+  `POI_DESTROYED_HABITAT`, "Habitat Wreckage"), with frozen bodies around it (see *Frozen bodies*).
 - **Hardpoint**: a ship's mount for a piece of equipment: high-stress, low-stress or spinal. Only high-stress ones
-  take the arm. In the ship's scene each is a `ships/WeaponSlot.gd` node, inline (some nested, the ND-LIS Kitsune's is
-  `Front/WeaponSlot`) or a placeholder of `weapons/WeaponSlot.tscn`, which stores only the values it overrides
-  (RA-TRTL's and the Vulture Prospector's main hardpoint leaves `slot` to the scene's own, `main`). In the ship's config
-  `weaponSlot.<slot>.type` holds what is mounted. A hardpoint the config names nothing for gets its node's `default`
-  when the ship enters the tree: `SYSTEM_NONE`, nothing, on every model the dealer sells. The Equipment screen offers
-  None on every hardpoint, free, as its default (`enceladus/Upgrades/WeaponSlotUpgrade.tscn`).
+  take the arm. In the ship's scene each is a `ships/WeaponSlot.gd` node, inline or a placeholder of
+  `weapons/WeaponSlot.tscn`; in the ship's config, `weaponSlot.<slot>.type` holds what is mounted, and `SYSTEM_NONE`
+  is nothing. Details: [GAME.md](GAME.md#hardpoint).
 - **Hire screen** (`ENCELADUS_CREW_HIRE`, "Hire"; also the Hire list): the Crew screen's tab of the people for hire
   that day, the `HireableCrew` node of `enceladus/Crew.tscn` (`enceladus/HireableCrew.gd`), filled from
   `CurrentGame.getAvailableCrew()` on the first show and every in-game day. One entry per person
@@ -766,16 +803,24 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   name, and can't be hailed (`hailable`). Its reactor shows a Singularity Core that spins faster the hotter the
   reactor runs (`ships/Artifact.gd`). A random event of the rings brings it to look at the player's ship, then attack
   it with an MWG; destroyed, it leaves its Singularity Core, an oddity. Details: [GAME.md](GAME.md#hybrid).
-- **Insurance** (`ENCELADUS_INSURED_FOR`, "Insured for"): money kept apart from the player's (`CurrentGame.getInsurance`,
-  `state.insurance`) that pays for repairs first. Jameson's Insurance (`SERVICE_JAMESON`), at Services, adds to it.
-  Details: [GAME.md](GAME.md#insurance).
+- **IFF** (`IFF_AUTO`, `IFF_FRIENDLY`, `IFF_HOSTILE`: "Auto", "Friendly", "Hostile"): the slider beside each object on
+  the OMS Pilot tab (`hud/components/IffSliderLabel.gd`), which tells the ship's AI and turrets to treat it as a
+  friend or a foe, or as its faction says (Auto, where it starts). Kept while the object stays identified, never
+  saved (`ship-ctrl.gd` `setIff`). Details: [GAME.md](GAME.md#iff).
+- **Info box** (no text of its own in `en.po`): the box the HUD shows by a chunk the crew's geologist has identified,
+  with its minerals in kg and its value (`hud/MineralMark.gd`); it shrinks to a small square while the HUD's row of the
+  Geologist tab doesn't let the chunk through. Details: [GAME.md](GAME.md#info-box).
+- **Insurance** (`ENCELADUS_INSURED_FOR`, "Insured for"): money kept apart from the player's
+  (`CurrentGame.getInsurance`, `state.insurance`) that pays for repairs first. Jameson's Insurance (`SERVICE_JAMESON`),
+  at Services, adds to it. Details: [GAME.md](GAME.md#insurance).
 - **Intake**: where the arm feeds chunks into the ship: a grinder, an excavator or a side bay (see *Salvage arm
   facts*).
-- **Launch sequence**: what the station plays after Launch Ring Dive (`ENCELADUS_RETURN_TO_RING`) and the dive target:
-  the ship powers up and leaves the dock (`enceladus/Enceladus.gd` `_on_DiveTarget_launch`: `ExitPlayer`'s
-  `LaunchSequence`, then, once the ship has power, `Autopilot`'s `GoToRing`, which ends in `goToRing()`, the switch to
-  the ring scene). Esc or `cutscene_ff` cuts it short (`Enceladus.gd` `_physics_process`). The ship flown there is the
-  station's, thrown away with the scene. DiveSkipTransit cuts the sequence as soon as it starts.
+- **Launch sequence**: what the station plays after Launch Ring Dive (`ENCELADUS_RETURN_TO_RING`) and the Dive entry
+  point (`ENCELADUS_DIVE_TARGET`): the ship powers up and leaves the dock (`enceladus/Enceladus.gd`
+  `_on_DiveTarget_launch`: `ExitPlayer`'s `LaunchSequence`, then, once the ship has power, `Autopilot`'s `GoToRing`,
+  which ends in `goToRing()`, the switch to the ring scene). Esc or `cutscene_ff` cuts it short (`Enceladus.gd`
+  `_physics_process`). The ship flown there is the station's, thrown away with the scene. DiveSkipTransit cuts the
+  sequence as soon as it starts.
 - **LIDAR** (`HUD_LIDAR`, "Doppler LIDAR"; `hud/LIDAR.gd`): the HUD's scanner of nearby objects. Its sweep plays a
   ping (the `Bleep` node) for each strong return, pitched and set in volume by the distance; a Tuning switch
   (`doBleep`) turns the pings off.
@@ -799,8 +844,8 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
 - **Morale** (crew happiness): each crew member's mood, `morale` in their entry of `CurrentGame.state.crew`, from
   -0.5 to 0.5 (`changeCrewMorale` clamps it), 0 for a new hire. It has no text in `en.po` and no number on screen;
   the crew line-up at the station (`enceladus/CrewFaceOnEnceladus.gd`) shows a happy or a sad icon. It raises or
-  lowers the member's crew stats, drifts every day towards a target, and changes with the station's Services (paid
-  bars, hotels and other services), conversations and unpaid wages. Details: [GAME.md](GAME.md#morale).
+  lowers the member's crew stats, drifts every day towards a target, and changes with the station's Services (the
+  bar, the hotels and other paid services), conversations and unpaid wages. Details: [GAME.md](GAME.md#morale).
 - **MPU** (`SYSTEM_CARGO_MPU*`, `ships/modules/MineralProcessingUnit.gd`): the Mineral Processing Unit, which turns
   the chunks taken in into processed ore and, in most models, their water into remass.
 - **Nanodrones** (the word is in their descriptions, `SYSTEM_DND_TS_DESC`): drones a plant on a hardpoint assembles as
@@ -809,6 +854,13 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   MLF Haul Drones (`SYSTEM_DND_HAUL`, "haul") and the OME Maintenance drones (`SYSTEM_DND_FIX`, "repair"). Each plant
   works on one target at a time, picked by `scanForTarget`; DroneAltPriorities changes the choice among the eligible
   objects for the player's tug and haul plants. Details: [GAME.md](GAME.md#nanodrones).
+- **New Game Options** (`MENU_NEW_GAME_OPTS`; `menu/NewGamePlus.tscn`, `menu/NewGamePlus.gd`): the popup the title
+  screen's New game opens while the tutorial is off, with the new game's seed and the first ship's transponder and
+  name (Reroll draws others). OK starts a new game with them (`CurrentGame.newGamePlus`); nothing carries over from
+  another game.
+- **Obonto** (`SERVICE_OBONTO`, "Obonto Habitats"): the company that keeps the SRA series of habitats in the rings,
+  "for agricultural and research purposes" (`SERVICE_OBONTO_DESC`), faction `obonto` (see *Habitat*), and its
+  compensation row at Services (see *Services*).
 - **Oddity**: an object worth a reward of its own (`specialPrice`, named by its `specialName`): a lifepod, a frozen
   body, an AI core and others. One the arm holds when the dive ends goes into the cargo (`ship-ctrl.gd`
   `handleExitToEnceladus`) and is sold for its reward (`CurrentGame.gd` `getMarketPrice`).
@@ -832,6 +884,10 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   `COMBATSIMULATOR_MODEL_DRONE`): the small crewless drone the ring races are flown to chase (`story/RingRace.gd`,
   faction `racedrone`), scene `ships/drone/Drone.tscn` (Shipyard model `DRONE`), built new (`createShipByName`, age 0).
   Its reactor is tiny (scaled to a quarter), with no body for turrets to aim at, and it has no lifepod.
+- **Random event** (no text of its own in `en.po`): something the rings bring by chance ahead of the ship: a derelict,
+  pirates, a lifepod, frozen bodies, a habitat, Vilcy, a race and more. Each is a node of `story/TheRing.tscn` with a
+  `canBeAt` and a `makeAt`, picked by `TheRing.gd` `getOddityAt` for `AsteroidSpawner.gd`. Details:
+  [GAME.md](GAME.md#random-event).
 - **Reactor** (`SYSTEM_REACTOR_*`; `ships/Reactor.gd`): the ship's nuclear reactor, the equipment that makes heat. The
   turbine (`SYSTEM_TURBINE_*`, equipment for fission ships, read as the config `turbine.power`) turns that heat into
   electricity and burns remass to do it (`turbineConsumption`). With no remass left, it makes no power. The HUD shows
@@ -869,13 +925,18 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   the fleet if it is salvageable (`ship-ctrl.gd` `handleExitToEnceladus`, `CurrentGame.isShipSalvageable`). Details:
   [GAME.md](GAME.md#salvage-claim).
 - **Services** (`ENCELADUS_SERVICES`, `enceladus/Services.tscn`): the station screen of paid services, one row each
-  (`enceladus/ServiceUI.gd`, its `serviceName` the service's key): bars and hotels, which take in-game hours and lift
-  the crew's morale, and monthly ones such as Jameson's Insurance (`SERVICE_JAMESON`, see *Insurance*) and Scrapwright
-  Recovery Operations (`SERVICE_SALVAGE_LICENCE`, see *Salvage*). Some can't be bought again for a while: those with a
-  cooldown (`cooldownHours`: The Twins, `SERVICE_BAR_TWINS`, and the monthly ones), and the compensation rows
+  (`enceladus/ServiceUI.gd`, its `serviceName` the service's key): a bar (The Twins, `SERVICE_BAR_TWINS`) and four
+  hotels (`SERVICE_HOTEL_*`), which take in-game hours and lift the crew's morale, and monthly ones such as Jameson's
+  Insurance (`SERVICE_JAMESON`, see *Insurance*) and Scrapwright Recovery Operations (`SERVICE_SALVAGE_LICENCE`, see
+  *Salvage*). Some can't be bought again for a while: those with a cooldown (`cooldownHours`: The Twins and the
+  monthly ones), and the compensation rows
   (`enceladus/ServiceUIFactionChange.gd`: Local Vilcy Branch, The Miner's Guild and Obonto Habitats), which pay off a
   faction's hostility and fear towards the player and cost nothing until it holds a grudge again. ServiceNotifier
   marks the station menu's Services entry while one of those can be bought. Details: [GAME.md](GAME.md#services).
+- **Shift badge** (not the game's: these mods' own term): the small framed "Shift" beside a station menu entry, or on
+  the simulator's button, whose Shift+Click opens a mod's settings or dialog (`Badge.gd`); it reads `PAD_TEXT`, the
+  gamepad twin, while the control scheme is the gamepad, and its tooltip says how, in either form. CombatSimulator,
+  CrewCheapHireNotifier, DealerNotifier, DiveSkipTransit, MarketAdvisor and ServiceNotifier have one.
 - **Ship models**: the kinds of ship, each with a key in `Shipyard.ships` (`TRTL`, `PROSPECTOR-VP`, …), a scene
   (`ships/RA-TRTL.tscn`) and the translation key of its name in the ship's `shipName` (`SHIP_TRTL`). The Dealer shows
   the names: K37 TNTRL, Eagle Prospector, Vulture Prospector, EIME (Eon Interstellar Model E), OCP-209, the Cothons,
@@ -888,14 +949,21 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
     models are alone in theirs. Which models the dealer offers: see *Dealer*.
 - **Simulator** (MVFS; `ENCELADUS_LAUNCH_VR`, `enceladus/Simulator/`): the Minding Virtual Flight Service, the
   station's flight simulator for trying a ship as fitted; launched from its button (`LaunchVRButton.tscn`, with the
-  `jury_rig` action, J, as its shortcut) on the Tuning screen, the Equipment screen's User Manual tab and the Examine
-  Ship tab of the Dealer and of Fleet. A Premium subscription (`SERVICE_SIMULATOR`) adds a simulated ring scenario.
-  Shift+Click on the button, or Shift plus its key, opens CombatSimulator's combat simulation instead.
+  `jury_rig` action, J or the gamepad's Back, as its shortcut) on the Tuning screen, the Equipment screen's User
+  Manual tab and the Examine Ship tab of the Dealer and of Fleet. A Premium subscription (`SERVICE_SIMULATOR`) adds a
+  simulated ring scenario. Shift+Click on the button, or Shift plus its key, or their gamepad twins (see *Shift
+  badge*), opens CombatSimulator's combat simulation instead.
+- **Smart camera** (`SETTINGS_SMART_CAMERA`, "Smart camera"): the default of the game's four camera settings, with
+  Direct camera, Smoothed camera and Fixed camera (`SETTINGS_STUPID_CAMERA`, `SETTINGS_SMOOTH_CAMERA`,
+  `SETTINGS_FIXED_CAMERA`; `menu/SmartCamera.gd`, `Settings.cfg.display`): the camera follows the action and zooms by
+  itself, and, as Smoothed camera does too, raises adrenaline when something closes in fast (`ships/camera.gd`).
+  Details: [GAME.md](GAME.md#adrenaline).
+- **Title card** (no key of its own; the arrival's shows `CUTSCENE_RINGS_OF_SATURN`, "The Rings of Saturn"): the
+  titles a cutscene of the ring scene shows over the view, on `Game.tscn`'s `TitleAnimPlayer` (`intro`, `exit`,
+  `fasttravel`, `gameover`, `helpless`). Details: [GAME.md](GAME.md#cutscene).
 - **Transit**: the interlunar trip between the station and the rings, which costs remass and in-game time each way and
-  isn't flown. Each way covers the ΔV for trajectory (`MAP_DV`) of the dive entry point picked (`DiveTarget.gd`
-  `getPrices`, kept in `CurrentGame.dvToEnceladus`), shared between the main drives (the ship's thrusters, which burn
-  remass) and the xenon drive. The trip out is charged as a dive starts (`Game.gd` `_ready`), the trip back during the
-  exit cutscene (`Game.gd` `interlunarToEnceladus`). Details: [GAME.md](GAME.md#transit).
+  isn't flown: the main drives (the ship's thrusters, which burn remass) and the xenon drive share each way's ΔV, the
+  ΔV for trajectory (`MAP_DV`) of the Dive entry point picked. Details: [GAME.md](GAME.md#transit).
 - **Transponder** (no key of its own; the word is in many lines, `{origin/transponder}`): the code a ship or object
   broadcasts. The Dealer and Fleet show it as Registration, and the HUD's ship marks, the LIDAR's labels, the OMS
   Pilot tab, comms, the dive's title card and the save slots show it too. The game makes codes in `CurrentGame.gd`
@@ -910,6 +978,10 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
 - **Tuning** (`ENCELADUS_SHIP_TUNING`, `enceladus/Tuning.tscn`): the station screen with the settings of each piece
   of the current ship's equipment, registered by its script with `registerSubsystem` and saved with the game (see
   *Conventions*).
+- **Vilcy** (`SERVICE_VILCY`, "Local Vilcy Branch"): "an organized bounty hunter group" (`SERVICE_VILCY_DESC`),
+  faction `vilcy`, hostile to pirates. Its ships come in random events of the rings (`story/Vilcy.gd`) and hail a
+  player with an ex-pirate in the crew (see *EVA*); its headquarters is the Big Bad Wolf (see *Tsukuyomi*). Local
+  Vilcy Branch, at Services, pays off its grudges (see *Services*). Details: [GAME.md](GAME.md#vilcy).
 - **Weapons** (no key of their own): the equipment that fires, mounted on a hardpoint (`weapons/WeaponSlot.tscn` names
   each system's scene; `enceladus/Upgrades/WeaponSlotUpgrade.tscn` holds the Equipment screen's offers and prices), in
   five families: mass drivers (`weapons/massdriver.gd`), lasers (`weapons/laser.gd`), microwave emitters
@@ -919,5 +991,4 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   passes 0 the same way. Details: [GAME.md](GAME.md#weapons).
 - **Xenon drive**: the low-thrust, economical drive every ship has for transit, which burns no remass (the game keeps
   no stock of xenon). Its Tuning setting, Interplanetary Xenon transit drive usage (`TUNE_XENON_BURN`, a HUD built-in:
-  `hud/Hud.gd` `getTuneables`; 0–100 %, default 100 %, kept per ship), is the share of the outbound ΔV it covers
-  (`ship-ctrl.gd` `getXenonBurnRatio`); the main drives cover the rest. The trip back ignores it (see *Transit*).
+  `hud/Hud.gd` `getTuneables`), sets its share of the trip out. Details: [GAME.md](GAME.md#xenon-drive).

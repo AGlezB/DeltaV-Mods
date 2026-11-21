@@ -2,14 +2,14 @@
 
 name="CrewPerfectSort"
 id="AGlezB.CrewPerfectSort"
-description="Sorts the Hire screen by salary then job, and Your crew by job then ascending salary."
+description="Sorts the Hire screen by salary then job, and Your Crew by job then ascending salary."
 author="AGlezB"
 
 [version]
 
 version_major=1
 version_minor=2
-version_bugfix=3
+version_bugfix=4
 
 [tags]
 

@@ -1,15 +1,15 @@
 # LidarLouderPing - ΔV: Rings of Saturn
 
-The lidar's ping for sensor contacts plays louder, by as much as you set in the ship's Tuning.
+The LIDAR's ping for sensor contacts plays louder, by as much as you set in the ship's Tuning.
 
 ## What it does and why
-- **What:** the ping the lidar plays for each contact it finds is louder, by the boost set on the slider "Audible
+- **What:** the ping the LIDAR plays for each contact it finds is louder, by the boost set on the slider "Audible
   feedback boost" in the ship's Tuning screen. The slider sits right below the switch "Audible feedback for sensor
   contacts", which turns this sound on and off and still works, and the boost only applies while that switch is on.
   Each ship keeps its own boost with its tuning, saved with the game; a ship that never had it set uses
-  `LOUDER_PING_DB_DEFAULT`. The ping in the lidar preview of the Tuning and Upgrades screens is louder too.
+  `LOUDER_PING_DB_DEFAULT`. The ping in the LIDAR preview of the Tuning and Equipment screens is louder too.
 - **Hear it while choosing:** while the slider is selected, the Tuning screen's preview plays a short sequence of
-  pings every `LOUDER_PING_DEMO_INTERVAL` seconds: from a contact at the edge of the lidar's range, one halfway and one
+  pings every `LOUDER_PING_DEMO_INTERVAL` seconds: from a contact at the edge of the LIDAR's range, one halfway and one
   close (`LOUDER_PING_DEMO_RANGES`), with `LOUDER_PING_DEMO_GAP` seconds of silence between them, so the boost sounds as
   it will in flight. The preview's other pings are silenced meanwhile. With the switch off there is no demo.
 - **What not:** the game's own way of playing it is kept. Contacts that are far away ping louder and lower, and
@@ -19,7 +19,7 @@ The lidar's ping for sensor contacts plays louder, by as much as you set in the 
 - **Why:** the ping is easy to miss over the rest of the ship's sound.
 - About every 10 dB sounds twice as loud; 0 dB leaves the game's volume. With a large boost the game holds the pings
   back and briefly lowers other sounds along with them.
-- What pings is up to the game: anything a lidar ray hits whose lidar response is above 1, such as mineral chunks
+- What pings is up to the game: anything a LIDAR ray hits whose LIDAR response is above 1, such as mineral chunks
   with any purity, ships, equipment and projectiles. Plain rock does not.
 - The slider's default, range and step (`LOUDER_PING_DB_DEFAULT`, `LOUDER_PING_DB_MIN`, `LOUDER_PING_DB_MAX`,
   `LOUDER_PING_DB_STEP`) and the demo's interval, gap and distances are constants at the top of
@@ -27,15 +27,15 @@ The lidar's ping for sensor contacts plays louder, by as much as you set in the 
   `LidarLouderPing/i18n/en.po`.
 
 ## For modders
-- Script extension of `res://hud/LIDAR.gd` (`installScriptExtension` in `ModMain.gd`), the lidar display of every
-  ship's HUD (`hud/Display-*.tscn`) and of the Tuning and Upgrades previews (`hud/components/LIDAR.tscn`). The tag
+- Script extension of `res://hud/LIDAR.gd` (`installScriptExtension` in `ModMain.gd`), the LIDAR display of every
+  ship's HUD (`hud/Display-*.tscn`) and of the Tuning and Equipment previews (`hud/components/LIDAR.tscn`). The tag
   `group = LIDAR` in `Mod.manifest` names that game script.
-- The ping is the lidar's `Bleep` child, an `AudioStreamPlayer` with `sfx/PitchAdjustedAudio.gd` and
+- The ping is the LIDAR's `Bleep` child, an `AudioStreamPlayer` with `sfx/PitchAdjustedAudio.gd` and
   `hud/LIDAR_beep.wav`, held in `soundBleep` (`onready`). `_physics_process` sets its `pitch_scale` and `volume_db`
-  before every ping, from how far away the contact is (`volume_db = w * -30 - 10`, with `w` 1 at the lidar and 0 at
+  before every ping, from how far away the contact is (`volume_db = w * -30 - 10`, with `w` 1 at the LIDAR and 0 at
   its range), and plays it only while `doBleep` is true. `onSetup` reads `doBleep` from the ship's tuning
-  (`getBleepSound`, `TUNE_AUDIO_LIDAR`) and registers the lidar's Tuning entries.
-- **The slider.** `onSetup` registers the entries with the lidar's reader, the ship's `hud/Hud.gd`
+  (`getBleepSound`, `TUNE_AUDIO_LIDAR`) and registers the LIDAR's Tuning entries.
+- **The slider.** `onSetup` registers the entries with the LIDAR's reader, the ship's `hud/Hud.gd`
   (`registerSubsystem`). `getTuneables` hands them to `enceladus/Tuning.gd` `fillTuneableSystems`, which groups them by
   `subsystem`, and `enceladus/Tuning/TuningItems.gd` builds one row per entry, in the order they were first
   registered. The mod overrides `onSetup` and calls the parent's. Before that call it registers `TUNE_AUDIO_LIDAR`
@@ -52,14 +52,14 @@ The lidar's ping for sensor contacts plays louder, by as much as you set in the 
   from the game's settings. A boost of 0 leaves the player on its own bus. `onSetup` runs again on every tuning change
   (the ship's `tuningChanged`), so a new value applies at once. The ping's code, its pitch and the switch are not
   touched. "Held back" is the compressor on the `Master` bus: the sound already peaks at full scale.
-- The bus is added on first use, last in the list (a bus can only send to one before it), and every lidar on the
-  same bus shares it. That is safe because HUDs, and so lidars, only exist on the player's ship and on the Tuning and
+- The bus is added on first use, last in the list (a bus can only send to one before it), and every LIDAR on the
+  same bus shares it. That is safe because HUDs, and so LIDARs, only exist on the player's ship and on the Tuning and
   Upgrades previews, which are built from the player's ship and its tuning (`hud/Hud.gd` `instance`,
-  `enceladus/Tuning.gd` `addShip`, `enceladus/Upgrades.gd`), so every lidar sets the same boost. The player's own bus
-  is its bus without the mod's suffix, so the boost is never added twice. A lidar without a `Bleep` is left alone.
-- **The demo.** It runs only on the previews' lidars (`dynamicConnect`), from an override of `_process`, which does
-  not call the parent's: Godot runs both, and the game processes a lidar only while it is visible. Selecting the
-  slider switches the Tuning preview to its lidar view (`testProtocol` `lidar`). The slider counts as selected while
+  `enceladus/Tuning.gd` `addShip`, `enceladus/Upgrades.gd`), so every LIDAR sets the same boost. The player's own bus
+  is its bus without the mod's suffix, so the boost is never added twice. A LIDAR without a `Bleep` is left alone.
+- **The demo.** It runs only on the previews' LIDARs (`dynamicConnect`), from an override of `_process`, which does
+  not call the parent's: Godot runs both, and the game processes a LIDAR only while it is visible. Selecting the
+  slider switches the Tuning preview to its LIDAR view (`testProtocol` `lidar`). The slider counts as selected while
   the focus is in the `enceladus/Tuning/TuningFloatValue.gd` row whose `tuningItem` is the slider's key: its slider,
   its Reset button or its name. The Upgrades preview has no such row. The demo pings go through the game's own
   player, with the pitch and volume `_physics_process` gives a contact at that distance. Each waits for the previous
@@ -78,7 +78,7 @@ The lidar's ping for sensor contacts plays louder, by as much as you set in the 
   `_louderPingPlayAt()`, `_louderPingSelected()`, `_louderPingDb()`, `_routeLouderPing()` and `_louderPingBus()`.
 - Tested only outside the game, in a headless Godot 3.6 with the game's `LIDAR.gd`, `PitchAdjustedAudio.gd`,
   `TuningFloatValue.gd` and audio buses, and stubs of the HUD and the ship (the `lidar` suite of the repository's test
-  harness). It has not been checked in a real game.
+  harness). The real check is playing the game.
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.

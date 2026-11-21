@@ -305,6 +305,14 @@ func everySavedJob(saved, value) -> bool:
 			return false
 	return true
 
+# The tooltip of the Shift badge beside a station menu entry (a mod's Badge.gd, a child of the entry), which holds it:
+# the entry has none of its own.
+func badgeTip(entry) -> String:
+	for child in entry.get_children():
+		var script = child.get_script()
+		if script != null and script.resource_path.ends_with("/Badge.gd"):
+			return child.hint_tooltip
+	return ""
 # The Crew entry's tooltip, in the language set now.
 func settingsTip(menu) -> String:
 	return tr(menu._CHEAP_HIRE_SETTINGS_TOOLTIP) % [OS.get_scancode_string(KEY_SHIFT), manifestValue("mod_information", "name")]
@@ -387,6 +395,19 @@ func joyButton(index):
 	var event = InputEventJoypadButton.new()
 	event.button_index = index
 	return event
+
+# A press and release of a gamepad button (JOY_*), then a frame: Input hands parsed events on at the next one.
+func tapJoy(index):
+	yield(tap(joyButton(index)), "completed")
+	yield(get_tree(), "idle_frame")
+
+# A gamepad button pressed, or released, and left so, as Input delivers it (Input.is_joy_button_pressed follows).
+func holdJoy(index, pressed):
+	yield(get_tree(), "idle_frame")
+	var event = joyButton(index)
+	event.pressed = pressed
+	Input.parse_input_event(event)
+	yield(get_tree(), "idle_frame")
 
 # The game's bindings (its project.godot): ui_cancel is Esc, B (button 1) and Start (button 11); pause is Esc and Start.
 func bindGameKeys():
@@ -539,8 +560,8 @@ func run():
 
 	# The tolerance at its minimum (negative, unless SETTINGS says otherwise): it changes my best-paid salary only.
 	var least = load(SETTINGS_SCRIPT).SETTINGS.salaryTolerance.min
-	menu._settings.setValue(TOLERANCE, least - 1.0)
-	check("a tolerance set below its minimum is clamped to it", menu._settings.getValue(TOLERANCE) == least, menu._settings.getValue(TOLERANCE))
+	menu._cheapHireModel.setValue(TOLERANCE, least - 1.0)
+	check("a tolerance set below its minimum is clamped to it", menu._cheapHireModel.getValue(TOLERANCE) == least, menu._cheapHireModel.getValue(TOLERANCE))
 	var paid = (t + 500) / (1.0 + least) # a best-paid pilot whose salary, with the tolerance, stays above the threshold
 	var paidPilot = [member("Hired Pilot", PILOT, paid)]
 	day([member("Pilot", PILOT, paid * (1.0 + least))], paidPilot)
@@ -555,19 +576,19 @@ func run():
 	else:
 		note("the tolerance's minimum isn't negative")
 	CurrentGame.state.ui = {}
-	menu._settings.loadFromState()
+	menu._cheapHireModel.loadFromState()
 
 	# The crew limit: a job whose hired crew has reached it is full, and there only a hire earning less than my best-paid
 	# in that job counts, whatever the threshold and the tolerance say. The limits used are 0 to 3.
 	var crewLimit = load(SETTINGS_SCRIPT).SETTINGS.crewLimit
-	check("every job's crew limit starts at its default, the most it can be", everyJob(menu._settings, crewLimit.default) and crewLimit.default == crewLimit.max, crewLimit)
+	check("every job's crew limit starts at its default, the most it can be", everyJob(menu._cheapHireModel, crewLimit.default) and crewLimit.default == crewLimit.max, crewLimit)
 	if crewLimit.min > 0 or crewLimit.max < 3:
 		note("the crew limit's range doesn't reach from 0 to 3: its checks are skipped")
 	else:
-		menu._settings.setValue(CREW_LIMIT, 2, PILOT)
+		menu._cheapHireModel.setValue(CREW_LIMIT, 2, PILOT)
 		day([member("Pilot", PILOT, capped(h))], hired)
 		check("a job below its crew limit: the usual rule, a hire at my best-paid plus the tolerance is marked", entry(menu) == marked, entry(menu))
-		menu._settings.setValue(CREW_LIMIT, 1, PILOT)
+		menu._cheapHireModel.setValue(CREW_LIMIT, 1, PILOT)
 		check("a limit lowered to the crew I have fills the job at once: that hire is no longer marked", entry(menu) == KEY, entry(menu))
 		day([member("Pilot", PILOT, h)], hired)
 		check("in a full job, a hire at my best-paid's salary: not marked", entry(menu) == KEY, entry(menu))
@@ -578,25 +599,25 @@ func run():
 		check("in a full job the threshold doesn't apply: a hire below it but not below my best-paid is not marked", entry(menu) == KEY, entry(menu))
 		day([member("Pilot", PILOT, t - 400)], lowPilot)
 		check("and one below my best-paid is", entry(menu) == marked, entry(menu))
-		menu._settings.setValue(TOLERANCE, least)
+		menu._cheapHireModel.setValue(TOLERANCE, least)
 		day([member("Pilot", PILOT, h - 100)], hired)
 		check("nor does the tolerance: at its minimum, a hire earning less than my best-paid is still marked", entry(menu) == marked, entry(menu))
-		menu._settings.setValue(TOLERANCE, tol)
+		menu._cheapHireModel.setValue(TOLERANCE, tol)
 		day([member("Mechanic", MECHANIC, top - 100)], hired)
 		check("another job is judged as usual while the pilots are full", entry(menu) == marked, entry(menu))
-		menu._settings.setValue(CREW_LIMIT, 3, PILOT)
+		menu._cheapHireModel.setValue(CREW_LIMIT, 3, PILOT)
 		var away = [member("Hired Pilot", PILOT, h), benched(member("Benched Pilot", PILOT, h - 500)), onLeave(member("Away Pilot", PILOT, h - 400))]
 		day([member("Pilot", PILOT, capped(h))], away)
 		check("benched and on-leave crew count toward the limit: a job full with them takes no hire above my best-paid", entry(menu) == KEY, entry(menu))
 		day([member("Pilot", PILOT, h - 100)], away)
 		check("and takes a cheaper one", entry(menu) == marked, entry(menu))
-		menu._settings.setValue(CREW_LIMIT, 0, PILOT)
+		menu._cheapHireModel.setValue(CREW_LIMIT, 0, PILOT)
 		day([member("Pilot", PILOT, t - 100)])
 		check("a limit of 0 with nobody in the job: even a hire below the threshold is not marked", entry(menu) == KEY, entry(menu))
 		day([member("Pilot", PILOT, h - 100)], hired)
 		check("and with someone in it, a hire earning less than them is", entry(menu) == marked, entry(menu))
 		# Firing frees the job and hiring fills it, as CurrentGame.fireCrewmember and hireCrewmember announce it.
-		menu._settings.setValue(CREW_LIMIT, 1, PILOT)
+		menu._cheapHireModel.setValue(CREW_LIMIT, 1, PILOT)
 		var atThreshold = member("Pilot", PILOT, t)
 		var lowHired = member("Low Pilot", PILOT, t - 100)
 		day([atThreshold], [lowHired])
@@ -608,8 +629,8 @@ func run():
 		CurrentGame.emit_signal("employmentChanged")
 		check("and hiring one fills it again", entry(menu) == KEY, entry(menu))
 	CurrentGame.state.ui = {}
-	menu._settings.loadFromState()
-	check("a save game without the mod's settings gives every job the default crew limit again", everyJob(menu._settings, crewLimit.default))
+	menu._cheapHireModel.loadFromState()
+	check("a save game without the mod's settings gives every job the default crew limit again", everyJob(menu._cheapHireModel, crewLimit.default))
 
 	# Hiring and firing, as CurrentGame.hireCrewmember and fireCrewmember announce them.
 	var cheap = member("Pilot", PILOT, top + 100)
@@ -635,7 +656,7 @@ func run():
 	var bare = make(null, false)
 	yield(get_tree(), "physics_frame")
 	CurrentGame.emit_signal("dayPassed")
-	check("a menu without a Crew entry is left alone", bare._crewButton == null and bare.get_node("Logs").text == LOGS_KEY)
+	check("a menu without a Crew entry is left alone", bare._cheapHireButton == null and bare.get_node("Logs").text == LOGS_KEY)
 	menu.disable(true)
 	check("the game's disable() still disables every entry", menu.get_node("Crew").disabled and menu.get_node("Logs").disabled)
 	for m in [control, menu, bare]:
@@ -648,7 +669,7 @@ func run():
 	var to = model.SETTINGS.salaryTolerance
 	var id = manifestValue("mod_information", "id")
 	var version = "%d.%d.%d" % [manifestValue("version", "version_major"), manifestValue("version", "version_minor"), manifestValue("version", "version_bugfix")]
-	check("there is one shared settings instance, and the menu uses it", model.shared() == settings and menu._settings == settings)
+	check("there is one shared settings instance, and the menu uses it", model.shared() == settings and menu._cheapHireModel == settings)
 	check("the mod's id and name come from its manifest", settings.modId() == id and settings.modName() == manifestValue("mod_information", "name"), "%s, %s" % [settings.modId(), settings.modName()])
 	var cl = model.SETTINGS.crewLimit
 	var third = CurrentGame.occupations[2] # a job besides the pilots and the mechanics
@@ -753,6 +774,28 @@ func run():
 		check("moving the mouse over it shows the game's tooltip, giving the limit for their job, in the game's language, and how many of that job I've hired out of its crew limit", hovered == limitTip(tab, PILOT_EN, top) + "\n" + hiredLine(tab, e), hovered)
 		check("the game's tooltip took over its hint_tooltip, so Godot's own (off screen in the released game) shows nothing", badge.hint_tooltip == "", badge.hint_tooltip)
 		check("moving the mouse away hides the game's tooltip", not e.get_node("PlaySoundsOnTheseButtons").tooltipPosition.visible)
+		# A gamepad shows no hover: the tooltip shows while the entry's Hire button, where the D-pad lands, has the focus.
+		var tooltips = e.get_node("PlaySoundsOnTheseButtons")
+		e.hireButton.grab_focus()
+		var keyFocus = tooltips.tooltipPosition.visible
+		e.hireButton.release_focus()
+		Settings.controlScheme = Settings.control.gamepad
+		e.hireButton.grab_focus()
+		var padShown = tooltips.tooltipLabel.text if tooltips.tooltipPosition.visible else "(no tooltip)"
+		e.hireButton.release_focus()
+		var padHidden = not tooltips.tooltipPosition.visible
+		var plain = hireEntry(tab, dearPilot)
+		var plainTips = plain.get_node("PlaySoundsOnTheseButtons") if plain != null else null
+		if plain != null:
+			plain.hireButton.grab_focus()
+		var plainShown = plainTips != null and plainTips.tooltipPosition.visible
+		if plain != null:
+			plain.hireButton.release_focus()
+		Settings.controlScheme = Settings.control.keyMouse
+		check("gamepad: with keyboard and mouse, focusing the entry's Hire button shows no tooltip", not keyFocus)
+		check("gamepad: with a gamepad, it shows the badge's tooltip while the Hire button has the focus", padShown == hovered, padShown)
+		check("gamepad: and hides it when the button loses the focus", padHidden)
+		check("gamepad: an entry without a badge shows none", plain != null and unbadged(tab, plain) and not plainShown)
 	check("the Hire button is the game's: no color override, no tooltip", untouched(e))
 	check("and the entry is as tall as one without a badge", e != null and hireEntry(tab, dearPilot) != null and is_equal_approx(e.rect_size.y, hireEntry(tab, dearPilot).rect_size.y))
 	e = hireEntry(tab, edgeMechanic)
@@ -853,15 +896,15 @@ func run():
 	setCrew([], [])
 	var s = station()
 	yield(frames(2), "completed")
-	check("the Crew entry's tooltip tells about Shift+Click", s.crew.hint_tooltip == settingsTip(s.menu), s.crew.hint_tooltip)
+	check("the Crew entry's Shift badge has the tooltip, which tells about Shift+Click; the entry has none of its own", badgeTip(s.crew) == settingsTip(s.menu) and s.crew.hint_tooltip == "", [badgeTip(s.crew), s.crew.hint_tooltip])
 	var german = Translation.new()
 	german.locale = "de"
 	german.add_message(s.menu._CHEAP_HIRE_SETTINGS_TOOLTIP, SETTINGS_TOOLTIP_DE)
 	TranslationServer.add_translation(german)
 	TranslationServer.set_locale("de")
-	check("after a language change the tooltip is in the new language", s.crew.hint_tooltip == SETTINGS_TOOLTIP_DE % [OS.get_scancode_string(KEY_SHIFT), manifestValue("mod_information", "name")], s.crew.hint_tooltip)
+	check("after a language change the tooltip is in the new language", badgeTip(s.crew) == SETTINGS_TOOLTIP_DE % [OS.get_scancode_string(KEY_SHIFT), manifestValue("mod_information", "name")], badgeTip(s.crew))
 	TranslationServer.set_locale("en")
-	check("and back", s.crew.hint_tooltip == settingsTip(s.menu), s.crew.hint_tooltip)
+	check("and back", badgeTip(s.crew) == settingsTip(s.menu), badgeTip(s.crew))
 	click(s.crew, false)
 	yield(frames(2), "completed")
 	check("a plain click on Crew opens the Crew screen and not the settings", s.crewScreen.opened == 1 and settingsScreen(s) == null, s.crewScreen.opened)
@@ -884,7 +927,25 @@ func run():
 	var g = groups(screen)
 	check("two Tuning groups: the settings that are not per job, then the crew limit, one row per job", g.size() == 2 and g[0].get_node("Label").text == load(UI_SCRIPT).GROUP_LABEL and g[1].get_node("Label").text == cl.label, g.size())
 	check("in an Items box in the scroll, as the Tuning screen's", screen.get_node_or_null("VB/ScrollContainer/Items") is VBoxContainer)
-	check("right below the header", screen.get_node("VB/ScrollContainer").get_index() == screen.get_node("VB/HeaderWithMoney").get_index() + 1)
+	var order = []
+	for child in screen.get_node("VB").get_children():
+		order.append(child.name)
+	check("under the header, the description's window, then the groups", order == ["HeaderWithMoney", "WindowMargin", "ScrollContainer"], order)
+	var description = screen.get_node_or_null("VB/WindowMargin/Window/MarginContainer/Description")
+	var suffix = load(UI_SCRIPT).DESCRIPTION_SUFFIX
+	var missing = []
+	for key in model.SETTINGS:
+		if tr(model.SETTINGS[key].label + suffix) == model.SETTINGS[key].label + suffix:
+			missing.append(key)
+	check("every setting has a description in i18n/en.po (its label and DESCRIPTION_SUFFIX)", missing.empty(), missing)
+	check("on opening, the window shows the first row's description", description is Label and description.autowrap and description.text == th.label + suffix, description.text if description is Label else null)
+	var limitRows = groups(screen)[1].get_children() if groups(screen).size() > 1 else []
+	for row in limitRows:
+		if "tune" in row:
+			row.get_node("HSlider").grab_focus()
+			break
+	yield(frames(1), "completed")
+	check("focusing a crew limit row shows the crew limit's description", description is Label and description.text == cl.label + suffix, description.text if description is Label else null)
 	# A different crew limit for each job, so each row shows its own, and a different number hired: more pilots than
 	# their limit, as many mechanics as theirs, nobody else.
 	var step = 0
@@ -1043,6 +1104,51 @@ func run():
 	s.logs.grab_focus()
 	yield(frames(40), "completed")
 	check("focusing another menu entry hides it, as it hides the game's screens", opening and not screen.visible)
+
+	# With a gamepad: the Shift badge reads the gamepad twin while the game is played with one, and X pressed on the
+	# highlighted entry while LT is held opens the settings, as Shift+Click does (Badge.gd).
+	var shiftBadge = s.menu._cheapHireShiftBadge
+	var padModifier = shiftBadge.PAD_MODIFIER
+	var padButton = shiftBadge.PAD_BUTTON
+	var keyText = OS.get_scancode_string(KEY_SHIFT)
+	var keyRead = shiftBadge._label.text
+	Settings.controlScheme = Settings.control.gamepad
+	var padRead = shiftBadge._label.text
+	var padTip = shiftBadge.hint_tooltip
+	Settings.controlScheme = Settings.control.keyMouse
+	var keyTip = shiftBadge.hint_tooltip
+	check("gamepad: the Shift badge reads Shift with keyboard and mouse, the gamepad twin with a gamepad, and Shift again", keyRead == keyText and padRead == shiftBadge.PAD_TEXT and shiftBadge._label.text == keyText, [keyRead, padRead, shiftBadge._label.text])
+	var padExpected = tr(s.menu._CHEAP_HIRE_SETTINGS_TOOLTIP_PAD) % [shiftBadge.PAD_BUTTON_NAME, shiftBadge.PAD_MODIFIER_NAME, manifestValue("mod_information", "name")]
+	check("gamepad: its tooltip tells about the gamepad twin with a gamepad, and about Shift+Click again with keyboard and mouse", padTip == padExpected and keyTip == settingsTip(s.menu) and tr(s.menu._CHEAP_HIRE_SETTINGS_TOOLTIP_PAD) != s.menu._CHEAP_HIRE_SETTINGS_TOOLTIP_PAD, [padTip, keyTip])
+	TranslationServer.set_locale("de")
+	var germanTip = shiftBadge.hint_tooltip
+	TranslationServer.set_locale("en")
+	check("the badge's tooltip follows a change of language by itself, and back", germanTip == SETTINGS_TOOLTIP_DE % [keyText, manifestValue("mod_information", "name")] and shiftBadge.hint_tooltip == settingsTip(s.menu), [germanTip, shiftBadge.hint_tooltip])
+	Settings.controlScheme = Settings.control.gamepad
+	var opened = s.crewScreen.opened
+	s.crew.grab_focus()
+	yield(tapJoy(padButton), "completed")
+	yield(frames(5), "completed")
+	check("gamepad: X alone on the highlighted entry does nothing", not screen.visible and s.crewScreen.opened == opened)
+	yield(holdJoy(padModifier, true), "completed")
+	s.crew.disabled = true
+	yield(tapJoy(padButton), "completed")
+	yield(frames(5), "completed")
+	check("gamepad: LT+X on a disabled entry does nothing", not screen.visible and s.crewScreen.opened == opened)
+	s.crew.disabled = false
+	s.logs.grab_focus()
+	yield(tapJoy(padButton), "completed")
+	yield(frames(5), "completed")
+	check("gamepad: LT+X with another entry highlighted doesn't open these settings", not screen.visible and s.crewScreen.opened == opened)
+	s.crew.grab_focus()
+	yield(tapJoy(padButton), "completed")
+	yield(frames(5), "completed")
+	check("gamepad: LT+X on the highlighted Crew entry opens the settings, not the Crew screen", screen.visible and screen.get_node("Shower").current_animation == "show" and s.crewScreen.opened == opened)
+	yield(holdJoy(padModifier, false), "completed")
+	yield(tapJoy(JOY_BUTTON_1), "completed")
+	yield(frames(40), "completed")
+	check("gamepad: B closes them, and the entry is highlighted again", not screen.visible and s.crew.has_focus())
+	Settings.controlScheme = Settings.control.keyMouse
 
 	# After a save and a load (CurrentGame writes the state as JSON and reads it back), a new station has the values.
 	settings.setValue("salaryThreshold", newT)

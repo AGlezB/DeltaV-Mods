@@ -1,5 +1,19 @@
 # GeologyByMass - Changes
 
+## 1.4.0
+- With a gamepad, the D-pad goes down from the switch at the top of the mod's OMS tab through the *Base* slider and
+  each mineral's, and back up, and no longer leaves the tab (`SettingsUI.gd` `_linkFocus()`).
+- A slider's description shows when its value is selected with the D-pad, and when the mouse is on its value, not
+  only on its bar.
+- The rule reads the mod's saved entry once per question instead of once per mass it needs (new `Settings.gd`
+  `massRule()` and `extraMassIn()`): the arm and the drones ask about every chunk they look at, and every read of the
+  ship's config takes its lock.
+- `SettingsUI.gd`: new `GAME_SLIDER_VALUE`, `GAME_SLIDER_BAR` and `DESCRIPTION_SUFFIX`, for the paths and the suffix
+  that were written inline.
+- `OmsScreen.gd`: `_GEOLOGIST_TAB` renamed `_GEOLOGY_BY_MASS_AFTER`, so that it starts with the mod's name, as
+  DroneAltPriorities's extension of the same script names its own `_DRONE_ALT_PRIORITIES_AFTER`.
+- README: the D-pad and the descriptions on the tab, `massRule()` and `extraMassIn()`, the renamed constant.
+
 ## 1.3.0
 - With the switch on, the masses now decide for every row of the Geologist tab, not only the HUD's: the AR-1500 arm,
   the MPI Tug drones, the MLF Haul Drones and the NT Mining Companion go for a chunk your geologist has identified when

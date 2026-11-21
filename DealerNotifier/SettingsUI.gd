@@ -24,6 +24,10 @@ const GAME_ENTRY_PICTURE = "HBox/Margin"
 const GAME_ENTRY_SPRITE = "HBox/Margin/Sprite"
 const GAME_ENTRY_BUY = "HBox/Buy"
 const GAME_ENTRY_VIEWPORT = "HBox/ViewportContainer/Viewport"
+# A Tuning switch's own nodes (enceladus/Tuning/TuningBoolValue.tscn): its row, the reset button and the switch.
+const GAME_ROW = "HBoxContainer"
+const GAME_ROW_RESET = "Reset"
+const GAME_ROW_VALUE = "Value"
 # The live Dealer screen's description window, whose frame the description's copies: the margins around it (and their
 # theme), its panel and least size, the margins inside it, and the box of its two texts.
 const GAME_WINDOW_MARGIN = "VB/VBoxContainer/WindowMargin"
@@ -49,6 +53,14 @@ const SELECT_ALL = "DEALERNOTIFIER_SELECT_ALL"
 const SELECT_NONE = "DEALERNOTIFIER_SELECT_NONE"
 # Ends a ship's name key to make that of its description, as the Dealer does (Dealer.gd displayShip).
 const DESCRIPTION_SUFFIX = "_DESC"
+# The lines of text the description window keeps room for where the live Dealer screen gives no height for its own.
+const DESCRIPTION_LINES = 6
+# The right stick scrolls the description window, as it scrolls the game's lists: its actions (project.godot) and the
+# game's speed at full tilt, in px per second (enceladus/ScrollWithAnalog.gd scrollSpeed). The list below has no
+# ScrollWithAnalog of its own: the D-pad moves through it, and the list follows the focus.
+const DESCRIPTION_SCROLL_UP = "ui_scroll_up2"
+const DESCRIPTION_SCROLL_DOWN = "ui_scroll_down2"
+const DESCRIPTION_SCROLL_SPEED = 800.0
 # How long a ship is drawn before its picture is taken, in seconds, so its looks have settled. The Dealer takes its
 # entries' pictures at the end of a flicker (enceladus/Flicker.tscn).
 const PICTURE_DELAY = 0.5
@@ -57,6 +69,9 @@ var lastFocus
 var _settings = DealerNotifier.shared()
 var _base = null # the description of the selected ship's series, shown for a variant
 var _description = null
+var _descriptionPanel = null # the window's panel, whose height the Dealer's gives
+var _descriptionScroll = null # the ScrollContainer holding the window's texts
+var _descriptionAt = 0.0 # where the right stick has scrolled the texts to, in fractions of a pixel
 var _scroll = null
 var _items = null
 var _rows = {} # each row's dictionary by the row's name (its ship's name key): the same one the row holds as its `tune`
@@ -120,8 +135,9 @@ func _buttons() -> HBoxContainer:
 
 # The description's window, nested as Dealer.tscn nests its own (WindowMargin > Window > MarginContainer > the box of
 # the series' description and the ship's), without the tabs and the ship's view behind the texts, with the live Dealer
-# screen's theme, margins, panel and least size; where the game lacks them, it is plain. The texts are clipped, as the
-# Dealer clips its own.
+# screen's theme, margins, panel and least size; where the game lacks them, it is plain. The texts are in a
+# ScrollContainer with no horizontal scroll, so they wrap to the window's width and scroll where they are longer than
+# the window (_keepDescriptionHeight): the Dealer only clips its own.
 func _descriptionWindow(dealer: Control) -> Control:
 	var margin = MarginContainer.new()
 	margin.name = "WindowMargin"
@@ -130,14 +146,19 @@ func _descriptionWindow(dealer: Control) -> Control:
 	window.name = "Window"
 	window.size_flags_horizontal = SIZE_EXPAND_FILL
 	margin.add_child(window)
+	_descriptionPanel = window
 	var inside = MarginContainer.new()
 	inside.name = "MarginContainer"
-	inside.rect_clip_content = true
 	window.add_child(inside)
+	_descriptionScroll = ScrollContainer.new()
+	_descriptionScroll.name = "ScrollContainer"
+	_descriptionScroll.scroll_horizontal_enabled = false
+	_descriptionScroll.size_flags_horizontal = SIZE_EXPAND_FILL
+	inside.add_child(_descriptionScroll)
 	var texts = VBoxContainer.new()
 	texts.name = "VBoxContainer"
 	texts.size_flags_horizontal = SIZE_EXPAND_FILL
-	inside.add_child(texts)
+	_descriptionScroll.add_child(texts)
 	_base = Label.new()
 	_base.name = "Base"
 	_base.autowrap = true
@@ -165,6 +186,22 @@ func _copyMargins(from, to: MarginContainer):
 	if from is MarginContainer:
 		for side in ["left", "top", "right", "bottom"]:
 			to.add_constant_override("margin_" + side, from.get_constant("margin_" + side))
+
+# The texts' ScrollContainer as tall as the room inside the window at the Dealer's least height (its panel's and its
+# margins' share taken off), so the window keeps that height whatever the ship, and the switches below don't move; where
+# the game gives no height, DESCRIPTION_LINES lines, as Godot sizes an autowrapping Label: its font's height per line
+# and its line spacing between lines. Run in the tree, where the theme gives them.
+func _keepDescriptionHeight():
+	var inside = _descriptionScroll.get_parent()
+	var room = _descriptionPanel.rect_min_size.y - inside.get_constant("margin_top") - inside.get_constant("margin_bottom")
+	var panel = _descriptionPanel.get_stylebox("panel")
+	if panel != null:
+		room -= panel.get_minimum_size().y
+	if room <= 0:
+		var lineHeight = _description.get_font("font").get_height()
+		var spacing = _description.get_constant("line_spacing")
+		room = DESCRIPTION_LINES * lineHeight + (DESCRIPTION_LINES - 1) * spacing
+	_descriptionScroll.rect_min_size.y = room
 
 func _ready():
 	visible = false
@@ -194,12 +231,31 @@ func unfocus():
 		lastFocus.grab_focus()
 		lastFocus = null
 
+# The right stick on the description window, kept in fractions of a pixel as ScrollWithAnalog.gd keeps its scroll, and
+# taken again from the window when something else scrolled it (the mouse wheel, a new ship). Time is real time, as
+# there.
+func _process(delta):
+	if not is_visible_in_tree():
+		return
+	if not InputMap.has_action(DESCRIPTION_SCROLL_UP) or not InputMap.has_action(DESCRIPTION_SCROLL_DOWN):
+		return
+	var speed = Input.get_action_strength(DESCRIPTION_SCROLL_DOWN) - Input.get_action_strength(DESCRIPTION_SCROLL_UP)
+	if speed == 0 or abs(_descriptionScroll.scroll_vertical - _descriptionAt) > 2:
+		_descriptionAt = float(_descriptionScroll.scroll_vertical)
+	if speed == 0:
+		return
+	var bar = _descriptionScroll.get_v_scrollbar()
+	var end = max(0.0, bar.max_value - bar.page)
+	_descriptionAt = clamp(_descriptionAt + speed * DESCRIPTION_SCROLL_SPEED * delta / Engine.time_scale, 0.0, end)
+	_descriptionScroll.scroll_vertical = int(_descriptionAt)
+
 # Tuning groups as Tuning.gd fillTuneableSystems builds them, in an Items box as Tuning.tscn has: first those of the
 # settings that aren't per model (_keyGroups), then one per series (_groups), titled by it, with a switch
 # (TuningBoolValue) per ship model, named by the model's name key, which the game's Labels and Buttons translate. Each
 # ship row is then dressed as a Dealer entry (_dressRow). The screen is filled each time it opens, so the order follows
 # a language change; the description is empty until a ship's row takes the focus.
 func _fill():
+	_keepDescriptionHeight()
 	_describe(null)
 	if _items != null:
 		_scroll.remove_child(_items)
@@ -262,7 +318,13 @@ func _fill():
 			first = group
 	if first != null:
 		Tool.deferCallWhenIdle(first, "focus")
+		Tool.deferCallWhenIdle(self, "_scrollToTop")
 	_drawPictures(order)
+
+# Focusing the first row scrolls the list to its switch (the ScrollContainer's follow_focus, before the rows are laid
+# out), which hides the first group's title: the list starts at the top again.
+func _scrollToTop():
+	_scroll.scroll_vertical = 0
 
 # The groups of the settings that aren't per model, each [its title (the settings' `group`), their keys], in the order
 # of Settings.gd SETTINGS.
@@ -316,7 +378,7 @@ func _isGroupBefore(a, b) -> bool:
 # The switch's tooltip is the setting's label.
 func _dressRow(row, model):
 	var entry = _gameEntry()
-	var hbox = row.get_node("HBoxContainer")
+	var hbox = row.get_node(GAME_ROW)
 	var picture = Control.new()
 	picture.name = "Picture"
 	picture.rect_min_size = entry.pictureSize
@@ -338,11 +400,11 @@ func _dressRow(row, model):
 # Every row's switch where a Dealer entry has Buy, so the switches line up: its slot as wide as the entry's Buy button,
 # at the row's right end; no reset button. Returns the switch.
 func _alignSwitch(row) -> Control:
-	var hbox = row.get_node("HBoxContainer")
-	var reset = hbox.get_node_or_null("Reset")
+	var hbox = row.get_node(GAME_ROW)
+	var reset = hbox.get_node_or_null(GAME_ROW_RESET)
 	if reset is Control:
 		reset.visible = false
-	var value = hbox.get_node("Value")
+	var value = hbox.get_node(GAME_ROW_VALUE)
 	value.rect_min_size.x = max(value.rect_min_size.x, _gameEntry().buyWidth)
 	return value
 
@@ -392,8 +454,10 @@ func _selectAll(on: bool):
 	_bulk = false
 
 # What Dealer.gd displayShip shows of a ship: its series' description, only where it differs from the ship's own, then
-# the ship's. The Labels translate the keys, so the texts follow the game's language. No model empties the window.
+# the ship's, scrolled back to their start. The Labels translate the keys, so the texts follow the game's language. No
+# model empties the window.
 func _describe(model):
+	_descriptionScroll.scroll_vertical = 0
 	if model == null:
 		_base.text = ""
 		_base.visible = false
@@ -445,7 +509,6 @@ func _drawPicture(model, holder):
 		holder.add_child(timer)
 		_emptyHardpoints(ship)
 		ship.setDummy(true)
-		ship.dummy = true
 		ship.setReactorState(false)
 		viewport.add_child(ship)
 		ship.preheat = false

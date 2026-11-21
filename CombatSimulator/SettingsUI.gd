@@ -9,7 +9,7 @@ extends CanvasLayer
 # - "Ship" (the setting's label): the ship list (ShipList.gd), under its own description window, then Start and
 #   Cancel. The title stays short: a ship's name in it would make the tab bar wider than the screen.
 # Each description window keeps one height, DESCRIPTION_LINES lines, and a longer text scrolls in it, so nothing below
-# moves as the selection changes.
+# moves as the selection changes; with a gamepad, on the right stick.
 # - Its _input runs before the screens' (the station root's last child: Godot 3 calls _input in reverse tree order),
 #   so Esc or the gamepad's back button cancel here, and neither the screen behind nor the station's pause menu sees
 #   them.
@@ -21,7 +21,6 @@ signal startRequested()
 const CombatSimulator = preload("res://CombatSimulator/Settings.gd")
 const ShipList = preload("res://CombatSimulator/ShipList.gd")
 
-const GAME_TUNING_ITEMS = "res://enceladus/Tuning/TuningItems.tscn"
 # The theme of the Tuning screen and of the simulator's button (enceladus/Simulator/LaunchVRButton.tscn), for the
 # tabs' contents when the Tuning screen is missing.
 const GAME_THEME = "res://menu/MenuTheme.tres"
@@ -49,15 +48,21 @@ const CANCEL = "COMBATSIMULATOR_CANCEL"
 # The tabs, by their place.
 const SETTINGS_TAB_INDEX = 0
 const SHIP_TAB_INDEX = 1
-# Ends a setting's label to make the translation key of its description, as the game's Tuning screen makes them
-# (Tuning.gd tuningChanged).
-const DESCRIPTION_SUFFIX = "_DESC"
 # The lines of text each description window shows; a longer text scrolls.
 const DESCRIPTION_LINES = 6
-# The layer it draws on: the station screens' (EnceladusMenu's inner CanvasLayer), below the cursor's MouseLayer.
-const LAYER = 9
+# The right stick scrolls the description window of the tab shown, as it scrolls the game's lists: its actions
+# (project.godot) and the game's speed at full tilt, in px per second (enceladus/ScrollWithAnalog.gd scrollSpeed). The
+# D-pad can't, since nothing in the window takes the focus.
+const DESCRIPTION_SCROLL_UP = "ui_scroll_up2"
+const DESCRIPTION_SCROLL_DOWN = "ui_scroll_down2"
+const DESCRIPTION_SCROLL_SPEED = 800.0
+# The layer it draws on: the station screens', the CanvasLayer holding the Tuning screen (enceladus/Enceladus.tscn,
+# EnceladusMenu's inner CanvasLayer), below the cursor's MouseLayer. This is that layer's number in the scene, for when
+# the Tuning screen is missing.
+const LAYER_FALLBACK = 9
 
 var _settings = CombatSimulator.shared()
+var pageTheme = null # the theme of the tabs' contents, which the arena's end confirmation takes too (CombatLayer.gd)
 var _popup = null
 var _root = null
 var _tabs = null
@@ -70,16 +75,23 @@ var _shipList = null
 var _lastFocus = null
 var _rows = {} # each row's dictionary by the row's name: the same one the row holds as its `tune`
 var _keys = {} # the setting key of each row, by the row's name
+var _startCancel = [] # Start and Cancel, on both tabs
+var _descriptionScroll = 0.0 # the right stick's scroll of the description shown, in fractions of a pixel
 
 # `tuning` is the station's Tuning screen (or null), whose theme and description window the tabs copy.
 func setup(tuning):
 	name = "CombatSimulatorDialog"
-	layer = LAYER
+	layer = LAYER_FALLBACK
+	var screensLayer = tuning.get_parent() if tuning is Control else null
+	while screensLayer != null and not screensLayer is CanvasLayer:
+		screensLayer = screensLayer.get_parent()
+	if screensLayer != null:
+		layer = screensLayer.layer
 	_popup = Popup.new()
 	_popup.name = "Popup"
 	_popup.popup_exclusive = true
 	add_child(_popup)
-	var pageTheme = tuning.theme if tuning is Control and tuning.theme != null else load(GAME_THEME)
+	pageTheme = tuning.theme if tuning is Control and tuning.theme != null else load(GAME_THEME)
 	# Behind the tabs, the Tuning screen's panel: beside the tab titles, the tab bar shows what lies behind it, here the
 	# screen the dialog covers.
 	var backdrop = Panel.new()
@@ -123,10 +135,10 @@ func setup(tuning):
 
 # A tab: a box named by its title's translation key (a TabContainer shows its children's names, translated), with the
 # Tuning screen's theme for what it holds.
-func _page(title: String, pageTheme: Theme) -> VBoxContainer:
+func _page(title: String, contentTheme: Theme) -> VBoxContainer:
 	var page = VBoxContainer.new()
 	page.name = title
-	page.theme = pageTheme
+	page.theme = contentTheme
 	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	page.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_tabs.add_child(page)
@@ -144,7 +156,16 @@ func _buttons() -> HBoxContainer:
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.connect("pressed", self, entry[2])
 		buttons.add_child(button)
+		_startCancel.append(button)
 	return buttons
+
+# The game's tooltip node (Code.gd's, on this layer) gives Start and Cancel the focus and hover sounds of the game's
+# buttons, which the D-pad then plays on them too.
+func attachTooltips(tooltips):
+	if tooltips == null or not tooltips.has_method("connectSounds"):
+		return
+	for button in _startCancel:
+		tooltips.connectSounds(button)
 
 # A description window, nested as Tuning.tscn nests its own (WindowMargin > Window > … > Description, without the
 # simulator's parts), with the live Tuning screen's theme, margins and panel; where the game lacks them, it is plain.
@@ -225,6 +246,27 @@ func _input(event):
 	if isOpen() and (event.is_action_pressed("ui_cancel") or event.is_action_pressed("pause")):
 		get_tree().set_input_as_handled()
 		close()
+	# The tabs' script switches tabs on the shoulder buttons in its own _input, which runs before this one (a child's),
+	# and keeps the press only when it switches: at the first or last tab it lets it through, and the screen behind,
+	# whose tabs use the same script (enceladus/Dealer.tscn, Upgrades.tscn), would switch its own.
+	elif isOpen() and (event.is_action_pressed("ui_page_up") or event.is_action_pressed("ui_page_down")):
+		get_tree().set_input_as_handled()
+
+# The right stick on the description window of the tab shown, kept in fractions of a pixel as ScrollWithAnalog.gd keeps
+# its scroll, and taken again from the window when something else scrolled it. Time is real time, as there.
+func _process(delta):
+	if not isOpen() or not InputMap.has_action(DESCRIPTION_SCROLL_UP) or not InputMap.has_action(DESCRIPTION_SCROLL_DOWN):
+		return
+	var scroll = (_shipDescription if _tabs.current_tab == SHIP_TAB_INDEX else _description).get_parent()
+	var speed = Input.get_action_strength(DESCRIPTION_SCROLL_DOWN) - Input.get_action_strength(DESCRIPTION_SCROLL_UP)
+	if speed == 0 or abs(scroll.scroll_vertical - _descriptionScroll) > 2:
+		_descriptionScroll = float(scroll.scroll_vertical)
+	if speed == 0:
+		return
+	var bar = scroll.get_v_scrollbar()
+	var end = max(0.0, bar.max_value - bar.page)
+	_descriptionScroll = clamp(_descriptionScroll + speed * DESCRIPTION_SCROLL_SPEED * delta / Engine.time_scale, 0.0, end)
+	scroll.scroll_vertical = int(_descriptionScroll)
 
 # A tab shown gets the focus on its first row, and the ship tab on the current ship. The tabs' script focuses the new
 # tab's first button when nothing has the focus (TabsWithGamepadControl.gd _tab_changed); this comes after it.
@@ -285,7 +327,7 @@ func _fill():
 			_keys[rowName] = key
 		if tuning.empty():
 			continue
-		var group = load(GAME_TUNING_ITEMS).instance()
+		var group = load(CombatSimulator.GAME_TUNING_ITEMS).instance()
 		group.system = entry[1]
 		group.key = null
 		group.tuning = tuning
@@ -321,4 +363,4 @@ func _onTuningChanged(_group, item, to, _protocol):
 		_settings.setValue(key, to)
 	else:
 		_settings.setValue(key, _settings.fromShown(key, to))
-	_showDescription(tr(setting.label + DESCRIPTION_SUFFIX), _description)
+	_showDescription(tr(setting.label + CombatSimulator.DESCRIPTION_SUFFIX), _description)

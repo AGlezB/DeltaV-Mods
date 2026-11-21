@@ -64,6 +64,10 @@ These pages explain what each mod does, for players. The code, and the notes for
 
 - [BootSkipLogos](BootSkipLogos): the game opens straight on the title screen, without the logos first.
 
+Some mods have settings, or a screen of their own, that you open by holding Shift and clicking a station menu entry or
+the simulator's button: a small **Shift** tab beside it reminds you. With a gamepad, the tab shows the two buttons to
+use instead: highlight the entry or the button, hold the first and press the second.
+
 ## Mods that change how the game plays
 
 Most of these mods only change what you see on screen. These also change how something works in a dive:

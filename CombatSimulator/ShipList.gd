@@ -13,7 +13,6 @@ signal describe(text) # the description window's text, for the row that got the 
 
 const CombatSimulator = preload("res://CombatSimulator/Settings.gd")
 
-const GAME_TUNING_ITEMS = "res://enceladus/Tuning/TuningItems.tscn"
 # A Tuning switch's own nodes (enceladus/Tuning/TuningBoolValue.tscn): its row, the switch and the reset button.
 const GAME_ROW = "HBoxContainer"
 const GAME_ROW_SWITCH = "HBoxContainer/Value"
@@ -39,9 +38,6 @@ const GAME_HARDPOINT_SCRIPT = "res://ships/WeaponSlot.gd"
 const GAME_HARDPOINT_SCENE = "res://weapons/WeaponSlot.tscn"
 # The title of the group of the ships whose series has no other ship in the list: a translation key of i18n/en.po.
 const OTHERS_LABEL = "COMBATSIMULATOR_OTHERS"
-# Ends a translation key to make that of its description: a setting's label, as the game's Tuning screen makes them
-# (Tuning.gd tuningChanged), and a ship's name, as the Dealer does (Dealer.gd displayShip).
-const DESCRIPTION_SUFFIX = "_DESC"
 # How long a ship is drawn before its picture is taken, in seconds, so its looks have settled. The Dealer takes its
 # entries' pictures at the end of a flicker (enceladus/Flicker.tscn).
 const PICTURE_DELAY = 0.5
@@ -80,7 +76,7 @@ func _init():
 # (_groups), with a switch per model, on for the current one. Filled each time the dialog opens, so the names follow
 # a language change.
 func fill():
-	_note.text = CombatSimulator.SETTINGS.ship.label + DESCRIPTION_SUFFIX
+	_note.text = CombatSimulator.SETTINGS.ship.label + CombatSimulator.DESCRIPTION_SUFFIX
 	if _items != null:
 		_scroll.remove_child(_items)
 		_items.queue_free()
@@ -112,7 +108,7 @@ func fill():
 			_rows[rowName] = row
 			_models[rowName] = model
 			order.append(model)
-		var group = load(GAME_TUNING_ITEMS).instance()
+		var group = load(CombatSimulator.GAME_TUNING_ITEMS).instance()
 		group.system = entry[0]
 		group.key = null
 		group.tuning = tuning

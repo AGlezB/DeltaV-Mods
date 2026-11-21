@@ -5,14 +5,15 @@ extends "res://CurrentGame.gd"
 # out of the save where the game writes whatever the ship's zone. The tables CombatLayer.gd copies at Start and
 # restores at the end (dispositions, encountered ships, ship names, transponders, factions) need nothing here.
 
-# The arena (CombatLayer.gd) while a run lasts, else null. Set and cleared by the arena.
+# The arena (CombatLayer.gd) while a run lasts, else null. Set and cleared by the arena; read with is_instance_valid, as
+# PauseMenu.gd does, so an arena gone without clearing it doesn't leave a run going for the rest of the session.
 var _csArena = null
 
 # Spotting ships and chunks (hud/ShipMark.gd, hud/MineralMark.gd) and flying (ships/ship-ctrl.gd handleExperience)
 # give experience whatever the zone. During a run it is dropped; talent passes, so the crew's daily growth at the
 # station (grantXpAtStation, giveXp(days, 0, true)) goes on.
 func giveXp(talent: float, experience: float, includeInactive = false, roleRestriction = "") -> void :
-	if _csArena != null:
+	if is_instance_valid(_csArena):
 		if talent > 0:
 			.giveXp(talent, 0, includeInactive, roleRestriction)
 		return
@@ -21,24 +22,24 @@ func giveXp(talent: float, experience: float, includeInactive = false, roleRestr
 # Reactors (the Tsukuyomi's storyFlag), conversations and the tutorial set story flags whatever the zone. At the
 # station only Enceladus.gd _ready sets one, so nothing real is dropped during a run.
 func setStory(story, to, onlyRise = true):
-	if _csArena != null:
+	if is_instance_valid(_csArena):
 		return
 	return .setStory(story, to, onlyRise)
 
 # Written when a ship starts a conversation (ships/ship-ctrl.gd aiStartDialog), before it checks it has one.
 func recordEncounter(ship, where: Vector2, player):
-	if _csArena != null:
+	if is_instance_valid(_csArena):
 		return
 	return .recordEncounter(ship, where, player)
 
 # The Astrogator tab's highlights of the save's destinations.
 func setDestinationHighlight(name: String, highlight: String):
-	if _csArena != null:
+	if is_instance_valid(_csArena):
 		return
 	return .setDestinationHighlight(name, highlight)
 
 # A ship joining the fleet: what the arm holds at the end of a dive, a conversation's gift.
 func addShip(s: RigidBody2D) -> bool:
-	if _csArena != null:
+	if is_instance_valid(_csArena):
 		return false
 	return .addShip(s)

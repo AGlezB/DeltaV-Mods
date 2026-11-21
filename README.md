@@ -19,20 +19,24 @@ in its folder, has the details for modders.
 | [CombatSimulator](../../wiki/CombatSimulator) | Shift+Click on the simulator's button runs a fight at the station instead, against the enemy ships, distance, rocks and remass you pick, with nothing carried over to the save. Its wiki page explains every ship and weapon in a fight. |
 | [CrewCheapHireNotifier](../../wiki/CrewCheapHireNotifier) | Marks the Crew entry of the Enceladus Prime menu while someone cheap is for hire, and shows who on the Hire screen. |
 | [CrewHighlightJobAndSalary](../../wiki/CrewHighlightJobAndSalary) | Makes the job and the salary of every crew entry (hired and unhired) stand out on the crew screens, and dims the rest. |
-| [CrewPerfectSort](../../wiki/CrewPerfectSort) | Sorts the crew lists at Enceladus Prime: the Hire screen by salary, then occupation; Your crew by occupation, then salary. |
+| [CrewPerfectSort](../../wiki/CrewPerfectSort) | Sorts the crew lists at Enceladus Prime: the Hire screen by salary, then occupation; Your Crew by occupation, then salary. |
 | [DealerNotifier](../../wiki/DealerNotifier) | Marks the Dealer entry of the Enceladus Prime menu when a ship you are waiting for comes up for sale, and that ship on the Dealer screen. You pick the ships with Shift+Click on Dealer. |
-| [DiveDisableAdrenalineBooster](../../wiki/DiveDisableAdrenalineBooster) | The Adrenaline Booster of your ship starts every dive switched off. |
+| [DiveDisableAdrenalineBooster](../../wiki/DiveDisableAdrenalineBooster) | The Adrenaline booster of your ship starts every dive switched off. |
 | [DiveSkipTransit](../../wiki/DiveSkipTransit) | Skips a dive's cutscenes (the transit both ways, launch, astrogation, rescue, game over, the station's fade-in), charging the remass and in-game time they would have cost, or plays the transit faster without holding Space. Each skip has its own switch (Shift+Click Launch Ring Dive). |
 | [DroneAltPriorities](../../wiki/DroneAltPriorities) | Changes which chunk the tug and haul nanodrones work on first: the most valuable, as set on a new tab of the OMS. |
 | [GeologyByMass](../../wiki/GeologyByMass) | Judges the ore your geologist identifies by the mass of each mineral in it instead of its value, as set on a new tab of the OMS. |
 | [HudHideLabels](../../wiki/HudHideLabels) | Hides the titles on the screens of the dive HUD. |
-| [LidarLouderPing](../../wiki/LidarLouderPing) | The lidar's ping for sensor contacts plays louder, by as much as you set in the ship's Tuning. |
+| [LidarLouderPing](../../wiki/LidarLouderPing) | The LIDAR's ping for sensor contacts plays louder, by as much as you set in the ship's Tuning. |
 | [MarketAdvisor](../../wiki/MarketAdvisor) | Keeps the cash reserve you set, within a tolerance, by putting the rest of your cash in ore at the Mineral Market, with a Trade button that trades on the best days the price charts show, and marks the Mineral Market entry when a trade is due. You set it with Shift+Click on Mineral Market. |
 | [ServiceNotifier](../../wiki/ServiceNotifier) | Marks the Services entry of the Enceladus Prime menu when a service you pick can be bought again: one with a cooldown, such as The Twins or Jameson's Insurance, or a compensation to a faction. You pick the services with Shift+Click on Services. |
 | [ShipCopyPaste](../../wiki/ShipCopyPaste) | On the Fleet screen, copies one ship's setup onto the current ship when both are the same model: the equipment, bought at the Equipment screen's prices, the tuning, the mineral targeting and the crew aboard. |
-| [ShipHighlightTypeAndPrice](../../wiki/ShipHighlightTypeAndPrice) | Makes the type of every ship in the dealer and fleet lists stand out, and hides the ship image behind each row. |
-| [ShipSortByTypeAndPrice](../../wiki/ShipSortByTypeAndPrice) | Sorts the ship list on the dealer screen by type, then by price (cheapest first). |
+| [ShipHighlightTypeAndPrice](../../wiki/ShipHighlightTypeAndPrice) | Makes the type of every ship in the Dealer and Fleet lists stand out, and hides the ship image behind each row. |
+| [ShipSortByTypeAndPrice](../../wiki/ShipSortByTypeAndPrice) | Sorts the ship list on the Dealer screen by type, then by price (cheapest first). |
 | [TransponderAltCodes](../../wiki/TransponderAltCodes) | New transponder codes say what carries them: a ship's series and model, and whether it is a ship's lifepod, its drones, an AI core or frozen crew. |
+
+Where a mod opens its settings, or a screen of its own, with Shift+Click on a station menu entry or a button, a small
+Shift badge beside it is the reminder. With a gamepad, the badge shows the two buttons to use instead: hold the first
+and press the second on the highlighted entry or button.
 
 The two arm mods work together or alone. Do not install `CrewPerfectSort` together with `CrewSortByJobAndSalary`, the
 older mod it replaced: both sort the same lists. Nor `TransponderAltCodes` together with `AltTransponderCodes`, the
@@ -46,7 +50,7 @@ These change how something works in a dive, compared to vanilla. Each one's wiki
 - [ArmAltTargetSelection](../../wiki/ArmAltTargetSelection#changes-how-the-game-plays): which targets the arm takes, and which one first.
 - [ArmAltPullBehavior](../../wiki/ArmAltPullBehavior#changes-how-the-game-plays): how the arm brings a chunk in and holds it, on ships with a
   grinder or an excavator.
-- [DiveDisableAdrenalineBooster](../../wiki/DiveDisableAdrenalineBooster#changes-how-the-game-plays): the Adrenaline Booster starts every
+- [DiveDisableAdrenalineBooster](../../wiki/DiveDisableAdrenalineBooster#changes-how-the-game-plays): the Adrenaline booster starts every
   dive switched off, which also damps the bullet time from the pilot and the smart camera.
 - [DiveSkipTransit](../../wiki/DiveSkipTransit#changes-how-the-game-plays): a dive's cutscenes are skipped, with their remass and in-game
   time charged from the game's formulas (the switches marked in its settings affect remass); the burn away from the

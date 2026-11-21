@@ -14,8 +14,8 @@ extends "res://ships/ship-ctrl.gd"
 # row's albedo (GAME.md, Geologist).
 #
 # With the switch on, for the player's ship, an identified chunk passes a row when it holds, of some mineral switched
-# on in that row, at least the base mass plus that mineral's extra mass (Settings.gd getBaseMass, getExtraMass); its
-# value and the row's Minimum value no longer count. One set of masses serves every row. The masses are the info box's
+# on in that row, at least the base mass plus that mineral's extra mass (Settings.gd massRule); its value and the row's
+# Minimum value no longer count. One set of masses serves every row. The masses are the info box's
 # own (MineralMark.gd scanParent, with the geologist's error), which the box stores in the ship's identifiedObjects
 # (identifyMinerals / identifyValue -> ship-ctrl.gd addIdentifiedObject). A chunk not yet identified, the switch off,
 # a row without mineral targeting or another ship: the game decides.
@@ -34,12 +34,12 @@ func isValidMineralTarget(object: RigidBody2D, config: Dictionary) -> bool:
 	if identified == null or not identified[0] is Dictionary:
 		return .isValidMineralTarget(object, config)
 	var settings = _geologyByMass()
-	if not settings.isEnabled():
+	var rule = settings.massRule()
+	if rule == null:
 		return .isValidMineralTarget(object, config)
 	var masses = identified[0]
-	var base = settings.getBaseMass()
 	for mineral in config.minerals:
-		if mineral in masses and masses[mineral] >= base + settings.getExtraMass(mineral):
+		if mineral in masses and masses[mineral] >= rule.base + settings.extraMassIn(rule, mineral):
 			return true
 	return false
 

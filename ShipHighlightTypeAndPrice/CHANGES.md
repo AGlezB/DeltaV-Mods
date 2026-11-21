@@ -1,5 +1,11 @@
 # ShipHighlightTypeAndPrice - Changes
 
+## 1.0.6
+- How long a new entry is left before it is painted is the constant `SETTLE_TIME`, and the bold outline's size and
+  opacity are `BOLD_OUTLINE_SIZE` and `BOLD_OUTLINE_ALPHA`.
+- The description in `Mod.manifest` no longer says the price is highlighted: it isn't.
+- The README is laid out as the others: *What it does and why*, *For modders*.
+
 ## 1.0.5
 - The README's *Disclaimer* no longer names the author.
 

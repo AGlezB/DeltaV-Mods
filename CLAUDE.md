@@ -3,12 +3,12 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 The repository's documentation is imported below: `README.md` (the mods, for players) and `MODDING.md` (the folders
-outside the repo, how the game loads a mod and how these mods hook in, packaging and releasing, the conventions and
-the game's terms). `GAME.md`, how the game works behind those terms (formulas, figures, spawn rules, what decides
-what), isn't imported, to keep every session light: read a term's section there before relying on how that part of
-the game works. The test harness's documentation, `_tests\README.md`, loads with `_tests\CLAUDE.md` when working in
-`_tests\`; read it before running the tests to compare with its baseline. Follow the conventions in every change, and
-keep these docs up to date as they ask.
+outside the repo, how the game loads a mod and how these mods hook in, packaging and releasing, testing, the drone
+bench, the users' wiki, the conventions and the game's terms). `GAME.md`, how the game works behind those terms
+(formulas, figures, spawn rules, what decides what), isn't imported, to keep every session light: read a term's
+section there before relying on how that part of the game works. The test harness's documentation,
+`_tests\README.md`, loads with `_tests\CLAUDE.md` when working in `_tests\`; read it before running the tests to
+compare with its baseline. Follow the conventions in every change, and keep these docs up to date as they ask.
 
 [@README.md](README.md)
 

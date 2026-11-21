@@ -17,7 +17,7 @@ const LOUDER_PING_DEMO_RANGES = [1.0, 0.5, 0.1]
 const LOUDER_PING_DEMO_GAP = 0.25
 const LOUDER_PING_DEMO_INTERVAL = 3.0
 
-# The slider's key: its name and, with "_DESC", its description in Translations.csv, and where each ship keeps its
+# The slider's key: its name and, with "_DESC", its description in i18n/en.po, and where each ship keeps its
 # value (tuning.Hud.<key> in the ship's config, saved with the game).
 const _LOUDER_PING_TUNE = "TUNE_LIDARLOUDERPING_GAIN"
 const _LOUDER_PING_BUS_SUFFIX = " (LidarLouderPing)"

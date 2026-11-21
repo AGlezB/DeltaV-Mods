@@ -147,10 +147,10 @@ func makeScreens():
 
 # An entry as Dealer.gd doAddShips makes one: a ship of the config (the current one's a copy, as
 # CurrentGame.getOwnedShips builds it), `owned` and `tradeIn` set before it enters the list, `current` after.
-func makeEntry(list, full: Dictionary, owned: bool, isCurrent: bool):
+func makeEntry(list, full: Dictionary, owned: bool, isCurrent: bool, scene = ENTRY):
 	var ship = load("res://harness/fleet_ship.gd").new()
 	ship.useConfig(full)
-	var entry = load(ENTRY).instance()
+	var entry = load(scene).instance()
 	entry.ship = ship
 	entry.owned = owned
 	entry.tradeIn = 0
@@ -268,6 +268,15 @@ func escKey():
 	event.scancode = KEY_ESCAPE
 	return event
 
+# A press and release of a gamepad button (JOY_*), as Input delivers a player's: the actions it is bound to follow
+# (Godot's defaults: the D-pad moves the focus), then the focused control gets it. Input hands parsed events on at the
+# next frame, so this waits for it.
+func tapJoy(button):
+	var event = InputEventJoypadButton.new()
+	event.button_index = button
+	yield(tap(event), "completed")
+	yield(get_tree(), "idle_frame")
+
 func pixels(icon: Texture) -> PoolByteArray:
 	return icon.get_data().get_data()
 
@@ -278,6 +287,8 @@ func run():
 	CurrentGame.state.ship = spareShip()
 	CurrentGame.state.garage = [templateShip(), otherModelShip()]
 	CurrentGame.state.shipNames = {"SE1-0001": "Tortoise", "SE1-0002": "Hare"}
+	# The crew the ships' lists name, hired (the game's state.crew, by full name).
+	CurrentGame.state.crew = {"Ann": {"fullName": "Ann"}, "Bob": {"fullName": "Bob"}, "Cid": {"fullName": "Cid"}}
 	player = load("res://harness/fleet_ship.gd").new()
 	player.useConfig(CurrentGame.state.ship)
 	# Before the items are made: each caches its slot's count the first time it is priced (SystemShipUpgradeUI.gd
@@ -546,6 +557,42 @@ func run():
 	press(paste[spare])
 	yield(idle(3), "completed")
 	check("a template whose crew list is empty: nobody aboard", lists[0].text == bullets(spare, settingsLines + [tr(spare._SHIP_COPY_PASTE_TEXT_CREW_NOBODY)]), lists[0].text)
+	# The game drops someone fired from the current ship's list only (CurrentGame.gd fireCrewmember).
+	dialog.hide()
+	garageConfig("SE1-0001").config.preferredCrew = ["Ann", "Gone"]
+	press(paste[spare])
+	yield(idle(3), "completed")
+	check("a template whose list still names someone fired since: only those still employed are listed", lists[0].text == bullets(spare, settingsLines + [tr(spare._SHIP_COPY_PASTE_TEXT_CREW) % "Ann"]), lists[0].text)
+	press(ok)
+	yield(idle(), "completed")
+	check("and only they are copied", same(config.get("preferredCrew"), ["Ann"]), config.get("preferredCrew"))
+
+	# An empty slot holds the slot's default item, as the Equipment screen counts it (Upgrades.gd
+	# updatePricesAndAvailability): None on one ship and nothing on the other are the same.
+	var none = items["SYSTEM_NONE@weaponSlot.left.type"]
+	none.default = true
+	var templateLeft = garageConfig("SE1-0001").config.weaponSlot.left.duplicate(true)
+	garageConfig("SE1-0001").config.weaponSlot.left = {"type": "SYSTEM_NONE"}
+	var spareLeft = config.weaponSlot.left.duplicate(true)
+	config.weaponSlot.erase("left")
+	player.useConfig(CurrentGame.state.ship)
+	var plan = spare._shipCopyPastePlan(garageConfig("SE1-0001"), player, equipment.get_node("Items").get_children())
+	var leftBought = false
+	for item in plan.buy:
+		leftBought = leftBought or item.slot == "weaponSlot.left.type"
+	check("an empty slot and its default item (None) count as the same: nothing bought for it, nothing listed as not copied", not leftBought and not plan.kept.has("weaponSlot.left.type"), [plan.buy.size(), plan.kept.keys()])
+	garageConfig("SE1-0001").config.weaponSlot.erase("left")
+	config.weaponSlot.left = {"type": "SYSTEM_NONE"}
+	player.useConfig(CurrentGame.state.ship)
+	plan = spare._shipCopyPastePlan(garageConfig("SE1-0001"), player, equipment.get_node("Items").get_children())
+	leftBought = false
+	for item in plan.buy:
+		leftBought = leftBought or item.slot == "weaponSlot.left.type"
+	check("and the other way round", not leftBought and not plan.kept.has("weaponSlot.left.type"), [plan.buy.size(), plan.kept.keys()])
+	none.default = false
+	garageConfig("SE1-0001").config.weaponSlot.left = templateLeft
+	config.weaponSlot.left = spareLeft
+	player.useConfig(CurrentGame.state.ship)
 
 	# Closing the Fleet screen with the dialog open
 	fleet.visible = false
@@ -566,6 +613,26 @@ func run():
 		translated = translated and tr(key) != key
 	check("a language without them shows the English texts", translated)
 	TranslationServer.set_locale(locale)
+
+	# With a gamepad: an entry with the game's tooltip node (SystemBuyUI.tscn has one), which takes in the entry's
+	# buttons a node per frame from its _ready on, Copy and Paste among them, since the entry adds them in its own
+	# _ready. The tooltip then shows when a button gets the focus, as on hover, so the D-pad shows why Copy is disabled.
+	var pad = makeEntry(list, otherModelShip(), true, false, "res://harness/dealer_entry.tscn")
+	yield(idle(60), "completed")
+	var tooltips = pad.get_node("PlaySoundsOnTheseButtons")
+	var padCopy = pad.get_node("HBox/" + copyName)
+	var padPaste = pad.get_node("HBox/" + pasteName)
+	check("gamepad: the entry's tooltip node takes Copy and Paste in", tooltips.tooltips.has(padCopy) and tooltips.tooltips.has(padPaste), tooltips.tooltips.keys())
+	padCopy.grab_focus()
+	check("gamepad: a disabled Copy shows why when it gets the focus", padCopy.disabled and tooltips.tooltipPosition.visible and tooltips.tooltipLabel.text == pad._SHIP_COPY_PASTE_TIP_COPY_MODEL, tooltips.tooltipLabel.text)
+	var padUse = pad.get_node("HBox/Use")
+	padUse.grab_focus()
+	yield(tapJoy(JOY_DPAD_LEFT), "completed")
+	var left = pad.get_focus_owner()
+	yield(tapJoy(JOY_DPAD_RIGHT), "completed")
+	var right = pad.get_focus_owner()
+	check("gamepad: the D-pad goes from Use to Copy and back", left == padCopy and right == padUse, [left, right])
+	padUse.release_focus()
 
 	# Other mods that find the entries by script (ShipHighlightTypeAndPrice, ShipSortByTypeAndPrice)
 	check("the entries' script keeps the game's path", spare.get_script().resource_path == "res://enceladus/SystemBuyUI.gd" and sale.get_script().resource_path == "res://enceladus/SystemBuyUI.gd")

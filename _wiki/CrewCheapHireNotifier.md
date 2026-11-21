@@ -4,14 +4,14 @@ The station menu tells you when someone cheap is for hire, and the Hire screen s
 
 - **The station menu.** Without the mod, the menu's Crew entry always reads *Crew*. With the mod, it reads
   **Crew (\*)** while someone cheap is for hire, so you know when the Hire screen is worth a look without opening it
-  every day.
+  every day. A small badge beside the entry tells you how to open the mod's settings (see [Settings](#settings)).
 - **The Hire screen.** Everyone cheap gets a small green badge on their entry: **CCHN**, then how many people with
   their job you have hired and how many you want (its **Crew limit**, see below). Point at the badge to see your limit
-  for their job, with those two numbers in words.
+  for their job, with those two numbers in words; with a gamepad, highlight their **Hire** button.
 
 | Without the mod | With the mod |
 |---|---|
-| ![The station menu, with the Crew entry as the game shows it](images/CrewCheapHireNotifier-menu-without.png) | ![The station menu, with the Crew entry marked while someone cheap is for hire](images/CrewCheapHireNotifier-menu-with.png) |
+| ![The station menu, with the Crew entry as the game shows it](images/CrewCheapHireNotifier-menu-without.png) | ![The station menu, with the Crew entry marked while someone cheap is for hire, and the Shift badge beside it](images/CrewCheapHireNotifier-menu-with.png) |
 | ![Someone on the Hire screen](images/CrewCheapHireNotifier-hire-without.png) | ![The same person, with the green CCHN badge above their details, giving how many of their job you have hired and want](images/CrewCheapHireNotifier-hire-with.png) |
 
 ### Who counts as cheap
@@ -34,9 +34,13 @@ when you change a setting.
 
 ## Settings
 
-Hold **Shift** and click the Crew entry to open the settings (a plain click still opens the Crew screen). They show
-where the Tuning screen does, and close with Esc or when you pick another entry of the menu. A change applies at once.
-Each save game keeps its own settings.
+Hold **Shift** and click the Crew entry to open the settings (a plain click still opens the Crew screen). With a
+gamepad, highlight the Crew entry, hold **LT** and press **X**. The small badge beside the entry reminds you: it reads
+**Shift**, or **LT+X** while you play with a gamepad. Point at it with the mouse to see how to open the settings.
+
+The settings show where the Tuning screen does, and close with Esc (B on a gamepad) or when you pick another entry of
+the menu. At the top, a window tells you what the setting you have selected does. A change applies at once. Each save
+game keeps its own settings.
 
 The first group, *Cheap hire alert*:
 
@@ -49,7 +53,7 @@ Then *Crew limit*, one row per job: how many people with that job you want. It s
 you lower it, and goes from 0 to 10. Each row shows how many people with that job you have hired, then the limit:
 in green when they are the same, in light red when you have hired more.
 
-![The settings screen, with the Cheap hire alert and Crew limit groups at their starting values, each Crew limit row after how many of that job you have hired](images/CrewCheapHireNotifier-settings.png)
+![The settings screen, with the Salary threshold selected and its description at the top, then the Cheap hire alert and Crew limit groups at their starting values, each Crew limit row after how many of that job you have hired](images/CrewCheapHireNotifier-settings.png)
 
 ## Works with other mods
 
@@ -64,7 +68,10 @@ See [Installing mods](Home#installing-mods).
 game-checked: 1.93.1
 CrewCheapHireNotifier/i18n/en.po CREWCHEAPHIRENOTIFIER_ALERT = "%s (*)" -> Crew (*) | images/CrewCheapHireNotifier-menu-with.png
 CrewCheapHireNotifier/i18n/en.po CREWCHEAPHIRENOTIFIER_BADGE = "%s %d/%d" | images/CrewCheapHireNotifier-hire-with.png
+CrewCheapHireNotifier/Badge.gd PAD_MODIFIER_NAME = "LT" -> LT
+CrewCheapHireNotifier/Badge.gd PAD_BUTTON_NAME = "X" -> X
 CrewCheapHireNotifier/i18n/en.po CREWCHEAPHIRENOTIFIER_GROUP = "Cheap hire alert" | images/CrewCheapHireNotifier-settings.png
+CrewCheapHireNotifier/i18n/en.po CREWCHEAPHIRENOTIFIER_SALARY_THRESHOLD_DESC = "Marks Crew in the station menu while someone for hire earns this much or less.\n\nIn a job whose crew is full (see Crew limit), only someone earning less than your best-paid crew member in that job counts, whatever this says." | images/CrewCheapHireNotifier-settings.png
 CrewCheapHireNotifier/Settings.gd SETTINGS.salaryThreshold.default = 1000 -> 1,000 E$ | images/CrewCheapHireNotifier-settings.png
 CrewCheapHireNotifier/Settings.gd SETTINGS.salaryThreshold.min = 0 -> 0 E$
 CrewCheapHireNotifier/Settings.gd SETTINGS.salaryThreshold.max = 10000 -> 10,000 E$

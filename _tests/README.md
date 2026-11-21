@@ -72,26 +72,27 @@ ServiceNotifier: stubs of a row of the Services screen, its insurance row and it
 the game's market code: the prices drawn from a save's seed and moved by the trades in its log (`state.logs`, which
 `logEvent` keeps as the game keeps it where a suite gives the state one), the stored minerals, and the price chart's
 prediction error.
-The game's `Shipyard` (which makes the rescue ship, recorded; for the `dealer` suite, the ship models' scenes,
-aliases and default configs (`getDefaultConfigByName`, falling back to the base model's, as the game's), and a
+The game's `Shipyard` (which makes the rescue ship, recorded; for the `dealer` suite, the ship models' scenes, aliases
+and default configs (`getDefaultConfigByName`, falling back to the base model's, as the game's), and a
 `createShipByConfig` that records each config, keeps it and its `config` by reference and, as the game's, registers a
 transponder for a config without one; and, as the game's, the build `stripEmpheralsFromConfig` keys codes by,
 `getBuildConfigByName`, `createShipBuildByName`, and a `createShipByName` that makes a model with a scene from its
-default config),
-`K2RGB`, `Factions` (with the game's `frozenFactions`, and the dispositions a suite sets, read and adjusted with the
-game's `getDispositionTowards` and `adjustFactionDisposition`, for the Services screen's compensation rows), `Namer`
-(fixed names: "Ann Bell", a ship name from its seed), `Agenda` (which the game's
-`CurrentGame.gd` names) and `Achivements` autoloads are stubs (`harness/stubs/`), in the game's order, so the game's
-scripts that name them compile. The drone bench (`_bench\README.md`) reuses these stubs and the mod loader, so they
-also hold what its game scripts read (`Settings` particle settings, `Factions.noFaction`,
-`CurrentGame.isInSimulatiorRange`). A script compiled once the autoloads exist has its calls on them checked against the
-stubs' scripts, arguments included, so the stubs take the game's arguments (`Shipyard.createShipByName`); one compiled
-while they are being created, from a `ModMain`'s `_init`, isn't checked (found with the game's `CurrentGame.gd`). It
-packages each mod as a release zip is laid out (MODDING.md *Packaging and releasing*, without the `LICENSE` copy) and
-loads the zips as `ModLoader.gd` does, at the same moment (`_tests\harness\loader.gd` is the `ModLoader` autoload, and
-loads in its `_init`; the autoloads keep the game's order), so the zip layout is tested too. Logs: `TempDir\tests\logs`. Godot and
-these folders come from `paths.local.psd1` (MODDING.md *Folders outside the repo*), or from the parameters `-GodotPath`,
-`-DecompiledRoot`, `-GameSource` and `-WorkDir`.
+default config), `K2RGB`, `Factions` (with the game's `frozenFactions`, and the dispositions a suite sets, read and
+adjusted with the game's `getDispositionTowards` and `adjustFactionDisposition`, for the Services screen's compensation
+rows), `Namer` (fixed names: "Ann Bell", a ship name from its seed), `Agenda` (which the game's `CurrentGame.gd` names),
+`Achivements` and `Debug` (whose logging the game's scripts call) autoloads are stubs (`harness/stubs/`), with the
+`Settings`, `Loader` and `CurrentGame` stubs named above, in the game's order, so the game's scripts that name them
+compile. The drone bench (`_bench\README.md`) reuses these stubs and the mod loader, so they also hold what its game
+scripts read and what the mods' badges read (`Settings` particle settings, its `control` enum and a `controlScheme` that
+emits `controlSchemeChaged` on a change, as the game's, `Factions.noFaction`, `CurrentGame.isInSimulatiorRange`). A
+script compiled once the autoloads exist has its calls on them checked against the stubs' scripts, arguments included,
+so the stubs take the game's arguments (`Shipyard.createShipByName`); one compiled while they are being created, from a
+`ModMain`'s `_init`, isn't checked (found with the game's `CurrentGame.gd`). It packages each mod as a release zip is
+laid out (MODDING.md *Packaging and releasing*, without the `LICENSE` copy) and loads the zips as `ModLoader.gd` does,
+at the same moment (`_tests\harness\loader.gd` is the `ModLoader` autoload, and loads in its `_init`; the autoloads keep
+the game's order), so the zip layout is tested too. Logs: `TempDir\tests\logs`. Godot and these folders come from
+`paths.local.psd1` (MODDING.md *Folders outside the repo*), or from the parameters `-GodotPath`, `-DecompiledRoot`,
+`-GameSource` and `-WorkDir`.
 
 ```powershell
 .\_tests\run.ps1                                               # every suite, its own mods, the game's order
@@ -112,25 +113,24 @@ DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos, `lidar` loads LidarLou
 `transponder` loads TransponderAltCodes, `combat` loads CombatSimulator, `drones` loads DroneAltPriorities and
 GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
 
-- `units`: the claude.ai unit tests (`arm/main.gd`) nearly verbatim, on synthetic arms around the game's
-  `DockingArm.gd`. TargetSelection: area geometry on turned, scaled and offset arms, reach, the strip, the weighted
-  pick, keeping the current target, switch off/on, intake and entry point. PullBehavior: where the pull goes (20
-  cases: feeding or not, grinder or excavator, a block of hull; since 1.6.0 held at the dock slot by the mod while not
-  feeding, and while feeding pulled along its path, kept off the hull, or straight in, never outwards, once in line
-  with the opening), the EIME's claws, the corridor's edge (pulled straight in exactly while in line with the
-  opening), closed beak, switching ship types, cost, a target held at the dock slot while the ship accelerates
-  (pushed along with it, never ahead of it, the ship taking the opposite push: the 1.3.0 bug flung it away). Plus 4
-  checks on the real
+- `units` (`suites/units.gd`): the claude.ai unit tests (its `arm/main.gd`) nearly verbatim, on synthetic arms around
+  the game's `DockingArm.gd`. TargetSelection: area geometry on turned, scaled and offset arms, reach, the strip, the
+  weighted pick, keeping the current target, switch off/on, intake and entry point. PullBehavior: where the pull goes
+  (20 cases: feeding or not, grinder or excavator, a block of hull; since 1.6.0 held at the dock slot by the mod while
+  not feeding, and while feeding pulled along its path, kept off the hull, or straight in, never outwards, once in line
+  with the opening), the EIME's claws, the corridor's edge (pulled straight in exactly while in line with the opening),
+  closed beak, switching ship types, cost, a target held at the dock slot while the ship accelerates (pushed along with
+  it, never ahead of it, the ship taking the opposite push: the 1.3.0 bug flung it away). Plus 4 checks on the real
   Eagle-Prospector-VP rig, including the hull inertia `moving` uses. A group whose mod is not loaded runs "control"
   checks of the game alone.
-- `still` (9 cases, `arm/real.gd`) and `moving` (16 cases, `arm/real_move.gd`): ArmAltPullBehavior bringing a chunk
-  in on a simulated Eagle-Prospector-VP, standing still, held in place, cruising at 10–40 m/s or turning, feeding
-  or not; two start points are where the author's in-game logs started. Each case expects the chunk in between the
-  rotors, its first touch of one on the inner side (facing the gap) and never on a rotor's outer half (the harness's
-  rotors don't collide, so the case ends at that touch), held at the dock slot, or moved straight forward first and
-  then held there, the mod never handing it back to the game's pull, and prints how long it took. The feeding cases
-  behind the red line beside the hull also have a time limit (1.5.0's times + 25 %, below 1.4.0's), so a slow-down
-  fails.
+- `still` (9 cases, `suites/still.gd`, the claude.ai `arm/real.gd`) and `moving` (16 cases, `suites/moving.gd`, its
+  `arm/real_move.gd`): ArmAltPullBehavior bringing a chunk in on a simulated Eagle-Prospector-VP, standing still, held
+  in place, cruising at 10–40 m/s or turning, feeding or not; two start points are where the author's in-game logs
+  started. Each case expects the chunk in between the rotors, its first touch of one on the inner side (facing the gap)
+  and never on a rotor's outer half (the harness's rotors don't collide, so the case ends at that touch), held at the
+  dock slot, or moved straight forward first and then held there, the mod never handing it back to the game's pull, and
+  prints how long it took. The feeding cases behind the red line beside the hull also have a time limit (1.5.0's times +
+  25 %, below 1.4.0's), so a slow-down fails.
 - `hold` (`suites/hold.gd`): ArmAltPullBehavior holding a chunk, and feeding it, while the simulated
   Eagle-Prospector-VP turns and accelerates, flown by a strong autopilot (the commanded turn rate ramps up at a set
   rate). The arm's limits are worked out from its own values (its strength, the fastest turn it can hold a target
@@ -146,29 +146,30 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   rotor's inner side. Distances allow for the harness's one-frame offset (the ship is moved before the physics step,
   the chunk during it, so the mod sees the ship a frame ahead): the ship's speed at the point times a frame; feeding
   while turning and braking starts at 20 m/s forward to keep that offset small. Combinations beyond the arm's strength
-  even held closest, and a 15 t target turning while braking, are notes, not checks.
-- `dive` (`dive/main.gd`): the player's Adrenaline Booster (the game's `CabinLight.gd`) starts disabled; another
-  ship's booster, other cabin-light systems and a light with no ship are untouched; switching it on sticks; it gives
-  adrenaline only when enabled. The control check (the game alone starts it enabled) runs on the game's own script,
-  the base of the extension, so it needs no separate run.
+  even held closest, and a 15 t target turning while braking, are notes, not checks. And while the mod pulls, the arm's
+  power (its OMS entry) shows what the pull draws, by the game's formula.
+- `dive` (`suites/dive.gd`, the claude.ai `dive/main.gd`): the player's Adrenaline booster (the game's `CabinLight.gd`)
+  starts disabled; another ship's booster, other cabin-light systems and a light with no ship are untouched; switching
+  it on sticks; it gives adrenaline only when enabled. The control check (the game alone starts it enabled) runs on the
+  game's own script, the base of the extension, so it needs no separate run.
 - `boot` (`suites/boot.gd`): runs with `_tests\harness\boot.tscn` as the main scene (a scene path on Godot's
   command line), whose root has the game's `Boot.gd`, so the engine loads it after the autoloads, as the game loads
   `Boot.tscn`. Checks that this startup scene got the extension, runs the game's own start-up and then asks for the
   title screen; that the first launch (`Settings.firstBoot`) keeps the logos; and, as control, that the game's
   script alone does not leave them. A `Loader` stub records the calls instead of switching scenes.
-- `lidar` (`suites/lidar.gd`): hidden lidars built in code around the game's `LIDAR.gd`, with a `Bleep` on the
+- `lidar` (`suites/lidar.gd`): hidden LIDARs built in code around the game's `LIDAR.gd`, with a `Bleep` on the
   game's `PitchAdjustedAudio.gd` that records each `play()` (`harness/recording_bleep.gd`), under stubs of the HUD and
   the ship (`harness/lidar_reader.gd`, `lidar_ship.gd`). Checks that the slider is registered right below the Tuning
   switch, in its group, with the mod's range, and stays there; that its value (clamped, the default for a non-number)
   moves the ping to the mod's bus, which sends to its own bus (`ShipBowels`, or `SFX`) with the gain, and a gain of 0
-  back to its own bus; that the bus is shared, not added twice, and that a lidar without a ping is left alone; that
-  the switch still sets `doBleep`. The demo, on a preview's lidar (`dynamicConnect`) with a synthetic sound, driven
+  back to its own bus; that the bus is shared, not added twice, and that a LIDAR without a ping is left alone; that
+  the switch still sets `doBleep`. The demo, on a preview's LIDAR (`dynamicConnect`) with a synthetic sound, driven
   frame by frame with the game's `TuningFloatValue` row focused: the game's volume and pitch for each distance, the
   spacing and the interval, the preview's own pings muted, nothing with another row, no focus, the switch off or a
-  lidar that isn't a preview's. And the texts of `i18n/en.po`, also in a language without them. The control checks (the
+  LIDAR that isn't a preview's. And the texts of `i18n/en.po`, also in a language without them. The control checks (the
   ping stays on its bus) run on the game's own script.
 - `hud` (`suites/hud.gd`): trees built in code with the node paths and types of the OCP-209's HUD
-  (`hud/Display-OCP209.tscn`), the station's Upgrades screen and the `J` screen (`hud/OMS.tscn`), each scene root
+  (`hud/Display-OCP209.tscn`), the station's Equipment screen and the OMS (`hud/OMS.tscn`), each scene root
   marked by its `filename`; the HUD is added in one go under stubs of the ship and its Hud (the `lidar` suite's),
   as `Hud.gd` `instance()` does. Checks that each title on the HUD (and the feed sub-scene's) is hidden from the
   first frame when its key is in the mod's `HIDDEN_KEYS` and drawn when not, also the LIDAR's, which the game's
@@ -215,23 +216,34 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   updates); the tooltip follows a language change. A new entry is
   hovered a frame after it is made, once its containers have laid it out. With CrewPerfectSort loaded too (`-Mods
   CrewCheapHireNotifier,CrewPerfectSort`), the list is sorted and the badges stay. Then a station built as
-  `enceladus/Enceladus.tscn` nests it (the menu, and the game's `HidingMarginContainer.gd` with stubs of the Crew and Tuning screens, `harness/crew_screen.gd`),
-  clicked through the scene tree's input: the tooltip, also after a language change; Shift+Click opens the
-  settings and not the Crew screen, a plain click the Crew screen, a disabled entry nothing; the screen copies
-  Tuning's frame and place; it has two groups in an `Items` box right below the header (the settings that are not per
-  job, then the crew limit, one row per job named by its key, in alphabetical order of the jobs' names whatever the case, and in a second language that language's order; test names for all four jobs in both), each row with its range, step and
-  value (each job's own); each crew limit row's value shows how many of its job are hired before its limit, as the
-  mod's text puts them (more pilots hired than their limit, as many mechanics as theirs, nobody else), also once its
-  slider is moved, in the game's `CrewBio.gd` worse-stat colour over the limit, its better-stat colour at it and the
-  game's own under it, on opening and as the mechanics' slider moves through all three, and the other rows show
-  theirs as the game does; opening it stores nothing; moving a slider (the threshold, the tolerance, the pilots' crew
-  limit) flips the mark at once and stores the value (the pilots' only); reset;
-  Esc (handled, so `harness/unhandled_probe.gd`, standing in for the pause menu, doesn't get it), the controller's B
-  and Start, and focusing another entry close it; after a JSON round trip of the state a new station has the saved
-  values; and without a Tuning screen there is no tooltip and Shift+Click is a plain click. Keys and buttons are sent as real
-  input events in the idle part of a frame, with the game's bindings: a bare `InputEventAction`, or one sent during
-  physics, doesn't make `Input.is_action_just_pressed` true. The control checks (the entry keeps its key; a Hire
-  screen entry gets no badge) run on the game's own scripts.
+  `enceladus/Enceladus.tscn` nests it (the menu, and the game's `HidingMarginContainer.gd` with stubs of the Crew and
+  Tuning screens, `harness/crew_screen.gd`), clicked through the scene tree's input: the tooltip, on the entry's Shift
+  badge (the entry has none of its own), also after a language change; Shift+Click opens the settings and not the Crew
+  screen, a plain click the Crew screen, a disabled entry nothing; the screen copies Tuning's frame and place; it has
+  two groups in an `Items` box right below the header (the settings that are not per job, then the crew limit, one row
+  per job named by its key, in alphabetical order of the jobs' names whatever the case, and in a second language that
+  language's order; test names for all four jobs in both), each row with its range, step and value (each job's own);
+  each crew limit row's value shows how many of its job are hired before its limit, as the mod's text puts them (more
+  pilots hired than their limit, as many mechanics as theirs, nobody else), also once its slider is moved, in the game's
+  `CrewBio.gd` worse-stat colour over the limit, its better-stat colour at it and the game's own under it, on opening
+  and as the mechanics' slider moves through all three, and the other rows show theirs as the game does; opening it
+  stores nothing; moving a slider (the threshold, the tolerance, the pilots' crew limit) flips the mark at once and
+  stores the value (the pilots' only); reset; Esc (handled, so `harness/unhandled_probe.gd`, standing in for the pause
+  menu, doesn't get it), the controller's B and Start, and focusing another entry close it; after a JSON round trip of
+  the state a new station has the saved values; and without a Tuning screen there is no tooltip and Shift+Click is a
+  plain click. Keys and buttons are sent as real input events in the idle part of a frame, with the game's bindings: a
+  bare `InputEventAction`, or one sent during physics, doesn't make `Input.is_action_just_pressed` true. With a gamepad
+  (the `Settings` stub's `controlScheme` set as the game sets it): the Shift badge reads the gamepad twin and its
+  tooltip tells about it, and both go back with keyboard and mouse; X alone, LT+X on a disabled entry and LT+X with
+  another entry highlighted do nothing; LT+X on the highlighted entry opens the settings and not the Crew screen, and B
+  closes them, the entry highlighted again; a Hire screen entry's badge shows its tooltip while the entry's Hire button
+  has the focus, only with a gamepad, and hides it when the button loses it. The settings screen: the description's
+  window under the header, a description in `i18n/en.po` for every setting (its label and `DESCRIPTION_SUFFIX`), the
+  first row's on opening and the crew limit's on its rows. Also a tolerance below its minimum clamped, every job's crew
+  limit at its default, also from a save without the mod's settings, a menu without a Crew entry left alone, and one
+  shared settings instance. The control checks (the entry keeps its key; a Hire screen entry gets no badge) run on the
+  game's own scripts.
+
 - `geology` (`suites/geology.gd`): the tab on HUDs from `harness/geology_hud.tscn` (the game's `Hud.gd`, with an
   `Inventory` placeholder of `harness/geology_oms.tscn`: the game's `OMS.gd` and `TabsWithGamepadControl.gd` over the
   OMS's four role tabs) on `harness/geology_ship.gd`, a ship stub whose `isValidMineralTarget` records each call in
@@ -270,7 +282,10 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   `i18n/en.po`, also in a language without them. With DiveSkipTransit too, in either order (both extend
   `ship-ctrl.gd`), the same checks pass. The control checks (the OMS keeps its four tabs; the HUD asks its ship with its
   own row; the ship judges by value against the Minimum value; the Geologist tab shows the HUD's and the arm's Minimum
-  value, not the dock's) run on the game's own scripts.
+  value, not the dock's) run on the game's own scripts. With a gamepad: each slider's value carries its description,
+  the base's and the minerals'; down goes from the switch through the base slider's value and each mineral's and stays
+  on the last, left and right stay where they are, up goes back to the switch and stays there, and walking the tab
+  changes nothing.
 - `fleet` (`suites/fleet.gd`): Fleet entries built from the stub `SystemBuyUI.tscn` (the game's `SystemBuyUI.gd`) as
   `Dealer.gd` `doAddShips` makes them, under a Fleet screen stub (`harness/fleet_screen.gd`, which records
   `shipChanged` and `addShips`, and the Esc presses that reach its `_input`, once per frame, as `Dealer.gd` closes the
@@ -293,7 +308,7 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   entry's Buy confirmation untouched; in the menu theme's window frame, with the game's OK and CANCEL, Cancel focused;
   the question naming both ships in the menu font; the Copied list (each piece bought, by its Equipment name, with its
   price; tuning, mineral targeting, slot filters; the crew aboard) and the Not copied list (what isn't sold, a missing
-  lidar read as the ship's default and a missing number as none; then what Paste never copies), under their headings,
+  LIDAR read as the ship's default and a missing number as none; then what Paste never copies), under their headings,
   side by side, in the prose font (the entry's `HBox/Margin`, `Subwindow.theme`); the summary (price, repair time);
   each list `COLUMN_SHARE` of the screen wide; the dialog on the screen, centered, at its least height; the entry's
   width kept; Cancel closes it, the focus back on Paste, nothing changed; Esc (a real key press, with the game's
@@ -308,8 +323,11 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   piece replaced isn't damaged); the same equipment (only the settings listed, nothing to buy; nothing bought, logged
   or added) with a template without a crew list (its unknown crew among what isn't copied, the spare's list stays,
   nothing put aboard); an empty crew list (nobody aboard); closing the screen with the dialog open. The texts of
-  `i18n/en.po`, also in a language without them; the entries' script keeps the game's path. The control checks (no
-  Copy, Paste or dialog) run on the game's own script.
+  `i18n/en.po`, also in a language without them; the entries' script keeps the game's path. A template whose crew list
+  still names someone fired since lists and copies only those still employed; an empty slot and its default item
+  (None) count as the same, either way round, so nothing is bought or listed for it. With a gamepad: the entry's
+  tooltip node takes Copy and Paste in, a disabled Copy shows why when it gets the focus, and the D-pad goes from Use to
+  Copy and back. The control checks (no Copy, Paste or dialog) run on the game's own script.
 - `skip` (`suites/skip.gd`): a dive's cutscenes, the station's fade-in, and the settings, with the game's bindings for
   `cutscene_ff`, `pause` and `ui_cancel`. The mod's settings file is pointed into the suite's own project
   (`filePath`) and removed at the start and the end; a Directory opened on `res://` sees the mounted zips, read-only,
@@ -370,23 +388,28 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   screen: a station built as `enceladus/Enceladus.tscn` nests the menu (the game's
   `EnceladusMenu.gd`, with a `RingDive` entry whose `pressed` the suite records) and the right-hand screens (the game's
   `HidingMarginContainer.gd` with a Tuning stub), clicked through the scene tree's input: the texts of `i18n/en.po`
-  loaded; the entry's tooltip; a plain click launches, Shift+Click on a disabled entry does nothing, Shift+Click opens
-  the screen without launching; a group per `GROUPS` entry, in order, titled by it, with a game's row per setting of
-  that group named by its label in the game's language, each switch showing its setting, under the entry's text; the
-  switches of the settings with `remass`, and only those, end with `REMASS_MARK`; under the header, in this order, the
-  description's window, the note that explains the mark (`REMASS_NOTE`) and the groups; the window copies the Tuning
-  screen's (the stub has one nested as `enceladus/Tuning.tscn` nests it: theme, margins around and inside, panel);
-  every setting has a description in `i18n/en.po` (its label and `DESCRIPTION_SUFFIX`), the window shows the first
-  row's on opening, that of each row focused in turn (switch or slider) and that of a row changed, and keeps its height
-  whatever the description; the transit's speed is a game's slider with the setting's range, step, unit and format,
-  dimmed (`DIMMED`) while the transit is skipped and not otherwise, storing what it is moved to, its reset button
-  restoring the default; switching a switch off stores it at once, focusing it again doesn't switch it back, its reset
-  button restores the default; Esc closes it after the fade. With
-  CrewCheapHireNotifier loaded too (`-Mods CrewCheapHireNotifier,DiveSkipTransit`), the menu also has its Crew entry:
-  Shift+Click on each opens its own screen and hides the other, and each keeps its own tooltip. The control checks (the
-  launch keeps playing and doesn't go to the ring; the ship spawned for the cutscene, which goes on under the title
-  card; only the transit charged; the exit, rescue and game over cutscenes play and call nothing yet; astrogation
-  yields; the station's menu stays disabled) run on the game's own scripts.
+  loaded; the tooltip, on the entry's Shift badge (the entry has none of its own); a plain click launches, Shift+Click
+  on a disabled entry does nothing, Shift+Click opens the screen without launching; a group per `GROUPS` entry, in
+  order, titled by it, with a game's row per setting of that group named by its label in the game's language, each
+  switch showing its setting, under the entry's text; the switches of the settings with `remass`, and only those, end
+  with `REMASS_MARK`; under the header, in this order, the description's window, the note that explains the mark
+  (`REMASS_NOTE`) and the groups; the window copies the Tuning screen's (the stub has one nested as
+  `enceladus/Tuning.tscn` nests it: theme, margins around and inside, panel); every setting has a description in
+  `i18n/en.po` (its label and `DESCRIPTION_SUFFIX`), the window shows the first row's on opening, that of each row
+  focused in turn (switch or slider) and that of a row changed, and keeps its height whatever the description; the
+  transit's speed is a game's slider with the setting's range, step, unit and format, dimmed (`DIMMED`) while the
+  transit is skipped and not otherwise, storing what it is moved to, its reset button restoring the default; switching a
+  switch off stores it at once, focusing it again doesn't switch it back, its reset button restores the default; Esc
+  closes it after the fade. With CrewCheapHireNotifier loaded too (`-Mods CrewCheapHireNotifier,DiveSkipTransit`), the
+  menu also has its Crew entry: Shift+Click on each opens its own screen and hides the other, and each entry's Shift
+  badge keeps its own tooltip. The control checks (the launch keeps playing and doesn't go to the ring; the ship spawned
+  for the cutscene, which goes on under the title card; only the transit charged; the exit, rescue and game over
+  cutscenes play and call nothing yet; astrogation yields; the station's menu stays disabled) run on the game's own
+  scripts. With a gamepad (the `Settings` stub's `controlScheme` set as the game sets it): the Shift badge reads the
+  gamepad twin and its tooltip tells about it, and both go back with keyboard and mouse; X alone, LT+X on a disabled
+  entry and LT+X with another entry highlighted do nothing; LT+X on the highlighted entry opens the settings and doesn't
+  launch, and B closes them, the entry highlighted again.
+
 - `dealer` (`suites/dealer.gd`): stations built in code as `enceladus/Enceladus.tscn` nests the menu (the game's
   `EnceladusMenu.gd`, with its `ShipMarket`, `OwnedShips` and `Logs` entries, and the Crew, dive, Mineral Market and
   Services entries of CrewCheapHireNotifier, DiveSkipTransit, MarketAdvisor and ServiceNotifier when they are loaded
@@ -429,14 +452,17 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   a disabled entry does nothing, on the entry opens the settings and not the Dealer; opening stores nothing; the Dealer
   screen's theme, frame, size and size flags; the entry's title; under the header the window, the groups and the
   buttons, with no note; the window copies the Dealer's (theme, margins around and inside, panel, least height, the
-  texts' spacing, clipping); first New and Used in a group titled by their `group`, then one group per series titled
+  texts' spacing), its texts wrapping in a ScrollContainer with no horizontal scroll that fills the window at the
+  Dealer's least height; first New and Used in a group titled by their `group`, then one group per series titled
   by its name, the series and their rows in alphabetical order of the names whatever the case, the models alone in their
   series last under `OTHERS_LABEL`, in an `Items` box, the titles and names in `i18n/en.po`; New's switch focused; each
   switch showing its setting; each ship's row dressed as a Dealer entry (the picture first, of the entry's picture's
   size, its sprite placed as the entry's; no reset; the switch at the row's right end, at least as wide as the entry's
   Buy button; its tooltip the setting's label); New's and Used's switches lined up with them, with no picture and no
   tooltip; focusing a row shows its ship's description after its series' where that differs, and focusing New or Used
-  empties the window; switching a model on stores it, describes it, and doesn't mark for a ship of it for sale, and
+  empties the window; a long description keeps the window's height and scrolls, the right stick scrolls it down, stops
+  when let go and scrolls it back up, and another ship's description starts at the top; switching a model on stores
+  it, describes it, and doesn't mark for a ship of it for sale, and
   focusing it again doesn't switch it back; a later ship marks; switching Used off on the screen stores it; Select all
   and Select none under the groups, in `i18n/en.po`: Select all switches every switch on (New's and Used's too) on the
   screen and in the settings, marking nothing already for sale and leaving the window as it was, Select none every
@@ -452,8 +478,21 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   (`-Mods CrewCheapHireNotifier,DealerNotifier,DiveSkipTransit`), and with MarketAdvisor and ServiceNotifier as well
   (`-Mods CrewCheapHireNotifier,DealerNotifier,DiveSkipTransit,MarketAdvisor,ServiceNotifier`),
   Shift+Click on each of their entries opens their screen, then on Dealer opens this one and hides theirs, and every
-  entry keeps its own tooltip. The control checks (the entry keeps its key; the Dealer lists the stock and no entry gets
-  a badge) run on the game's own scripts.
+  entry's Shift badge keeps its own tooltip. The control checks (the entry keeps its key; the Dealer lists the stock and
+  no entry gets a badge) run on the game's own scripts. With ShipSortByTypeAndPrice or ShipHighlightTypeAndPrice loaded,
+  with or without DealerNotifier (`-Mods ShipHighlightTypeAndPrice,ShipSortByTypeAndPrice`), each waiting its mod's
+  `SETTLE_TIME`: the sort puts the Dealer's offers in order of their type as shown, then of price, moves the highlight
+  the Dealer put on its first entry to the new first one, and leaves Fleet's entries in the game's order; the highlight,
+  on every entry of the Dealer and Fleet, shows the type in `TYPE_COLOR` and in a bold copy of the game's font, one copy
+  for every entry (also after the Dealer adds its entries again), with the game's font as its file has it; the
+  registration and year in `DIM_COLOR`, the name and price as they were, the picture behind the row transparent. The
+  stock ships for these have their model's name and a price each (`harness/fleet_ship.gd` `value`). With a gamepad (the
+  `Settings` stub's `controlScheme` set as the game sets it): the Shift badge reads the gamepad twin and its tooltip
+  tells about it, and both go back with keyboard and mouse; X alone, LT+X on a disabled entry and LT+X with another
+  entry highlighted do nothing; LT+X on the highlighted entry opens the settings and not the Dealer screen, and closing
+  them highlights the entry again; a Dealer entry's badge shows its tooltip while the entry's name has the focus, only
+  with a gamepad, and hides it when the name loses it.
+
 - `transponder` (`suites/transponder.gd`): the game's `CurrentGame.gd`, copied to `res://CurrentGame.gd` (where the
   mod's `Code.gd` extends it), instanced under the suite with a player's ship in its state; the `CurrentGame` autoload
   stays the stub, which hands this instance `menu/NewGamePlus.gd`'s transponder calls and the members it lacks
@@ -466,7 +505,7 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   `getTransponder`: a config's own code kept; a new build coded by its model, stored in
   `state.transponders`; met again (not new, a frame later), its stored code back; a code stored before the mod reused
   as it is; no model left set. The player's ship: `createPlayerShip` and `validateState` code a ship without one by
-  its model, a save's code is kept. The game's New Game+ screen, built on the node paths its script reads: the
+  its model, a save's code is kept. The game's New Game Options screen, built on the node paths its script reads: the
   extension, a code of the new game's ship model and the name the game makes from it. `_tacNodeAdded` on ships of the
   game's `ship-ctrl.gd` out of the tree: a ship's lifepod (the suffix, the name of the ship's code kept, the forgotten
   code not stored back; a ship's stored name kept; added again, unchanged), a lone lifepod (a `usedShipsPool` ship's
@@ -484,7 +523,7 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   it) and a Fleet screen, each with the simulator's button where the game's has it and a stand-in of its script
   (`harness/combat_station.gd`: `previewedConfig` or `currentConfig`, `_on_LaunchVR_pressed`, Esc closing it from its
   `_input`), wired to a stand-in of the simulator's layer that records `startSimulation`, as the scene wires them; the
-  dive target's ring (the game's `TheRing.gd`, with the stand-in maps); the cursor's layer (the game's
+  dive entry point's ring (the game's `TheRing.gd`, with the stand-in maps); the cursor's layer (the game's
   `MouseLayer.gd`); the station's pause menu (the game's `PauseLayer.gd`, with the nodes it reaches); `NoBulletTime`
   (the game's script). The game's `CurrentGame.gd`, with the extension, is instanced under the suite, and the
   `CurrentGame` stub hands it `_csArena`, as in `transponder`. The arena runs on stub ships, a stub field (which records
@@ -497,8 +536,8 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
     unchanged value; each slider kept in its range and snapped to its step; a change stored in `state.ui` under the
     manifest's id with the format and mod versions and every setting, signalled once; the ship one of the models
     offered, a switch a bool; a JSON round trip; a hand-edited entry, and one that isn't a dictionary. The texts of
-    `i18n/en.po` (the tooltip with its four `%s`, the title, groups and buttons, every setting's name and description,
-    the unnamed models' names and descriptions).
+    `i18n/en.po` (the tooltip with its two `%s` and its gamepad form with three, the title, groups and buttons, every
+    setting's name and description, the unnamed models' names and descriptions).
   - The HUD: the ring map (the game's `hud/Video.gd`) and the gravimetric readout (`hud/GravimetricReadout.gd`), under
     a HUD stand-in, show on the arena's ship outside the rings, stay hidden on another ship there and show in the rings;
     the readout stays hidden without the scanner. Disabled weapons: on a disarmed ship a hardpoint (the game's
@@ -510,24 +549,24 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
     spot is the closest of its `SPOT_SAMPLES` samples (the sampling replayed with the same seed), at a pixel's centre
     away from the edges.
   - The dialog: the arena's layer right after the simulator's, on its layer, and the dialog's last; both buttons found;
-    the tooltip, held by the game's tooltip node on the dialog's layer and shown on focus, a hidden button's once it
-    shows, after the key is rebound and after a language change; a plain click and J start the simulator and open
-    nothing; Shift+Click and Shift+J open the dialog and start nothing; J and Shift+J with it open start nothing; it pops
-    up over the screen, at least as big as its parts need; Esc, Cancel and the controller's Start close it, the screen
-    staying open, the station's pause menu shut and the focus back on the button; a disabled button, or the simulator
-    showing, opens nothing; from the Fleet screen it takes `currentConfig`. Its screen: opening it stores nothing; two
-    tabs, the settings then the ship, the second titled by the Ship setting's label, opening on the first (a plain
-    `TabContainer`: the harness has neither the Crew screen's tab hints nor its theme); the first holding the window,
-    the groups and the buttons, the second the window, the ship list and the buttons; Tuning's theme on both and its
-    window frame copied; a group per `GROUPS` entry with a game's row per setting but the ship, named by its label; each
-    slider's range, step, unit and value in the units shown, each switch's state; the first row focused and its
-    description shown, then each row's on focus; the window keeping its height with a long text, which scrolls, and
-    with none; a slider and a switch stored when changed, the switch not switched back on focus. The ship list (its
-    pictures drawn from the combat ship stub): a row per model offered, only the current one on; the models alone in
-    their series under Others, last; the tab focusing the current ship and showing its description; another ship
-    switched on picked, the previous one switched off, the tab's title kept, the value stored; the current one switched
-    off back on; focusing another row changing nothing; Esc cancelling from the ship tab; reopened on the first tab with
-    the last choices, the ship's row switched on.
+    the tooltip, on the button's Shift badge (the button has none), held and shown by the game's tooltip node on the
+    dialog's layer, a hidden button's badge's once it shows, after the key is rebound and after a language change; a
+    plain click and J start the simulator and open nothing; Shift+Click and Shift+J open the dialog and start nothing; J
+    and Shift+J with it open start nothing; it pops up over the screen, at least as big as its parts need; Esc, Cancel
+    and the controller's Start close it, the screen staying open, the station's pause menu shut and the focus back on
+    the button; a disabled button, or the simulator showing, opens nothing; from the Fleet screen it takes
+    `currentConfig`. Its screen: opening it stores nothing; two tabs, the settings then the ship, the second titled by
+    the Ship setting's label, opening on the first (a plain `TabContainer`: the harness has neither the Crew screen's
+    tab hints nor its theme); the first holding the window, the groups and the buttons, the second the window, the ship
+    list and the buttons; Tuning's theme on both and its window frame copied; a group per `GROUPS` entry with a game's
+    row per setting but the ship, named by its label; each slider's range, step, unit and value in the units shown, each
+    switch's state; the first row focused and its description shown, then each row's on focus; the window keeping its
+    height with a long text, which scrolls, and with none; a slider and a switch stored when changed, the switch not
+    switched back on focus. The ship list (its pictures drawn from the combat ship stub): a row per model offered, only
+    the current one on; the models alone in their series under Others, last; the tab focusing the current ship and
+    showing its description; another ship switched on picked, the previous one switched off, the tab's title kept, the
+    value stored; the current one switched off back on; focusing another row changing nothing; Esc cancelling from the
+    ship tab; reopened on the first tab with the last choices, the ship's row switched on.
   - A run from Start (TRTL, `number` at its most, grouped): the layer running, known to `CurrentGame`, processing while
     paused, its viewport's container stopping and not forwarding, the simulator's scale, the viewport's own world and
     mouse proxy; the field, BulletTimer (without its notifications layer, deaf to `gameOver`), the music and WESpace in
@@ -563,7 +602,16 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   the suite calls is the last one's only, so the suite runs with CombatSimulator alone or with TransponderAltCodes. The
   control checks (with `-Mods @()`): a click starts the simulator, Shift held or not; Shift+J starts nothing and J does
   (a button's shortcut matches its key exactly); the ring map and the readout hide outside the rings; a hardpoint and a
-  turret fire with the power given; the station's pause menu pauses.
+  turret fire with the power given; the station's pause menu pauses; LT+X on the highlighted button does nothing, and
+  LT+Back starts the simulator. With a gamepad (the game's bindings: Back is `jury_rig`, LB and RB `ui_page_up` and
+  `ui_page_down`, the right stick `ui_scroll_up2` and `ui_scroll_down2`): the Shift badge reads the gamepad twin and its
+  tooltip tells about it; with the dialog closed RB switches the screen's own tabs; X alone does nothing, Back alone
+  still starts the simulator, and with the button disabled neither twin opens the dialog; LT+X opens it only on the
+  highlighted button, without starting the simulator, and B closes it with the focus back on the button; LT+Back opens
+  it with the button not highlighted; RB and LB switch the dialog's tabs, and at its last or first tab the screen behind
+  keeps its own; the right stick scrolls a long description down, stops when let go and scrolls it back up; Start with
+  no ring map runs nothing and gives the focus back to the button. On opening, the first row is focused and the window
+  shows its description; the arena's end confirmation opens with Cancel focused, as the game's own confirmations do.
 - `drones` (`suites/drones.gd`): drone plants from `harness/drones_plant.tscn` (the game's `drone-plant.gd`, with a
   stub launch manager, `harness/drones_launcher.gd`, and bare pickup area and sound nodes) in hardpoints
   (`harness/weapon_slot.gd`) of `harness/drones_ship.gd`, the geology suite's ship stub plus what a plant reaches (its
@@ -588,8 +636,11 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   without the entry; reading, unchanged sets and a reset store nothing; clamping and snapping, an unknown weight
   ignored, the units shown; the entry in `hud.config` under the manifest's id with the format and mod versions, the
   switch and every weight, the game's keys untouched; a JSON round trip; hand-edited entries. And the texts of
-  `i18n/en.po`, also in a language without them. The control checks (both plants pick by the game's rule; the OMS
-  keeps its four tabs) run on the game's own scripts.
+  `i18n/en.po`, also in a language without them. With a gamepad: a reset button, its text and tooltip translated and
+  taken in by the game's tooltip node; each slider's value carries its weight's description; down goes from the switch
+  through each slider's value to Reset and stays there, Reset shows its description on focus, left and right stay
+  where they are, up goes back to the switch and stays there, and walking the tab changes nothing. The control checks
+  (both plants pick by the game's rule; the OMS keeps its four tabs) run on the game's own scripts.
 - `market` (`suites/market.gd`): stations built in code as `enceladus/Enceladus.tscn` nests them: the menu (the game's
   `EnceladusMenu.gd`, with its `MineralMarket`, `Services` and `Logs` entries) and the right-hand screens (the game's
   `HidingMarginContainer.gd` with the Mineral Market from its stub, wired to its entry as the scene wires it; a Services
@@ -625,22 +676,27 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   the stay ending at the reserve with nothing left beyond the parked tonnes; a higher reserve selling parked ore down to
   within a tonne of the cheapest ore sold that has tonnes left, the record and the parked row following. Every tonne
   the market allows held: nothing to trade, the advice says so, no alert mark. The menu: the texts of `i18n/en.po`; the
-  market entry's tooltip; its alert mark while a trade is due, following a language change; the Services entry left
-  alone while Jameson's Insurance can be bought (ServiceNotifier's, in `services`); without the market screen, no
-  tooltip and no settings. The screen: Shift+Click on a disabled entry does nothing, on the entry opens the settings and
-  not the market, storing nothing; the market's frame; the header, then the description's window (copying the Tuning
-  screen's), then the groups, one per `GROUPS` entry with a row per setting named by its label, the notation switch
-  first, each showing its setting, a slider with its range, step and value as the screen shows them (`toShown`); the
-  power of ten's row showing the power; the cash reserve's row under the cash group, named by the mod's text, its name
-  and reset button out of reach, its value the reserve's range, right-aligned under the values of the two sliders
-  without a unit once laid out; the tolerance's row between the power of ten's and the cash reserve's, in its unit;
-  each row's description on focus, with the mineral it names, storing nothing; the sliders and the notation switch
-  stored and shown as they change (the tolerance stored as a fraction, the range following it, the reserve alone at
-  its lowest), a switch not switched back on focus, resets; Esc and another entry close it. A year of stays from
-  100,000 E$, with Trade all ores off and on (ore brought back, 1 to 3 days of maintenance, Trade pressed every day of
-  the stay, money spent between stays): every stay ends inside the reserve's range with the ore sold. The control
-  checks (the entry keeps its key and gets no tooltip; no row of the mod's in the market; Shift+Click opens the market)
-  run on the game's own scripts.
+  market entry's tooltip, on its Shift badge (the entry has none of its own); its alert mark while a trade is due,
+  following a language change; the Services entry left alone while Jameson's Insurance can be bought (ServiceNotifier's,
+  in `services`); without the market screen, no tooltip and no settings. The screen: Shift+Click on a disabled entry
+  does nothing, on the entry opens the settings and not the market, storing nothing; the market's frame; the header,
+  then the description's window (copying the Tuning screen's), then the groups, one per `GROUPS` entry with a row per
+  setting named by its label, the notation switch first, each showing its setting, a slider with its range, step and
+  value as the screen shows them (`toShown`); the power of ten's row showing the power; the cash reserve's row under the
+  cash group, named by the mod's text, its name and reset button out of reach, its value the reserve's range,
+  right-aligned under the values of the two sliders without a unit once laid out; the tolerance's row between the power
+  of ten's and the cash reserve's, in its unit; each row's description on focus, with the mineral it names, storing
+  nothing; the sliders and the notation switch stored and shown as they change (the tolerance stored as a fraction, the
+  range following it, the reserve alone at its lowest), a switch not switched back on focus, resets; Esc and another
+  entry close it. A year of stays from 100,000 E$, with Trade all ores off and on (ore brought back, 1 to 3 days of
+  maintenance, Trade pressed every day of the stay, money spent between stays): every stay ends inside the reserve's
+  range with the ore sold. The control checks (the entry keeps its key and gets no tooltip; no row of the mod's in the
+  market; Shift+Click opens the market; LT+X on the highlighted entry opens nothing) run on the game's own scripts. With
+  a gamepad (the `Settings` stub's `controlScheme` set as the game sets it): the Shift badge reads the gamepad twin and
+  its tooltip tells about it, and both go back with keyboard and mouse; X alone, LT+X on a disabled entry and LT+X with
+  another entry highlighted do nothing; LT+X on the highlighted entry opens the settings and not the market, and closing
+  them highlights the entry again.
+
 - `services` (`suites/services.gd`, which extends `market.gd` for its station, saves, time, clicks and translations):
   the same station without the Mineral Market, its Services screen with the game's rows (`enceladus/Services.tscn`'s
   values) for The Twins, a hotel, the three that cost a monthly fee and The Miner's Guild, a compensation row whose
@@ -649,38 +705,48 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   the compensations, not the hotel); an unchanged value storing and signalling nothing; a change stored under the
   manifest's id with the format and mod versions and the service's value, signalled once, as a copy; a value that
   isn't a bool giving the default; a JSON round trip; a hand-edited entry (only bool values kept) and one that isn't a
-  dictionary. The mark: the texts of `i18n/en.po`; the Services entry's tooltip; none with no money, for the hotel, or
-  for The Twins during their cooldown; the mark once it is over, following a language change; none with The Twins'
-  switch off; the mark for Jameson's Insurance and the simulator, none with their switches off though both can be
-  bought; the mark for Scrapwright Recovery Operations, none during its cooldown; the mark while the miners hold a
-  grudge, none once that is paid (the row costs nothing); back with a switch on; none with the money below every price;
-  a menu without the station's screens, no tooltip and no mark. The screen: Shift+Click on a disabled entry does
-  nothing, on the entry opens the settings and not the Services screen, storing nothing; the Services screen's frame;
-  the header, then the description's window (copying the Tuning screen's), then a group per kind in `KINDS` order with
-  a row per watched service in the screen's order, no hotel; each switch showing its service's setting, with the
-  setting's label as its tooltip; the first row's description, its kind's with its name and cooldown as the game
-  writes a time, another row's with its own, a compensation's; focusing stores nothing; a switch stored, and not
-  switched back on focus; Esc and another entry close it. The control checks (the entry keeps its key and gets no
-  tooltip; Shift+Click opens no settings) run on the game's own scripts.
+  dictionary. The mark: the texts of `i18n/en.po`; the Services entry's tooltip, on its Shift badge (the entry has none
+  of its own); none with no money, for the hotel, or for The Twins during their cooldown; the mark once it is over,
+  following a language change; none with The Twins' switch off; the mark for Jameson's Insurance and the simulator, none
+  with their switches off though both can be bought; the mark for Scrapwright Recovery Operations, none during its
+  cooldown; the mark while the miners hold a grudge, none once that is paid (the row costs nothing); back with a switch
+  on; none with the money below every price; a menu without the station's screens, no tooltip and no mark. The screen:
+  Shift+Click on a disabled entry does nothing, on the entry opens the settings and not the Services screen, storing
+  nothing; the Services screen's frame; the header, then the description's window (copying the Tuning screen's), then a
+  group per kind in `KINDS` order with a row per watched service in the screen's order, no hotel; each switch showing
+  its service's setting, with the setting's label as its tooltip; the first row's description, its kind's with its name
+  and cooldown as the game writes a time, another row's with its own, a compensation's; focusing stores nothing; a
+  switch stored, and not switched back on focus; Esc and another entry close it. With a gamepad (the `Settings` stub's
+  `controlScheme` set as the game sets it): the Shift badge reads the gamepad twin and its tooltip tells about it, and
+  both go back with keyboard and mouse; X alone, LT+X on a disabled entry and LT+X with another entry highlighted do
+  nothing; LT+X on the highlighted entry opens the settings and not the Services screen, and closing them highlights the
+  entry again. The control checks (the entry keeps its key and gets no tooltip; Shift+Click and LT+X open no settings)
+  run on the game's own scripts.
+
 - `_tests\harness\rig.gd` builds the arm's node tree as the game nests it, with the values in
   `_tests\harness\vp_data.gd`; each cites its scene file and line, so re-check them after a game update. The ship
   is a stub moved by hand (it takes the arm's impulses and torque; inertia from the hull); the rotors don't collide.
+  `harness\grinder.gd` and `spotlight.gd` are stubs of the grinder (its two rotors, which the arm mods read) and of
+  the arm's spotlight (which `DockingArm.gd` switches).
+- `_tests\harness\suite.gd` is the base of every suite: the results, the loaded mods and the masses given on the
+  command line. `harness\dive_ship.gd` is the ship `dive` gives the game's `CabinLight.gd`: what it and
+  DiveDisableAdrenalineBooster read.
 - **Baseline** (both arm load orders give the same results): `units` 114 checks with both arm mods (64 with
-  PullBehavior alone, 61 with TargetSelection alone), `still` 9, `moving` 16, `hold` 62, `dive` 8, `boot` 5 (3 control checks
-  with `-Mods @()`), `lidar` 40 (3 control checks with `-Mods @()`), `hud` 13 (3 control checks with `-Mods @()`),
-  `crew` 148 (149 with CrewPerfectSort too, in both load orders; the same 148 with DealerNotifier too, in both; 3
-  control checks with `-Mods @()`), `geology` 80 (the same with DiveSkipTransit too, in both load orders; 5 control
-  checks with `-Mods @()`), `fleet` 70 (the same with ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too; 3
-  control checks with `-Mods @()`), `skip` 109 (112 with
-  CrewCheapHireNotifier too, the same with DealerNotifier as well; 13 control checks with `-Mods @()`), `dealer` 111
-  (114 with CrewCheapHireNotifier and DiveSkipTransit too, in every load order, 116 with MarketAdvisor and
-  ServiceNotifier as well, in every load order; the same 111 with ShipCopyPaste,
-  ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too; 2 control checks with `-Mods @()`), `transponder` 48 (3
-  control checks with `-Mods @()`; the same 48 with CombatSimulator too), `combat` 129 (the same with
-  TransponderAltCodes too; 7 control checks with `-Mods @()`), `drones` 63 (the same in both load orders and with
-  DroneAltPriorities alone; 3 control checks with `-Mods @()`), `market` 97 (3 control checks with `-Mods @()`),
-  `services` 42 (2 control checks with `-Mods @()`), all passing; `skip` gives its 109 with CombatSimulator
-  too; `-Matrix` gives 16 of 16 in every combination.
+  PullBehavior alone, 61 with TargetSelection alone), `still` 9, `moving` 16, `hold` 63, `dive` 8 (1 control check with
+  `-Mods @()`), `boot` 5 (3 control checks with `-Mods @()`), `lidar` 40 (3 control checks with `-Mods @()`), `hud` 13
+  (3 control checks with `-Mods @()`), `crew` 163 (164 with CrewPerfectSort too, in both load orders; the same 163
+  with DealerNotifier too; 3 control checks with `-Mods @()`), `geology` 85 (the same with DiveSkipTransit too, in
+  both load orders; 5 control checks with `-Mods @()`), `fleet` 77 (the same with ShipHighlightTypeAndPrice and
+  ShipSortByTypeAndPrice too; 3 control checks with `-Mods @()`), `skip` 116 (119 with CrewCheapHireNotifier too, the
+  same with DealerNotifier as well; the same 116 with CombatSimulator too; 13 control checks with `-Mods @()`),
+  `dealer` 127 (130 with CrewCheapHireNotifier and DiveSkipTransit too, in every load order, 132 with MarketAdvisor and
+  ServiceNotifier as well; 133 with ShipCopyPaste, ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too; 8 with
+  the two ship-list mods alone; 2 control checks with `-Mods @()`), `transponder` 48 (3 control checks with
+  `-Mods @()`; the same 48 with CombatSimulator too), `combat` 144 (the same with TransponderAltCodes too; 8 control
+  checks with `-Mods @()`), `drones` 69 (the same in both load orders and with DroneAltPriorities alone; 3 control
+  checks with `-Mods @()`), `market` 104 (4 control checks with `-Mods @()`), `services` 49 (3 control checks with
+  `-Mods @()`), all passing; `units` gives 11 control checks with `-Mods @()`; `-Matrix` gives 16 of 16 in every
+  combination.
   Feeding, a chunk beside the hull is in after 3.0–3.7 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.5.4 (the same pull as 1.5.0) takes 4.2–4.8 s
   there, and fails the 3 cases that move a chunk straight forward and then expect it held at the dock slot (it hands
@@ -691,7 +757,7 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   game, gives 0, 0, 12, 4 of 16. This ship also takes the arm's torque reaction, as the game's does (the claude.ai
   stub dropped it), which shifts some numbers in the third decimal.
 
-The harness doesn't replace the game. CrewHighlightJobAndSalary has no tests at all, and CrewPerfectSort and the
-ship-list mods have none of their own: only CrewPerfectSort's Hire screen sort runs, beside CrewCheapHireNotifier in
-`crew`, and the ship-list mods load beside ShipCopyPaste in `fleet` (and beside DealerNotifier in `dealer`) without
-checks of their own. The real check is playing the game with the mods.
+The harness doesn't replace the game. CrewHighlightJobAndSalary has no tests at all, and CrewPerfectSort none of its
+own: only its Hire screen sort runs, beside CrewCheapHireNotifier in `crew`. The ship-list mods have their checks in
+`dealer`, and load beside ShipCopyPaste in `fleet` without checks of their own. The real check is playing the game
+with the mods.

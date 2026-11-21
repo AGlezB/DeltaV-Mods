@@ -1,5 +1,10 @@
 # CrewPerfectSort - Changes
 
+## 1.2.4
+- The README is laid out as the others: *What it does and why*, *For modders*, with the game's names of the screens
+  (Your Crew).
+- Comments and the description in `Mod.manifest` write Your Crew as the game does.
+
 ## 1.2.3
 - The README's *Disclaimer* no longer names the author.
 

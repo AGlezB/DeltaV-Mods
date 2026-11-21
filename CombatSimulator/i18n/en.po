@@ -6,10 +6,15 @@ msgstr ""
 "Language: en\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 
-# The simulator's button's tooltip (Code.gd): the key to hold while clicking, the same key again, the simulator's key,
-# the mod's name.
+# The tooltip of the Shift badge in the simulator's button (Code.gd): the key to hold while clicking the
+# button, the mod's name.
 msgid "COMBATSIMULATOR_TOOLTIP"
-msgstr "%s+Click or %s+%s: %s, a fight against the enemy ships you pick, in a stretch of ring."
+msgstr "Click the button while pressing %s to open the %s interface."
+
+# The same while the game is played with a gamepad: the button to press on the highlighted button, the one to hold, the
+# mod's name.
+msgid "COMBATSIMULATOR_TOOLTIP_PAD"
+msgstr "Highlight the button and press %s while holding %s to open the %s interface."
 
 # The dialog (SettingsUI.gd): its first tab (the second is titled by the Ship setting's name), its groups and its
 # buttons; the ship list's group of the ships alone in their series (ShipList.gd).

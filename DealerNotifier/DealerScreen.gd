@@ -15,6 +15,14 @@ const DealerNotifier = preload("res://DealerNotifier/Settings.gd")
 const _DN_BADGE_TOOLTIP = "DEALERNOTIFIER_BADGE_TOOLTIP"
 # The badge's node name in an entry's name, so that a refresh finds the badge it made.
 const _DN_BADGE = "DealerNotifierBadge"
+# An entry's nodes (enceladus/SystemBuyUI.tscn): the ship's name, which holds the badge; its Buy button, whose frame
+# the badge copies; the label in the colour the badge takes; the picture, whose theme has the small font.
+const _DN_ENTRY_NAME = "HBox/ShipName"
+const _DN_ENTRY_BUY = "HBox/Buy"
+const _DN_ENTRY_OWNED = "HBox/V/Owned"
+const _DN_ENTRY_PICTURE = "HBox/Margin"
+# The badges' script: their tooltip as their only interaction.
+const _DN_BADGE_SCRIPT = preload("res://DealerNotifier/Badge.gd")
 # The age under which a Dealer entry marks its ship NEW, in seconds (enceladus/SystemBuyUI.gd checkPrice, with the ship
 # not owned and pristine: a ship that young always is, as CurrentGame.gd ageToDamageWithSeed damages none under ten
 # years).
@@ -76,7 +84,7 @@ func _dnMarkFresh():
 	for entry in items.get_children():
 		if not _dnIsOffer(entry):
 			continue
-		var badge = entry.get_node_or_null("HBox/ShipName/" + _DN_BADGE)
+		var badge = entry.get_node_or_null(_DN_ENTRY_NAME + "/" + _DN_BADGE)
 		if _dnFresh.has(entry.ship.transponder):
 			badge = _dnBadge(entry)
 			if badge != null:
@@ -99,27 +107,26 @@ func _dnMarkFresh():
 # enceladus/Subwindow.theme, has a small one), as its own RepairTimeLeft label is: the name sets no theme, so a Label
 # there would get the entry's, the menu's big font. It lets the mouse through, so the wheel still scrolls the list and a
 # click is the name's (focusing it shows the ship, Dealer.gd), and still gets the mouse's enter and exit.
-# The tooltip: the released game draws its own, with the entry's PlaySoundsOnTheseButtons
-# (menu/sfx/PlaySoundsOnTheseButtons.gd), which registers only the buttons and sliders it finds when the entry is
-# made. Its connectSounds registers the badge too: it takes over the badge's hint_tooltip, shows it below the badge on
-# hover and reads it again on every hover, so _dnMarkFresh keeps setting it.
+# The tooltip (Badge.gd): the entry's PlaySoundsOnTheseButtons (menu/sfx/PlaySoundsOnTheseButtons.gd) shows it below the
+# badge on hover, silently, also for the name under it, and reads it again on every hover, so _dnMarkFresh keeps
+# setting it. With a gamepad, it shows while the name has the focus, which the D-pad moves from entry to entry.
 func _dnBadge(entry):
-	var shipName = entry.get_node_or_null("HBox/ShipName")
-	var buy = entry.get_node_or_null("HBox/Buy")
+	var shipName = entry.get_node_or_null(_DN_ENTRY_NAME)
+	var buy = entry.get_node_or_null(_DN_ENTRY_BUY)
 	if not shipName is Control or not buy is Control:
 		return null
 	var badge = shipName.get_node_or_null(_DN_BADGE)
 	if badge != null:
 		return badge
 	var colour = Color(1, 1, 1, 1)
-	var owned = entry.get_node_or_null("HBox/V/Owned")
+	var owned = entry.get_node_or_null(_DN_ENTRY_OWNED)
 	if owned is CanvasItem:
 		colour = owned.modulate
 	var right = 0.0
 	var text = shipName.get_stylebox("normal")
 	if text != null:
 		right = text.get_margin(MARGIN_RIGHT)
-	badge = PanelContainer.new()
+	badge = _DN_BADGE_SCRIPT.new()
 	badge.name = _DN_BADGE
 	badge.set_anchors_preset(Control.PRESET_CENTER_RIGHT)
 	badge.margin_left = -right
@@ -136,14 +143,12 @@ func _dnBadge(entry):
 	var label = Label.new()
 	label.text = _dnInitials()
 	label.add_color_override("font_color", buy.get_color("font_color") * colour)
-	var picture = entry.get_node_or_null("HBox/Margin")
+	var picture = entry.get_node_or_null(_DN_ENTRY_PICTURE)
 	if picture is Control:
 		label.add_font_override("font", picture.get_font("font", "Label"))
 	badge.add_child(label)
 	shipName.add_child(badge)
-	var tooltips = entry.get_node_or_null("PlaySoundsOnTheseButtons")
-	if tooltips != null and tooltips.has_method("connectSounds"):
-		tooltips.connectSounds(badge)
+	badge.attachTooltip(entry.get_node_or_null("PlaySoundsOnTheseButtons"), shipName)
 	return badge
 
 # The capitals of the mod's name in Mod.manifest.

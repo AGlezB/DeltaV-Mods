@@ -1,5 +1,11 @@
 # ShipSortByTypeAndPrice - Changes
 
+## 1.0.6
+- The highlight the Dealer puts on the entry it lists first, for the keyboard and the gamepad, moves to the new first
+  entry after the sort, if the old first one still has it.
+- How long the entries are collected before a sort is the constant `SETTLE_TIME`.
+- The README is laid out as the others: *What it does and why*, *For modders*.
+
 ## 1.0.5
 - The README's *Disclaimer* no longer names the author.
 

@@ -1,5 +1,25 @@
 # MarketAdvisor - Changes
 
+## 1.2.0
+- A Shift badge beside the station menu's Mineral Market entry tells how to open the settings: it reads Shift with
+  keyboard and mouse, and the gamepad's twin of Shift+Click (`PAD_TEXT` in `Badge.gd`) while the game is played with
+  a gamepad (the game's Controls setting, which with Auto follows the device last used). Hovering it shows its
+  tooltip, which the entry no longer has.
+- With a gamepad, the settings open from the highlighted Mineral Market entry: hold `PAD_MODIFIER` and press
+  `PAD_BUTTON` (`Badge.gd`). Opening them no longer needs a mouse and a keyboard.
+- New `Badge.gd`, the badge, kept identical in every mod with a Shift badge (CombatSimulator, CrewCheapHireNotifier,
+  DealerNotifier, DiveSkipTransit, ServiceNotifier).
+- `StationMenu.gd`: new `_MA_SETTINGS_TOOLTIP_PAD`, `_MA_BADGE_SCRIPT`, `_maShiftBadge` and `_maMakeShiftBadge()`;
+  `_maUpdate()` writes only the entry's text.
+- `i18n/en.po`: `MARKETADVISOR_SETTINGS_TOOLTIP` reworded, now the badge's tooltip; new
+  `MARKETADVISOR_SETTINGS_TOOLTIP_PAD`, the same with a gamepad.
+- `Code.gd`: new `_MA_DETAILS`, `_MA_LIST_MARGIN` and `_MA_PRICES_OPACITY`, for the paths and the value that were
+  written inline; `_MA_HEADER_BOX` starts from `_MA_DETAILS`.
+- `SettingsUI.gd`: `_labelArg()` removed, since no setting has a `labelArg` (nor does `SETTINGS` describe one any
+  more); a row's name is its label, translated.
+- README: the badge, the gamepad's twin of Shift+Click and `Badge.gd`; the advice warns about a sale below average
+  only when it sells to get the cash back up to the range, as it always has.
+
 ## 1.1.0
 - New setting, *Tolerance* (`tolerance`, in the cash reserve's group, shown in percent): the cash reserve gets a range,
   the reserve less and plus that share of it. The Trade button buys only once your cash is above the range, and sells

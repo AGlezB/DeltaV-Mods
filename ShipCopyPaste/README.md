@@ -56,8 +56,10 @@ at the Equipment screen's prices, the tuning, the mineral targeting and the crew
   to the game's state.
 - **The crew:** a ship's crew list is its config's `preferredCrew`, which `CurrentGame.gd` writes to the current ship
   only (`hireCrewmember`, `fireCrewmember`, `setMemberActive`) and `validateEmployment` puts aboard when the ship is
-  set up (and on every new day); without one, the crew aboard stays as it was. A template with a `preferredCrew` gives
-  it, and Paste calls `CurrentGame.validateEmployment()` right after writing it, so the crew goes aboard at once and
+  set up (and on every new day); without one, the crew aboard stays as it was. Firing someone takes them off the current
+  ship's list only (`fireCrewmember`), so a template's list can still name them: Paste gives the template's list
+  without anyone who is no longer in `CurrentGame.state.crew`, and calls `CurrentGame.validateEmployment()` right after
+  writing it, so the crew goes aboard at once and
   the station's portraits (`enceladus/CurrentCrew.gd`, on `employmentChanged`) follow. A template without one: its crew
   is unknown, the current ship's `preferredCrew` is left as it is, and the dialog says so.
 - **Paste** is enabled on the current entry when the template is in `CurrentGame.state.garage` with the same `model`
@@ -78,7 +80,8 @@ at the Equipment screen's prices, the tuning, the mineral targeting and the crew
 - **The plan:** the Equipment screen is the node `Upgrades` next to the Fleet screen (`enceladus/Enceladus.tscn`). On
   *Paste* and on *OK*, the mod calls its `updatePricesAndAvailability()` (as it does when it shows), then goes through
   `getItems()` by `slot`. A slot's value is read from each ship's config as that function reads the player's: a missing
-  `lidar.type` is the ship's `defaultLidar`, a missing number is 0; values are the same when they have the same type
+  `lidar.type` is the ship's `defaultLidar`, then a missing value is that of the slot's default item (the item with
+  `default`, as a hardpoint's None), and a missing number is 0; values are the same when they have the same type
   (an int counting as a float) and value. Where the template's value differs, the item with that value is bought if
   it `isAvailable()`: its `getNetPrice()`, and its `actualReplacementTime` (non-zero only when the piece it replaces is
   damaged: `ships/ship-ctrl.gd` `getSlotTime`). Otherwise the slot is kept and listed: a system's name translated, or
@@ -93,8 +96,9 @@ at the Equipment screen's prices, the tuning, the mineral targeting and the crew
   `config`, but for the slots kept, removed where the template has none; the crew, as `preferredCrew`, put aboard with
   `validateEmployment()`. Then, as `Dealer.gd` `use()` does after a switch, the Fleet screen emits `shipChanged`
   (`Enceladus.gd` `shipChanged` rebuilds the docked ship, which emits `playerShipChanged`) and calls `addShips()`.
-- `_ready` (only for Fleet entries; the parent's runs by itself), `_input` (the game's script has none) and
-  `checkCurrentAndOwned()`, an ordinary function that calls the parent's with `.checkCurrentAndOwned()`.
+- `_ready` (only for Fleet entries, the Dealer's turning `_input` off; the parent's runs by itself), `_input` (the
+  game's script has none) and `checkCurrentAndOwned()`, an ordinary function that calls the parent's with
+  `.checkCurrentAndOwned()`.
 - Members of the extension: the constants `_SHIP_COPY_PASTE_*`, the variables `_shipCopyPasteCopy`,
   `_shipCopyPastePaste`, `_shipCopyPasteDialog`, `_shipCopyPasteTitle`, `_shipCopyPasteLists`, `_shipCopyPasteSummary`,
   `_shipCopyPasteShown` and `_shipCopyPasteClosedFrame`, and the functions `_shipCopyPaste*` (the buttons, icons,

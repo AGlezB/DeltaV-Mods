@@ -1,5 +1,9 @@
 # LidarLouderPing - Changes
 
+## 1.2.4
+- The README and the description in `Mod.manifest` write LIDAR and the Equipment screen as the game does.
+- A comment in `Code.gd` names `i18n/en.po`, where the slider's texts are.
+
 ## 1.2.3
 - The README's *Disclaimer* no longer names the author.
 

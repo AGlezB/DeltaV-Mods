@@ -11,6 +11,8 @@ extends Node
 #   load                          loads the save and goes to the station, then waits until it is there
 #   dive                          from the station, goes to the ring scene, then waits until the player's ship is out of
 #                                 the arrival cutscene; nothing is saved
+#   transponders                  in the ring scene, one object of each kind that carries a code, around the player's
+#                                 ship and identified at once, so the OMS Pilot tab lists them (_transponders)
 #   wait|<seconds>
 #   press|<path>                  presses a button (its pressed signal)
 #   shiftclick|<path>             Shift+Click on a control (its gui_input signal), as the mods' settings open
@@ -21,6 +23,8 @@ extends Node
 #   set|<path>|<property>[/<key>...]|<json>
 #                                 sets a node's property, or a key of a dictionary it holds (missing ones are made), to
 #                                 a JSON value
+#   call|<path>|<method>|<json>   calls a node's method with the values of a JSON array as its arguments (JSON numbers
+#                                 are floats); an absolute path reaches an autoload (/root/CurrentGame)
 #   tab|<path>|<n or name>        shows tab n, or the tab with that node name, of a TabContainer
 #   scroll|<path>|<pixels>        scrolls the first ScrollContainer under <path> (itself included) down
 #   shot|<file>[|x,y,w,h]         saves the window, or that part of it, as a PNG
@@ -50,6 +54,40 @@ const FIXTURE_SHIP = ["WK-0001", "Wiki One"]
 const FIXTURE_SPARE = ["WK-0002", "Wiki Two"] # the same model as the ship flown
 const FIXTURE_OTHERS = [["EIME", "WK-0003", "Wiki Three"], ["COTHON", "WK-0004", "Wiki Four"]] # other models
 const FIXTURE_MONEY = 3000000
+
+# The transponders step: one object of each kind that carries a code, each made as the game makes it, around the
+# player's ship. Every random draw that makes a code or a name is seeded first, from SCENARIO_SEED, so both runs
+# (without and with TransponderAltCodes) get the same objects with the same draws. Each goes to its spot from the ship,
+# in world units: within the LIDAR's reach and apart from the others.
+const SCENARIO_SEED = 4242
+const SCENARIO_SPOTS = {
+	"carrier": Vector2(0, -7000),
+	"lifepod": Vector2(6000, 2500),
+	"wreck": Vector2(-6000, 2500),
+	"core": Vector2(8000, -4500),
+	"bodies": Vector2(-8000, -4500),
+}
+# A ship with drones: an Antonoff-Titan K225, a miner, every hardpoint empty but three bays, with a THI Cargo Container,
+# an NT Mining Companion and a B8 Claim Beacon. Their docks (ships/modules/ClaimOwner.gd) let the drones go a physics
+# frame after entering the tree, and code them from the ship's code; SCENARIO_DRONES_SECONDS is left for that.
+const SCENARIO_CARRIER = "AT225"
+const SCENARIO_FACTION = "civilian" # ship-ctrl.gd's default faction
+const SCENARIO_BAYS = {"leftBay1": "SYSTEM_EXSTORAGE-L", "leftBay2": "SYSTEM_SCOOP-L", "leftBay3": "SYSTEM_CLAIM-L"}
+const SCENARIO_DRONES_SECONDS = 1.0
+# A lifepod floating alone (story/LifepodIsFloating.gd makes one of this scene, which gives itself a code), and the
+# lifepod of a destroyed ship of SCENARIO_WRECK (ship-ctrl.gd vanish: its scene's lifepod, with the ship's code).
+const SCENARIO_LIFEPOD = "res://ships/Lifepod.tscn"
+const SCENARIO_WRECK = "COTHON"
+# The AI core an ATLAS drone leaves: its lifepod scene (ships/drone/ATLAS.tscn), with the drone's code and faction.
+const SCENARIO_CORE = "res://ships/drone/AICore.tscn"
+const SCENARIO_CORE_SHIP = "ATLAS"
+const SCENARIO_CORE_FACTION = "ai"
+# Frozen bodies, from the ring's own event (story/DeadBody.gd makeAt: a talking beacon and the bodies, all with one
+# code), in the ring scene: the beacon and the first SCENARIO_BODIES bodies, in a row SCENARIO_BODY_SPACING apart. The
+# beacon is placed, as the event places it, but not identified: the LIDAR doesn't see its collision layer.
+const SCENARIO_FROZEN_BODIES = "TheRing/DeadBody"
+const SCENARIO_BODIES = 3
+const SCENARIO_BODY_SPACING = 600.0
 
 # The ship and weapon pictures. A ship is drawn as DealerNotifier draws the Dealer's (its SettingsUI.gd _drawPicture):
 # in the viewport of a Dealer entry (enceladus/SystemBuyUI.tscn, never added to the tree), with its lights and
@@ -212,6 +250,8 @@ func _ready():
 				while not is_instance_valid(ship) or not ship.is_inside_tree() or ship.cutscene:
 					yield(get_tree().create_timer(POLL), "timeout")
 					ship = CurrentGame.getPlayerShip()
+			"transponders":
+				yield(_transponders(), "completed")
 			"wait":
 				yield(get_tree().create_timer(float(parts[1])), "timeout")
 			"press":
@@ -261,6 +301,13 @@ func _ready():
 					printerr("SHOTRENDERER: not JSON: ", parts[3])
 				elif target:
 					_assign(target, parts[2].split("/"), parsed.result)
+			"call":
+				var callee = _node(parts[1])
+				var arguments = JSON.parse(parts[3])
+				if arguments.error != OK or not arguments.result is Array:
+					printerr("SHOTRENDERER: not a JSON array: ", parts[3])
+				elif callee:
+					callee.callv(parts[2], arguments.result)
 			"tab":
 				var tabs = _node(parts[1])
 				if tabs:
@@ -402,6 +449,139 @@ func _newGame():
 		CurrentGame.setShipNameByTransponder(other[1], other[2])
 	CurrentGame.markStateAsValid()
 	CurrentGame.saveToFile()
+
+# --- The transponder scenario ---
+
+# The transponders step: the player's ship stopped, the objects placed around it (_place), then each identified as an
+# astrogator's mark identifies it (hud/ShipMark.gd scanTarget: its code and name, marked, flag 2), so the OMS Pilot tab
+# lists them in this order with their bearing and distance (hud/ShipList.gd): the ship, its drones, the lifepods, the AI
+# core, the bodies. Their codes are printed.
+func _transponders():
+	yield(get_tree(), "idle_frame")
+	var ship = CurrentGame.getPlayerShip()
+	var field = ship.get_parent() if is_instance_valid(ship) else null
+	if field == null:
+		printerr("SHOTRENDERER: no player's ship in a field for the transponders")
+		return
+	ship.linear_velocity = Vector2.ZERO
+	ship.angular_velocity = 0.0
+	ship.autopilotDesiredVelocity = Vector2.ZERO
+	var carrier = _carrier()
+	_place(field, carrier, ship.position + SCENARIO_SPOTS.carrier)
+	var lifepod = load(SCENARIO_LIFEPOD).instance()
+	lifepod.ai = false
+	seed(SCENARIO_SEED + 1)
+	_place(field, lifepod, ship.position + SCENARIO_SPOTS.lifepod)
+	var wreckPod = _wreckLifepod()
+	_place(field, wreckPod, ship.position + SCENARIO_SPOTS.wreck)
+	var core = _aiCore()
+	_place(field, core, ship.position + SCENARIO_SPOTS.core)
+	var bodies = []
+	var event = _scene().get_node_or_null(SCENARIO_FROZEN_BODIES)
+	if event == null:
+		printerr("SHOTRENDERER: no frozen bodies event at ", SCENARIO_FROZEN_BODIES)
+	else:
+		seed(SCENARIO_SEED + 4)
+		var made = event.makeAt(ship.position + SCENARIO_SPOTS.bodies)
+		for i in range(made.size()):
+			if i > SCENARIO_BODIES:
+				made[i].free()
+				continue
+			# A body's name, and so its initials, is drawn as it enters the tree (story/body.gd detail).
+			seed(SCENARIO_SEED + 5 + i)
+			_place(field, made[i], ship.position + SCENARIO_SPOTS.bodies + Vector2(i * SCENARIO_BODY_SPACING, 0))
+			if i > 0:
+				bodies.append(made[i])
+	yield(get_tree().create_timer(SCENARIO_DRONES_SECONDS), "timeout")
+	var drones = []
+	for child in field.get_children():
+		if child != carrier and "transponder" in child and child.transponder.begins_with(carrier.transponder + "-"):
+			drones.append(child)
+	drones.sort_custom(self, "_isSceneBefore")
+	var objects = [carrier] + drones + [lifepod, wreckPod, core] + bodies
+	for o in objects:
+		if is_instance_valid(o) and o.is_inside_tree():
+			var code = o.getTransponder() if o.has_method("getTransponder") else o.transponder
+			var shown = o.getShipName() if o.has_method("getShipName") else ""
+			ship.addIdentifiedShip(o, code, shown, true, 2)
+			print("SHOTRENDERER transponder ", code, " (", shown, ")")
+	_identifiedFirst(ship, objects)
+
+# The ship's identified objects (ship-ctrl.gd identifiedShips, keyed by the object's hash, which the Pilot tab lists in
+# its order) reordered in place: `objects` first, in their order, then the others. The game identifies some of them on
+# its own as soon as they are near (the astrogator's marks, the LIDAR), in an order that differs from run to run.
+func _identifiedFirst(ship, objects):
+	var all = ship.identifiedShips.duplicate()
+	ship.identifiedShips.clear()
+	for o in objects:
+		if not is_instance_valid(o):
+			continue
+		var h = hash(o)
+		if h in all:
+			ship.identifiedShips[h] = all[h]
+			all.erase(h)
+	for h in all:
+		ship.identifiedShips[h] = all[h]
+	ship.emit_signal("identifiedShipsChanged")
+
+# The ship with drones (SCENARIO_CARRIER), built as the Shipyard builds a ship of the rings, its code from the seed. Its
+# AI and autopilot are off, so it stays where it is placed and hails no one.
+func _carrier():
+	var cfg = Shipyard.getDefaultConfigByName(SCENARIO_CARRIER)
+	cfg.faction = SCENARIO_FACTION
+	var slots = cfg.config.get(HARDPOINTS, {})
+	for slot in slots:
+		slots[slot][HARDPOINT_SYSTEM] = NO_SYSTEM
+	for slot in SCENARIO_BAYS:
+		slots[slot] = {HARDPOINT_SYSTEM: SCENARIO_BAYS[slot]}
+	cfg.config[HARDPOINTS] = slots
+	var carrier = Shipyard.createShipByConfig(cfg, true, 0, SCENARIO_SEED)
+	carrier.factionIndependent = true
+	carrier.ai = false
+	carrier.autopilot = false
+	return carrier
+
+# The lifepod a destroyed SCENARIO_WRECK leaves, as ship-ctrl.gd vanish makes it: the ship's code (which the game then
+# forgets, forgetTransponser) and faction. The ship itself never enters the tree.
+func _wreckLifepod():
+	var cfg = Shipyard.getDefaultConfigByName(SCENARIO_WRECK)
+	cfg.faction = SCENARIO_FACTION
+	var wreck = Shipyard.createShipByConfig(cfg, true, 0, SCENARIO_SEED + 2)
+	var pod = wreck.lifepod.instance()
+	pod.transponder = wreck.transponder
+	pod.faction = wreck.faction
+	pod.playerControlled = false
+	pod.ai = false
+	CurrentGame.forgetTransponser(wreck.transponder)
+	wreck.free()
+	return pod
+
+# The AI core an ATLAS leaves, with the code the Shipyard would give the drone (CurrentGame.gd getTransponder, from
+# the seed) and its faction, as ship-ctrl.gd vanish gives them.
+func _aiCore():
+	var cfg = Shipyard.getDefaultConfigByName(SCENARIO_CORE_SHIP)
+	cfg.faction = SCENARIO_CORE_FACTION
+	var core = load(SCENARIO_CORE).instance()
+	core.transponder = CurrentGame.getTransponder(true, cfg, SCENARIO_SEED + 3)
+	core.faction = SCENARIO_CORE_FACTION
+	core.playerControlled = false
+	core.ai = false
+	return core
+
+# Puts `o` in the asteroid field at `at` (the field's coordinates, as the player's ship's position), at rest, with the
+# field's zone, as AsteroidSpawner.gd spawnByBlueprint puts an oddity there; but exactly there, since that function
+# draws a random spot and turn, and draws again where something is in the way, which would change the draws after it.
+func _place(field, o, at):
+	o.position = at
+	if o is RigidBody2D:
+		o.linear_velocity = Vector2.ZERO
+		o.angular_velocity = 0.0
+	if "zone" in o and "zone" in field:
+		o.zone = field.zone
+	field.add_child(o)
+
+func _isSceneBefore(a, b):
+	return a.filename < b.filename
 
 # --- Ship and weapon pictures ---
 

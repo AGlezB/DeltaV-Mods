@@ -31,7 +31,8 @@ const WARN_BELOW_AVERAGE = 0.1
 #     sale and a purchase of the same mineral make one trade). parked: the parked tonnes once `now` is done.
 #   waits: the trades worth waiting for, each {mineral, when, sell}. cashAfter: the cash once `now` is done.
 #   capped: there is cash to park, but every parking mineral is at maxTonnes. short: selling can't reach the range.
-#   warnings: the parking minerals `now` sells more than WARN_BELOW_AVERAGE below their average.
+#   warnings: when `now` sells parked tonnes to get back up to the range, the parking minerals it sells (parked tonnes
+#     or stored ore) more than WARN_BELOW_AVERAGE below their average.
 static func plan(input: Dictionary) -> Dictionary:
 	var start = input.held
 	var held = {}

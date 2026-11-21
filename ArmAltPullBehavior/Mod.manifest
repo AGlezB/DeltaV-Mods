@@ -2,14 +2,14 @@
 
 name="ArmAltPullBehavior"
 id="AGlezB.ArmAltPullBehavior"
-description="Changes how the ship's AR-1500 arm brings a target in and holds it: along curved paths through the opening of the grinder or excavator, clear of the rotors, claws and hull, and steady against the ship's turns and thrust."
+description="Changes how the ship's AR-1500 arm brings a target in and holds it."
 author="AGlezB"
 
 [version]
 
 version_major=1
 version_minor=6
-version_bugfix=0
+version_bugfix=1
 
 [tags]
 

@@ -196,6 +196,24 @@ func escKey():
 	event.scancode = KEY_ESCAPE
 	return event
 
+func joyButton(index):
+	var event = InputEventJoypadButton.new()
+	event.button_index = index
+	return event
+
+# A press and release of a gamepad button (JOY_*), then a frame: Input hands parsed events on at the next one.
+func tapJoy(index):
+	yield(tap(joyButton(index)), "completed")
+	yield(get_tree(), "idle_frame")
+
+# A gamepad button pressed, or released, and left so, as Input delivers it (Input.is_joy_button_pressed follows).
+func holdJoy(index, pressed):
+	yield(get_tree(), "idle_frame")
+	var event = joyButton(index)
+	event.pressed = pressed
+	Input.parse_input_event(event)
+	yield(get_tree(), "idle_frame")
+
 # The game's bindings (its project.godot): ui_cancel is Esc, pause is Esc too.
 func bindGameKeys():
 	if not InputMap.has_action("pause"):
@@ -265,6 +283,14 @@ func parkedValue(s) -> String:
 	var r = s.market.get_node_or_null(PARKED_ROW)
 	return r.get_node("Insurance").text if r != null else "no row"
 
+# The tooltip of the Shift badge beside a station menu entry (a mod's Badge.gd, a child of the entry), which holds it:
+# the entry has none of its own.
+func badgeTip(entry) -> String:
+	for child in entry.get_children():
+		var script = child.get_script()
+		if script != null and script.resource_path.ends_with("/Badge.gd"):
+			return child.hint_tooltip
+	return ""
 func run():
 	bindGameKeys()
 	addTranslations()
@@ -293,6 +319,13 @@ func control():
 	yield(frames(5), "completed")
 	check("control: the market's entry keeps its key, and has no tooltip", s.marketEntry.text == MARKET_KEY and s.marketEntry.hint_tooltip == "", s.marketEntry.text)
 	check("control: the market has no row of the mod's, at the bottom or in the header", not s.market.has_node("Details/MarketAdvisor") and not s.market.has_node(PARKED_ROW))
+	# The gamepad twin of Shift+Click (the mod's Badge.gd, not loaded here: LT and X).
+	s.marketEntry.grab_focus()
+	yield(holdJoy(JOY_L2, true), "completed")
+	yield(tapJoy(JOY_XBOX_X), "completed")
+	yield(holdJoy(JOY_L2, false), "completed")
+	yield(frames(5), "completed")
+	check("control: LT+X on the highlighted entry opens nothing", not s.market.visible and s.screens.get_node_or_null(SCREEN) == null)
 	click(s.marketEntry, true)
 	yield(frames(40), "completed")
 	check("control: Shift+Click opens the market", s.market.visible)
@@ -625,7 +658,7 @@ func alerts():
 	yield(frames(5), "completed")
 	var menuKeys = s.menu
 	check("menu: the mod's texts are loaded (i18n/en.po)", tr(menuKeys._MA_SETTINGS_TOOLTIP) != menuKeys._MA_SETTINGS_TOOLTIP and tr(menuKeys._MA_ALERT) != menuKeys._MA_ALERT)
-	check("menu: the market entry's tooltip tells about Shift+Click", s.marketEntry.hint_tooltip == tr(menuKeys._MA_SETTINGS_TOOLTIP) % [OS.get_scancode_string(KEY_SHIFT), manifestValue("mod_information", "name")], s.marketEntry.hint_tooltip)
+	check("menu: the market entry's Shift badge has the tooltip, which tells about Shift+Click; the entry has none of its own", badgeTip(s.marketEntry) == tr(menuKeys._MA_SETTINGS_TOOLTIP) % [OS.get_scancode_string(KEY_SHIFT), manifestValue("mod_information", "name")] and s.marketEntry.hint_tooltip == "", [badgeTip(s.marketEntry), s.marketEntry.hint_tooltip])
 	check("menu: no alert marks with nothing to do", s.marketEntry.text == MARKET_KEY and s.servicesEntry.text == SERVICES_KEY, [s.marketEntry.text, s.servicesEntry.text])
 	CurrentGame.changeMoney(10500000.0)
 	yield(frames(3), "completed")
@@ -785,6 +818,47 @@ func screen():
 	click(s.logs, false)
 	yield(frames(40), "completed")
 	check("screen: focusing another entry of the menu closes it", reopened and not screen.visible)
+	# With a gamepad: the Shift badge reads the gamepad twin while the game is played with one, and X pressed on the
+	# highlighted entry while LT is held opens the settings, as Shift+Click does (Badge.gd).
+	var shiftBadge = s.menu._maShiftBadge
+	var padModifier = shiftBadge.PAD_MODIFIER
+	var padButton = shiftBadge.PAD_BUTTON
+	var keyText = OS.get_scancode_string(KEY_SHIFT)
+	var keyRead = shiftBadge._label.text
+	Settings.controlScheme = Settings.control.gamepad
+	var padRead = shiftBadge._label.text
+	var padTip = shiftBadge.hint_tooltip
+	Settings.controlScheme = Settings.control.keyMouse
+	var keyTip = shiftBadge.hint_tooltip
+	check("gamepad: the Shift badge reads Shift with keyboard and mouse, the gamepad twin with a gamepad, and Shift again", keyRead == keyText and padRead == shiftBadge.PAD_TEXT and shiftBadge._label.text == keyText, [keyRead, padRead, shiftBadge._label.text])
+	var modName = manifestValue("mod_information", "name")
+	var padKey = s.menu._MA_SETTINGS_TOOLTIP_PAD
+	var padExpected = tr(padKey) % [shiftBadge.PAD_BUTTON_NAME, shiftBadge.PAD_MODIFIER_NAME, modName]
+	check("gamepad: its tooltip tells about the gamepad twin with a gamepad, and about Shift+Click again with keyboard and mouse", padTip == padExpected and keyTip == tr(s.menu._MA_SETTINGS_TOOLTIP) % [keyText, modName] and tr(padKey) != padKey, [padTip, keyTip])
+	Settings.controlScheme = Settings.control.gamepad
+	s.marketEntry.grab_focus()
+	yield(tapJoy(padButton), "completed")
+	yield(frames(5), "completed")
+	check("gamepad: X alone on the highlighted entry does nothing", not screen.visible and not s.market.visible)
+	yield(holdJoy(padModifier, true), "completed")
+	s.marketEntry.disabled = true
+	yield(tapJoy(padButton), "completed")
+	yield(frames(5), "completed")
+	check("gamepad: LT+X on a disabled entry does nothing", not screen.visible and not s.market.visible)
+	s.marketEntry.disabled = false
+	s.logs.grab_focus()
+	yield(tapJoy(padButton), "completed")
+	yield(frames(5), "completed")
+	check("gamepad: LT+X with another entry highlighted doesn't open these settings", not screen.visible and not s.market.visible)
+	s.marketEntry.grab_focus()
+	yield(tapJoy(padButton), "completed")
+	yield(frames(5), "completed")
+	check("gamepad: LT+X on the highlighted market entry opens the settings, not the market", screen.visible and not s.market.visible)
+	yield(holdJoy(padModifier, false), "completed")
+	yield(tap(escKey()), "completed")
+	yield(frames(40), "completed")
+	check("gamepad: closing them highlights the entry again", not screen.visible and s.marketEntry.has_focus())
+	Settings.controlScheme = Settings.control.keyMouse
 	for key in ma.SETTINGS:
 		settings.setValue(key, ma.SETTINGS[key].default)
 	yield(freeStation(s), "completed")

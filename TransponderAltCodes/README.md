@@ -19,7 +19,7 @@ also happens without the mod.
   and a serial of `SERIAL_LENGTH` letters and digits from `SERIAL_CHARS` (without the letters that read like digits),
   enough for every ship of a model. Both come from the seed the game draws its code from, so a ship always gets the
   same code. Every ship gets one this way: the Dealer's stock, the ships met in a dive, the player's first ship (also
-  the one New Game+ offers).
+  the one the New Game Options screen offers).
 - **What:** the objects whose code the game makes from a ship's get a suffix that says what they are:
   - a ship's lifepod: the ship's code and `LIFEPOD_SUFFIX`; a lifepod found floating: a random ship's code (drawn as
     the Dealer draws its used ships) and the same suffix. The pod keeps the name the game gives its ship's code.
@@ -45,7 +45,7 @@ also happens without the mod.
 
 ## For modders
 - Script extension of `res://CurrentGame.gd`, the `CurrentGame` autoload, and of `res://menu/NewGamePlus.gd`, the
-  New Game+ screen (`installScriptExtension` in `ModMain.gd`, in that order). The tag `group = Transponder` in
+  New Game Options screen (`installScriptExtension` in `ModMain.gd`, in that order). The tag `group = Transponder` in
   `Mod.manifest` names what it changes.
 - Installed in `ModMain`'s `_init`: the game's `ModLoader.gd` runs it while the engine creates its autoloads, and
   `CurrentGame` comes after `ModLoader` in the game's `project.godot`, so the engine creates the autoload from the
@@ -73,8 +73,15 @@ also happens without the mod.
     a ship: it keeps the game's.
   - `NewGamePlusScreen.gd` overrides `rerollNames()`: `_tacModel` set to the model of `CurrentGame.initialShip` (the
     new game's ship) around the parent's call, through `set` and `get`.
+- With CombatSimulator, which extends `CurrentGame.gd` too, from `_init` as well: by path the chain is game ←
+  CombatSimulator ← TransponderAltCodes. They override different functions (CombatSimulator `giveXp`, `setStory`,
+  `recordEncounter`, `setDestinationHighlight` and `addShip`), and their members differ (the `transponder` and
+  `combat` suites of the repository's test harness load them together).
 - New members, all prefixed `_tac`: `_tacModel`, `_tacModelCode`, `_tacNodeAdded`, `_tacShipAdded`, `_tacAddSuffix`,
-  `_tacDockAdded`.
+  `_tacDockAdded`, and the constants of what it matches in the game (script paths, transponder formats, scene and
+  `specialName`), `_TAC_SHIP_SCRIPT`, `_TAC_BODY_SCRIPT`, `_TAC_DOCK_SCRIPT`, `_TAC_DOCK_FORMAT`,
+  `_TAC_STORY_BEACON_SCRIPTS`, `_TAC_STORY_BEACON_FORMAT`, `_TAC_BODY_BEACON_SCENE`, `_TAC_LIFEPOD_NAME` and
+  `_TAC_AI_CORE_NAME`.
 - Constants (`Code.gd`) a player may edit inside the zip: `MODEL_CODES` (one code per model key of the game's
   `ships/Shipyard.gd`, all the same length), `MODEL_CODE_PAD` (fills the code of a model missing from the table, made
   from its key), `SERIAL_LENGTH` and `SERIAL_CHARS` (the serial), `LIFEPOD_SUFFIX`, `AI_CORE_SUFFIX`, `CREW_SUFFIX`

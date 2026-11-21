@@ -71,6 +71,13 @@ func serviceControl():
 	var s = station(false, ROWS)
 	yield(frames(5), "completed")
 	check("control: the Services entry keeps its key, and has no tooltip", s.servicesEntry.text == SERVICES_KEY and s.servicesEntry.hint_tooltip == "", s.servicesEntry.text)
+	# The gamepad twin of Shift+Click (the mod's Badge.gd, not loaded here: LT and X).
+	s.servicesEntry.grab_focus()
+	yield(holdJoy(JOY_L2, true), "completed")
+	yield(tapJoy(JOY_XBOX_X), "completed")
+	yield(holdJoy(JOY_L2, false), "completed")
+	yield(frames(5), "completed")
+	check("control: LT+X on the highlighted entry opens nothing", s.screens.get_node_or_null(SN_SCREEN) == null and not s.servicesScreen.visible)
 	click(s.servicesEntry, true)
 	yield(frames(10), "completed")
 	check("control: Shift+Click opens no settings", s.screens.get_node_or_null(SN_SCREEN) == null)
@@ -119,7 +126,7 @@ func serviceMark():
 	yield(frames(5), "completed")
 	var menuKeys = s.menu
 	check("menu: the mod's texts are loaded (i18n/en.po)", tr(menuKeys._SN_SETTINGS_TOOLTIP) != menuKeys._SN_SETTINGS_TOOLTIP and tr(menuKeys._SN_ALERT) != menuKeys._SN_ALERT)
-	check("menu: the Services entry's tooltip tells about Shift+Click", s.servicesEntry.hint_tooltip == tr(menuKeys._SN_SETTINGS_TOOLTIP) % [OS.get_scancode_string(KEY_SHIFT), snManifestValue("mod_information", "name")], s.servicesEntry.hint_tooltip)
+	check("menu: the Services entry's Shift badge has the tooltip, which tells about Shift+Click; the entry has none of its own", badgeTip(s.servicesEntry) == tr(menuKeys._SN_SETTINGS_TOOLTIP) % [OS.get_scancode_string(KEY_SHIFT), snManifestValue("mod_information", "name")] and s.servicesEntry.hint_tooltip == "", [badgeTip(s.servicesEntry), s.servicesEntry.hint_tooltip])
 	check("menu: no alert mark with no money", s.servicesEntry.text == SERVICES_KEY, s.servicesEntry.text)
 	CurrentGame.setUiValue("cooldown.SERVICE_BAR_TWINS", CurrentGame.getInGameTimestamp() + 10 * DAY)
 	CurrentGame.changeMoney(1000.0)
@@ -259,5 +266,46 @@ func serviceScreen():
 	click(s.logs, false)
 	yield(frames(40), "completed")
 	check("screen: focusing another entry of the menu closes it", reopened and not screen.visible)
+	# With a gamepad: the Shift badge reads the gamepad twin while the game is played with one, and X pressed on the
+	# highlighted entry while LT is held opens the settings, as Shift+Click does (Badge.gd).
+	var shiftBadge = s.menu._snShiftBadge
+	var padModifier = shiftBadge.PAD_MODIFIER
+	var padButton = shiftBadge.PAD_BUTTON
+	var keyText = OS.get_scancode_string(KEY_SHIFT)
+	var keyRead = shiftBadge._label.text
+	Settings.controlScheme = Settings.control.gamepad
+	var padRead = shiftBadge._label.text
+	var padTip = shiftBadge.hint_tooltip
+	Settings.controlScheme = Settings.control.keyMouse
+	var keyTip = shiftBadge.hint_tooltip
+	check("gamepad: the Shift badge reads Shift with keyboard and mouse, the gamepad twin with a gamepad, and Shift again", keyRead == keyText and padRead == shiftBadge.PAD_TEXT and shiftBadge._label.text == keyText, [keyRead, padRead, shiftBadge._label.text])
+	var modName = snManifestValue("mod_information", "name")
+	var padKey = s.menu._SN_SETTINGS_TOOLTIP_PAD
+	var padExpected = tr(padKey) % [shiftBadge.PAD_BUTTON_NAME, shiftBadge.PAD_MODIFIER_NAME, modName]
+	check("gamepad: its tooltip tells about the gamepad twin with a gamepad, and about Shift+Click again with keyboard and mouse", padTip == padExpected and keyTip == tr(s.menu._SN_SETTINGS_TOOLTIP) % [keyText, modName] and tr(padKey) != padKey, [padTip, keyTip])
+	Settings.controlScheme = Settings.control.gamepad
+	s.servicesEntry.grab_focus()
+	yield(tapJoy(padButton), "completed")
+	yield(frames(5), "completed")
+	check("gamepad: X alone on the highlighted entry does nothing", not screen.visible and not s.servicesScreen.visible)
+	yield(holdJoy(padModifier, true), "completed")
+	s.servicesEntry.disabled = true
+	yield(tapJoy(padButton), "completed")
+	yield(frames(5), "completed")
+	check("gamepad: LT+X on a disabled entry does nothing", not screen.visible and not s.servicesScreen.visible)
+	s.servicesEntry.disabled = false
+	s.logs.grab_focus()
+	yield(tapJoy(padButton), "completed")
+	yield(frames(5), "completed")
+	check("gamepad: LT+X with another entry highlighted doesn't open these settings", not screen.visible and not s.servicesScreen.visible)
+	s.servicesEntry.grab_focus()
+	yield(tapJoy(padButton), "completed")
+	yield(frames(5), "completed")
+	check("gamepad: LT+X on the highlighted Services entry opens the settings, not the Services screen", screen.visible and not s.servicesScreen.visible)
+	yield(holdJoy(padModifier, false), "completed")
+	yield(tap(escKey()), "completed")
+	yield(frames(40), "completed")
+	check("gamepad: closing them highlights the entry again", not screen.visible and s.servicesEntry.has_focus())
+	Settings.controlScheme = Settings.control.keyMouse
 	snSettings.cfg.alert = {}
 	yield(freeStation(s), "completed")

@@ -1,6 +1,6 @@
 extends "res://enceladus/CurrentCrewManagement.gd"
 
-# The "Your crew" screen, sorted by job, then salary (lowest first).
+# The Your Crew screen, sorted by job, then salary (lowest first).
 
 
 func fillCrew():

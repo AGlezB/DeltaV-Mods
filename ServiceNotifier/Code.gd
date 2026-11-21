@@ -2,24 +2,36 @@ extends "res://enceladus/EnceladusMenu.gd"
 
 # The station menu (enceladus/EnceladusMenu.gd). Its Services entry shows an alert mark (the " (*)" after its text)
 # while a service whose switch is on can be bought, as the game's own row for that service decides, and opens the mod's
-# settings with Shift+Click, the way DealerNotifier's Dealer entry opens its own: the entry's tooltip says so, and a
-# plain click still opens the Services screen. The services watched are those that can't be bought again right after
-# being bought (Settings.gd kindOf): those with a cooldown, and those that pay a faction compensation.
+# settings with Shift+Click, the way DealerNotifier's Dealer entry opens its own: a Shift badge beside the entry says
+# so in its tooltip, and a plain click on the entry still opens the Services screen. The services watched are those
+# that can't be bought again right after being bought (Settings.gd kindOf): those with a cooldown, and those that pay a
+# faction compensation.
 
 # The settings: their model, shared with the settings screen.
 const ServiceNotifier = preload("res://ServiceNotifier/Settings.gd")
 const _SN_SETTINGS_UI = preload("res://ServiceNotifier/SettingsUI.gd")
 # Translation keys of i18n/en.po. The entry's text with its alert mark, whose %s is the entry's own text in the game's
-# language; and the entry's tooltip, whose first %s is the key to hold while clicking, the second the mod's name.
+# language; and the Shift badge's tooltip, whose first %s is the key to hold while clicking the entry, the second the
+# mod's name.
 const _SN_ALERT = "SERVICENOTIFIER_ALERT"
 const _SN_SETTINGS_TOOLTIP = "SERVICENOTIFIER_SETTINGS_TOOLTIP"
+# The same while the game is played with a gamepad (Badge.gd setShiftTooltips): the button to press, the one to hold,
+# the mod's name.
+const _SN_SETTINGS_TOOLTIP_PAD = "SERVICENOTIFIER_SETTINGS_TOOLTIP_PAD"
 # The Services screen (enceladus/Services.tscn) in the screens container, and the box of its rows (enceladus/ServiceUI.gd,
 # one per service) in it.
 const _SN_SERVICES_SCREEN = "Services"
+# The menu's Services entry (enceladus/EnceladusMenu.tscn), and the Tuning screen among the station's screens, whose
+# description window the settings screen copies.
+const _SN_SERVICES_ENTRY = "Services"
+const _SN_TUNING_SCREEN = "Tuning"
 const _SN_SERVICE_ROWS = "VB/MarginContainer/ScrollContainer/MarginContainer/Items"
+# The badges' script: their look, and their tooltip as their only interaction.
+const _SN_BADGE_SCRIPT = preload("res://ServiceNotifier/Badge.gd")
 
 var _snButton = null
 var _snKey = ""
+var _snShiftBadge = null # the Shift badge beside the Services entry
 var _snScreens = null # the station's container of right-hand screens (enceladus/HidingMarginContainer.gd)
 var _snServices = null # the station's Services screen: its rows, and the frame the settings screen copies
 var _snTuning = null # the station's Tuning screen, whose description window the settings screen copies
@@ -34,7 +46,7 @@ var _snQueued = false
 # Without the container or its Services screen there are no settings and no alert mark, and Shift+Click is a plain
 # click.
 func _ready():
-	var button = get_node_or_null("Services")
+	var button = get_node_or_null(_SN_SERVICES_ENTRY)
 	if not button is Button:
 		return
 	_snButton = button
@@ -46,8 +58,9 @@ func _ready():
 	if screens != null and screens.has_signal("hidefoka") and screens.get_node_or_null(_SN_SERVICES_SCREEN) is Control:
 		_snScreens = screens
 		_snServices = screens.get_node(_SN_SERVICES_SCREEN)
-		_snTuning = screens.get_node_or_null("Tuning")
+		_snTuning = screens.get_node_or_null(_SN_TUNING_SCREEN)
 		_snButton.connect("gui_input", self, "_snOnServicesInput")
+		_snShiftBadge = _snMakeShiftBadge(_snButton)
 		_snSettings.connect("settingsChanged", self, "_snQueue")
 		for signalName in ["dayPassed", "hourPassed", "moneyChanged", "moneyOrInsuranceChanged", "employmentChanged"]:
 			if CurrentGame.has_signal(signalName):
@@ -55,17 +68,24 @@ func _ready():
 		_snQueue()
 	_snUpdate()
 
-# The entry with its alert mark and the tooltip hold translated text, which the button can't translate again.
+# The entry with its alert mark holds translated text, which the button can't translate again.
 func _notification(what):
 	if what == NOTIFICATION_TRANSLATION_CHANGED and _snButton != null:
 		_snUpdate()
 
-# The tooltip only where Shift+Click opens the settings. The game's tooltip node (the menu's PlaySoundsOnTheseButtons,
-# menu/sfx/PlaySoundsOnTheseButtons.gd) takes it over and reads it again on every hover, so setting it again is enough.
 func _snUpdate():
 	_snButton.text = tr(_SN_ALERT) % tr(_snKey) if _snDue else _snKey
-	if _snScreens != null:
-		_snButton.hint_tooltip = tr(_SN_SETTINGS_TOOLTIP) % [OS.get_scancode_string(KEY_SHIFT), _snSettings.modName()]
+
+# The Shift badge (Badge.gd), in the entry's own frame and font colour, to the right of the entry, the menu's gap
+# between entries away (Badge.gd hangBeside). Its tooltip, only where Shift+Click opens the settings, is shown by the
+# menu's PlaySoundsOnTheseButtons.
+func _snMakeShiftBadge(button):
+	var badge = _SN_BADGE_SCRIPT.new()
+	badge.dress(button, OS.get_scancode_string(KEY_SHIFT), _SN_BADGE_SCRIPT.PAD_TEXT)
+	badge.hangBeside(button, get_constant("separation"))
+	badge.attachTooltip(get_node_or_null("PlaySoundsOnTheseButtons"))
+	badge.setShiftTooltips(_SN_SETTINGS_TOOLTIP, _SN_SETTINGS_TOOLTIP_PAD, _snSettings.modName())
+	return badge
 
 # Checked once per frame at most, after the game's own handlers of the same signals.
 func _snQueue(_arg = null):
@@ -98,11 +118,12 @@ func _snCheck():
 			_snDue = true
 	_snUpdate()
 
-# Shift+Click opens the settings instead of the Services screen. The gui_input signal comes before the button's own
-# _gui_input, and accepting the press there keeps the button from pressing.
+# Shift+Click opens the settings instead of the Services screen, and so does its gamepad twin on the highlighted entry
+# (Badge.gd isPadShortcut). A click's gui_input signal comes before the button's own _gui_input, and accepting the
+# press there keeps the button from pressing; the gamepad's X does nothing to a button.
 func _snOnServicesInput(event):
-	if event is InputEventMouseButton and event.pressed and event.button_index == BUTTON_LEFT and event.shift \
-			and not _snButton.disabled:
+	var shiftClick = event is InputEventMouseButton and event.pressed and event.button_index == BUTTON_LEFT and event.shift
+	if (shiftClick or _SN_BADGE_SCRIPT.isPadShortcut(event)) and not _snButton.disabled:
 		_snButton.accept_event()
 		_snOpenSettings()
 

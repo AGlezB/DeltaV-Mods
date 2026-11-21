@@ -60,13 +60,13 @@
 	CrewCheapHireNotifier = @{
 		Steps = @(
 			'load', 'wait|10'
-			'shot|menu|0,115,340,457'
+			'shot|menu|0,115,410,457'
 			'press|{menu}/Crew', 'wait|2'
 			'tab|{screens}/Crew/TabHintContainer/Tabs|1', 'wait|2'
 			'scroll|{screens}/Crew/TabHintContainer/Tabs/ENCELADUS_CREW_HIRE|700', 'wait|1'
 			'shot|hire|950,100,622,235'
 			'with:shiftclick|{menu}/Crew', 'wait|2'
-			'with:shot|settings|545,15,1055,630'
+			'with:shot|settings|545,15,1055,750'
 		)
 	}
 	CrewHighlightJobAndSalary = @{
@@ -76,6 +76,25 @@
 			'shot|yourcrew|950,290,622,225'
 			'tab|{screens}/Crew/TabHintContainer/Tabs|1', 'wait|2'
 			'shot|hire|950,110,622,235'
+		)
+	}
+	# The station menu with its alert mark, the Dealer screen with its badge, and the settings, in a run where every model
+	# is switched on (Select all) and then a day passes: the dealer's ship of the day comes up for sale. The settings
+	# screen closes with Esc, and its third row (the first ship's) is focused with the keyboard, so its description
+	# shows; the shot comes before the game's tooltip for the focused switch.
+	DealerNotifier = @{
+		Steps = @(
+			'load', 'wait|10'
+			'with:shiftclick|{menu}/ShipMarket', 'wait|2'
+			'with:pressfind|{screens}/DealerNotifierSettings|SelectAll|0', 'wait|1'
+			'with:action|ui_cancel', 'wait|2'
+			'call|/root/CurrentGame|advanceTimeBySeconds|[86400]', 'wait|4'
+			'shot|menu|0,115,410,457'
+			'press|{menu}/ShipMarket', 'wait|4'
+			'shot|dealer|560,505,1010,380'
+			'with:shiftclick|{menu}/ShipMarket', 'wait|2'
+			'with:action|ui_down', 'with:action|ui_down', 'wait|0.3'
+			'with:shot|settings|545,15,1055,875'
 		)
 	}
 	DiveSkipTransit = @{
@@ -188,7 +207,7 @@
 	MarketAdvisor = @{
 		Steps = @(
 			'load', 'wait|10'
-			'shot|menu|0,115,350,457'
+			'shot|menu|0,115,410,457'
 			'press|{menu}/MineralMarket', 'wait|3'
 			'shot|market|545,15,1055,875'
 			'with:shiftclick|{menu}/MineralMarket', 'wait|2'
@@ -199,7 +218,7 @@
 	ServiceNotifier = @{
 		Steps = @(
 			'load', 'wait|10'
-			'shot|menu|0,115,350,457'
+			'shot|menu|0,115,410,457'
 			'with:shiftclick|{menu}/Services', 'wait|2'
 			'with:shot|settings|545,15,1055,700'
 		)
@@ -221,6 +240,19 @@
 			'shot|dealer|560,505,1010,380'
 			'press|{menu}/OwnedShips', 'wait|4'
 			'shot|fleet|560,470,1020,275'
+		)
+	}
+	# The OMS Pilot tab (J opens the OMS) listing one object of each kind that carries a code, around the ship in a dive
+	# (ShotRenderer's transponders step): a ship with a THI Cargo Container, an NT Mining Companion and a B8 Claim Beacon
+	# out as drones, a lifepod floating alone, a destroyed ship's lifepod, an ATLAS's AI core, and three frozen bodies.
+	TransponderAltCodes = @{
+		Steps = @(
+			'load', 'wait|10'
+			'dive', 'wait|5'
+			'transponders', 'wait|2'
+			'action|jury_rig', 'wait|2'
+			'tab|{oms}|CREW_OCCUPATION_PILOT', 'wait|2'
+			'shot|pilot|320,2,965,535'
 		)
 	}
 }

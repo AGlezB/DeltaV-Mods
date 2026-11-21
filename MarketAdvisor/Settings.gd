@@ -18,11 +18,11 @@ const RANGE = "MARKETADVISOR_RANGE"
 
 # One description per setting, in the order the settings screen lists them within their group. Each default is
 # declared here only. `label` is a translation key of i18n/en.po, and so is `label` followed by SettingsUI.gd's
-# DESCRIPTION_SUFFIX: the description the screen shows while the setting is selected. Where a setting has `labelArg`,
-# both texts have a %s for it, translated; where it has `descriptionArg`, only the description has. `group`:
-# the screen's group it is in (SettingsUI.gd GROUPS). `type` "bool" is a switch; "float" a slider, with its `min`, `max`,
-# `step`, `unit` and `format` (for the value shown), and `shown`, the factor from the stored value to the one the screen
-# shows (toShown): a fraction is stored, and shown as a percentage.
+# DESCRIPTION_SUFFIX: the description the screen shows while the setting is selected. Where a setting has
+# `descriptionArg`, its description has a %s for it, translated. `group`: the screen's group it is in (SettingsUI.gd
+# GROUPS). `type` "bool" is a switch; "float" a slider, with its `min`, `max`, `step`, `unit` and `format` (for the
+# value shown), and `shown`, the factor from the stored value to the one the screen shows (toShown): a fraction is
+# stored, and shown as a percentage.
 const SETTINGS = {
 	# The cash reserve in scientific notation (5e5) instead of thousands (500K).
 	"scientific": {

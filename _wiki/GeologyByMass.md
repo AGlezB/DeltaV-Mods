@@ -45,7 +45,11 @@ In the **GBM** tab:
   mineral needs (= kg). H2O (water) is there too: only the rows of the arm and the drones can switch it on.
 
 The sliders work like the ones in the *Geologist* tab. While the switch is off they are dimmed, but you can still set
-them. Each ship keeps its own settings, saved with your game.
+them. Point at a slider to read what it does. Each ship keeps its own settings, saved with your game.
+
+With a gamepad, the D-pad moves down from the switch through **Base** and each mineral's slider, and back up, and the
+description of the slider you select shows under it. Press A on a slider to change it with left and right, then A or
+B when you are done.
 
 In the picture, a chunk needs less of a dear mineral than of a cheap one: 200 kg more for each step down in price,
 from Be, the dearest, to H2O, the cheapest.
@@ -60,6 +64,12 @@ switch off, nothing changes.
 
 If the info boxes, the arm, the drones or the *Geologist* tab do something wrong, try again without the mod before you
 report a bug to the game's developers.
+
+## Works with other mods
+
+[DroneAltPriorities](DroneAltPriorities) also adds a tab right after the *Geologist* tab: both show, this mod's **GBM**
+tab first. With this mod's switch on, DroneAltPriorities ranks only the chunks the masses let through, and
+[ArmAltTargetSelection](ArmAltTargetSelection) picks the arm's target only among those the arm's row lets through.
 
 ## Install
 

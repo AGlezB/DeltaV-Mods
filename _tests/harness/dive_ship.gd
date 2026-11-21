@@ -1,6 +1,6 @@
 extends Node2D
 
-# Stub of the game's ship for CabinLight.gd (the Adrenaline Booster): what it and DiveDisableAdrenalineBooster read.
+# Stub of the game's ship for CabinLight.gd (the Adrenaline booster): what it and DiveDisableAdrenalineBooster read.
 # CabinLight.gd takes the first parent with a `preheat` member as its ship.
 
 var preheat = false

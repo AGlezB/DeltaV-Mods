@@ -33,6 +33,8 @@ const DroneAltPriorities = preload("res://DroneAltPriorities/Settings.gd")
 const SCORE_FLOOR = 0.01
 # The current target keeps its place unless another chunk scores more than (1 + this) times as much.
 const KEEP_TARGET_MARGIN = 1.0
+# The plant's range is in metres and positions in world units, 10 to the metre (weapons/drone-plant.gd scanForTarget).
+const WORLD_UNITS_PER_METRE = 10
 
 var _droneAltPrioritiesSettings = null
 
@@ -48,8 +50,8 @@ func scanForTarget(delta):
 			if inHold:
 				target = null
 		return
-	var dmin = getRangeMin() * 10
-	var dmax = getRangeMax() * 10
+	var dmin = getRangeMin() * WORLD_UNITS_PER_METRE
+	var dmax = getRangeMax() * WORLD_UNITS_PER_METRE
 	scanProcess = 0
 	var previous = target
 	target = null
@@ -62,7 +64,7 @@ func scanForTarget(delta):
 			continue
 		var check = _dapCheck(t, space, dmin, dmax)
 		if check != null:
-			eligible.append(_dapCriteria(t, check))
+			eligible.append(_dapCriteria(t, check, dmax))
 		Tool.release(t)
 	target = _dapChoose(eligible, previous)
 
@@ -122,9 +124,10 @@ func _dapCheck(t, space, dmin, dmax):
 		check = t.mass * pow(t.linear_velocity.length(), 2)
 	return check if check > minEnergyToTarget else null
 
-# A chunk's criteria, in Settings.gd WEIGHTS order: ore value, ore mass, intake. Only ore counts: the minerals the HUD
-# can mark (CurrentGame.traceMinerals), not the water around them.
-func _dapCriteria(t, check) -> Dictionary:
+# A chunk's criteria, by the key of their weight in Settings.gd WEIGHTS: ore value, ore mass, intake. Only ore counts:
+# the minerals the HUD can mark (CurrentGame.traceMinerals), not the water around them. `dmax`: the plant's range, in
+# world units.
+func _dapCriteria(t, check, dmax) -> Dictionary:
 	var value = 0.0
 	var ore = 0.0
 	var identified = ship.identifiedObjects.get(hash(t))
@@ -136,29 +139,28 @@ func _dapCriteria(t, check) -> Dictionary:
 	var intake = 0.0
 	if droneFunction == "haul" and excavator != null:
 		var spot = excavator.global_position + haulGatherSpot.rotated(excavator.global_rotation)
-		intake = 1.0 - clamp(t.global_position.distance_to(spot) / max(1.0, getRangeMax() * 10), 0, 1)
-	return {"target": t, "check": check, "criteria": [value, ore, intake]}
+		intake = 1.0 - clamp(t.global_position.distance_to(spot) / max(1.0, dmax), 0, 1)
+	return {"target": t, "check": check, "criteria": {"value": value, "mass": ore, "intake": intake}}
 
 func _dapChoose(eligible: Array, previous):
 	if eligible.empty():
 		return null
 	var settings = _droneAltPriorities()
-	var weights = []
+	var weights = {}
+	var best = {}
 	for key in settings.keys():
-		weights.append(settings.getWeight(key))
-	var best = []
-	for i in weights.size():
-		best.append(0.0)
+		weights[key] = settings.getWeight(key)
+		best[key] = 0.0
 		for e in eligible:
-			best[i] = max(best[i], e.criteria[i])
+			best[key] = max(best[key], e.criteria[key])
 	var pick = null
 	var pickScore = -INF
 	var pickCheck = -INF
 	for e in eligible:
 		var score = 1.0
-		for i in weights.size():
-			var share = e.criteria[i] / best[i] if best[i] > 0 else 0.0
-			score *= pow(share + SCORE_FLOOR, weights[i])
+		for key in weights:
+			var share = e.criteria[key] / best[key] if best[key] > 0 else 0.0
+			score *= pow(share + SCORE_FLOOR, weights[key])
 		if e.target == previous:
 			score *= 1.0 + KEEP_TARGET_MARGIN
 		if score > pickScore or (score == pickScore and e.check > pickCheck):

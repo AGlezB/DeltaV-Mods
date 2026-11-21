@@ -2,14 +2,14 @@
 
 name="ShipHighlightTypeAndPrice"
 id="AGlezB.ShipHighlightTypeAndPrice"
-description="Highlights the type and price in the dealer and fleet ship lists."
+description="Highlights the type in the Dealer and Fleet ship lists."
 author="AGlezB"
 
 [version]
 
 version_major=1
 version_minor=0
-version_bugfix=5
+version_bugfix=6
 
 [tags]
 

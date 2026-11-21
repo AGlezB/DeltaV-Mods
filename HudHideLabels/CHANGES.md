@@ -1,5 +1,9 @@
 # HudHideLabels - Changes
 
+## 1.0.4
+- The README names the K225's HUD by its file (`Display-K225.tscn`), and the Equipment screen and the Onboard
+  Maintenance System as the game does.
+
 ## 1.0.3
 - The README's *Disclaimer* no longer names the author.
 

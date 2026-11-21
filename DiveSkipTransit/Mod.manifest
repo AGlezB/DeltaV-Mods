@@ -2,14 +2,14 @@
 
 name="DiveSkipTransit"
 id="AGlezB.DiveSkipTransit"
-description="Skips the cutscenes of a dive (launch, arrival, astrogation, return, rescue, game over, station fade-in), each by a setting opened with Shift+Click on Launch Ring Dive."
+description="Skips the cutscenes of a dive (launch, arrival, astrogation, return, rescue, game over, station fade-in), each by a setting of its own."
 author="AGlezB"
 
 [version]
 
 version_major=1
-version_minor=0
-version_bugfix=2
+version_minor=1
+version_bugfix=0
 
 [tags]
 

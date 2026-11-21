@@ -11,7 +11,7 @@ const _GEOLOGY_BY_MASS_UI = preload("res://GeologyByMass/SettingsUI.gd")
 # The mod's tab: its node name, which the game's TabContainer shows translated as the tab's title (as it shows the
 # OMS's own tabs, named CREW_OCCUPATION_*), and the Geologist tab it follows (hud/OMS.tscn).
 const _GEOLOGY_BY_MASS_TAB = "GEOLOGYBYMASS_TAB"
-const _GEOLOGIST_TAB = "CREW_OCCUPATION_GEOLOGIST"
+const _GEOLOGY_BY_MASS_AFTER = "CREW_OCCUPATION_GEOLOGIST"
 
 var _geologyByMassSettings = null
 
@@ -41,7 +41,7 @@ func _addGeologyByMassTab():
 		return
 	var tab = _GEOLOGY_BY_MASS_UI.new()
 	tab.name = _GEOLOGY_BY_MASS_TAB
-	var geologist = tabs.get_node_or_null(_GEOLOGIST_TAB)
+	var geologist = tabs.get_node_or_null(_GEOLOGY_BY_MASS_AFTER)
 	if geologist is Control:
 		tab.theme = geologist.theme
 		tab.rect_clip_content = geologist.rect_clip_content

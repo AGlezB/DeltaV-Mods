@@ -1,5 +1,13 @@
 # TransponderAltCodes - Changes
 
+## 1.0.3
+- The game's script paths, formats and names the mod matches are prefixed constants: `_TAC_SHIP_SCRIPT`,
+  `_TAC_BODY_SCRIPT`, `_TAC_DOCK_SCRIPT`, `_TAC_DOCK_FORMAT`, `_TAC_STORY_BEACON_SCRIPTS`, `_TAC_STORY_BEACON_FORMAT`,
+  `_TAC_BODY_BEACON_SCENE`, `_TAC_LIFEPOD_NAME` and `_TAC_AI_CORE_NAME`, so their names can't clash with another mod's
+  on the same script.
+- The README calls the game's New Game+ screen by its name, New Game Options, and says how the mod goes with
+  CombatSimulator, which extends the same script.
+
 ## 1.0.2
 - The README's *Disclaimer* no longer names the author.
 

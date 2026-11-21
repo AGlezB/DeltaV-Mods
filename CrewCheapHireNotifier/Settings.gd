@@ -1,8 +1,9 @@
 extends Reference
 
 # CrewCheapHireNotifier's settings model, shared by Code.gd, HireScreen.gd and SettingsUI.gd: one instance (shared())
-# holds the current values, and the rule they define (isCheapHire). They are kept per save game, in the game's UI store (CurrentGame.state.ui, which
-# CurrentGame.saveToFile writes with the rest of the state), under the mod's id from Mod.manifest.
+# holds the current values, and the rule they define (isCheapHire). They are kept per save game, in the game's UI
+# store (CurrentGame.state.ui, which CurrentGame.saveToFile writes with the rest of the state), under the mod's id from
+# Mod.manifest.
 
 signal settingsChanged()
 

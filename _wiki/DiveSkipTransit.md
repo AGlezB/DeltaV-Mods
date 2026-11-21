@@ -1,5 +1,5 @@
-Skips the cutscenes of a dive, so you get to the mining sooner, or plays the trip to and from the rings faster.
-Each skip has its own switch.
+Skips the cutscenes of a dive, each with its own switch, so you get to the mining sooner, or plays the trip to and from
+the rings faster.
 
 ## What changes
 
@@ -29,9 +29,13 @@ Space, from 1x up to 24x. Faster than 3x it plays without sound, and a slow comp
 
 ## Settings
 
-Hold **Shift** and click *Launch Ring Dive* to open the settings (a plain click still launches a dive). They show
-where the Tuning screen does, and close with Esc or when you pick another entry of the menu. At the top, a window
-explains the setting you have selected. The skips marked (\*) take remass.
+Hold **Shift** and click *Launch Ring Dive* to open the settings (a plain click still launches a dive). With a
+gamepad, highlight *Launch Ring Dive*, hold **LT** and press **X**. The small badge beside the entry reminds you how:
+it reads *Shift*, or *LT+X* while you play with a gamepad (the game's *Controls* setting at *Gamepad*, or at *Auto*
+once you use the gamepad), and pointing at it tells you what to do.
+
+The settings show where the Tuning screen does, and close with Esc (B on a gamepad) or when you pick another entry of
+the menu. At the top, a window explains the setting you have selected. The skips marked (\*) take remass.
 
 Every skip starts switched on. The settings are the same for all your save games.
 
@@ -74,6 +78,8 @@ See [Installing mods](Home#installing-mods).
 <!-- wiki-values (checked by wiki.ps1)
 game-checked: 1.93.1
 DiveSkipTransit/Code.gd _DST_SPACE_SPEED = 3.0 -> 3x
+DiveSkipTransit/Badge.gd PAD_MODIFIER_NAME = "LT" -> LT
+DiveSkipTransit/Badge.gd PAD_BUTTON_NAME = "X" -> X
 DiveSkipTransit/SettingsUI.gd REMASS_MARK = "(*)" | images/DiveSkipTransit-settings.png
 DiveSkipTransit/i18n/en.po DIVESKIPTRANSIT_REMASS_NOTE = "%s Affects remass: what the skipped cutscene would burn is charged, worked out from the game's formulas." | images/DiveSkipTransit-settings.png
 DiveSkipTransit/i18n/en.po DIVESKIPTRANSIT_GROUP_TRANSIT = "Transit" | images/DiveSkipTransit-settings.png

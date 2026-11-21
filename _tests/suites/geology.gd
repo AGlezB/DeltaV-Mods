@@ -51,6 +51,18 @@ func idle(count = 2):
 	for i in count:
 		yield(get_tree(), "idle_frame")
 
+# A press and release of a gamepad button (JOY_*), as Input delivers a player's: the actions it is bound to follow
+# (Godot's defaults: the D-pad moves the focus), then the focused control gets it. Input hands parsed events on at the
+# next frame, so this waits for it.
+func tapJoy(button):
+	yield(get_tree(), "idle_frame")
+	for pressed in [true, false]:
+		var event = InputEventJoypadButton.new()
+		event.button_index = button
+		event.pressed = pressed
+		Input.parse_input_event(event)
+	yield(get_tree(), "idle_frame")
+
 # The game builds the OMS on the ship's `instance` signal (Hud.gd _ready connects it); the mod adds its tab once the
 # frame is idle.
 func buildOms(ship):
@@ -332,6 +344,43 @@ func run():
 	tabs.current_tab = index
 	yield(idle(), "completed")
 	check("choosing the tab focuses its switch", tabs.get_focus_owner() == toggle, tabs.get_focus_owner())
+
+	# With a gamepad: the D-pad goes down from the switch through the base slider's value and each mineral's to the last,
+	# and back up, and stays in the tab at either end and to the sides; each value carries its slider's description,
+	# which the slider's own tooltip node shows when it gets the focus.
+	var chain = [toggle]
+	var described = true
+	for i in range(1, kids.size(), 3):
+		chain.append(kids[i].label)
+		described = described and kids[i].label.hint_tooltip == (base.label + "_DESC" if i == 1 else extra.label)
+	check("gamepad: each slider's value carries its description, the base's and the minerals'", described)
+	var beforeWalk = hud.mineralConfig.get(modId, {}).duplicate(true)
+	var down = []
+	for i in range(1, chain.size()):
+		yield(tapJoy(JOY_DPAD_DOWN), "completed")
+		down.append(tabs.get_focus_owner())
+	yield(tapJoy(JOY_DPAD_DOWN), "completed")
+	down.append(tabs.get_focus_owner())
+	var last = chain[chain.size() - 1]
+	check("gamepad: down goes from the switch through the base slider's value and each mineral's, and stays on the last", down == chain.slice(1, chain.size() - 1) + [last], down)
+	var sides = []
+	for node in [last, chain[1], toggle]:
+		node.grab_focus()
+		for button in [JOY_DPAD_LEFT, JOY_DPAD_RIGHT]:
+			yield(tapJoy(button), "completed")
+			sides.append(tabs.get_focus_owner() == node)
+	check("gamepad: left and right stay where they are, on a mineral's value, the base's and the switch", not sides.has(false), sides)
+	last.grab_focus()
+	var up = []
+	for i in range(chain.size() - 1):
+		yield(tapJoy(JOY_DPAD_UP), "completed")
+		up.append(tabs.get_focus_owner())
+	yield(tapJoy(JOY_DPAD_UP), "completed")
+	up.append(tabs.get_focus_owner())
+	var back = chain.slice(0, chain.size() - 2)
+	back.invert()
+	check("gamepad: up goes back to the switch, and stays there", up == back + [toggle], up)
+	check("gamepad: walking the tab changes nothing", same(hud.mineralConfig.get(modId, {}), beforeWalk), hud.mineralConfig.get(modId))
 
 	# The HUD: its info boxes ask the ship, with the HUD's row, whatever the switch
 	settings.setEnabled(true)

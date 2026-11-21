@@ -9,7 +9,7 @@ signal settingsChanged()
 
 # One description per setting, in the order the dialog lists them within their group (SettingsUI.gd GROUPS). Each
 # default is declared here only. `label` is a translation key of i18n/en.po, and so is `label` followed by
-# SettingsUI.gd's DESCRIPTION_SUFFIX: the description the dialog shows while the setting is selected. `type` "bool" is
+# DESCRIPTION_SUFFIX: the description the dialog shows while the setting is selected. `type` "bool" is
 # a switch: no range, unit or conversion; "float" a slider, with its `min`, `max` and `step` (as stored), `unit`,
 # `shown` (the factor from the stored value to the one shown: a fraction shown as %) and `format` (for the value
 # shown); "choice" one of the ship models (models()), stored as its key in Shipyard.ships.
@@ -118,7 +118,13 @@ const SHIP_SCENES = "res://ships/"
 # default shipName, SHIP_TRTL, or names a key the game's texts lack, as the racing drone's SHIP_DRONE): this prefix,
 # the model's key, and for its description DESCRIPTION_SUFFIX after that.
 const MODEL_NAME_PREFIX = "COMBATSIMULATOR_MODEL_"
+# Ends a translation key to make that of its description: a setting's label, as the game's Tuning screen makes them
+# (Tuning.gd tuningChanged), a ship's name, as the Dealer does (Dealer.gd displayShip), and the names above. Shared by
+# the dialog (SettingsUI.gd) and its ship list (ShipList.gd).
 const DESCRIPTION_SUFFIX = "_DESC"
+# The game's Tuning groups (enceladus/Tuning/TuningItems.tscn), which the dialog's settings and its ship list are built
+# from.
+const GAME_TUNING_ITEMS = "res://enceladus/Tuning/TuningItems.tscn"
 
 var cfg = {}
 var _models = null # the ship models offered, worked out once

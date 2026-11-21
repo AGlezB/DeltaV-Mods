@@ -43,11 +43,12 @@ the mod.
   has neither: chunks escaping fastest first, and chunks not yet identified first.
 - **Settings:** on the OMS tab right after the Geologist tab.
   - The switch at the top: on, the drones pick as above; off, as the game does. Under it, a line on what it does.
-  - *Ore value*, *Ore mass* and *Intake*: a slider each, in %, the weight of that figure. Hovering a slider shows what
-    it does.
+  - *Ore value*, *Ore mass* and *Intake*: a slider each, in %, the weight of that figure.
   - The sliders are the Geologist tab's own controls: pick the value to change it, then left and right (or drag the
     slider), and accept or cancel to leave. While the switch is off they are dimmed, but you can still set them.
   - *Reset to defaults*, under the sliders, puts the switch and every slider back to their defaults.
+  - Pointing at a slider or at *Reset to defaults*, or selecting it, shows what it does. With a gamepad, the D-pad goes
+    down from the switch through the sliders to *Reset to defaults* and back up, and never leaves the tab.
   - They are kept with your ship, next to the Geologist tab's own settings, and saved and loaded with them: one set
     for all the ship's plants. A ship that never had them starts from the defaults.
   - The switch's default is `ENABLED`, and each slider's default, range and step are its entry in `WEIGHTS`, both at
@@ -56,8 +57,8 @@ the mod.
 
 ## For modders
 - Four scripts: `Code.gd` (the drone plants' script extension: the choice), `OmsScreen.gd` (the HUD's script
-  extension: adding the tab), `SettingsUI.gd` (the tab) and `Settings.gd` (the settings model the other three share),
-  plus `ModMain.gd`. The texts are in `i18n/en.po`.
+  extension: adding the tab), `SettingsUI.gd` (the tab) and `Settings.gd` (the settings model the other three share).
+  The texts are in `i18n/en.po`.
 - Script extension of `res://weapons/drone-plant.gd` (`Code.gd`), the script of every nanodrone plant:
   `weapons/drone-plant.tscn`, which `weapons/WeaponSlot.tscn` mounts for `SYSTEM_DND_TS` and `SYSTEM_DND_HAUL`, and
   `weapons/drone-fix-plant.tscn`, an instance of it for `SYSTEM_DND_FIX` (`droneFunction` "repair"). The tag
@@ -72,12 +73,13 @@ the mod.
     `isValidSystemTarget` with `sanbus`, the plant's row `ship.isValidMineralTarget(t, mineralConfig)` with
     `mineralTargetting`, and the game's score above `minEnergyToTarget`), each object claimed with `Tool.claim` while
     it is read.
-  - `_dapCriteria()` gives a chunk's figures: ore value and ore mass from `ship.identifiedObjects[hash(chunk)][0]`
-    (the kg per mineral the geologist's info box stores), counting only `CurrentGame.traceMinerals`, at
-    `CurrentGame.mineralPrices`; intake from the distance between the chunk and the gathering spot,
-    `excavator.global_position + haulGatherSpot.rotated(excavator.global_rotation)`, over the plant's maximum Tuning
-    range, clamped, from 1 (0 for tug plants and a ship without an excavator). `_dapChoose()` scores them as above and
-    breaks ties with the game's score.
+  - `_dapCriteria()` gives a chunk's figures, by the key of their weight in `WEIGHTS` (`value`, `mass`, `intake`): ore
+    value and ore mass from `ship.identifiedObjects[hash(chunk)][0]` (the kg per mineral the geologist's info box
+    stores), counting only `CurrentGame.traceMinerals`, at `CurrentGame.mineralPrices`; intake from the distance
+    between the chunk and the gathering spot, `excavator.global_position +
+    haulGatherSpot.rotated(excavator.global_rotation)`, over the plant's maximum Tuning range (in metres, times
+    `WORLD_UNITS_PER_METRE` as the game's `scanForTarget` does), clamped, from 1 (0 for tug plants and a ship without
+    an excavator). `_dapChoose()` scores them as above, weight by weight by key, and breaks ties with the game's score.
   - The plants still ask the ship which chunks pass their row (`ship.isValidMineralTarget`), so a mod that changes
     that rule changes which chunks this one ranks.
 - Script extension of `res://hud/Hud.gd` (`OmsScreen.gd`), the script of every ship's HUD, which builds the OMS
@@ -92,11 +94,18 @@ the mod.
   (`hud/SystemMineralList.gd`), as GeologyByMass's tab is: `hud/components/MineralSystemToggle.tscn` for the switch,
   with its label beside it (`TOGGLE_SPACING`), the `HINT` line under it, then a grid of two columns: each weight's
   name (`hud/components/MineralLabel.tscn`, without focus) and its slider (`hud/components/PriceLabel.tscn`, the
-  Minimum value control), with the weight's range, step and unit in the units shown, the bar `SLIDER_WIDTH` wide and
-  the weight's `label` + `_DESC` as its tooltip; last the `RESET` button, with `RESET` + `_DESC` as its tooltip. The
-  grid is dimmed (`DIMMED`) while the switch is off. `menu/TabsWithGamepadControl.gd` focuses the switch when the tab
-  is chosen. The values are filled in when the tab enters the tree and whenever it shows, only where they differ, so
-  opening it stores nothing.
+  Minimum value control), with the weight's range, step and unit in the units shown, the bar (`GAME_SLIDER_BAR`)
+  `SLIDER_WIDTH` wide, and the weight's `label` + `DESCRIPTION_SUFFIX` as the tooltip of both the bar and the value
+  (`GAME_SLIDER_VALUE`, the button the D-pad lands on); last the `RESET` button, with `RESET` + `DESCRIPTION_SUFFIX`
+  as its tooltip and the game's tooltip node (`GAME_TOOLTIPS`) beside it. The released game draws no Godot tooltips:
+  that node (`menu/sfx/PlaySoundsOnTheseButtons.gd`, which `PriceLabel.tscn` holds too) takes in the buttons and
+  sliders under its parent and shows their tooltips on hover and on focus. The grid is dimmed (`DIMMED`) while the
+  switch is off. `menu/TabsWithGamepadControl.gd` focuses the switch when the tab is chosen. The D-pad's way from
+  there (`_linkFocus()`, set as `hud/SystemMineralList.gd` `adjustFocus` sets the Geologist tab's): down from the
+  switch through each slider's value, in `WEIGHTS` order, to Reset, and back up (`focus_neighbour_top` and
+  `focus_neighbour_bottom`); at either end, and to the sides, a control is its own neighbour, so the focus never
+  leaves the tab, and once A turns a value into its bar, left and right are the bar's. The values are filled in when
+  the tab enters the tree and whenever it shows, only where they differ, so opening it stores nothing.
 - **The settings model** (`Settings.gd`, a `Reference`) follows GeologyByMass's: one instance per ship, made from the
   ship by each script that reads it (each plant, the HUD), with no shared instance and no signal, since they all read
   the same entry: a change applies at each plant's next pick. `ENABLED` describes the switch (label, default) and
@@ -120,15 +129,16 @@ the mod.
   Geologist tab and this one. Both keep their entries in `mineralConfig`, each under its own id. Their members are
   distinct.
 - Members of the drone plants' extension (`Code.gd`): `DroneAltPriorities` (preload), `SCORE_FLOOR`,
-  `KEEP_TARGET_MARGIN`, `_droneAltPrioritiesSettings`, `_droneAltPriorities()`, `_dapFromQueue()`, `_dapCheck()`,
-  `_dapCriteria()` and `_dapChoose()`.
+  `KEEP_TARGET_MARGIN`, `WORLD_UNITS_PER_METRE`, `_droneAltPrioritiesSettings`, `_droneAltPriorities()`,
+  `_dapFromQueue()`, `_dapCheck()`, `_dapCriteria()` and `_dapChoose()`.
 - Members of the HUD's extension (`OmsScreen.gd`): `DroneAltPriorities` and `_DRONE_ALT_PRIORITIES_UI` (preloads),
   `_DRONE_ALT_PRIORITIES_TAB`, `_DRONE_ALT_PRIORITIES_AFTER`, `_droneAltPrioritiesSettings`, `_droneAltPriorities()`
   and `_addDroneAltPrioritiesTab()`. It has no `_ready` of its own.
 - Tested outside the game in a headless Godot 3.6 with the game's `drone-plant.gd`, `Hud.gd`, `OMS.gd`,
   `TabsWithGamepadControl.gd`, `PriceLabel.gd`, `RepeatingHSlider.gd`, `MineralLabel.gd` and
-  `MineralSystemToggle.gd`, drone plants in a stub ship and an OMS built as its scene nests the tabs (the `drones`
-  suite of the repository's test harness), alone and with GeologyByMass in both load orders; on the drone bench,
+  `MineralSystemToggle.gd`, drone plants in a stub ship and an OMS built as its scene nests the tabs, with the D-pad's
+  way through the tab and the descriptions on focus (the `drones` suite of the repository's test harness), alone and
+  with GeologyByMass in both load orders; on the drone bench,
   which runs the game's own drone plants, PDWs, excavator, chunks and roids; and in the game.
 
 ## Install

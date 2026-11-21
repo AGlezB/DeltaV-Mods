@@ -42,22 +42,18 @@ const GAME_VIEWPORT = "res://enceladus/Simulator/ViewportWithProxy.gd"
 # BulletTimer's own notifications layer: the station has one (NotificationLayer), and each notification would show
 # twice.
 const GAME_BULLET_TIMER_NOTIFICATIONS = "NotificationsLayer"
-# The theme of the simulator's button, for the end confirmation when the Tuning screen is missing.
-const GAME_THEME = "res://menu/MenuTheme.tres"
 # The random events of the rings (story/TheRing.tscn), where the Big Bad Wolf's builder has its values.
 const GAME_EVENTS = "res://story/TheRing.tscn"
 # The Music bus, whose first effect (a low-pass filter) the dive's pause menu switches on.
 const MUSIC_BUS = "Music"
 
-# The station's nodes (enceladus/Enceladus.tscn).
-const STATION_SIMULATION = "SimulationLayer"
-const STATION_SIMULATION_UPSCALE = "SimulationLayer/MarginContainer"
+# The station's nodes (enceladus/Enceladus.tscn); the simulator's layer (Code.gd gives it) holds its upscaler.
+const SIMULATION_UPSCALE = "MarginContainer"
 const STATION_RING = "EnceladusMenu/DiveTarget/TheRing"
 const STATION_NO_BULLET_TIME = "NoBulletTime"
 const STATION_MUSIC = ["Intro", "Loop"]
 const STATION_MOUSE = "MouseLayer/Mouse"
 const STATION_UI = ["Background", "EnceladusMenu"]
-const STATION_TUNING = "Tuning"
 
 # How the game builds a model when it attacks the player: the event's script, its builder, the builder's arguments,
 # values set on the script's fresh instance first, and the node of story/TheRing.tscn whose values it takes (the Big
@@ -104,8 +100,8 @@ const ENEMY_FACTION = "pirate"
 const SPOT_SAMPLES = 400
 const SPOT_EDGE_MARGIN = 5
 # Where the enemies spawn, in m: from the Distance setting to that plus SPAWN_SPREAD; grouped ones side by side,
-# GROUP_SPACING apart. With the largest Distance and three grouped enemies, the farthest stays inside the AI's
-# awareness (ships/AI.tscn ShipArea, 6.4 km), so they come for the player.
+# GROUP_SPACING apart. With the largest Distance and the most grouped enemies (SETTINGS.number max), the farthest stays
+# inside the AI's awareness (ships/AI.tscn ShipArea, 6.4 km), so they come for the player.
 const SPAWN_SPREAD = 1000
 const GROUP_SPACING = 300
 # How far the field may move a spot taken by a rock (AsteroidSpawner.gd spawnByBlueprint's spawnPointRandomness), in
@@ -123,9 +119,7 @@ const SAVE_TABLES = ["dispositions", "encounteredShips", "shipNames", "transpond
 
 var _settings = CombatSimulator.shared()
 var _station = null
-var _upscale = null
 var _viewport = null
-var _picture = null
 var _texture = null
 var _tween = null
 var _confirm = null
@@ -141,35 +135,36 @@ var _frozePirate = false
 var _mouseFade = null
 var _copies = {}
 
-func setup(station):
+# `station` the station root, `simulation` its simulator's layer (or null), `confirmTheme` the theme of the end
+# confirmation (the dialog's: SettingsUI.gd pageTheme).
+func setup(station, simulation, confirmTheme):
 	_station = station
 	name = "CombatSimulatorArena"
 	pause_mode = PAUSE_MODE_PROCESS
-	var simulation = station.get_node_or_null(STATION_SIMULATION)
 	if simulation is CanvasLayer:
 		layer = simulation.layer
 	visible = false
-	_upscale = MarginContainer.new()
-	_upscale.set_script(load(GAME_UPSCALE))
-	_upscale.name = "Upscale"
-	_upscale.pause_mode = PAUSE_MODE_STOP
-	_upscale.passEvents = false
-	var gameUpscale = station.get_node_or_null(STATION_SIMULATION_UPSCALE)
+	var upscale = MarginContainer.new()
+	upscale.set_script(load(GAME_UPSCALE))
+	upscale.name = "Upscale"
+	upscale.pause_mode = PAUSE_MODE_STOP
+	upscale.passEvents = false
+	var gameUpscale = simulation.get_node_or_null(SIMULATION_UPSCALE) if simulation != null else null
 	if gameUpscale != null and "scale" in gameUpscale:
-		_upscale.scale = gameUpscale.scale
-	_fullRect(_upscale)
-	add_child(_upscale)
+		upscale.scale = gameUpscale.scale
+	_fullRect(upscale)
+	add_child(upscale)
 	_viewport = Viewport.new()
 	_viewport.set_script(load(GAME_VIEWPORT))
 	_viewport.name = "Viewport"
 	_viewport.own_world = true
 	_viewport.render_target_update_mode = Viewport.UPDATE_DISABLED
 	_viewport.mouseProxy = NodePath("../../Picture/TextureRect")
-	_upscale.add_child(_viewport)
-	_picture = MarginContainer.new()
-	_picture.name = "Picture"
-	_fullRect(_picture)
-	add_child(_picture)
+	upscale.add_child(_viewport)
+	var picture = MarginContainer.new()
+	picture.name = "Picture"
+	_fullRect(picture)
+	add_child(picture)
 	_texture = TextureRect.new()
 	_texture.name = "TextureRect"
 	_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -178,11 +173,11 @@ func setup(station):
 	_texture.flip_v = true
 	_texture.texture = _viewport.get_texture()
 	_texture.modulate.a = 0.0
-	_picture.add_child(_texture)
+	picture.add_child(_texture)
 	_tween = Tween.new()
 	_tween.name = "Fade"
 	add_child(_tween)
-	_buildConfirmation(station)
+	_buildConfirmation(confirmTheme)
 
 func _fullRect(control: Control):
 	control.set_anchors_and_margins_preset(Control.PRESET_WIDE)
@@ -191,9 +186,9 @@ func _fullRect(control: Control):
 	control.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	control.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
-# The end confirmation: the question and Yes / No, in the game's theme (the Tuning screen's, as SettingsUI.gd uses),
-# as ShipCopyPaste's dialog is built. Exclusive: clicks outside it do nothing.
-func _buildConfirmation(station):
+# The end confirmation: the question and Yes / No, in the game's theme (the Tuning screen's, as the dialog uses:
+# `confirmTheme`), as ShipCopyPaste's dialog is built. Exclusive: clicks outside it do nothing.
+func _buildConfirmation(confirmTheme):
 	_confirm = ConfirmationDialog.new()
 	_confirm.name = "EndConfirmation"
 	_confirm.window_title = ""
@@ -202,9 +197,8 @@ func _buildConfirmation(station):
 	_confirm.dialog_text = "COMBATSIMULATOR_END_QUESTION"
 	_confirm.get_ok().text = "COMBATSIMULATOR_END_YES"
 	_confirm.get_cancel().text = "COMBATSIMULATOR_END_NO"
-	var screens = station.get("menusContainer")
-	var tuning = screens.get_node_or_null(STATION_TUNING) if screens != null else null
-	_confirm.theme = tuning.theme if tuning is Control and tuning.theme != null else load(GAME_THEME)
+	_confirm.theme = confirmTheme
+
 	add_child(_confirm)
 	_confirm.connect("confirmed", self, "_onConfirmed")
 	_confirm.connect("popup_hide", self, "_onConfirmHidden")
@@ -213,12 +207,15 @@ func isRunning() -> bool:
 	return _running
 
 # Starts a run with the ship `sim` (what the screen's simulator would have flown); `lastFocus` gets the focus back at
-# the end. Nothing happens without the station's ring map to build the stretch of ring from.
+# the end. Nothing happens without the station's ring map to build the stretch of ring from, and then `lastFocus` gets
+# the focus back at once: the dialog that asked has closed, and a gamepad has nothing else to hold on to.
 func start(sim, lastFocus):
-	if _running or not sim is Dictionary or not sim.has("config"):
+	if _running:
 		return
 	var ring = _station.get_node_or_null(STATION_RING)
-	if ring == null or ring.get("image") == null:
+	if not sim is Dictionary or not sim.has("config") or ring == null or ring.get("image") == null:
+		if lastFocus != null and is_instance_valid(lastFocus):
+			lastFocus.grab_focus()
 		return
 	_running = true
 	_ending = false
@@ -538,13 +535,14 @@ func _input(event):
 
 # Asks whether to end the run, pausing the game as the dive's pause menu does: the tree paused (the arena, the
 # station's time and wages), the Music bus's low-pass filter on. Also what the station's pause menu does during a run
-# (PauseMenu.gd).
+# (PauseMenu.gd). Cancel has the focus, as in the game's own confirmations (PauseLayer.gd), so the pause button and then
+# accept go back to the run rather than end it.
 func confirmEnd():
 	if not _running or _ending or _confirm.visible:
 		return
 	_pause(true)
 	_confirm.popup_centered_minsize()
-	_confirm.get_ok().grab_focus()
+	_confirm.get_cancel().grab_focus()
 
 func _pause(pause: bool):
 	get_tree().paused = pause

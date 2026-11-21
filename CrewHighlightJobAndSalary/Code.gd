@@ -7,6 +7,9 @@ const CREW_SCRIPT = "res://enceladus/CrewBio.gd"
 const JOB_COLOR = Color(1.0, 0.95, 0.5)
 const SALARY_COLOR = Color(1.0, 0.75, 0.35)
 const DIM_COLOR = Color(0.6, 0.6, 0.6)
+# How long a new entry is left before it is painted, in seconds: its labels are onready nodes, filled by fillData from
+# its _ready (enceladus/CrewBio.gd), which runs after the tree's node_added.
+const SETTLE_TIME = 0.3
 
 
 func _ready():
@@ -17,8 +20,7 @@ func _on_node_added(node):
 	var script = node.get_script()
 	if script == null or script.resource_path != CREW_SCRIPT:
 		return
-	# The entry sets up its labels after entering the tree, so wait a moment.
-	yield(get_tree().create_timer(0.3), "timeout")
+	yield(get_tree().create_timer(SETTLE_TIME), "timeout")
 	if not is_instance_valid(node):
 		return
 	_paint(node.occupationNode, JOB_COLOR)

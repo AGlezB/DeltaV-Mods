@@ -171,12 +171,14 @@ func _fill():
 				rowName += " " + REMASS_MARK
 			var row = {
 				"type": setting.type,
-				"default": setting.default,
-				"current": _settings.getValue(key),
+				"default": _settings.toShown(key, setting.default),
+				"current": _settings.toShown(key, _settings.getValue(key)),
 				"testProtocol": "",
 			}
 			if setting.type == "float":
-				for field in ["min", "max", "step", "unit", "format"]:
+				for field in ["min", "max", "step"]:
+					row[field] = _settings.toShown(key, setting[field])
+				for field in ["unit", "format"]:
 					row[field] = setting[field]
 			tuning[rowName] = row
 			_rows[rowName] = row
@@ -218,6 +220,6 @@ func _dimRows():
 # does, so it follows the selection.
 func _onTuningChanged(_group, item, to, _protocol):
 	_rows[item].current = to
-	_settings.setValue(_keys[item], to)
+	_settings.setValue(_keys[item], _settings.fromShown(_keys[item], to))
 	_description.text = DiveSkipTransit.SETTINGS[_keys[item]].label + DESCRIPTION_SUFFIX
 	_dimRows()

@@ -17,7 +17,8 @@ extends "res://harness/suite.gd"
 # so the mod's NEW_STOCK finds some of them; their names are test keys, translated here in two languages, in a
 # different order in each. The mod's texts are its i18n/en.po, and every expected text is built with tr() from the
 # mod's keys, so any wording passes. The control checks run on the game's own scripts: with the mod loaded, those are
-# the bases of the extensions.
+# the bases of the extensions. ShipSortByTypeAndPrice and ShipHighlightTypeAndPrice, where loaded, are checked on the
+# same Dealer and Fleet entries (shipLists), with or without DealerNotifier.
 
 const KEY = "ENCELADUS_SHIP_MARKET"
 const TEXT_EN = "Dealer"
@@ -122,6 +123,13 @@ func offer(model, transponder):
 func newAge():
 	return load(DEALER_SCRIPT).get_script_constant_map()._DN_GAME_NEW_AGE
 
+# A ship for sale of `model` at `price` E$, with its model's name (offer() gives every ship the stub's name and price).
+func pricedOffer(model, transponder, price):
+	var ship = offer(model, transponder)
+	ship.shipName = NAMES[model][0]
+	ship.value = price
+	return ship
+
 # A ship for sale made `age` seconds ago (offer() makes them now).
 func agedOffer(model, transponder, age):
 	var ship = offer(model, transponder)
@@ -161,6 +169,14 @@ func entry(s) -> String:
 func marked(s) -> String:
 	return tr(s.menu._DN_ALERT) % tr(KEY)
 
+# The tooltip of the Shift badge beside a station menu entry (a mod's Badge.gd, a child of the entry), which holds it:
+# the entry has none of its own.
+func badgeTip(entry) -> String:
+	for child in entry.get_children():
+		var script = child.get_script()
+		if script != null and script.resource_path.ends_with("/Badge.gd"):
+			return child.hint_tooltip
+	return ""
 func settingsTip(s) -> String:
 	return tr(s.menu._DN_SETTINGS_TOOLTIP) % [OS.get_scancode_string(KEY_SHIFT), manifestValue("mod_information", "name")]
 
@@ -302,11 +318,44 @@ func escKey():
 	event.scancode = KEY_ESCAPE
 	return event
 
-# The game's bindings (its project.godot): ui_cancel is Esc, pause is Esc too.
+func joyButton(index):
+	var event = InputEventJoypadButton.new()
+	event.button_index = index
+	return event
+
+# A press and release of a gamepad button (JOY_*), then a frame: Input hands parsed events on at the next one.
+func tapJoy(index):
+	yield(tap(joyButton(index)), "completed")
+	yield(get_tree(), "idle_frame")
+
+# A gamepad button pressed, or released, and left so, as Input delivers it (Input.is_joy_button_pressed follows).
+func holdJoy(index, pressed):
+	yield(get_tree(), "idle_frame")
+	var event = joyButton(index)
+	event.pressed = pressed
+	Input.parse_input_event(event)
+	yield(get_tree(), "idle_frame")
+
+# A stick's axis moved to `value` and left there, as Input delivers it (the actions' strength follows).
+func holdAxis(axis, value):
+	yield(get_tree(), "idle_frame")
+	var event = InputEventJoypadMotion.new()
+	event.axis = axis
+	event.axis_value = value
+	Input.parse_input_event(event)
+	yield(get_tree(), "idle_frame")
+
+# The game's bindings (its project.godot): ui_cancel is Esc, pause is Esc too; ui_scroll_up2 and ui_scroll_down2 are
+# the right stick's vertical axis, with a dead zone of 0.1.
 func bindGameKeys():
-	if not InputMap.has_action("pause"):
-		InputMap.add_action("pause")
-	for binding in [["ui_cancel", escKey()], ["pause", escKey()]]:
+	var up = InputEventJoypadMotion.new()
+	up.axis = JOY_AXIS_3
+	up.axis_value = -1.0
+	var down = up.duplicate()
+	down.axis_value = 1.0
+	for binding in [["ui_cancel", escKey()], ["pause", escKey()], ["ui_scroll_up2", up], ["ui_scroll_down2", down]]:
+		if not InputMap.has_action(binding[0]):
+			InputMap.add_action(binding[0], 0.1 if binding[0].begins_with("ui_scroll") else 0.5)
 		if not InputMap.action_has_event(binding[0], binding[1]):
 			InputMap.action_add_event(binding[0], binding[1])
 
@@ -447,15 +496,15 @@ func run():
 	CurrentGame.state.ship = {"transponder": "OWN-0", "model": "TRTL", "config": {}}
 	Input.set_use_accumulated_input(false)
 	bindGameKeys()
-	if not mod:
+	if mod:
+		yield(model(), "completed")
+		yield(rule(), "completed")
+		yield(conditions(), "completed")
+		yield(screen(), "completed")
+		yield(together(), "completed")
+	else:
 		yield(controls(), "completed")
-		freeMade()
-		return
-	yield(model(), "completed")
-	yield(rule(), "completed")
-	yield(conditions(), "completed")
-	yield(screen(), "completed")
-	yield(together(), "completed")
+	yield(shipLists(), "completed")
 	freeMade()
 
 func freeMade():
@@ -561,7 +610,7 @@ func rule():
 	yield(settle(), "completed")
 	check("the Dealer screen lists the stock (the game's refresh)", offers(dealer).size() == 2, offers(dealer).size())
 	check("nothing switched on: the Dealer entry keeps its key", entry(s) == KEY, entry(s))
-	check("the Dealer entry's tooltip tells about Shift+Click", s.market.hint_tooltip == settingsTip(s), s.market.hint_tooltip)
+	check("the Dealer entry's Shift badge has the tooltip, which tells about Shift+Click; the entry has none of its own", badgeTip(s.market) == settingsTip(s) and s.market.hint_tooltip == "", [badgeTip(s.market), s.market.hint_tooltip])
 	check("the stock reached the settings model", settings.stock.size() == 2, settings.stock)
 	settings.setValue(WATCHED, true, "TRTL")
 	check("switching a model on doesn't mark the ships of it the dealer has already", entry(s) == KEY and "T-1" in settings.known and not "E-1" in settings.known, settings.known)
@@ -578,9 +627,9 @@ func rule():
 	TranslationServer.add_translation(german)
 	TranslationServer.set_locale("de")
 	check("after a language change the mark is in the new language", entry(s) == marked(s) and entry(s).find(TEXT_DE) >= 0, entry(s))
-	check("and so is the tooltip", s.market.hint_tooltip == SETTINGS_TOOLTIP_DE % [OS.get_scancode_string(KEY_SHIFT), manifestValue("mod_information", "name")], s.market.hint_tooltip)
+	check("and so is the tooltip", badgeTip(s.market) == SETTINGS_TOOLTIP_DE % [OS.get_scancode_string(KEY_SHIFT), manifestValue("mod_information", "name")], badgeTip(s.market))
 	TranslationServer.set_locale("en")
-	check("and back", entry(s) == marked(s) and s.market.hint_tooltip == settingsTip(s), entry(s))
+	check("and back", entry(s) == marked(s) and badgeTip(s.market) == settingsTip(s), [entry(s), badgeTip(s.market)])
 	settings.setValue(WATCHED, false, "TRTL")
 	check("switching the model off unmarks it", entry(s) == KEY, entry(s))
 	settings.setValue(WATCHED, true, "TRTL")
@@ -643,6 +692,27 @@ func rule():
 	check("at the right end of the entry's name, inside the right margin around its text, centred from top to bottom, at its least size", nameRect.encloses(badgeRect) and placed and badge.rect_size == badge.get_combined_minimum_size(), [badgeRect, nameRect, right])
 	var tooltips = e.get_node("PlaySoundsOnTheseButtons")
 	check("its tooltip is the game's (the entry's PlaySoundsOnTheseButtons registered it)", tooltips.tooltips.has(badge) and badge.hint_tooltip == tr(dealer._DN_BADGE_TOOLTIP) and tr(dealer._DN_BADGE_TOOLTIP) != dealer._DN_BADGE_TOOLTIP, badge.hint_tooltip)
+	# A gamepad shows no hover: the tooltip shows while the entry's name, where the D-pad lands, has the focus.
+	shipName.grab_focus()
+	var keyFocus = tooltips.tooltipPosition.visible
+	shipName.release_focus()
+	Settings.controlScheme = Settings.control.gamepad
+	shipName.grab_focus()
+	var padShown = tooltips.tooltipLabel.text if tooltips.tooltipPosition.visible else "(no tooltip)"
+	shipName.release_focus()
+	var padHidden = not tooltips.tooltipPosition.visible
+	var plain = entryOf(dealer, "T-1")
+	var plainTips = plain.get_node("PlaySoundsOnTheseButtons") if plain != null else null
+	if plain != null:
+		plain.get_node("HBox/ShipName").grab_focus()
+	var plainShown = plainTips != null and plainTips.tooltipPosition.visible
+	if plain != null:
+		plain.get_node("HBox/ShipName").release_focus()
+	Settings.controlScheme = Settings.control.keyMouse
+	check("gamepad: with keyboard and mouse, focusing the entry's name shows no tooltip", not keyFocus)
+	check("gamepad: with a gamepad, it shows the badge's tooltip while the name has the focus", padShown == dealer._DN_BADGE_TOOLTIP or padShown == tr(dealer._DN_BADGE_TOOLTIP), padShown)
+	check("gamepad: and hides it when the name loses the focus", padHidden)
+	check("gamepad: an entry without a badge shows none", plain != null and not badged(dealer, "T-1") and not plainShown)
 	# Closed, a later ship marks it again; the badge stays; opened again, both have one.
 	dealer.hide()
 	yield(frames(40), "completed")
@@ -749,7 +819,8 @@ func screen():
 	var margin = screen.get_node("VB/WindowMargin")
 	var window = screen.get_node("VB/WindowMargin/Window")
 	var inside = screen.get_node("VB/WindowMargin/Window/MarginContainer")
-	var texts = screen.get_node("VB/WindowMargin/Window/MarginContainer/VBoxContainer")
+	var textScroll = screen.get_node("VB/WindowMargin/Window/MarginContainer/ScrollContainer")
+	var texts = textScroll.get_node("VBoxContainer")
 	var gameMargin = s.dealer.get_node(ui.GAME_WINDOW_MARGIN)
 	var gameWindow = s.dealer.get_node(ui.GAME_WINDOW)
 	var gameInside = s.dealer.get_node(ui.GAME_WINDOW_INSIDE)
@@ -758,7 +829,8 @@ func screen():
 		copied = copied and margin.get_constant("margin_" + side) == gameMargin.get_constant("margin_" + side) and inside.get_constant("margin_" + side) == gameInside.get_constant("margin_" + side)
 	copied = copied and texts.get_constant("separation") == s.dealer.get_node(ui.GAME_WINDOW_TEXTS).get_constant("separation")
 	check("the description's window copies the Dealer's: theme, margins around and inside, panel, least height, the texts' spacing", copied)
-	check("and clips its texts, as the Dealer's", inside.rect_clip_content and texts.get_node("Base").autowrap and texts.get_node("Description").autowrap)
+	check("its texts wrap, in a ScrollContainer with no horizontal scroll", textScroll is ScrollContainer and not textScroll.scroll_horizontal_enabled and texts.get_node("Base").autowrap and texts.get_node("Description").autowrap)
+	check("which fills the window at the Dealer's least height", is_equal_approx(window.get_combined_minimum_size().y, window.rect_min_size.y), [window.get_combined_minimum_size().y, window.rect_min_size.y])
 	# The groups: first New and Used, under their `group`; then one per series, titled by its base model's name, then
 	# the models alone in their series, under Others.
 	var others = ui.OTHERS_LABEL
@@ -774,6 +846,7 @@ func screen():
 	var conditionRows = keyRows(screen)
 	var first = conditionRows[0] if conditionRows.size() > 0 else null
 	check("the first switch (New's) has the focus", first != null and first.get_node("HBoxContainer/Value").has_focus())
+	check("and the list starts at the top, with the first group's title", screen.get_node("VB/ScrollContainer").scroll_vertical == 0, screen.get_node("VB/ScrollContainer").scroll_vertical)
 	check("each switch shows its model's setting", rowOf(screen, "TRTL").get_node("HBoxContainer/Value").pressed == false and rowOf(screen, "EIME").get_node("HBoxContainer/Value").pressed == false)
 	var conditionsShown = conditionRows.size() == 2
 	for row in conditionRows:
@@ -826,6 +899,34 @@ func screen():
 		yield(frames(1), "completed")
 		emptied = emptied and description.text == "" and not base.visible
 	check("focusing New or Used empties the window: no ship is selected", emptied and conditionRows.size() == 2, [base.text, description.text])
+	# A description longer than the window scrolls in it, on the right stick too, and starts at the top for every ship.
+	var lines = PoolStringArray()
+	for i in range(40):
+		lines.append("Line %d" % i)
+	var windowHeight = window.rect_size.y
+	description.text = lines.join("\n")
+	yield(frames(2), "completed")
+	check("a long description keeps the window's height and scrolls", is_equal_approx(window.rect_size.y, windowHeight) and textScroll.get_v_scrollbar().max_value > textScroll.rect_size.y, [windowHeight, window.rect_size.y])
+	yield(holdAxis(JOY_AXIS_3, 1.0), "completed")
+	yield(frames(10), "completed")
+	var down = textScroll.scroll_vertical
+	yield(holdAxis(JOY_AXIS_3, 0.0), "completed")
+	yield(frames(5), "completed")
+	var still = textScroll.scroll_vertical
+	yield(holdAxis(JOY_AXIS_3, -1.0), "completed")
+	yield(frames(60), "completed")
+	var up = textScroll.scroll_vertical
+	yield(holdAxis(JOY_AXIS_3, 0.0), "completed")
+	check("gamepad: the right stick scrolls it down, stops when let go, and scrolls it back up", down > 0 and still == down and up == 0, [down, still, up])
+	yield(holdAxis(JOY_AXIS_3, 1.0), "completed")
+	yield(frames(10), "completed")
+	yield(holdAxis(JOY_AXIS_3, 0.0), "completed")
+	var scrolled = textScroll.scroll_vertical
+	rowOf(screen, "EIME").get_node("HBoxContainer/Value").grab_focus()
+	yield(frames(1), "completed")
+	check("another ship's description starts at the top", scrolled > 0 and textScroll.scroll_vertical == 0, [scrolled, textScroll.scroll_vertical])
+	conditionRows[0].get_node("HBoxContainer/Value").grab_focus()
+	yield(frames(1), "completed")
 	# Switching a model on stores it; a ship of it the dealer has now doesn't mark.
 	var kitsune = rowOf(screen, "KITSUNE").get_node("HBoxContainer/Value")
 	kitsune.pressed = true
@@ -907,6 +1008,45 @@ func screen():
 	s.logs.grab_focus()
 	yield(frames(40), "completed")
 	check("focusing another menu entry hides it, as it hides the game's screens", not screen.visible)
+	# With a gamepad: the Shift badge reads the gamepad twin while the game is played with one, and X pressed on the
+	# highlighted entry while LT is held opens the settings, as Shift+Click does (Badge.gd).
+	var shiftBadge = s.menu._dnShiftBadge
+	var padModifier = shiftBadge.PAD_MODIFIER
+	var padButton = shiftBadge.PAD_BUTTON
+	var keyText = OS.get_scancode_string(KEY_SHIFT)
+	var keyRead = shiftBadge._label.text
+	Settings.controlScheme = Settings.control.gamepad
+	var padRead = shiftBadge._label.text
+	var padTip = shiftBadge.hint_tooltip
+	Settings.controlScheme = Settings.control.keyMouse
+	var keyTip = shiftBadge.hint_tooltip
+	check("gamepad: the Shift badge reads Shift with keyboard and mouse, the gamepad twin with a gamepad, and Shift again", keyRead == keyText and padRead == shiftBadge.PAD_TEXT and shiftBadge._label.text == keyText, [keyRead, padRead, shiftBadge._label.text])
+	var padExpected = tr(s.menu._DN_SETTINGS_TOOLTIP_PAD) % [shiftBadge.PAD_BUTTON_NAME, shiftBadge.PAD_MODIFIER_NAME, manifestValue("mod_information", "name")]
+	check("gamepad: its tooltip tells about the gamepad twin with a gamepad, and about Shift+Click again with keyboard and mouse", padTip == padExpected and keyTip == settingsTip(s) and tr(s.menu._DN_SETTINGS_TOOLTIP_PAD) != s.menu._DN_SETTINGS_TOOLTIP_PAD, [padTip, keyTip])
+	Settings.controlScheme = Settings.control.gamepad
+	s.market.grab_focus()
+	yield(tapJoy(padButton), "completed")
+	yield(frames(5), "completed")
+	check("gamepad: X alone on the highlighted entry does nothing", not screen.visible and not s.dealer.visible)
+	yield(holdJoy(padModifier, true), "completed")
+	s.market.disabled = true
+	yield(tapJoy(padButton), "completed")
+	yield(frames(5), "completed")
+	check("gamepad: LT+X on a disabled entry does nothing", not screen.visible and not s.dealer.visible)
+	s.market.disabled = false
+	s.logs.grab_focus()
+	yield(tapJoy(padButton), "completed")
+	yield(frames(5), "completed")
+	check("gamepad: LT+X with another entry highlighted doesn't open these settings", not screen.visible and not s.dealer.visible)
+	s.market.grab_focus()
+	yield(tapJoy(padButton), "completed")
+	yield(frames(5), "completed")
+	check("gamepad: LT+X on the highlighted Dealer entry opens the settings, not the Dealer screen", screen.visible and not s.dealer.visible)
+	yield(holdJoy(padModifier, false), "completed")
+	yield(tap(escKey()), "completed")
+	yield(frames(40), "completed")
+	check("gamepad: closing them highlights the entry again", not screen.visible and s.market.has_focus())
+	Settings.controlScheme = Settings.control.keyMouse
 	click(s.market, false)
 	yield(settle(), "completed")
 	check("a plain click still opens the Dealer screen, clearing the mark", s.dealer.visible and not screen.visible and entry(s) == KEY)
@@ -973,6 +1113,90 @@ func _allPictures(screen) -> bool:
 # EnceladusMenu.gd, each opening its own screen, which hides the others, and keeping its own tooltip. Theirs are as wide
 # as the Tuning stub, the Mineral Market or the Services screen, which leave the menu free to click, so they are opened
 # first.
+# ShipSortByTypeAndPrice and ShipHighlightTypeAndPrice, where loaded: scene-tree observers of the Dealer's and Fleet's
+# entries (enceladus/SystemBuyUI.gd), with or without DealerNotifier. The sort: the Dealer's offers by their type as
+# shown, then by price; the highlight the Dealer put on its first entry moved to the new first one; Fleet's entries left
+# in the game's order. The highlight: on every entry of both screens, the type in its colour and in a bold copy of the
+# game's font, one copy for every entry (also after the Dealer adds its entries again), the game's font untouched; the
+# registration and year dimmed; the name and price as they were; the picture behind the row transparent. Each waits its
+# mod's SETTLE_TIME after the entries come.
+func shipLists():
+	var sorting = hasMod("ShipSortByTypeAndPrice")
+	var highlighting = hasMod("ShipHighlightTypeAndPrice")
+	yield(frames(1), "completed")
+	if not sorting and not highlighting:
+		return
+	var wait = 0.0
+	for modName in ["ShipSortByTypeAndPrice", "ShipHighlightTypeAndPrice"]:
+		if hasMod(modName):
+			wait = max(wait, load("res://%s/Code.gd" % modName).get_script_constant_map().SETTLE_TIME)
+	TranslationServer.set_locale("en")
+	var s = station()
+	var dealer = s.dealer
+	# By type as shown in English: Fox (KITSUNE), Model E (EIME), Tortoise (TRTL); in each, the cheapest first.
+	CurrentGame.forSale = [pricedOffer("TRTL", "L-1", 3000000), pricedOffer("EIME", "L-2", 2000000), pricedOffer("TRTL", "L-3", 1000000), pricedOffer("KITSUNE", "L-4", 5000000), pricedOffer("EIME", "L-5", 1500000)]
+	var sorted = ["L-4", "L-5", "L-2", "L-3", "L-1"]
+	CurrentGame.ownedShips = [pricedOffer("TRTL", "M-1", 4000000), pricedOffer("KITSUNE", "M-2", 1000000)]
+	yield(settle(), "completed")
+	click(s.market, false)
+	yield(settle(), "completed")
+	yield(get_tree().create_timer(wait + 0.1), "timeout")
+	var order = []
+	for e in offers(dealer):
+		order.append(e.ship.transponder)
+	if sorting:
+		check("ShipSortByTypeAndPrice: the Dealer's offers by type as shown, then by price", order == sorted, order)
+		var first = offers(dealer)[0] if offers(dealer).size() > 0 else null
+		check("ShipSortByTypeAndPrice: the highlight the Dealer put on its first entry moves to the new first one", first != null and first.get_node("HBox/ShipName").has_focus(), dealer.get_focus_owner())
+	# A new hour: the Dealer adds the same entries again.
+	yield(hour(CurrentGame.forSale.duplicate()), "completed")
+	yield(get_tree().create_timer(wait + 0.1), "timeout")
+	var dealerEntries = offers(dealer)
+	dealer.hide()
+	yield(frames(40), "completed")
+	s.fleet.addShips()
+	yield(settle(), "completed")
+	click(s.owned, false)
+	yield(settle(), "completed")
+	yield(get_tree().create_timer(wait + 0.1), "timeout")
+	var fleetEntries = []
+	var fleetOrder = []
+	for e in s.fleet.items.get_children():
+		if "ship" in e and not e.is_queued_for_deletion() and e.owned:
+			fleetEntries.append(e)
+			fleetOrder.append(e.ship.transponder)
+	if sorting:
+		check("ShipSortByTypeAndPrice: Fleet's entries stay in the game's order", fleetOrder == ["M-1", "M-2"], fleetOrder)
+	if highlighting:
+		var c = load("res://ShipHighlightTypeAndPrice/Code.gd").get_script_constant_map()
+		# The font the type's Label has from the game's theme.
+		var gameEntry = load("res://enceladus/SystemBuyUI.tscn").instance()
+		var gameTheme = gameEntry.get_node("HBox/V").theme
+		var plainFont = gameTheme.get_font("font", "Label") if gameTheme != null else null
+		gameEntry.free()
+		var painted = dealerEntries.size() == sorted.size() and fleetEntries.size() == 2
+		var bold = painted
+		var fonts = []
+		for e in dealerEntries + fleetEntries:
+			painted = painted and e.shipLabel.get_color("font_color") == c.TYPE_COLOR and e.transponder.get_color("font_color") == c.DIM_COLOR and e.makeYearLabel.get_color("font_color") == c.DIM_COLOR
+			painted = painted and not e.stickerPriceLabel.has_color_override("font_color") and not e.get_node("HBox/ShipName").has_color_override("font_color") and e.background.self_modulate.a == 0.0
+			var font = e.shipLabel.get_font("font")
+			var outline = c.TYPE_COLOR
+			outline.a = c.BOLD_OUTLINE_ALPHA
+			bold = bold and e.shipLabel.has_font_override("font") and font is DynamicFont and font.outline_size == c.BOLD_OUTLINE_SIZE and font.outline_color == outline
+			if not font in fonts:
+				fonts.append(font)
+		check("ShipHighlightTypeAndPrice: on every entry of the Dealer and Fleet, the type in its colour, the registration and year dimmed, the name and price as they were, the picture behind transparent", painted, [dealerEntries.size(), fleetEntries.size()])
+		check("ShipHighlightTypeAndPrice: the type in a bold copy of the game's font, one copy for every entry, also after the Dealer adds them again", bold and fonts.size() == 1, fonts)
+		# The game's font as its file has it, loaded again without the cache.
+		var fileFont = ResourceLoader.load(plainFont.resource_path, "", true) if plainFont is DynamicFont else null
+		var untouched = fileFont is DynamicFont and not plainFont in fonts and plainFont.outline_size == fileFont.outline_size and plainFont.outline_color == fileFont.outline_color
+		check("ShipHighlightTypeAndPrice: the game's font is untouched", untouched, plainFont)
+	s.fleet.hide()
+	CurrentGame.ownedShips = []
+	CurrentGame.forSale = []
+	yield(freeStation(s), "completed")
+
 func together():
 	var others = []
 	if hasMod("CrewCheapHireNotifier"):
@@ -999,8 +1223,8 @@ func together():
 		yield(frames(40), "completed")
 		var mine = screenOf(s)
 		check("with %s: Shift+Click on its entry opens its settings, then Shift+Click on Dealer opens these and hides its" % other[2], opened and mine != null and mine.visible and not theirs.visible)
-		tips = tips and button.hint_tooltip.find(other[2]) >= 0
+		tips = tips and badgeTip(button).find(other[2]) >= 0
 		yield(tap(escKey()), "completed")
 		yield(frames(40), "completed")
-	check("every entry keeps its own tooltip", tips and s.market.hint_tooltip.find(settings.modName()) >= 0, s.market.hint_tooltip)
+	check("every entry's Shift badge keeps its own tooltip", tips and badgeTip(s.market).find(settings.modName()) >= 0, badgeTip(s.market))
 	yield(freeStation(s), "completed")

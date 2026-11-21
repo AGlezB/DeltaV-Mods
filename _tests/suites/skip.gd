@@ -33,6 +33,14 @@ func _record(what):
 func _recordCutscene(how):
 	recorded.append(["cutscene", how])
 
+# The tooltip of the Shift badge beside a station menu entry (a mod's Badge.gd, a child of the entry), which holds it:
+# the entry has none of its own.
+func badgeTip(entry) -> String:
+	for child in entry.get_children():
+		var script = child.get_script()
+		if script != null and script.resource_path.ends_with("/Badge.gd"):
+			return child.hint_tooltip
+	return ""
 func run():
 	var mod = hasMod("DiveSkipTransit")
 	bindGameKeys()
@@ -91,6 +99,26 @@ func joyButton(index):
 	event.button_index = index
 	return event
 
+# The game's own script under a chain of extensions: the one at its root. Other mods loaded too extend the same game
+# scripts (CombatSimulator the station, GeologyByMass the ship), so the extension's base isn't always the game's.
+func rootScript(script):
+	while script.get_base_script() != null:
+		script = script.get_base_script()
+	return script
+
+# A press and release of a gamepad button (JOY_*), then a frame: Input hands parsed events on at the next one.
+func tapJoy(index):
+	yield(tap(joyButton(index)), "completed")
+	yield(get_tree(), "idle_frame")
+
+# A gamepad button pressed, or released, and left so, as Input delivers it (Input.is_joy_button_pressed follows).
+func holdJoy(index, pressed):
+	yield(get_tree(), "idle_frame")
+	var event = joyButton(index)
+	event.pressed = pressed
+	Input.parse_input_event(event)
+	yield(get_tree(), "idle_frame")
+
 # ---- The launch ----
 
 # A station with `script` (the game's Enceladus.gd), given after the node is in the tree: its _ready needs the whole
@@ -130,7 +158,7 @@ func launchesAtOnce(script) -> bool:
 
 func launch(mod):
 	var script = load("res://enceladus/Enceladus.gd")
-	var game = script.get_base_script() if mod else script
+	var game = rootScript(script) if mod else script
 	Loader.calls.clear()
 	recorded.clear()
 	var control = makeStation(game)
@@ -230,7 +258,7 @@ func turbinesPerSecond(ship):
 
 func arrival(mod):
 	var script = load("res://Game.gd")
-	var game = script.get_base_script() if mod else null
+	var game = rootScript(script) if mod else null
 	var control = makeRing(game)
 	var cScene = control[0]
 	var cShip = control[1]
@@ -352,7 +380,7 @@ func leave(script, strength, velocity):
 
 func exits(mod):
 	var script = load("res://Game.gd")
-	var game = script.get_base_script() if mod else null
+	var game = rootScript(script) if mod else null
 	var state = leave(game, 1.0, Vector2(0, 0))
 	var control = yield(state, "completed")
 	var cShip = control[1]
@@ -410,7 +438,7 @@ func strand(script):
 
 func rescue(mod):
 	var script = load("res://Game.gd")
-	var game = script.get_base_script() if mod else null
+	var game = rootScript(script) if mod else null
 	var state = strand(game)
 	var control = yield(state, "completed")
 	yield(frames(3), "completed")
@@ -457,7 +485,7 @@ func meltDown(script):
 
 func gameOver(mod):
 	var script = load("res://Game.gd")
-	var game = script.get_base_script() if mod else null
+	var game = rootScript(script) if mod else null
 	var state = meltDown(game)
 	var control = yield(state, "completed")
 	check("control: the game alone plays the game over cutscene and stays in the ring", control[0].get_node("TitleAnimPlayer").current_animation == "gameover" and not ("go " + TITLE_SCENE) in Loader.calls, Loader.calls)
@@ -527,7 +555,7 @@ func course():
 
 func astrogation(mod):
 	var shipScript = load("res://ships/ship-ctrl.gd")
-	var game = shipScript.get_base_script() if mod else shipScript
+	var game = rootScript(shipScript) if mod else shipScript
 	var control = makeAstrogator(game)
 	recorded.clear()
 	var waiting = control[1].fastTravelTo(course())
@@ -634,7 +662,7 @@ func menuDisabled(station) -> bool:
 
 func fadeIn(mod):
 	var script = load("res://enceladus/Enceladus.gd")
-	var game = script.get_base_script() if mod else script
+	var game = rootScript(script) if mod else script
 	var control = fadeInStation(game)
 	yield(frames(2), "completed")
 	check("control: the game alone keeps the station's menu disabled while it fades in", menuDisabled(control) and control.get_node("AnimationPlayer").current_animation == "FadeInCRT")
@@ -642,8 +670,17 @@ func fadeIn(mod):
 	yield(frames(1), "completed")
 	if not mod:
 		return
+	# The extension's _ready, as the engine calls it after the base's (which needs the whole station). A call reaches only
+	# the top of the script chain: with CombatSimulator loaded after this mod (not the game's order, which goes by path),
+	# its extension of the station is on top, and this mod's _ready can't be called on its own.
+	var stationMods = []
+	for name in mods:
+		if name in ["DiveSkipTransit", "CombatSimulator"]:
+			stationMods.append(name)
+	if stationMods.back() != "DiveSkipTransit":
+		note("fade-in: not checked with %s's station extension above this mod's (load it first, as the game does)" % stationMods.back())
+		return
 	var station = fadeInStation(script)
-	# The extension's _ready, as the engine calls it after the base's (which needs the whole station).
 	station._ready()
 	var player = station.get_node("AnimationPlayer")
 	check("fade-in: the menu is usable at once", not station.get_node("EnceladusMenu/MenuContainer/MarginContainer/HBoxContainer/Options/RingDive").disabled and not station.get_node("EnceladusMenu/MenuContainer/MarginContainer/HBoxContainer/Options/Logs").disabled)
@@ -923,7 +960,7 @@ func settingsScreen():
 	yield(frames(2), "completed")
 	var tip = tr("DIVESKIPTRANSIT_SETTINGS_TOOLTIP")
 	check("screen: the mod's texts are loaded (i18n/en.po)", tip != "DIVESKIPTRANSIT_SETTINGS_TOOLTIP" and tr("DIVESKIPTRANSIT_SKIP_TRANSIT") != "DIVESKIPTRANSIT_SKIP_TRANSIT")
-	check("screen: the dive entry's tooltip tells about Shift+Click", s.dive.hint_tooltip == tip % [OS.get_scancode_string(KEY_SHIFT), settings.modName()], s.dive.hint_tooltip)
+	check("screen: the dive entry's Shift badge has the tooltip, which tells about Shift+Click; the entry has none of its own", badgeTip(s.dive) == tip % [OS.get_scancode_string(KEY_SHIFT), settings.modName()] and s.dive.hint_tooltip == "", [badgeTip(s.dive), s.dive.hint_tooltip])
 	click(s.dive, false)
 	yield(frames(2), "completed")
 	check("screen: a plain click on the dive entry launches and opens no settings", recorded == ["dive"] and screenOf(s) == null, recorded)
@@ -1037,6 +1074,47 @@ func settingsScreen():
 	yield(tap(escKey()), "completed")
 	yield(frames(40), "completed")
 	check("screen: Esc closes it after the game's fade", not screen.visible)
+	# With a gamepad: the Shift badge reads the gamepad twin while the game is played with one, and X pressed on the
+	# highlighted entry while LT is held opens the settings, as Shift+Click does (Badge.gd).
+	var shiftBadge = s.menu._dstShiftBadge
+	var padModifier = shiftBadge.PAD_MODIFIER
+	var padButton = shiftBadge.PAD_BUTTON
+	var keyText = OS.get_scancode_string(KEY_SHIFT)
+	var keyRead = shiftBadge._label.text
+	Settings.controlScheme = Settings.control.gamepad
+	var padRead = shiftBadge._label.text
+	var padTip = shiftBadge.hint_tooltip
+	Settings.controlScheme = Settings.control.keyMouse
+	var keyTip = shiftBadge.hint_tooltip
+	check("gamepad: the Shift badge reads Shift with keyboard and mouse, the gamepad twin with a gamepad, and Shift again", keyRead == keyText and padRead == shiftBadge.PAD_TEXT and shiftBadge._label.text == keyText, [keyRead, padRead, shiftBadge._label.text])
+	var padKey = s.menu._DST_SETTINGS_TOOLTIP_PAD
+	var padExpected = tr(padKey) % [shiftBadge.PAD_BUTTON_NAME, shiftBadge.PAD_MODIFIER_NAME, settings.modName()]
+	check("gamepad: its tooltip tells about the gamepad twin with a gamepad, and about Shift+Click again with keyboard and mouse", padTip == padExpected and keyTip == tip % [keyText, settings.modName()] and tr(padKey) != padKey, [padTip, keyTip])
+	Settings.controlScheme = Settings.control.gamepad
+	var launched = recorded.size()
+	s.dive.grab_focus()
+	yield(tapJoy(padButton), "completed")
+	yield(frames(5), "completed")
+	check("gamepad: X alone on the highlighted entry does nothing", not screen.visible and recorded.size() == launched, recorded)
+	yield(holdJoy(padModifier, true), "completed")
+	s.dive.disabled = true
+	yield(tapJoy(padButton), "completed")
+	yield(frames(5), "completed")
+	check("gamepad: LT+X on a disabled entry does nothing", not screen.visible and recorded.size() == launched, recorded)
+	s.dive.disabled = false
+	s.logs.grab_focus()
+	yield(tapJoy(padButton), "completed")
+	yield(frames(5), "completed")
+	check("gamepad: LT+X with another entry highlighted doesn't open these settings", not screen.visible and recorded.size() == launched, recorded)
+	s.dive.grab_focus()
+	yield(tapJoy(padButton), "completed")
+	yield(frames(5), "completed")
+	check("gamepad: LT+X on the highlighted dive entry opens the settings and doesn't launch", screen.visible and recorded.size() == launched, recorded)
+	yield(holdJoy(padModifier, false), "completed")
+	yield(tapJoy(JOY_BUTTON_1), "completed")
+	yield(frames(40), "completed")
+	check("gamepad: B closes them, and the entry is highlighted again", not screen.visible and s.dive.has_focus())
+	Settings.controlScheme = Settings.control.keyMouse
 	if withCrew:
 		click(s.crew, true)
 		yield(frames(40), "completed")
@@ -1045,7 +1123,7 @@ func settingsScreen():
 		click(s.dive, true)
 		yield(frames(40), "completed")
 		check("with CrewCheapHireNotifier: Shift+Click on the dive entry opens these and hides its", screen.visible and not crewSettings.visible)
-		check("with CrewCheapHireNotifier: both entries keep their own tooltip", s.dive.hint_tooltip.find(settings.modName()) >= 0 and s.crew.hint_tooltip.find("CrewCheapHireNotifier") >= 0, [s.dive.hint_tooltip, s.crew.hint_tooltip])
+		check("with CrewCheapHireNotifier: both entries' Shift badges keep their own tooltip", badgeTip(s.dive).find(settings.modName()) >= 0 and badgeTip(s.crew).find("CrewCheapHireNotifier") >= 0, [badgeTip(s.dive), badgeTip(s.crew)])
 	freeMenuStation(s)
 
 func freeMenuStation(s):

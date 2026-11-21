@@ -45,7 +45,7 @@ const OFFERED = ["TRTL", "TRTL-R", "PROSPECTOR", "ATLAS", "MADCERF", "DRONE"]
 # The models the game leaves without a name and a description of their own (their scenes keep ship-ctrl.gd's shipName),
 # which the mod's texts name.
 const UNNAMED = ["MADCERF", "TSUKUYOMI", "HYBRID", "ATLAS", "DRONE"]
-const TOOLTIP_DE = "%s+Klick oder %s+%s: %s"
+const TOOLTIP_DE = "%s+Klick: %s"
 
 var settings = null
 var cg = null # the game's CurrentGame.gd (with the extension), in the tree
@@ -91,17 +91,39 @@ func joyButton(index):
 	event.button_index = index
 	return event
 
-# The game's bindings (its project.godot): jury_rig is J and button 10; jury_rig_cancel is Esc; pause is Esc and
-# Start; ui_cancel is Esc, B (button 1) and Start.
+func joyAxis(axis, value):
+	var event = InputEventJoypadMotion.new()
+	event.axis = axis
+	event.axis_value = value
+	return event
+
+# The game's bindings (its project.godot): jury_rig is J and button 10 (Back); jury_rig_cancel is Esc; pause is Esc and
+# Start; ui_cancel is Esc, B (button 1) and Start; ui_page_up and ui_page_down are LB and RB (buttons 4 and 5) too;
+# ui_scroll_up2 and ui_scroll_down2 are the right stick's vertical axis, with a dead zone of 0.1.
 func bindGameKeys():
-	var bindings = [["jury_rig", key(KEY_J)], ["jury_rig", joyButton(JOY_L3)], ["jury_rig_cancel", escKey()],
+	var bindings = [["jury_rig", key(KEY_J)], ["jury_rig", joyButton(JOY_SELECT)], ["jury_rig_cancel", escKey()],
 		["pause", escKey()], ["pause", joyButton(JOY_START)], ["ui_cancel", escKey()], ["ui_cancel", joyButton(JOY_BUTTON_1)],
-		["ui_cancel", joyButton(JOY_START)]]
+		["ui_cancel", joyButton(JOY_START)], ["ui_page_up", joyButton(JOY_L)], ["ui_page_down", joyButton(JOY_R)],
+		["ui_scroll_up2", joyAxis(JOY_AXIS_3, -1.0)], ["ui_scroll_down2", joyAxis(JOY_AXIS_3, 1.0)]]
 	for binding in bindings:
 		if not InputMap.has_action(binding[0]):
-			InputMap.add_action(binding[0])
+			InputMap.add_action(binding[0], 0.1 if binding[0].begins_with("ui_scroll") else 0.5)
 		if not InputMap.action_has_event(binding[0], binding[1]):
 			InputMap.action_add_event(binding[0], binding[1])
+
+# A gamepad button pressed, or released, and left so, as Input delivers it (Input.is_joy_button_pressed follows).
+func holdJoy(index, pressed):
+	yield(get_tree(), "idle_frame")
+	var event = joyButton(index)
+	event.pressed = pressed
+	Input.parse_input_event(event)
+	yield(get_tree(), "idle_frame")
+
+# A stick's axis moved to `value` and left there, as Input delivers it (the actions' strength follows).
+func holdAxis(axis, value):
+	yield(get_tree(), "idle_frame")
+	Input.parse_input_event(joyAxis(axis, value))
+	yield(get_tree(), "idle_frame")
 
 # A press in one idle frame and the release in the next, as Input delivers a player's.
 func tap(event):
@@ -368,6 +390,15 @@ func controls():
 	check("control: Shift+J starts nothing (a button's shortcut matches its key exactly), and J does", s.simulation.started.size() == 2, s.simulation.started.size())
 	yield(tap(key(KEY_J)), "completed")
 	check("control: J fires the button's shortcut, starting it", s.simulation.started.size() == 3, s.simulation.started.size())
+	# The gamepad twins (the mod's Badge.gd, not loaded here: LT, and X): a gamepad's buttons carry no modifiers, so
+	# LT+Back is Back, the shortcut's button, and LT+X is nothing.
+	s.vr.grab_focus()
+	yield(holdJoy(JOY_L2, true), "completed")
+	yield(tap(joyButton(JOY_XBOX_X)), "completed")
+	var afterX = s.simulation.started.size()
+	yield(tap(joyButton(JOY_SELECT)), "completed")
+	yield(holdJoy(JOY_L2, false), "completed")
+	check("control: LT+X on the highlighted button does nothing, and LT+Back starts it", afterX == 3 and s.simulation.started.size() == 4, [afterX, s.simulation.started.size()])
 	s.pause.pauseGame(true)
 	check("control: the station's pause menu pauses the game and shows itself", get_tree().paused and pauseShown(s))
 	s.pause.pauseGame(false)
@@ -453,7 +484,7 @@ func texts():
 	for g in ui.GROUPS:
 		keys.append(g[1])
 	for k in S:
-		keys += [S[k].label, S[k].label + ui.DESCRIPTION_SUFFIX]
+		keys += [S[k].label, S[k].label + script.DESCRIPTION_SUFFIX]
 	for m in UNNAMED:
 		keys += [script.MODEL_NAME_PREFIX + m, script.MODEL_NAME_PREFIX + m + script.DESCRIPTION_SUFFIX]
 	var missing = []
@@ -461,7 +492,7 @@ func texts():
 		if tr(k) == k:
 			missing.append(k)
 	check("texts: i18n/en.po has the tooltip, the dialog's title, groups and buttons, every setting's name and description, and the unnamed models' names and descriptions", missing.empty(), missing)
-	check("texts: the tooltip takes the Shift key twice, the simulator's key and the mod's name", tr(keys[0]).count("%s") == 4, tr(keys[0]))
+	check("texts: the tooltip takes the Shift key and the mod's name", tr(keys[0]).count("%s") == 2, tr(keys[0]))
 
 # ---- The HUD and the weapons ----
 
@@ -607,25 +638,27 @@ func dialog(s):
 	var tooltips = root._csTooltips
 	check("station: the arena's layer comes right after the simulator's, on its layer; the dialog's layer is the station's last child", layer.get_index() == s.simulation.get_index() + 1 and layer.layer == s.simulation.layer and ui.get_index() == root.get_child_count() - 1)
 	check("station: both simulator buttons are found by their scene", root._csButtons.size() == 2 and s.vr in root._csButtons and s.fleetVr in root._csButtons)
-	# The tooltip, shown by the game's tooltip node.
-	var tip = tr(root._CS_TOOLTIP) % [OS.get_scancode_string(KEY_SHIFT), OS.get_scancode_string(KEY_SHIFT), "J", settings.modName()]
-	check("tooltip: the game's tooltip node is on the dialog's layer and holds the button's tooltip, which tells about Shift+Click and Shift+J", tooltips != null and tooltips.get_parent() == ui and tooltips.tooltips.get(s.vr) == tip, tooltips.tooltips.get(s.vr) if tooltips != null else null)
-	if tooltips == null:
+	# The tooltip, on each button's Shift badge (Badge.gd), shown by the game's tooltip node.
+	var tip = tr(root._CS_TOOLTIP) % [OS.get_scancode_string(KEY_SHIFT), settings.modName()]
+	var badge = s.vr.get_node_or_null(root._CS_SHIFT_BADGE)
+	check("tooltip: the game's tooltip node is on the dialog's layer; the button's Shift badge has the tooltip, which tells about Shift+Click, and the button none", tooltips != null and tooltips.get_parent() == ui and badge != null and badgeTip(tooltips, badge) == tip and tooltips.tooltips.get(s.vr, "") == "", badgeTip(tooltips, badge) if tooltips != null and badge != null else null)
+	if tooltips == null or badge == null:
 		return
-	yield(focusTip(s.vr), "completed")
-	check("tooltip: focusing the button shows it", tooltips.tooltipLabel.text == tip and tooltips.tooltipPosition.visible, tooltips.tooltipLabel.text)
+	tooltips.showTooltip(badge)
+	yield(frames(1), "completed")
+	check("tooltip: shown, it is the badge's", tooltips.tooltipLabel.text == tip and tooltips.tooltipPosition.visible, tooltips.tooltipLabel.text)
+	tooltips.hideTooltip(badge)
 	check("tooltip: a hidden button has none yet", tooltips.tooltips.get(s.fleetVr) == "")
 	s.fleet.show()
 	yield(frames(1), "completed")
-	yield(focusTip(s.fleetVr), "completed")
-	check("tooltip: once it shows, it has it", tooltips.tooltipLabel.text == tip, tooltips.tooltipLabel.text)
+	check("tooltip: once it shows, its badge has it", badgeTip(tooltips, s.fleetVr.get_node(root._CS_SHIFT_BADGE)) == tip, badgeTip(tooltips, s.fleetVr.get_node(root._CS_SHIFT_BADGE)))
 	s.fleet.hide()
 	InputMap.action_erase_events("jury_rig")
 	InputMap.action_add_event("jury_rig", key(KEY_K))
 	s.tuning.hide()
 	s.tuning.show()
-	yield(focusTip(s.vr), "completed")
-	check("tooltip: it follows the simulator's key, rebound, when the button shows again", tooltips.tooltipLabel.text == tr(root._CS_TOOLTIP) % [OS.get_scancode_string(KEY_SHIFT), OS.get_scancode_string(KEY_SHIFT), "K", settings.modName()], tooltips.tooltipLabel.text)
+	yield(frames(1), "completed")
+	check("tooltip: with the simulator's key rebound it stays the same, naming only Shift", badgeTip(tooltips, badge) == tip, badgeTip(tooltips, badge))
 	InputMap.action_erase_events("jury_rig")
 	bindGameKeys()
 	var de = Translation.new()
@@ -633,10 +666,10 @@ func dialog(s):
 	de.add_message(root._CS_TOOLTIP, TOOLTIP_DE)
 	TranslationServer.add_translation(de)
 	TranslationServer.set_locale("de")
-	yield(focusTip(s.vr), "completed")
-	check("tooltip: it follows a language change", tooltips.tooltipLabel.text == TOOLTIP_DE % [OS.get_scancode_string(KEY_SHIFT), OS.get_scancode_string(KEY_SHIFT), "J", settings.modName()], tooltips.tooltipLabel.text)
+	yield(frames(1), "completed")
+	check("tooltip: it follows a language change", badgeTip(tooltips, badge) == TOOLTIP_DE % [OS.get_scancode_string(KEY_SHIFT), settings.modName()], badgeTip(tooltips, badge))
 	TranslationServer.set_locale("en")
-	yield(focusTip(s.vr), "completed")
+	yield(frames(1), "completed")
 	# Opening and closing.
 	var started = s.simulation.started
 	click(s.vr, false)
@@ -684,13 +717,120 @@ func dialog(s):
 	s.fleet.hide()
 	s.tuning.show()
 	yield(frames(2), "completed")
+	yield(gamepad(s), "completed")
+
+# With a gamepad: the Shift badge reads the gamepad twin while the game is played with one; X pressed on the highlighted
+# button while LT is held opens the dialog, as Shift+Click does, and Back (the simulator's button) while LT is held, as
+# Shift+J does. In the dialog, the right stick scrolls the description, and the shoulder buttons switch only its tabs.
+func gamepad(s):
+	var root = s.root
+	var ui = root._csDialog
+	var started = s.simulation.started
+	var count = started.size()
+	var shiftBadge = s.vr.get_node(root._CS_SHIFT_BADGE)
+	var padModifier = shiftBadge.PAD_MODIFIER
+	var padButton = shiftBadge.PAD_BUTTON
+	var keyText = OS.get_scancode_string(KEY_SHIFT)
+	var keyRead = shiftBadge._label.text
+	Settings.controlScheme = Settings.control.gamepad
+	var padRead = shiftBadge._label.text
+	var padTip = shiftBadge.hint_tooltip
+	Settings.controlScheme = Settings.control.keyMouse
+	var keyTip = shiftBadge.hint_tooltip
+	check("gamepad: the Shift badge reads Shift with keyboard and mouse, the gamepad twin with a gamepad, and Shift again", keyRead == keyText and padRead == shiftBadge.PAD_TEXT and shiftBadge._label.text == keyText, [keyRead, padRead, shiftBadge._label.text])
+	var padExpected = tr(root._CS_TOOLTIP_PAD) % [shiftBadge.PAD_BUTTON_NAME, shiftBadge.PAD_MODIFIER_NAME, settings.modName()]
+	check("gamepad: its tooltip tells about the gamepad twin with a gamepad, and about Shift+Click again with keyboard and mouse", padTip == padExpected and keyTip == tr(root._CS_TOOLTIP) % [keyText, settings.modName()] and tr(root._CS_TOOLTIP_PAD) != root._CS_TOOLTIP_PAD, [padTip, keyTip])
+	Settings.controlScheme = Settings.control.gamepad
+	# A screen whose tabs use the game's tab script, as the Dealer's and the Equipment screen's do. With the dialog
+	# closed, the shoulder buttons are the screen's.
+	var behind = TabContainer.new()
+	behind.set_script(load("res://menu/TabsWithGamepadControl.gd"))
+	for tabName in ["First", "Second"]:
+		var page = Control.new()
+		page.name = tabName
+		behind.add_child(page)
+	s.tuning.add_child(behind)
+	yield(frames(1), "completed")
+	yield(tap(joyButton(JOY_R)), "completed")
+	check("gamepad: with the dialog closed, RB switches the screen's own tabs", behind.current_tab == 1 and not ui.isOpen(), [behind.current_tab, ui._tabs.current_tab])
+	behind.current_tab = 0
+	s.vr.grab_focus()
+	yield(tap(joyButton(padButton)), "completed")
+	check("gamepad: X alone on the highlighted button does nothing", not ui.isOpen() and started.size() == count, started.size())
+	yield(tap(joyButton(JOY_SELECT)), "completed")
+	count += 1
+	check("gamepad: Back alone still fires the button's shortcut, starting the simulator", not ui.isOpen() and started.size() == count, started.size())
+	yield(holdJoy(padModifier, true), "completed")
+	s.vr.disabled = true
+	yield(tap(joyButton(padButton)), "completed")
+	yield(tap(joyButton(JOY_SELECT)), "completed")
+	check("gamepad: with the button disabled, neither LT+X nor LT+Back opens it", not ui.isOpen() and started.size() == count, started.size())
+	s.vr.disabled = false
+	s.vr.release_focus()
+	yield(tap(joyButton(padButton)), "completed")
+	check("gamepad: LT+X with the button not highlighted opens nothing", not ui.isOpen() and started.size() == count)
+	s.vr.grab_focus()
+	yield(tap(joyButton(padButton)), "completed")
+	check("gamepad: LT+X on the highlighted button opens the dialog and doesn't start the simulator", ui.isOpen() and started.size() == count and root._csSim == s.tuning.previewedConfig, started.size())
+	yield(tap(joyButton(JOY_BUTTON_1)), "completed")
+	yield(frames(2), "completed")
+	check("gamepad: B closes it, the focus back on the button", not ui.isOpen() and s.vr.get_focus_owner() == s.vr, s.vr.get_focus_owner())
+	s.vr.release_focus()
+	yield(tap(joyButton(JOY_SELECT)), "completed")
+	check("gamepad: LT+Back opens the dialog without the button highlighted, and doesn't start the simulator", ui.isOpen() and started.size() == count, started.size())
+	yield(holdJoy(padModifier, false), "completed")
+
+	# The shoulder buttons, with the dialog open: at its last tab, RB goes nowhere else.
+	yield(tap(joyButton(JOY_R)), "completed")
+	var switched = ui._tabs.current_tab == ui.SHIP_TAB_INDEX
+	yield(tap(joyButton(JOY_R)), "completed")
+	check("gamepad: RB switches the dialog's tab, and at its last tab the screen behind keeps its own", switched and ui._tabs.current_tab == ui.SHIP_TAB_INDEX and behind.current_tab == 0, [ui._tabs.current_tab, behind.current_tab])
+	yield(tap(joyButton(JOY_L)), "completed")
+	switched = ui._tabs.current_tab == ui.SETTINGS_TAB_INDEX
+	yield(tap(joyButton(JOY_L)), "completed")
+	check("gamepad: LB switches it back, and at its first tab the screen behind keeps its own", switched and ui._tabs.current_tab == ui.SETTINGS_TAB_INDEX and behind.current_tab == 0, [ui._tabs.current_tab, behind.current_tab])
+	behind.queue_free()
+
+	# The right stick on a description longer than its window.
+	var lines = PoolStringArray()
+	for i in range(ui.DESCRIPTION_LINES * 4):
+		lines.append("Line %d" % i)
+	ui._showDescription(lines.join("\n"), ui._description)
+	yield(frames(2), "completed")
+	var scroll = ui._description.get_parent()
+	yield(holdAxis(JOY_AXIS_3, 1.0), "completed")
+	yield(frames(10), "completed")
+	var down = scroll.scroll_vertical
+	yield(holdAxis(JOY_AXIS_3, 0.0), "completed")
+	yield(frames(5), "completed")
+	var still = scroll.scroll_vertical
+	yield(holdAxis(JOY_AXIS_3, -1.0), "completed")
+	yield(frames(60), "completed")
+	var up = scroll.scroll_vertical
+	yield(holdAxis(JOY_AXIS_3, 0.0), "completed")
+	check("gamepad: the right stick scrolls a long description down, stops when let go, and scrolls it back up", down > 0 and still == down and up == 0, [down, still, up])
+
+	# Start with no ring map to build the arena from: nothing runs, and the focus goes back to the button the dialog was
+	# opened from.
+	ui.close()
+	s.vr.grab_focus()
+	click(s.vr, true)
+	yield(frames(2), "completed")
+	var image = s.ring.image
+	s.ring.image = null
+	ui._onStart()
+	yield(frames(2), "completed")
+	check("gamepad: Start with no ring map runs nothing and gives the focus back to the button", not root._csLayer.isRunning() and not ui.isOpen() and s.vr.get_focus_owner() == s.vr, s.vr.get_focus_owner())
+	s.ring.image = image
+	Settings.controlScheme = Settings.control.keyMouse
 
 # Focuses `button` afresh, so the game's tooltip node shows its tooltip.
-func focusTip(button):
-	button.release_focus()
-	yield(frames(1), "completed")
-	button.grab_focus()
-	yield(frames(1), "completed")
+# A Shift badge's tooltip: its hint_tooltip, which Badge.gd sets as the control scheme and the language change, or, once
+# the game's tooltip node has taken it over (connectSounds, showTooltip: it empties the node's own), the node's copy.
+func badgeTip(tooltips, badge) -> String:
+	if badge.hint_tooltip != "":
+		return badge.hint_tooltip
+	return tooltips.tooltips.get(badge, "")
 
 # The dialog's groups (the game's TuningItems) and rows.
 func groups(ui) -> Array:
@@ -819,13 +959,13 @@ func screenChecks(s):
 			ranges = ranges and all[i].get_node("HBoxContainer/Value").pressed == settings.getValue(k)
 	check("dialog: each slider has its setting's range, step, unit and value in the units shown; each switch shows its setting", ranges)
 	var description = ui._description
-	check("dialog: on opening the first row is focused, and the window shows its description", description.text == tr(S[keys[0]].label + c.DESCRIPTION_SUFFIX), description.text)
+	check("dialog: on opening the first row is focused, and the window shows its description", description.text == tr(S[keys[0]].label + load(SETTINGS_SCRIPT).DESCRIPTION_SUFFIX), description.text)
 	var described = true
 	for i in keys.size():
 		var control = all[i].get_node("HBoxContainer/Value") if S[keys[i]].type == "bool" else all[i].get_node("HSlider")
 		control.grab_focus()
 		yield(frames(1), "completed")
-		described = described and description.text == tr(S[keys[i]].label + c.DESCRIPTION_SUFFIX)
+		described = described and description.text == tr(S[keys[i]].label + load(SETTINGS_SCRIPT).DESCRIPTION_SUFFIX)
 	check("dialog: focusing a row shows its description", described)
 	# The description's window keeps its height, and a longer text scrolls in it.
 	var window = tabs.get_child(0).get_node("WindowMargin")
@@ -1067,6 +1207,7 @@ func runOne(s):
 	var moods = field.moods
 	yield(tap(escKey()), "completed")
 	check("confirm: with the OMS closed, Esc asks whether to end the run, pausing the game and filtering the music, not into the viewport", layer._confirm.visible and get_tree().paused and musicFilter() and probe.events.size() == 3)
+	check("confirm: Cancel has the focus, as in the game's own confirmations, so accepting at once goes on with the run", layer._confirm.get_cancel().has_focus(), layer._confirm.get_focus_owner())
 	check("confirm: the station's pause menu doesn't open", not pauseShown(s))
 	moods = field.moods
 	yield(frames(5), "completed")

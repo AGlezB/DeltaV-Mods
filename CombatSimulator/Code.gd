@@ -2,8 +2,10 @@ extends "res://enceladus/Enceladus.gd"
 
 # CombatSimulator's extension of the station (enceladus/Enceladus.gd): Shift+Click on the simulator's button, or Shift
 # plus its key (the game's jury_rig action, J by default), opens the dialog (SettingsUI.gd) instead of the simulator,
-# and its Start runs the arena (CombatLayer.gd) with the ship that screen's simulator would fly. Each button gets a
-# tooltip that says so. The station is rebuilt after every load and new game, so the save's settings load here.
+# and its Start runs the arena (CombatLayer.gd) with the ship that screen's simulator would fly. With a gamepad, LT+X on
+# the highlighted button (Badge.gd isPadShortcut) or LT+Back (the action's gamepad button) does the same. Each button
+# gets a Shift badge inside it, on the left, whose tooltip says so; it reads LT+X with a gamepad. The station is rebuilt
+# after every load and new game, so the save's settings load here.
 # Godot 3 runs _ready and _input at every level of the script chain by itself: neither calls the parent's.
 
 const CombatSimulator = preload("res://CombatSimulator/Settings.gd")
@@ -21,10 +23,19 @@ const _CS_TUNING = "Tuning"
 const _CS_CONFIGS = ["previewedConfig", "currentConfig"]
 # The simulator's action (the button's shortcut).
 const _CS_ACTION = "jury_rig"
-# The buttons' tooltip, a translation key of i18n/en.po: %s the Shift key (twice), the action's key, the mod's name.
+# The Shift badge's tooltip, a translation key of i18n/en.po: %s the Shift key, the mod's name. And the same while the
+# game is played with a gamepad (Badge.gd setShiftTooltips): the button to press, the one to hold, the mod's name.
 const _CS_TOOLTIP = "COMBATSIMULATOR_TOOLTIP"
+const _CS_TOOLTIP_PAD = "COMBATSIMULATOR_TOOLTIP_PAD"
 # The game's tooltip node (with its sounds), as the station's menus and entries instance it.
 const _CS_GAME_TOOLTIPS = "res://menu/sfx/PlaySoundsOnTheseButtons.tscn"
+# Where the simulator's button holds the game's key glyph showing its key (the J, in a box anchored to its right edge),
+# whose place the Shift badge mirrors.
+const _CS_KEY_HINT = "MarginContainer/ContextSensitiveControlDisplay"
+# The badges' script: their look, and their tooltip as their only interaction.
+const _CS_BADGE_SCRIPT = preload("res://CombatSimulator/Badge.gd")
+# The Shift badge's node name in a button.
+const _CS_SHIFT_BADGE = "CombatSimulatorShiftBadge"
 
 var _csButtons = []
 var _csTooltips = null
@@ -37,75 +48,85 @@ var _csLastFocus = null # where the focus was when the dialog opened
 func _ready():
 	CombatSimulator.shared().loadFromState()
 	_csSimulation = get_node_or_null(_CS_SIMULATION_LAYER)
+	_csDialog = _CS_SETTINGS_UI.new()
+	_csDialog.setup(menusContainer.get_node_or_null(_CS_TUNING) if menusContainer != null else null)
 	_csLayer = _CS_COMBAT_LAYER.new()
-	_csLayer.setup(self)
+	_csLayer.setup(self, _csSimulation, _csDialog.pageTheme)
 	add_child(_csLayer)
 	if _csSimulation != null:
 		move_child(_csLayer, _csSimulation.get_index() + 1)
-	_csDialog = _CS_SETTINGS_UI.new()
-	_csDialog.setup(menusContainer.get_node_or_null(_CS_TUNING) if menusContainer != null else null)
 	add_child(_csDialog)
 	_csDialog.connect("startRequested", self, "_csStart")
 	if ResourceLoader.exists(_CS_GAME_TOOLTIPS):
 		_csTooltips = load(_CS_GAME_TOOLTIPS).instance()
 		_csDialog.add_child(_csTooltips)
+		_csDialog.attachTooltips(_csTooltips)
 	if menusContainer != null:
 		_csFindButtons(menusContainer)
 
-# Each button gets the tooltip, shown by the game's own tooltip node: the released game moves Godot's tooltips off
-# the screen (project.godot display/mouse_cursor/tooltip_position_offset.release) and draws its own, through a
-# PlaySoundsOnTheseButtons (menu/sfx/PlaySoundsOnTheseButtons.gd), none of which covers these buttons. One of its own
-# sits on the dialog's layer, drawn above the screens: its parent there is no Control, so it takes over nothing by
-# itself, and connectSounds registers each button (with the hover and focus sounds the game's menus have). It takes
-# over the button's hint_tooltip, and reads it again on every hover, so setting it again is enough.
+# Each button gets the Shift badge, and the badge the tooltip, shown by the game's own tooltip node: the released game
+# moves Godot's tooltips off the screen (project.godot display/mouse_cursor/tooltip_position_offset.release) and draws
+# its own, through a PlaySoundsOnTheseButtons (menu/sfx/PlaySoundsOnTheseButtons.gd), none of which covers these
+# buttons. One of its own sits on the dialog's layer, drawn above the screens: its parent there is no Control, so it
+# takes over nothing by itself, and connectSounds registers each button (with the hover and focus sounds the game's
+# menus have) and each badge (without them, Badge.gd). It takes over the badge's hint_tooltip, and reads it again on
+# every hover; the button's stays empty, so it shows none.
 func _csFindButtons(node):
 	for child in node.get_children():
 		if child is BaseButton and child.filename == _CS_LAUNCH_VR_BUTTON:
 			_csButtons.append(child)
 			child.connect("gui_input", self, "_csOnButtonInput", [child])
-			child.connect("visibility_changed", self, "_csUpdateTooltip", [child])
-			_csUpdateTooltip(child)
+			_csMakeShiftBadge(child)
 			if _csTooltips != null and _csTooltips.has_method("connectSounds"):
 				_csTooltips.connectSounds(child)
 		_csFindButtons(child)
 
-func _notification(what):
-	if what == NOTIFICATION_TRANSLATION_CHANGED:
-		for button in _csButtons:
-			if is_instance_valid(button):
-				_csUpdateTooltip(button)
+# The Shift badge (Badge.gd), in the button's own frame and font colour, inside the button on the left, centred on it
+# from top to bottom, mirroring the button's key glyph, the J on its right (enceladus/Simulator/LaunchVRButton.tscn):
+# as far from the left edge as the J is from the right one (its box's margin from the edge, plus half the room the box,
+# which centres it, leaves beside it). Without the J, inside the margin the button keeps around its text (its normal
+# stylebox's). A Button doesn't lay out its children, so the badge hangs from it directly, anchored to the middle of its
+# left side, and grows right, up and down to its minimum size. On the button, it lets the mouse through: a click on it
+# is the button's, as if it weren't there. Its tooltip is shown by the dialog's tooltip node.
+func _csMakeShiftBadge(button):
+	var badge = _CS_BADGE_SCRIPT.new()
+	badge.name = _CS_SHIFT_BADGE
+	badge.dress(button, OS.get_scancode_string(KEY_SHIFT), _CS_BADGE_SCRIPT.PAD_TEXT)
+	var inset = 0.0
+	var key = button.get_node_or_null(_CS_KEY_HINT)
+	var box = key.get_parent() if key is Control else null
+	if box is Control:
+		inset = -box.margin_right + (box.margin_right - box.margin_left - key.rect_min_size.x) / 2
+	elif button.get_stylebox("normal") != null:
+		inset = button.get_stylebox("normal").get_margin(MARGIN_LEFT)
+	badge.set_anchors_preset(Control.PRESET_CENTER_LEFT)
+	badge.margin_left = inset
+	badge.margin_right = inset
+	badge.margin_top = 0
+	badge.margin_bottom = 0
+	badge.grow_horizontal = Control.GROW_DIRECTION_END
+	badge.grow_vertical = Control.GROW_DIRECTION_BOTH
+	badge.mouse_filter = Control.MOUSE_FILTER_PASS
+	button.add_child(badge)
+	badge.attachTooltip(_csTooltips)
+	badge.setShiftTooltips(_CS_TOOLTIP, _CS_TOOLTIP_PAD, CombatSimulator.shared().modName())
 
-# Rebuilt whenever the button shows, so it follows a change of the key in the game's settings.
-func _csUpdateTooltip(button):
-	if not button.is_visible_in_tree():
-		return
-	var shift = OS.get_scancode_string(KEY_SHIFT)
-	button.hint_tooltip = tr(_CS_TOOLTIP) % [shift, shift, _csActionKey(), CombatSimulator.shared().modName()]
-
-# The first key bound to the action, as the keyboard shows it.
-func _csActionKey() -> String:
-	for event in InputMap.get_action_list(_CS_ACTION):
-		if event is InputEventKey:
-			var code = event.scancode if event.scancode != 0 else event.physical_scancode
-			return OS.get_scancode_string(code)
-	return ""
-
-# Shift+Click opens the dialog instead of the simulator. The gui_input signal comes before the button's own
-# _gui_input, and accepting the press there keeps the button from pressing.
+# Shift+Click opens the dialog instead of the simulator, and so does its gamepad twin on the highlighted button
+# (Badge.gd isPadShortcut). A click's gui_input signal comes before the button's own _gui_input, and accepting the press
+# there keeps the button from pressing; the gamepad's X does nothing to a button.
 func _csOnButtonInput(event, button):
-	if event is InputEventMouseButton and event.pressed and event.button_index == BUTTON_LEFT and event.shift \
-			and not button.disabled:
+	var shiftClick = event is InputEventMouseButton and event.pressed and event.button_index == BUTTON_LEFT and event.shift
+	if (shiftClick or _CS_BADGE_SCRIPT.isPadShortcut(event)) and not button.disabled:
 		button.accept_event()
 		_csOpen(button)
 
-# Shift plus the simulator's key opens the dialog. An action bound to a key alone also matches it with Shift held
-# (is_action_pressed), while the button's shortcut matches the key exactly, so without the mod Shift+J does nothing at
-# the station. The event is marked handled anyway, so nothing after _input sees it. Nothing at the station polls the
-# action.
+# Shift plus the simulator's key, or its gamepad button (Back) while LT is held, opens the dialog. An action bound to a
+# key alone also matches it with Shift held (is_action_pressed), while the button's shortcut matches the key exactly, so
+# without the mod Shift+J does nothing at the station; a gamepad's buttons carry no modifiers, so without the mod LT+Back
+# is Back, which starts the simulator. The event is marked handled, and the button's shortcut, which Godot checks after
+# _input (BaseButton's _unhandled_input), never sees it. Nothing at the station polls the action.
 func _input(event):
-	if not event is InputEventKey or not event.pressed or event.echo:
-		return
-	if not event.shift or event.control or event.alt or event.meta or not event.is_action_pressed(_CS_ACTION):
+	if not _csIsShortcut(event):
 		return
 	if _csSimulation != null and _csSimulation.visible:
 		return
@@ -116,6 +137,17 @@ func _input(event):
 			get_tree().set_input_as_handled()
 			_csOpen(button)
 			return
+
+# Shift plus the simulator's key and nothing else held, or its gamepad button while the gamepad twin's modifier
+# (Badge.gd PAD_MODIFIER, LT) is held on the same gamepad.
+func _csIsShortcut(event) -> bool:
+	if not (event is InputEventKey or event is InputEventJoypadButton):
+		return false
+	if not event.pressed or event.is_echo() or not event.is_action_pressed(_CS_ACTION):
+		return false
+	if event is InputEventKey:
+		return event.shift and not (event.control or event.alt or event.meta)
+	return Input.is_joy_button_pressed(event.device, _CS_BADGE_SCRIPT.PAD_MODIFIER)
 
 # The ship that screen's simulator would fly; with none, nothing happens, as with the simulator.
 func _csOpen(button):

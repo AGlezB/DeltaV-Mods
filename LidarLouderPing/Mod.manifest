@@ -2,14 +2,14 @@
 
 name="LidarLouderPing"
 id="AGlezB.LidarLouderPing"
-description="The lidar's ping for sensor contacts plays louder, by a boost set in the ship's Tuning."
+description="The LIDAR's ping for sensor contacts plays louder, by a boost set in the ship's Tuning."
 author="AGlezB"
 
 [version]
 
 version_major=1
 version_minor=2
-version_bugfix=3
+version_bugfix=4
 
 [tags]
 

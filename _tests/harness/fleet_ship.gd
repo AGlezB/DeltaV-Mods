@@ -12,6 +12,7 @@ var shipName = "SHIP_TEST" # the model's key, which the entry shows
 var transponder = ""
 var model = ""
 var madeTimestamp = 0
+var value = 1000000.0 # what getShipValue gives
 var fullConfig = {}
 var shipConfig = {}
 var dummy = false
@@ -75,7 +76,7 @@ func setDummy(how, _always = false):
 	dummy = how
 
 func getShipValue():
-	return 1000000.0
+	return value
 
 func getShipName():
 	return CurrentGame.getShipNameByTransponder(transponder)

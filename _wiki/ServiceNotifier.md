@@ -5,6 +5,7 @@ service once its month is up, or a side you can pay off.
 
 - **The station menu.** Without the mod, the menu's Services entry always reads *Services*. With the mod, it reads
   **Services (\*)** while one of the services you picked can be bought, so you don't have to open Services to check.
+  A small badge beside the entry tells you how to open the mod's settings (see [Settings](#settings)).
 - **Which services.** Those you can't buy again right after buying them:
   - **After a cooldown**: The Twins, the bar that lifts your crew's morale, once a day; and once every 30 days
     Jameson's Insurance (more insurance, which pays for repairs before your money does), Scrapwright Recovery
@@ -21,16 +22,19 @@ changes.
 
 | Without the mod | With the mod |
 |---|---|
-| ![The station menu, as the game shows it](images/ServiceNotifier-menu-without.png) | ![The station menu, with Services (*)](images/ServiceNotifier-menu-with.png) |
+| ![The station menu, as the game shows it](images/ServiceNotifier-menu-without.png) | ![The station menu, with Services (*) and the Shift badge beside it](images/ServiceNotifier-menu-with.png) |
 
 ## Settings
 
-Hold **Shift** and click the Services entry to open the settings (a plain click still opens Services). They show
-where Services does, laid out like the Tuning screen: at the top, what the switch you have selected does, followed by
-the game's own offer for that service; below it, a switch for each service, in two groups, **After a cooldown** and
-**Compensation**. Point at a switch to read *Mark Services when this service can be bought*. Every switch starts on.
-The settings close with Esc or when you pick another entry of the menu. A change applies at once. Each save game keeps
-its own settings.
+Hold **Shift** and click the Services entry to open the settings (a plain click still opens Services). With a
+gamepad, highlight the Services entry, hold **LT** and press **X**. The small badge beside the entry reminds you: it
+reads **Shift**, or **LT+X** while you play with a gamepad. Point at it with the mouse to see how to open the settings.
+
+The settings show where Services does, laid out like the Tuning screen: at the top, what the switch you have selected
+does, followed by the game's own offer for that service; below it, a switch for each service, in two groups, **After
+a cooldown** and **Compensation**. Point at a switch to read *Mark Services when this service can be bought*. Every
+switch starts on. The settings close with Esc (B on a gamepad) or when you pick another entry of the menu. A change
+applies at once. Each save game keeps its own settings.
 
 ![The settings: the description of The Twins at the top, then the After a cooldown and Compensation groups](images/ServiceNotifier-settings.png)
 
@@ -47,6 +51,8 @@ See [Installing mods](Home#installing-mods).
 <!-- wiki-values (checked by wiki.ps1)
 game-checked: 1.93.1
 ServiceNotifier/i18n/en.po SERVICENOTIFIER_ALERT = "%s (*)" -> Services (*) | images/ServiceNotifier-menu-with.png
+ServiceNotifier/Badge.gd PAD_MODIFIER_NAME = "LT" -> LT
+ServiceNotifier/Badge.gd PAD_BUTTON_NAME = "X" -> X
 ServiceNotifier/Settings.gd SETTINGS.alert.default = true -> starts on
 ServiceNotifier/i18n/en.po SERVICENOTIFIER_SWITCH = "Mark Services when this service can be bought"
 ServiceNotifier/i18n/en.po SERVICENOTIFIER_GROUP_COOLDOWN = "After a cooldown" | images/ServiceNotifier-settings.png

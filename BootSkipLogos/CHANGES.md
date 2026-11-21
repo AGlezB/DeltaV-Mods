@@ -1,5 +1,8 @@
 # BootSkipLogos - Changes
 
+## 1.0.4
+- The README says Godot, not the mod loader, runs `_ready` at every level of the script chain.
+
 ## 1.0.3
 - The README's *Disclaimer* no longer names the author.
 

@@ -63,15 +63,15 @@ const DRONE_CODES = {
 }
 
 # The game's (not settings).
-const SHIP_SCRIPT = "res://ships/ship-ctrl.gd"
-const BODY_SCRIPT = "res://story/body.gd" # a frozen body; its getTransponder adds "-" and the initials
-const DOCK_SCRIPT = "res://ships/modules/ClaimOwner.gd" # launches a drone, coded by its transponderFormat
-const DOCK_FORMAT = "{ship}-%s{nr}" # the docks' transponderFormat (ClaimOwner.gd, the dock scenes), by type
-const STORY_BEACON_SCRIPTS = ["res://story/ClaimBeacon-1.gd", "res://story/ClaimBeaconForeign.gd"]
-const STORY_BEACON_FORMAT = "%%s-%s%%d" # their transponderFormat, "%s-CB%d"
-const BODY_BEACON_SCENE = "res://story/DeadTalkingBeacon.tscn" # the frozen bodies' beacon (story/DeadBody.gd)
-const LIFEPOD_NAME = "ODDITY_LIFEPOD" # specialName of ships/Lifepod.tscn and the scenes inheriting it
-const AI_CORE_NAME = "ODDITY_AICORE" # specialName of ships/drone/AICore.tscn, the ATLAS's lifepod
+const _TAC_SHIP_SCRIPT = "res://ships/ship-ctrl.gd"
+const _TAC_BODY_SCRIPT = "res://story/body.gd" # a frozen body; its getTransponder adds "-" and the initials
+const _TAC_DOCK_SCRIPT = "res://ships/modules/ClaimOwner.gd" # launches a drone, coded by its transponderFormat
+const _TAC_DOCK_FORMAT = "{ship}-%s{nr}" # the docks' transponderFormat (ClaimOwner.gd, the dock scenes), by type
+const _TAC_STORY_BEACON_SCRIPTS = ["res://story/ClaimBeacon-1.gd", "res://story/ClaimBeaconForeign.gd"]
+const _TAC_STORY_BEACON_FORMAT = "%%s-%s%%d" # their transponderFormat, "%s-CB%d"
+const _TAC_BODY_BEACON_SCENE = "res://story/DeadTalkingBeacon.tscn" # the frozen bodies' beacon (story/DeadBody.gd)
+const _TAC_LIFEPOD_NAME = "ODDITY_LIFEPOD" # specialName of ships/Lifepod.tscn and the scenes inheriting it
+const _TAC_AI_CORE_NAME = "ODDITY_AICORE" # specialName of ships/drone/AICore.tscn, the ATLAS's lifepod
 
 var _tacModel = null # the model the next getNewTransponder codes for; null: a ship from usedShipsPool
 
@@ -134,21 +134,21 @@ func _tacNodeAdded(node: Node):
 	if script == null:
 		return
 	var path = script.resource_path
-	if path == SHIP_SCRIPT:
+	if path == _TAC_SHIP_SCRIPT:
 		_tacShipAdded(node)
-	elif path == BODY_SCRIPT:
+	elif path == _TAC_BODY_SCRIPT:
 		if node.transponder and not node.transponder.ends_with(CREW_SUFFIX):
 			node.transponder += CREW_SUFFIX
-	elif path == DOCK_SCRIPT:
+	elif path == _TAC_DOCK_SCRIPT:
 		_tacDockAdded(node)
-	elif path in STORY_BEACON_SCRIPTS:
+	elif path in _TAC_STORY_BEACON_SCRIPTS:
 		for type in DRONE_CODES:
-			if node.transponderFormat == STORY_BEACON_FORMAT % type:
+			if node.transponderFormat == _TAC_STORY_BEACON_FORMAT % type:
 				node.transponderFormat = "%%s-%s-%%d" % DRONE_CODES[type]
 
 func _tacShipAdded(ship: Node):
 	match ship.specialName:
-		LIFEPOD_NAME:
+		_TAC_LIFEPOD_NAME:
 			if ship.transponder == "":
 				var previous = _tacModel
 				_tacModel = null
@@ -156,13 +156,13 @@ func _tacShipAdded(ship: Node):
 				_tacModel = previous
 			else:
 				_tacAddSuffix(ship, LIFEPOD_SUFFIX)
-		AI_CORE_NAME:
+		_TAC_AI_CORE_NAME:
 			if ship.transponder != "":
 				_tacAddSuffix(ship, AI_CORE_SUFFIX)
 		_:
 			# The destroyed habitat's beacon (story/habitat/DestoryedHabitat.tscn) gets its code later, from its
 			# ClaimOwner: it has none yet, and keeps the game's.
-			if ship.filename == BODY_BEACON_SCENE and ship.transponder != "" and not ship.transponder.ends_with(CREW_SUFFIX):
+			if ship.filename == _TAC_BODY_BEACON_SCENE and ship.transponder != "" and not ship.transponder.ends_with(CREW_SUFFIX):
 				ship.transponder += CREW_SUFFIX
 
 # Keeps the name the game gives the old code (a lifepod shows its ship's, as without the mod). The game has already
@@ -181,9 +181,9 @@ func _tacDockAdded(dock: Node):
 	var host = dock.get_parent()
 	while host != null and not "transponder" in host:
 		host = host.get_parent()
-	if host == null or host.get_script() == null or host.get_script().resource_path != SHIP_SCRIPT:
+	if host == null or host.get_script() == null or host.get_script().resource_path != _TAC_SHIP_SCRIPT:
 		return
 	for type in DRONE_CODES:
-		if dock.transponderFormat == DOCK_FORMAT % type:
+		if dock.transponderFormat == _TAC_DOCK_FORMAT % type:
 			dock.transponderFormat = "{ship}-%s-{nr}" % DRONE_CODES[type]
 			return

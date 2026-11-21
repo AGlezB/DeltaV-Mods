@@ -1,6 +1,6 @@
 extends "res://harness/suite.gd"
 
-# DiveDisableAdrenalineBooster: the player's Adrenaline Booster (the game's ships/CabinLight.gd) starts every dive
+# DiveDisableAdrenalineBooster: the player's Adrenaline booster (the game's ships/CabinLight.gd) starts every dive
 # switched off. Ported from the claude.ai harness (DVModTestHarness 1.0.0, dive/main.gd). The control check (the game
 # alone starts it enabled) runs on the game's own script: with the mod loaded, that is the base of the extension.
 

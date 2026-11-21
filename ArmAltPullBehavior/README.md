@@ -148,22 +148,27 @@ check that it also happens without the mod.
 ## For modders
 - Script extension of `res://ships/modules/DockingArm.gd` (`installScriptExtension` in `ModMain.gd`). The tag
   `group = DockingArm` in `Mod.manifest` names that game script.
-- Overrides `_ready` (reads the chunk radius) and `_physics_process`. Neither calls the parent's: the mod loader runs the
-  base first for `_ready`, and the child first for `_physics_process`, which switches the base pull off
-  (`maxThrust = 0`) while the mod pulls the target.
+- Overrides `_ready` (reads the chunk radius) and `_physics_process`. Neither calls the parent's: Godot runs them at
+  every level of the script chain, the base first for `_ready`, and the child first for `_physics_process`, which
+  switches the base pull off (`maxThrust = 0`) while the mod pulls the target.
 - Functions: `_readChunkRadius`; `_entry` (the measurements: the tip, half the opening, the red line and the front of the
-  rotors / claws; null where the mod does not apply); `_frontPoint`; `_outside` (where the target must go; null where
+  rotors / claws; null where the mod does not apply); `_clawsOf` (an excavator's claws, found once per excavator, since
+  `find_node` searches the whole excavator and `_entry` runs every physics frame); `_frontPoint`; `_outside` (where the target must go; null where
   the mod does not apply); `_pathAt` (the path while feeding: the straight zone and the turned aim); `_inwardSpeed`
   (the feed's speed); `_hitsHull` (the sweep test against the ship's collision shapes); `_pullTo` (the force the target
   needs, given through the game's formula); `_roomFor` (the speed a bend and a turn leave room for); `_shorten` (the
   overload priority); `_parkVelocity` (the speed towards a place it is held at); `_forceFor` (the force for an
   acceleration relative to the hull, the ship's give included); `_updateCloser` (how far in a light target is held);
   `_measureShip` (the ship's acceleration without the mod's own push); `_cost` (the game's energy, power limit, wear
-  and weakening for an impulse) and `_shipVelocityAt` (the velocity of the ship's hull at a point).
+  and weakening for an impulse); `_shipVelocityAt` (the velocity of the ship's hull at a point) and `_showPower` (the
+  arm's `power`, which its OMS entry shows: the game's `_physics_process`, which runs right after the mod's, sets it
+  from what its own pull drew, nothing while the mod pulls; a deferred call sets it afterwards from what the mod's pull
+  drew, as the game's formula would).
 - Members: `_active`, `_radius`, `_clearance`, `_sweep`, `_body`, `_maxThrust`, `_parking` (not feeding: held at the dock
   slot rather than moved forward first), `_feedIn` (feeding, in line with the opening), `_passThrough` (straight forward
   without slowing down), `_way` (the path while feeding), `_lastTarget`, `_shipSeen`, `_lastShipVelocity`,
-  `_lastImpulse`, `_shipAccel`, `_closer` and `_parkAt` (the place a target is held at). If you stack another mod on
+  `_lastImpulse`, `_shipAccel`, `_closer`, `_parkAt` (the place a target is held at), `_claws` (each excavator's claws,
+  by its instance id) and `_drawn` (the energy the mod's pull drew this physics frame). If you stack another mod on
   `DockingArm.gd`, keep your member names different.
 - The mod reads the arm's `feed` (the excavator command), `feedVelocity`, `areaDockSlot` (its dock slot), `maxVelocity`,
   `easeDistance`, `thrust`, `targetMassThrust`, `fullThrust` and `maxVelocityConsidered`, and the ship's `mass`,

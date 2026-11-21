@@ -16,7 +16,8 @@ const ENABLED = {
 
 # The weights, in the tab's order: how much each criterion counts when a plant picks a chunk (Code.gd). Stored as the
 # exponent Code.gd raises the criterion to (0 ignores it), shown as % (`shown`: the factor from the stored value to the
-# one shown). `label` names the row, and `label` + "_DESC" is its tooltip. Each value is declared here only.
+# one shown). `label` names the row, and `label` + SettingsUI.gd DESCRIPTION_SUFFIX is its tooltip. Each value is
+# declared here only.
 #   value   the price per kg of the best ore the geologist found in the chunk
 #   mass    the kg of ore the geologist found in it
 #   intake  how close the chunk is to the haul drones' gathering spot ahead of the excavator (haul plants only)

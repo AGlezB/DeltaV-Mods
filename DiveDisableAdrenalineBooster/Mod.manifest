@@ -2,14 +2,14 @@
 
 name="DiveDisableAdrenalineBooster"
 id="AGlezB.DiveDisableAdrenalineBooster"
-description="The Adrenaline Booster of your ship starts every dive switched off."
+description="The Adrenaline booster of your ship starts every dive switched off."
 author="AGlezB"
 
 [version]
 
 version_major=1
 version_minor=0
-version_bugfix=4
+version_bugfix=5
 
 [tags]
 

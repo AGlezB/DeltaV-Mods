@@ -156,8 +156,8 @@ func _watchedShips() -> Array:
 			out.append(ship)
 	return out
 
-# What the dealer has after a refresh, one {model, transponder} per ship for sale. Ships no longer there are forgotten
-# from `known`; with `seen` (the Dealer screen is open), every ship there becomes known.
+# What the dealer has after a refresh, one {model, transponder, used} per ship for sale. Ships no longer there are
+# forgotten from `known`; with `seen` (the Dealer screen is open), every ship there becomes known.
 func setStock(entries: Array, seen: bool):
 	stock = entries.duplicate()
 	var current = []

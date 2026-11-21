@@ -1,5 +1,12 @@
 # ArmAltPullBehavior - Changes
 
+## 1.6.1
+- The arm's entry in the OMS's Mechanic tab shows the power the mod's pull draws, as the game's formula would, instead
+  of nothing while the mod pulls (`_showPower`, `_drawn`).
+- An excavator's claws are found once per excavator instead of on every physics frame (`_clawsOf`, `_claws`).
+- The description in `Mod.manifest` only says what the mod does; the details are in the README.
+- The README says Godot, not the mod loader, runs `_ready` and `_physics_process` at every level of the script chain.
+
 ## 1.6.0
 - While feeding, a target no longer stops at the opening: it follows a path into the grinder or excavator. Only the
   outer half of each rotor / claw is kept clear, so a target coming in at an angle aims past the near one's outer side,

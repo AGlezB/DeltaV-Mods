@@ -23,6 +23,8 @@ const DT = 1.0 / 60.0
 
 var wmax = 0.0 # the turn limit at the dock slot, rad/s
 var amax = 0.0 # the linear limit, world units/s^2
+var pulledFrames = 0 # the grabbing cases' frames in which the mod pulled (the game's pull off: maxThrust 0) and drew energy
+var shownFrames = 0 # and of those, the frames after which the arm's power showed what the mod drew
 
 func run():
 	if not hasMod("ArmAltPullBehavior"):
@@ -67,6 +69,9 @@ func run():
 	for s in [0.5, 0.75, 1.0]:
 		yield(grab("grabbed ahead-left, then turning at %d%%" % int(s * 100), Vector2(-211, -259), s), "completed")
 		yield(grab("grabbed off to the side, then turning at %d%%" % int(s * 100), Vector2(250, -200), s), "completed")
+	# The arm's power, which its OMS entry shows: the game's _physics_process sets it from what its own pull drew
+	# (DockingArm.gd, power = newPower / 1000), nothing while the mod pulls; the mod sets it from what its pull drew.
+	check("power: while the mod pulls, the arm's power shows what it draws, by the game's formula", pulledFrames > 0 and shownFrames == pulledFrames, "%d of %d frames" % [shownFrames, pulledFrames])
 	# feeding
 	var starts = [["ahead-left", Vector2(-211, -259)], ["near the corridor", Vector2(45, -215)], ["beside the hull", Vector2(120, -150)], ["where the logs start", Vector2(-260, -345)], ["far ahead, off to the side", Vector2(-120, -480)]]
 	var motions = [["the ship still", 0.0, 0.0, Vector2()], ["turning at 50%", 0.5, 0.0, Vector2()], ["turning at 100%", 1.0, 0.0, Vector2()], ["braking at 50%", 0.0, -0.5, Vector2()], ["accelerating forward at 50%", 0.0, 0.5, Vector2()], ["turning at 50% while braking at 50%, from 20 m/s forward", 0.5, -0.5, Vector2(0, -200)]]
@@ -170,6 +175,11 @@ func grab(label, start, turnShare):
 		state.w = move_toward(state.w, turnShare * wmax if grabbed != null else 0.0, 0.3 * DT)
 		fly(ship, state, state.w, Vector2(), DT)
 		yield(get_tree(), "physics_frame")
+		# physics_frame comes before the step's physics callbacks, after the last step's deferred calls.
+		if arm.maxThrust == 0.0 and arm._drawn > 0.0:
+			pulledFrames += 1
+			if is_equal_approx(arm.power, clamp(arm._drawn / 1000.0, 0.0, 1.0)):
+				shownFrames += 1
 		if arm.target != chunk:
 			lost = true
 		var d = (chunk.global_position - arm._parkAt).length() - _allowance(ship, arm._parkAt)

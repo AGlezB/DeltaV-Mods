@@ -50,7 +50,8 @@
 	  the game's ship-ctrl.gd.
 	- fleet: ShipCopyPaste.
 	- skip: DiveSkipTransit. Instances the ring scene stub (Game.tscn), whose root has the game's Game.gd.
-	- dealer: DealerNotifier. Instances the Dealer screen stub (Dealer.tscn), whose root has the game's Dealer.gd.
+	- dealer: DealerNotifier. Instances the Dealer screen stub (Dealer.tscn), whose root has the game's Dealer.gd. Also
+	  checks ShipSortByTypeAndPrice and ShipHighlightTypeAndPrice where -Mods loads them.
 	- transponder: TransponderAltCodes. Instances the game's CurrentGame.gd (the CurrentGame autoload stays the stub).
 	- combat: CombatSimulator. Builds a station around the game's Enceladus.gd, with the game's PauseLayer.gd and
 	  TheRing.gd, and runs the arena on stub ships and a stub asteroid field.

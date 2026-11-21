@@ -101,6 +101,25 @@ func idle(count = 2):
 	for i in count:
 		yield(get_tree(), "idle_frame")
 
+# A press and release of a gamepad button (JOY_*), as Input delivers a player's: the actions it is bound to follow
+# (Godot's defaults: the D-pad moves the focus), then the focused control gets it. Input hands parsed events on at the
+# next frame, so this waits for it.
+func tapJoy(button):
+	yield(get_tree(), "idle_frame")
+	for pressed in [true, false]:
+		var event = InputEventJoypadButton.new()
+		event.button_index = button
+		event.pressed = pressed
+		Input.parse_input_event(event)
+	yield(get_tree(), "idle_frame")
+
+# The game's tooltip node (menu/sfx/PlaySoundsOnTheseButtons.gd) among `node`'s children, or null.
+func tooltipNode(node):
+	for c in node.get_children():
+		if c.has_method("connectSounds"):
+			return c
+	return null
+
 func buildOms(ship):
 	ship.emit_signal("instance")
 	yield(idle(), "completed")
@@ -358,7 +377,9 @@ func tab():
 	check("and shows it in the units shown", kids[1].label.text == "%s %s" % [CurrentGame.formatThousands(moved * first.shown), first.unit], kids[1].label.text)
 
 	var reset = page._reset
-	check("a reset button, with its text and tooltip translated", reset is Button and reset.text == load(UI).RESET and tr(reset.text) != reset.text and tr(reset.hint_tooltip) != reset.hint_tooltip)
+	var resetTips = tooltipNode(reset.get_parent())
+	var resetTip = resetTips.tooltips.get(reset, "") if resetTips != null else ""
+	check("a reset button, with its text translated, and its tooltip, translated, taken in by the game's tooltip node in its row", reset is Button and reset.text == load(UI).RESET and tr(reset.text) != reset.text and resetTip == load(UI).RESET + "_DESC" and tr(resetTip) != resetTip, resetTip)
 	reset.emit_signal("pressed")
 	var defaults = toggle.pressed == model.ENABLED.default and settings.isEnabled() == model.ENABLED.default
 	for i in range(0, kids.size() - 1, 2):
@@ -374,6 +395,43 @@ func tab():
 	tabs.current_tab = index
 	yield(idle(), "completed")
 	check("choosing the tab focuses its switch", tabs.get_focus_owner() == toggle, tabs.get_focus_owner())
+
+	# With a gamepad: the D-pad goes down from the switch through each slider's value to Reset and back up, and stays in
+	# the tab at either end and to the sides; each value carries its weight's description, which the slider's own tooltip
+	# node shows when it gets the focus, and Reset shows its own.
+	var chain = [toggle]
+	var described = true
+	for i in range(1, kids.size(), 2):
+		chain.append(kids[i].label)
+		described = described and kids[i].label.hint_tooltip == model.WEIGHTS[i / 2].label + "_DESC"
+	chain.append(reset)
+	check("gamepad: each slider's value carries its weight's description", described)
+	var down = []
+	for i in range(1, chain.size()):
+		yield(tapJoy(JOY_DPAD_DOWN), "completed")
+		down.append(tabs.get_focus_owner())
+	yield(tapJoy(JOY_DPAD_DOWN), "completed")
+	down.append(tabs.get_focus_owner())
+	check("gamepad: down goes from the switch through each slider's value to Reset, and stays there", down == chain.slice(1, chain.size() - 1) + [reset], down)
+	check("gamepad: Reset shows its description when it gets the focus", resetTips != null and resetTips.tooltipPosition.visible and resetTips.tooltipLabel.text == resetTip, resetTips.tooltipLabel.text if resetTips != null else null)
+	var sides = []
+	for node in [reset, chain[1], toggle]:
+		node.grab_focus()
+		for button in [JOY_DPAD_LEFT, JOY_DPAD_RIGHT]:
+			yield(tapJoy(button), "completed")
+			sides.append(tabs.get_focus_owner() == node)
+	check("gamepad: left and right stay where they are, on Reset, a slider's value and the switch", not sides.has(false), sides)
+	reset.grab_focus()
+	var up = []
+	for i in range(chain.size() - 1):
+		yield(tapJoy(JOY_DPAD_UP), "completed")
+		up.append(tabs.get_focus_owner())
+	yield(tapJoy(JOY_DPAD_UP), "completed")
+	up.append(tabs.get_focus_owner())
+	var back = chain.slice(0, chain.size() - 2)
+	back.invert()
+	check("gamepad: up goes back to the switch, and stays there", up == back + [toggle], up)
+	check("gamepad: walking the tab changes nothing", not hud.mineralConfig.has(modId), hud.mineralConfig.keys())
 
 	# The plants read what the tab writes
 	var plant = makePlant(ship, "haul")

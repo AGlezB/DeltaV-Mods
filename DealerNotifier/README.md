@@ -18,39 +18,46 @@ the Dealer screen. You pick the ships with Shift+Click on Dealer.
   such ship arrives. A ship you sold yourself, which the dealer offers again for a while, never marks it.
 - **On the Dealer screen:** the ships that set the mark get a badge at the right end of their name, until you
   leave the station: the capitals of the mod's name in the game's button frame, outlined and lettered in the green of
-  the Fleet screen's Owned label. Hovering it shows the `DEALERNOTIFIER_BADGE_TOOLTIP` text in the game's own tooltip.
+  the Fleet screen's Owned label. Hovering it shows the `DEALERNOTIFIER_BADGE_TOOLTIP` text in the game's own tooltip;
+  with a gamepad, the tooltip shows while the ship's name is highlighted.
 - **When it updates:** whenever the game refreshes the dealer's stock: as you arrive at the station, every in-game hour
   you spend there, and when you open the Dealer screen. A dive doesn't refresh it, so ships that arrived meanwhile mark
   the entry as you get back. Also when you switch something on or off, and when the game's language changes.
 - **Why:** so you know when a ship you want is for sale without opening the Dealer screen every hour, and which entry
   it is once there.
 - **Settings:**
-  - **Shift+Click** the Dealer entry to open them, as the entry's tooltip says. A plain click still opens the Dealer
-    screen. They open where the Dealer screen does, with the same frame, and close the way the game's screens do: Esc,
-    the controller's B or Start button, or picking another entry of the menu.
+  - **Shift+Click** the Dealer entry to open them, or use its gamepad twin: highlight the entry, hold the
+    `PAD_MODIFIER` button and press the `PAD_BUTTON` one (constants of `DealerNotifier/Badge.gd`). A plain click still
+    opens the Dealer screen. A small badge beside the entry says so: it reads Shift, or the gamepad twin as `PAD_TEXT`
+    names it while the game is played with a gamepad (the game's *Controls* setting, or with *Auto* the device last
+    used). Hovering it shows the `DEALERNOTIFIER_SETTINGS_TOOLTIP` text, or with a gamepad the
+    `DEALERNOTIFIER_SETTINGS_TOOLTIP_PAD` one. The settings open where the Dealer screen does, with the same frame, and
+    close the way the game's screens do: Esc, the gamepad's B or Start button, or picking another entry of the menu.
   - Laid out as the Dealer screen: a window with the description of the selected ship (the game's own, as the Dealer
     shows it), then the switches. First New and Used, in a group of their own, then one row per ship model: its
     picture, its name and its switch, where the Dealer has Buy. Hovering a ship's switch shows the
     `DEALERNOTIFIER_WATCHED` text. The screen has no note on what the switches do: this README and the mod's page in
     the users' wiki explain them. Under the list, Select all and Select none switch every switch on or off, New and
     Used too.
+  - The window keeps the Dealer's height whatever the ship, so the switches under it don't move. A longer description
+    scrolls, with the mouse wheel or the right stick, and each ship's starts at its top. The list opens at its top.
   - The ships are grouped by series, each group titled by the series' name; series and ships in alphabetical order of
-    their names in the game's language. Ships alone in their series (in game 1.92.5: the Eon Interstellar Model E, the
+    their names in the game's language. Ships alone in their series (in game 1.93.1: the Eon Interstellar Model E, the
     ND-LIS Kitsune and the OCP-209) are grouped last, under *Others*.
   - The pictures show each ship as the dealer sells it, but with nothing on its hardpoints. They are drawn the first
     time you open the settings, all at once, as the Dealer draws its own, and kept until you quit the game.
   - Your switches are kept in your save game, each save with its own, and written to disk the next time the game saves
     (when you launch a dive, or quit through the pause menu). A new game, or a save made before the mod, starts with
     every ship's switch off and New and Used on, as does a save made before New and Used for those two.
-  - Opening them needs a mouse and a keyboard; a controller can use and close them.
   - The mod's texts (the mark, the tooltips, the titles of the groups, New and Used, the buttons) are in
     `DealerNotifier/i18n/en.po`, inside the zip.
 
 ## For modders
 - Five scripts: `Code.gd` (the station menu's script extension: the Dealer entry, opening the settings),
   `DealerScreen.gd` (the Dealer screen's script extension: the stock, the ships seen, the badges), `SettingsUI.gd` (the
-  settings screen) and `Settings.gd` (the settings model and the rule, which the other three share), plus `ModMain.gd`.
-  The texts are in `i18n/en.po`.
+  settings screen), `Settings.gd` (the settings model and the rule, which the other three share) and `Badge.gd` (the
+  badges: the Shift badge beside the Dealer entry and the Dealer screen's, and the gamepad's twin of Shift+Click). The
+  texts are in `i18n/en.po`.
 - **The dealer's stock** is stored nowhere. `CurrentGame.gd` `getShipsAvailableForSale` builds it anew on every call
   from the in-game day and week and `state.seed`: a few ships new every week (named in its code: the mod's
   `NEW_STOCK`), one used ship a day kept 10 days (drawn from `CurrentGame.usedShipsPool`),
@@ -65,11 +72,14 @@ the Dealer screen. You pick the ships with Shift+Click on Dealer.
   `ShipMarket` child, a plain `Button` whose text is the translation key `ENCELADUS_SHIP_MARKET` and whose `pressed`
   the station connects to the Dealer screen's `show`. The mod reads the key from the button and puts it back while
   nothing is new; while marked, the text is `tr(_DN_ALERT) % tr(key)`. It updates on the settings model's
-  `settingsChanged` and `stockChanged`, and on `NOTIFICATION_TRANSLATION_CHANGED`. Shift+Click, the tooltip and the
-  settings screen's place are CrewCheapHireNotifier's (see its README): the press is accepted in the button's
-  `gui_input`, so the Dealer screen stays closed. Without the right-hand screens' container or its `Dealer` child
-  there is no settings screen, no tooltip, and Shift+Click is a plain click. A menu without a `ShipMarket` button is
-  left alone.
+  `settingsChanged` and `stockChanged`, and on `NOTIFICATION_TRANSLATION_CHANGED`. Shift+Click and its gamepad twin
+  (`Badge.gd` `isPadShortcut`), the Shift badge and its tooltip, and the settings screen's place are
+  CrewCheapHireNotifier's (see its README): the press is accepted in the button's `gui_input`, so the Dealer screen
+  stays closed. The badge (`_dnMakeShiftBadge()`, kept in `_dnShiftBadge`) hangs beside the entry; its tooltips are
+  `_DN_SETTINGS_TOOLTIP` and, with a gamepad, `_DN_SETTINGS_TOOLTIP_PAD`; the entry itself has none. Without the
+  right-hand screens' container or its Dealer screen (`_DN_DEALER_SCREEN`) there is no settings screen and no Shift
+  badge, Shift+Click is a plain click and its gamepad twin does nothing. A menu without a `ShipMarket` button is left
+  alone.
 - Script extension of `res://enceladus/Dealer.gd` (`DealerScreen.gd`): the script of `enceladus/Dealer.tscn`,
   instanced in `Enceladus.tscn` as the station's `Dealer` (with `showOwned` off) and, through `enceladus/Owned.tscn`, as
   Fleet (with `showAvailable` off). Everything it does is gated on `showAvailable`, so Fleet is untouched. The tag
@@ -93,22 +103,26 @@ the Dealer screen. You pick the ships with Shift+Click on Dealer.
     the screen is visible, sees everything again.
   - Overrides `_notification`, which the game's script doesn't have: on `NOTIFICATION_TRANSLATION_CHANGED` it sets the
     badges' tooltips again, since they hold translated text.
-  - **The badge** is a `PanelContainer` named `_DN_BADGE`, built as CrewCheapHireNotifier's: only the capitals of the
-    mod's name (`_dnInitials()`), a copy of the entry's Buy button `normal` frame (never the game's shared resource)
-    with its border in the `modulate` of the entry's Owned label (`HBox/V/Owned`, the overbright green ShipCopyPaste
-    marks its template with), the letters in the button's `font_color` times that colour, as the label draws, and in
-    the font a Label gets in the entry's picture (`HBox/Margin`, whose theme, `enceladus/Subwindow.theme`, has a small
-    one): the name sets no theme, so a Label there would get the entry's, the menu's big font. It sits at the right end
-    of the entry's name column (`HBox/ShipName`, a flat Button that fills the column between the picture and the
-    specs), inside the right margin the button keeps around its text (its `normal` stylebox's, which a flat button still
-    lays its text out in), centred on it from top to bottom. A Button doesn't lay out its children, so the badge hangs
-    from it directly, anchored to the middle of its right side and growing left, up and down to its minimum size. A name
-    long enough to reach the column's end would run under it (the button clips its text at its own edge); a ship's name
-    is two words in a column many times wider. The badge lets the mouse through (`MOUSE_FILTER_PASS`), so the wheel
-    still scrolls the list and a click is the name's: it focuses the name, which shows the ship (`Dealer.gd`). Its
-    tooltip (`tr(_DN_BADGE_TOOLTIP)`) goes through the entry's `PlaySoundsOnTheseButtons` (`connectSounds`), as
-    CrewCheapHireNotifier's badge does, since the released game shows no Godot tooltips. The game keeps an entry from
-    one refresh to the next and never touches the badge, so `_dnMarkFresh()` only shows or hides it.
+  - **The badge** is a `Badge.gd` (`_DN_BADGE_SCRIPT`, a `PanelContainer`) named `_DN_BADGE`, built as
+    CrewCheapHireNotifier's Hire screen badge: only the capitals of the mod's name (`_dnInitials()`), a copy of the
+    entry's Buy button (`_DN_ENTRY_BUY`) `normal` frame (never the game's shared resource) with its border in the
+    `modulate` of the entry's Owned label (`_DN_ENTRY_OWNED`, the overbright green ShipCopyPaste marks its template
+    with), the letters in the button's `font_color` times that colour, as the label draws, and in the font a Label gets
+    in the entry's picture (`_DN_ENTRY_PICTURE`, whose theme, `enceladus/Subwindow.theme`, has a small one): the name
+    sets no theme, so a Label there would get the entry's, the menu's big font. It sits at the right end of the entry's
+    name column (`_DN_ENTRY_NAME`, a flat Button that fills the column between the picture and the specs), inside the
+    right margin the button keeps around its text (its `normal` stylebox's, which a flat button still lays its text out
+    in), centred on it from top to bottom. A Button doesn't lay out its children, so the badge hangs from it directly,
+    anchored to the middle of its right side and growing left, up and down to its minimum size. A name long enough to
+    reach the column's end would run under it (the button clips its text at its own edge); a ship's name is two words
+    in a column many times wider. The badge lets the mouse through (`MOUSE_FILTER_PASS`), so the wheel still scrolls
+    the list and a click is the name's: it focuses the name, which shows the ship (`Dealer.gd`). Its tooltip
+    (`tr(_DN_BADGE_TOOLTIP)`) goes through the entry's `PlaySoundsOnTheseButtons` with `Badge.gd` `attachTooltip()`,
+    as CrewCheapHireNotifier's badge does, since the released game shows no Godot tooltips: shown on hover sooner than
+    the game's own and without the hover sound (`BUTTON_HOVER_MUTE` keeps the name under the badge from playing its own
+    again as the mouse crosses the badge's edge), and, with the name as `focusOwner`, while the name has the focus and
+    the game is played with a gamepad. The game keeps an entry from one refresh to the next and never touches the
+    badge, so `_dnMarkFresh()` only shows or hides it.
 - **The rule** (`Settings.gd`): `stock` is the last refresh's `{model, transponder, used}` list (not saved;
   `loadFromState` empties it, since it is another save's or the last visit's). `_watchedShips()` is the stock's ships of
   a model switched on whose condition is switched on too (`watchUsed` for a used one, `watchNew` for a new one).
@@ -127,10 +141,10 @@ the Dealer screen. You pick the ships with Shift+Click on Dealer.
   `ships/ship-ctrl.gd`'s default (`RA-TRTL.tscn`'s `shipName`), one ship is instanced, never added to the tree, read and
   freed. The names are kept for the session.
 - **The settings model** follows CrewCheapHireNotifier's (`shared()`, `SETTINGS`, `cfg`, `getValue` / `setValue`,
-  `loadFromState` / `saveToState`, `modId()`, `modName()`, `modVersion()`), with three switches: `watched`, that has
-  `perModel` (a value for each model, a dictionary by model key in `cfg`, all sharing its default), then `watchNew`
-  and `watchUsed`, which aren't per model and have a `group`, the translation key of the title of the screen's group
-  they show in. `SETTINGS` lists New and Used first, in display order. Anything that isn't a bool gives the default, so
+  `loadFromState` / `saveToState`, `modId()`, `modName()`, `modVersion()`), with three switches, in the screen's order
+  as `SETTINGS` lists them: `watchNew` and `watchUsed`, which aren't per model and have a `group`, the translation key
+  of the title of the screen's group they show in, then `watched`, that has `perModel` (a value for each model, a
+  dictionary by model key in `cfg`, all sharing its default). Anything that isn't a bool gives the default, so
   a save edited by hand can't break anything. The autoloads are read with `get()`
   (`CurrentGame.get("usedShipsPool")`, `Shipyard.get("ships")`): the mod's scripts are compiled while the autoloads
   after `ModLoader` are still null, and Godot would work out `"key" in CurrentGame` then, failing.
@@ -142,9 +156,18 @@ the Dealer screen. You pick the ships with Shift+Click on Dealer.
   Under the header (the Dealer entry's key):
   - The description window, nested as `Dealer.tscn` nests its own (`GAME_WINDOW_MARGIN`, `GAME_WINDOW`,
     `GAME_WINDOW_INSIDE`, `GAME_WINDOW_TEXTS`), without the tabs and the ship's view behind the text, with the Dealer's
-    theme, margins, panel, least size and spacing, its texts clipped. For the focused row it shows what `Dealer.gd`
-    `displayShip` shows: `baseShipName` + `DESCRIPTION_SUFFIX` where it differs from `shipName`, then `shipName` +
-    `DESCRIPTION_SUFFIX`, keys the Labels translate. A row that isn't a ship's empties it.
+    theme, margins, panel, least size and spacing. For the focused row it shows what `Dealer.gd` `displayShip` shows:
+    `baseShipName` + `DESCRIPTION_SUFFIX` where it differs from `shipName`, then `shipName` + `DESCRIPTION_SUFFIX`, keys
+    the Labels translate. A row that isn't a ship's empties it.
+  - The texts are in a `ScrollContainer` with no horizontal scroll (`_descriptionScroll`), so they wrap to the window's
+    width; the Dealer only clips its own. `_keepDescriptionHeight()` makes the `ScrollContainer` as tall as the room
+    inside the window at the Dealer's least height (`_descriptionPanel`'s, less its panel's and margins' share), so the
+    window keeps that height whatever the ship and the switches below don't move; where the game gives no height,
+    `DESCRIPTION_LINES` lines. A longer description scrolls with the mouse wheel (the `ScrollContainer`'s own) and with
+    the right stick: `_process` reads `DESCRIPTION_SCROLL_UP` and `DESCRIPTION_SCROLL_DOWN`, at up to
+    `DESCRIPTION_SCROLL_SPEED`, in real time, kept in fractions of a pixel (`_descriptionAt`), as
+    `enceladus/ScrollWithAnalog.gd` scrolls the game's lists. The list of switches has no `ScrollWithAnalog`: the D-pad
+    moves through it, and it follows the focus. `_describe()` scrolls the texts back to their top for each ship.
   - No note: unlike the game's Tuning settings, the switches have no description on the screen. This README and the
     mod's page in the users' wiki explain them.
   - An `Items` box in the scroll of `enceladus/Tuning/TuningItems.tscn` groups of `TuningBoolValue.tscn` switches.
@@ -153,6 +176,8 @@ the Dealer screen. You pick the ships with Shift+Click on Dealer.
     (`_groups()`): series with two or more models, titled by the base model's `shipName`, sorted by the titles'
     translated names, each one's models by theirs (case ignored); then the models alone in their series, under
     `OTHERS_LABEL`. Filled each time it opens, so the order follows a language change; New's switch takes the focus.
+    That scrolls the list to the switch (the `ScrollContainer`'s `follow_focus`, before the rows are laid out), hiding
+    the first group's title, so `_scrollToTop()` then scrolls it back to the top.
     On `tuningChanged` (a change, or a row taking the focus) it sets the row's `tune.current` (DiveSkipTransit's fix:
     a switch doesn't update it itself), calls `setValue` and shows the row's description, or empties the window for New
     and Used.
@@ -194,29 +219,37 @@ the Dealer screen. You pick the ships with Shift+Click on Dealer.
     and sometimes nested (the ND-LIS Kitsune's is `Front/WeaponSlot`), and its placeholders of the hardpoint scene
     (`GAME_HARDPOINT_SCENE`: RA-TRTL's, the Vulture Prospector's, the OCP-209's). A placeholder stores only the values
     it overrides (`get_stored_values()`), and RA-TRTL's and the VP's main hardpoint leaves `slot` to the scene: that is
-    read from one instance of the hardpoint scene, never added to the tree (`_hardpointSceneSlot()`). In game 1.92.5
+    read from one instance of the hardpoint scene, never added to the tree (`_hardpointSceneSlot()`). In game 1.93.1
     only ship scenes, the Tsukuyomi's turret module and the habitat use them.
 - **The texts.** `i18n/en.po` holds every text the mod shows, under keys that start with `DEALERNOTIFIER_`. `ModMain.gd`
   loads it with `load()` and `TranslationServer.add_translation`, as CrewCheapHireNotifier does (its README says why).
-- **With CrewCheapHireNotifier and DiveSkipTransit**, which extend `EnceladusMenu.gd` too: mods load by path, so the
-  chain is game ← CrewCheapHireNotifier ← DealerNotifier ← DiveSkipTransit. All three override `_ready` and
-  `_notification` (the game's script has neither) without calling the parent's; their members are distinct, and
-  opening one's screen hides the others' (`hidefoka`).
+- **With the other mods on the station menu** (CrewCheapHireNotifier, DiveSkipTransit, MarketAdvisor and
+  ServiceNotifier), which extend `EnceladusMenu.gd` too, each for its own entry: mods load by path, so the chain is
+  game ← CrewCheapHireNotifier ← DealerNotifier ← DiveSkipTransit ← MarketAdvisor ← ServiceNotifier. Each overrides
+  `_ready`, and all but DiveSkipTransit `_notification` (the game's script has neither), without calling the
+  parent's; their members are distinct, and opening one's screen hides the others' (`hidefoka`).
 - **With the ship-list mods:** ShipCopyPaste extends `SystemBuyUI.gd`, the Dealer's entries; ShipHighlightTypeAndPrice
   and ShipSortByTypeAndPrice change and reorder them. The badge is a child of the entry's name, which none of them
   changes, and the stock is read from every entry, whatever their order, so they work together.
-- Members of the menu's extension (`Code.gd`): `DealerNotifier` and `_DN_SETTINGS_UI` (preloads), `_DN_ALERT` and
-  `_DN_SETTINGS_TOOLTIP` (translation keys), `_dnMarketButton`, `_dnMarketKey`, `_dnSettingsScreen`, `_dnScreens`,
-  `_dnDealer`, `_dnSettings`, `_dnUpdate()`, `_dnOnMarketInput()` and `_dnOpenSettings()`.
-- Members of the Dealer screen's extension (`DealerScreen.gd`): `DealerNotifier` (preload), `_DN_BADGE_TOOLTIP`
-  (translation key), `_DN_BADGE`, `_DN_GAME_NEW_AGE`, `_dnFresh`, `_dnStock()`, `_dnIsNew()`, `_dnIsOffer()`,
-  `_dnMarkFresh()`, `_dnBadge()` and `_dnInitials()`.
+- Members of the menu's extension (`Code.gd`): `DealerNotifier`, `_DN_SETTINGS_UI` and `_DN_BADGE_SCRIPT` (preloads),
+  `_DN_ALERT`, `_DN_SETTINGS_TOOLTIP` and `_DN_SETTINGS_TOOLTIP_PAD` (translation keys), `_DN_DEALER_SCREEN`,
+  `_dnMarketButton`, `_dnMarketKey`, `_dnShiftBadge`, `_dnSettingsScreen`, `_dnScreens`, `_dnDealer`, `_dnSettings`,
+  `_dnUpdate()`, `_dnMakeShiftBadge()`, `_dnOnMarketInput()` and `_dnOpenSettings()`.
+- Members of the Dealer screen's extension (`DealerScreen.gd`): `DealerNotifier` and `_DN_BADGE_SCRIPT` (preloads),
+  `_DN_BADGE_TOOLTIP` (translation key), `_DN_BADGE`, `_DN_ENTRY_NAME`, `_DN_ENTRY_BUY`, `_DN_ENTRY_OWNED`,
+  `_DN_ENTRY_PICTURE`, `_DN_GAME_NEW_AGE`, `_dnFresh`, `_dnStock()`, `_dnIsNew()`, `_dnIsOffer()`, `_dnMarkFresh()`,
+  `_dnBadge()` and `_dnInitials()`.
+- **`Badge.gd`** is the same file in every mod that has a Shift badge, CrewCheapHireNotifier's among them, whose
+  README lists its members: keep the copies identical.
 - Tested only outside the game, in a headless Godot 3.6 with the game's `EnceladusMenu.gd`, `HidingMarginContainer.gd`,
   `Dealer.gd`, `SystemBuyUI.gd`, `WeaponSlot.gd`, `TuningItems.gd`, `TuningBoolValue.gd`, `PlaySoundsOnTheseButtons.gd`
   and `Shower.tscn`: the station built in code as its scene nests it, with stubs of the Dealer screen's, its entries'
   and the hardpoint's scenes, of `CurrentGame` and `Shipyard`, and ship models of the harness's own (the `dealer` suite
-  of the repository's test harness), alone, with CrewCheapHireNotifier and DiveSkipTransit in every load order, and
-  with the ship-list mods. It has not been checked in a real game.
+  of the repository's test harness), alone, with CrewCheapHireNotifier and DiveSkipTransit, and with MarketAdvisor
+  and ServiceNotifier as well, in every load order, and with the ship-list mods. The Shift badge's text and tooltip are
+  checked with each control scheme, Shift+Click's gamepad twin with gamepad button events, the Dealer screen badge's
+  tooltip on the name's focus with a gamepad, and the description's scrolling with a long text and the right stick. The
+  real check is playing the game.
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.

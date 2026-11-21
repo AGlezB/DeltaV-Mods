@@ -1,5 +1,33 @@
 # CrewCheapHireNotifier - Changes
 
+## 1.10.0
+- Shift+Click has a gamepad twin: on the highlighted Crew entry, the `PAD_BUTTON` button pressed while the
+  `PAD_MODIFIER` one is held opens the settings too (constants of the new `Badge.gd`).
+- A small badge beside the station menu's Crew entry tells how to open the settings: it reads Shift, or the gamepad
+  twin (`PAD_TEXT`) while the game is played with a gamepad (the game's Controls setting, or with Auto the device last
+  used). Hovering it shows how, in a tooltip that follows the control scheme too. The tooltip was the Crew entry's: the
+  entry has none now.
+- The settings screen has a description window, as the game's Tuning screen does: under the title, what the selected
+  setting does, then the details.
+- The Hire screen badge's tooltip shows sooner, without the hover sound; with a gamepad, it shows while the entry's
+  Hire button has the focus.
+- New script, `Badge.gd` (the same file in every mod that has a Shift badge): the Shift badge and the Hire screen badge,
+  their look and their tooltips, and the gamepad's twin of Shift+Click. Constants `PAD_MODIFIER`, `PAD_BUTTON`,
+  `PAD_MODIFIER_NAME`, `PAD_BUTTON_NAME`, `PAD_TEXT`, `SMALL_FONT_THEME`, `TOOLTIP_DELAY`, `TOOLTIP_FADE` and
+  `BUTTON_HOVER_MUTE`; `isPadShortcut()`, `dress()`, `hangBeside()`, `setShiftTooltips()` and `attachTooltip()`.
+- `i18n/en.po`: `CREWCHEAPHIRENOTIFIER_SETTINGS_TOOLTIP` reworded (it is the badge's); new
+  `CREWCHEAPHIRENOTIFIER_SETTINGS_TOOLTIP_PAD`, `CREWCHEAPHIRENOTIFIER_SALARY_THRESHOLD_DESC`,
+  `CREWCHEAPHIRENOTIFIER_SALARY_TOLERANCE_DESC` and `CREWCHEAPHIRENOTIFIER_CREW_LIMIT_DESC`.
+- `Code.gd`: `_crewButton`, `_crewKey` and `_settings` renamed `_cheapHireButton`, `_cheapHireKey` and
+  `_cheapHireModel`; new `_CHEAP_HIRE_SETTINGS_TOOLTIP_PAD`, `_CHEAP_HIRE_TUNING_SCREEN`, `_CHEAP_HIRE_BADGE_SCRIPT`,
+  `_cheapHireShiftBadge` and `_makeCheapHireShiftBadge()`.
+- `HireScreen.gd`: new `_CHEAP_HIRE_CURRENCY` and `_CHEAP_HIRE_BADGE_SCRIPT`; the badge is a `Badge.gd`.
+- `SettingsUI.gd`: new `GAME_ROW_VALUE`, `GAME_WINDOW_MARGIN`, `GAME_WINDOW`, `GAME_WINDOW_INSIDE`,
+  `DESCRIPTION_SUFFIX`, `DESCRIPTION_LINES`, `_description`, `_descriptionWindow()`, `_copyMargins()` and
+  `_keepDescriptionHeight()`; `_colorBelowLimit`, the crew screens' colour for an equal stat, colours a Crew limit row
+  with fewer hired than its limit (white, as before).
+- README: the Shift badge, the gamepad twin, the descriptions, `Badge.gd`; the other mods on the station menu.
+
 ## 1.9.2
 - The README's *Disclaimer* no longer names the author.
 

@@ -5,10 +5,23 @@ extends Tabs
 # Geologist tab's own parts (hud/SystemMineralList.gd), as GeologyByMass's tab is: its on/off switch, its names and its
 # Minimum value slider, which keeps the game's focus and controller handling (press the value to edit it, left and
 # right to change it, accept or cancel to leave). A `Tabs` node, as every page of the OMS is (hud/OMS.tscn).
+#
+# With a gamepad: the D-pad goes down from the switch through each slider's value to Reset and back up, and stays in the
+# tab (_linkFocus). The game's tooltip node (menu/sfx/PlaySoundsOnTheseButtons.tscn) shows a control's tooltip when it
+# gets the focus, as on hover, for the controls it took in: each slider has one of its own, which takes in its bar and
+# its value (so the weight's description goes on both), and Reset gets one in its row.
 
 const GAME_TOGGLE = "res://hud/components/MineralSystemToggle.tscn"
 const GAME_NAME_LABEL = "res://hud/components/MineralLabel.tscn"
 const GAME_SLIDER = "res://hud/components/PriceLabel.tscn"
+# The slider's value, the button the D-pad lands on, which A turns into the bar (hud/components/PriceLabel.tscn, as
+# hud/SystemMineralList.gd getChildOrLabel picks it).
+const GAME_SLIDER_VALUE = "Box/MarginContainer/Label"
+# The slider's bar, which A turns the value into (hud/components/PriceLabel.tscn).
+const GAME_SLIDER_BAR = "Box/HSlider"
+# Ends a text's key to make the key of its description, as the game's Tuning screen makes them (Tuning.gd tuningChanged).
+const DESCRIPTION_SUFFIX = "_DESC"
+const GAME_TOOLTIPS = "res://menu/sfx/PlaySoundsOnTheseButtons.tscn"
 const HINT = "DRONEALTPRIORITIES_HINT"
 const RESET = "DRONEALTPRIORITIES_RESET"
 
@@ -67,12 +80,13 @@ func setup(settings):
 		_grid.add_child(label)
 		var slider = load(GAME_SLIDER).instance()
 		slider.format = "%s " + desc.unit.replace("%", "%%") # the unit can be % itself
-		var bar = slider.get_node("Box/HSlider")
+		var bar = slider.get_node(GAME_SLIDER_BAR)
 		bar.min_value = desc.min * desc.shown
 		bar.max_value = desc.max * desc.shown
 		bar.step = desc.step * desc.shown
 		bar.rect_min_size.x = SLIDER_WIDTH
-		bar.hint_tooltip = desc.label + "_DESC"
+		bar.hint_tooltip = desc.label + DESCRIPTION_SUFFIX
+		slider.get_node(GAME_SLIDER_VALUE).hint_tooltip = bar.hint_tooltip
 		slider.connect("valueChanged", self, "_onWeightChanged", [desc.key])
 		_grid.add_child(slider)
 		_sliders[desc.key] = slider
@@ -81,11 +95,30 @@ func setup(settings):
 	box.add_child(footer)
 	_reset = Button.new()
 	_reset.text = RESET
-	_reset.hint_tooltip = RESET + "_DESC"
+	_reset.hint_tooltip = RESET + DESCRIPTION_SUFFIX
 	_reset.connect("pressed", self, "_onResetPressed")
 	footer.add_child(_reset)
+	if ResourceLoader.exists(GAME_TOOLTIPS):
+		footer.add_child(load(GAME_TOOLTIPS).instance())
+	_linkFocus()
 	_dim()
 	connect("visibility_changed", self, "_refresh")
+
+# The D-pad's way through the tab, set as the Geologist tab sets its own (hud/SystemMineralList.gd adjustFocus): down
+# from the switch through each slider's value, in WEIGHTS order, to Reset, and back up. At either end, and to the sides,
+# it stays where it is, so it never leaves the tab for the rest of the OMS; left and right are the value's once A has
+# turned it into the bar.
+func _linkFocus():
+	var chain = [_toggle]
+	for desc in _settings.WEIGHTS:
+		chain.append(_sliders[desc.key].get_node(GAME_SLIDER_VALUE))
+	chain.append(_reset)
+	for i in chain.size():
+		var node = chain[i]
+		node.focus_neighbour_top = node.get_path_to(chain[max(i - 1, 0)])
+		node.focus_neighbour_bottom = node.get_path_to(chain[min(i + 1, chain.size() - 1)])
+		node.focus_neighbour_left = "."
+		node.focus_neighbour_right = "."
 
 func _ready():
 	_refresh()

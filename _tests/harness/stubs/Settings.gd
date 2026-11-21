@@ -4,11 +4,26 @@ extends Node
 # Boot.gd (firstBoot), AnalogControlSlider.gd (getControlDeviceNr, while a slider has the focus), Hud.gd instance()
 # (cfg.gameplay.tutorial) and DiveSkipTransit (focused, cfg.gameplay.streaming: the game's mute rule) read, and the
 # game scripts the bench runs (_bench\): DroneLaunchManager.gd and asteroid.gd (cfg.display.particlesExplosion, the
-# particle signals), the dust cloud (particlesForbidden).
+# particle signals), the dust cloud (particlesForbidden); and the control scheme the mods' Shift badges follow
+# (Badge.gd: controlScheme, control, controlSchemeChaged), set by the suites as menu/Mouse.gd sets the game's.
 
 signal settingsChanged
 signal particlesSettingsChanged
 signal removeGpuParticles
+signal controlSchemeChaged
+
+# The game's (Settings.gd), whose getter gives this with Auto, the Controls setting's default.
+enum control {
+	gamepad,
+	keyMouse,
+	auto
+}
+var controlScheme = control.keyMouse setget _setControlScheme
+
+func _setControlScheme(v):
+	if controlScheme != v:
+		controlScheme = v
+		emit_signal("controlSchemeChaged")
 
 var cfg = {"display": {"lights": 1.0, "particlesExplosion": 1.0}, "gameplay": {"tutorial": false, "streaming": false}}
 var firstBoot = false # the game's is true only until user://settings.cfg exists (loadFromFile)

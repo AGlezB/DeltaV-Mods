@@ -11,9 +11,15 @@ msgstr ""
 msgid "SERVICENOTIFIER_ALERT"
 msgstr "%s (*)"
 
-# The Services entry's tooltip; the first %s is the key to hold while clicking, the second the mod's name.
+# The tooltip of the Shift badge beside the Services entry; the first %s is the key to hold while clicking
+# the entry, the second the mod's name.
 msgid "SERVICENOTIFIER_SETTINGS_TOOLTIP"
-msgstr "Click while pressing %s to open the %s settings."
+msgstr "Click the button while pressing %s to open the %s settings."
+
+# The same while the game is played with a gamepad; the first %s is the button to press on the highlighted entry, the
+# second the one to hold, the third the mod's name.
+msgid "SERVICENOTIFIER_SETTINGS_TOOLTIP_PAD"
+msgstr "Highlight the button and press %s while holding %s to open the %s settings."
 
 # The settings screen: a group per kind of service, with a switch per service, named as the game names the service.
 # Each kind has the description the screen shows while one of its services is selected, written as the game's Tuning

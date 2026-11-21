@@ -107,6 +107,8 @@ var _shipCopyPasteClosedFrame = -1 # the frame in which Esc closed it
 
 func _ready():
 	if not owned:
+		# The ship market's entries have nothing of the mod's: no _input for them (Godot turned it on for the method).
+		set_process_input(false)
 		return
 	_shipCopyPasteBuild()
 	var fleet = _shipCopyPasteFleet()
@@ -562,10 +564,13 @@ func _shipCopyPastePlan(source: Dictionary, target, items: Array) -> Dictionary:
 			continue
 		var group = groups[slot]
 		var numeric = false
+		var fallback = null
 		for item in group:
 			numeric = numeric or item.numVal != -1
-		var want = _shipCopyPasteValue(target, slot, source.config, numeric)
-		var have = _shipCopyPasteValue(target, slot, target.shipConfig, numeric)
+			if item.default and fallback == null:
+				fallback = item.getVal()
+		var want = _shipCopyPasteValue(target, slot, source.config, numeric, fallback)
+		var have = _shipCopyPasteValue(target, slot, target.shipConfig, numeric, fallback)
 		if _shipCopyPasteSame(want, have):
 			continue
 		var pick = null
@@ -598,18 +603,27 @@ func _shipCopyPasteFilters(from: Dictionary, to: Dictionary, kept: Dictionary) -
 				return true
 	return false
 
-# The template's crew: its crew list; null when it has none (unknown).
+# The template's crew: those on its crew list still employed; null when it has no list (unknown). Someone fired drops
+# off the current ship's list only (CurrentGame.gd fireCrewmember), so a garage ship's list can still name them.
 func _shipCopyPasteCrew(source: Dictionary):
-	if source.config.get("preferredCrew") is Array:
-		return source.config.preferredCrew
-	return null
+	if not source.config.get("preferredCrew") is Array:
+		return null
+	var employed = CurrentGame.state.get("crew")
+	var crew = []
+	for memberName in source.config.preferredCrew:
+		if employed is Dictionary and employed.has(memberName):
+			crew.append(memberName)
+	return crew
 
 # A slot's value in `config`, read as the Equipment screen reads the player's (Upgrades.gd updatePricesAndAvailability):
-# the lidar's default where there is none, and nothing in a numeric slot is 0.
-func _shipCopyPasteValue(target, slot: String, config: Dictionary, numeric: bool):
+# the lidar's default where there is none, then the value of the slot's default item (`fallback`, null without one),
+# and nothing in a numeric slot is 0.
+func _shipCopyPasteValue(target, slot: String, config: Dictionary, numeric: bool, fallback):
 	var value = target.getConfig(slot, null, config)
 	if value == null and slot == _SHIP_COPY_PASTE_LIDAR_SLOT and _SHIP_COPY_PASTE_LIDAR_DEFAULT in target:
 		value = target.get(_SHIP_COPY_PASTE_LIDAR_DEFAULT)
+	if value == null and fallback != null:
+		value = fallback
 	if value == null and numeric:
 		value = 0.0
 	return value

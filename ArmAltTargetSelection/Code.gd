@@ -16,7 +16,7 @@
 #     empty while the arm is off, and it is rebuilt when the arm is switched on (_physics_process).
 #
 # Rules for stacking with other mods (see the README): never call the parent's _ready or
-# _physics_process (the mod loader runs them), call ordinary parent functions with .name(), and keep
+# _physics_process (Godot runs every level of them), call ordinary parent functions with .name(), and keep
 # member names unique (everything here that is not an override starts with "_" or is documented).
 extends "res://ships/modules/DockingArm.gd"
 
@@ -42,6 +42,7 @@ const INTAKES = ["SYSTEM_GRINDER", "SYSTEM_EXCAVATOR"]
 var _targeting = false # this arm is a salvage arm on a ship, i.e. the mod applies to it
 var _wasEnabled = true # `enabled` of the previous physics frame, to detect switching on
 var _rear = 0.0 # how far ahead of the arm base the game's own dock area starts (7 m for the AR-1500)
+var _targetingClaws = {} # each excavator's claws, by the excavator's instance id (see _targetingClawsOf)
 
 func _ready():
 	_targeting = systemName == "SYSTEM_SALVAGE_ARM" and ship != null
@@ -112,11 +113,23 @@ func _intakePosition() -> Vector2:
 	for system in INTAKES:
 		var s = ship.hasSystem(system)
 		if s != null and "ref" in s and Tool.ov(s.ref):
-			var a = s.ref.get("grinder1node") if system == "SYSTEM_GRINDER" else s.ref.find_node("Claw Left", true, false)
-			var b = s.ref.get("grinder2node") if system == "SYSTEM_GRINDER" else s.ref.find_node("Claw Right", true, false)
+			var claws = _targetingClawsOf(s.ref) if system != "SYSTEM_GRINDER" else []
+			var a = s.ref.get("grinder1node") if system == "SYSTEM_GRINDER" else claws[0]
+			var b = s.ref.get("grinder2node") if system == "SYSTEM_GRINDER" else claws[1]
 			if Tool.ov(a) and Tool.ov(b):
 				return (a.global_position + b.global_position) / 2.0
 	return ship.global_position
+
+# An excavator's two claws, [left, right], each null if missing. The game calls switchTarget every physics frame while
+# the arm has no target (DockingArm.gd _physics_process), and find_node searches the whole excavator, so they are found
+# once per excavator, and again only if one found is gone.
+func _targetingClawsOf(excavator) -> Array:
+	var id = excavator.get_instance_id()
+	var claws = _targetingClaws.get(id)
+	if claws == null or (claws[0] != null and not Tool.ov(claws[0])) or (claws[1] != null and not Tool.ov(claws[1])):
+		claws = [excavator.find_node("Claw Left", true, false), excavator.find_node("Claw Right", true, false)]
+		_targetingClaws[id] = claws
+	return claws
 
 # Overrides the game's choice. Best = lowest weighted sum (BALANCE) of the distance to the intake's
 # centerline and the distance to the entry point. The intake's centerline is the line through the

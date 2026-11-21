@@ -22,19 +22,24 @@ tells you when there is a trade to make.
   chart's, as good as your geologist makes it. With your ship ready, it trades now.
 - **Parked in ore.** At the top of the screen, under your cash, a new line shows what the ore Trade bought would sell
   for today.
-- **The station menu.** The **Mineral Market (\*)** entry tells you there is a trade to make now.
+- **The station menu.** The **Mineral Market (\*)** entry tells you there is a trade to make now. The small badge
+  beside the entry reminds you how to open the settings (see [Settings](#settings)).
 
 | Without the mod | With the mod |
 |---|---|
-| ![The station menu, as the game shows it](images/MarketAdvisor-menu-without.png) | ![The station menu, with Mineral Market (*)](images/MarketAdvisor-menu-with.png) |
+| ![The station menu, as the game shows it](images/MarketAdvisor-menu-without.png) | ![The station menu, with Mineral Market (*) and the Shift badge beside it](images/MarketAdvisor-menu-with.png) |
 | ![The Mineral Market, as the game shows it](images/MarketAdvisor-market-without.png) | ![The Mineral Market, with Parked in ore under your cash and, at the bottom, the advice and the Trade button](images/MarketAdvisor-market-with.png) |
 
 ## Settings
 
-Hold **Shift** and click the Mineral Market entry to open the settings (a plain click still opens the market). They
-show where the market does, laid out like the Tuning screen: at the top, what the setting you have selected does;
-below it, the settings in two groups. They close with Esc or when you pick another entry of the menu. A change
-applies at once. Each save game keeps its own settings.
+Hold **Shift** and click the Mineral Market entry to open the settings (a plain click still opens the market). With a
+gamepad, highlight the Mineral Market entry, hold **LT** and press **X**. The small badge beside the entry reminds you
+how: it reads *Shift*, or *LT+X* while you play with a gamepad (the game's *Controls* setting at *Gamepad*, or at
+*Auto* once you use the gamepad), and pointing at it tells you what to do.
+
+The settings show where the market does, laid out like the Tuning screen: at the top, what the setting you have
+selected does; below it, the settings in two groups. They close with Esc (B on a gamepad) or when you pick another
+entry of the menu. A change applies at once. Each save game keeps its own settings.
 
 - **Cash reserve**:
   - **Use scientific notation**: shows the cash reserve as, for example, 5e5 instead of 500K. Off at first.
@@ -65,6 +70,8 @@ See [Installing mods](Home#installing-mods).
 <!-- wiki-values (checked by wiki.ps1)
 game-checked: 1.93.1
 MarketAdvisor/i18n/en.po MARKETADVISOR_ALERT = "%s (*)" -> Mineral Market (*) | images/MarketAdvisor-menu-with.png
+MarketAdvisor/Badge.gd PAD_MODIFIER_NAME = "LT" -> LT
+MarketAdvisor/Badge.gd PAD_BUTTON_NAME = "X" -> X
 MarketAdvisor/i18n/en.po MARKETADVISOR_TRADE = "Trade" | images/MarketAdvisor-market-with.png
 MarketAdvisor/i18n/en.po MARKETADVISOR_PARKED = "Parked in ore" | images/MarketAdvisor-market-with.png
 MarketAdvisor/Settings.gd MAIN_MINERAL = "Be" -> Be

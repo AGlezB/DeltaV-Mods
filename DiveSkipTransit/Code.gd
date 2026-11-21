@@ -38,16 +38,20 @@ const _DST_MASTER_BUS = 0
 var _dstBurn = null # the departure's burn while the exit is played through (_dstEscapeBurn)
 var _dstPace = 0.0 # the speed the mod plays the transit at, or 0 while it doesn't
 var _dstBaseRate = 0 # the physics rate (Engine.iterations_per_second) when the pacing started
+var _dstModel = null # the settings (Settings.gd), kept in _ready: _physics_process asks them every frame
+var _dstTitles = null # the ring scene's title card player (Game.tscn TitleAnimPlayer), kept in _ready
 
 # Game.gd's _ready has run first (Godot runs every level's _ready, base first): it has spawned the ship (_respawn_ship
 # adds it to the tree deferred) and waits for the ship's setup. "helpless" is played inside _process, so it is caught
 # when the title card player starts it.
 func _ready():
-	$TitleAnimPlayer.connect("animation_started", self, "_dstOnTitleCard")
+	_dstModel = DiveSkipTransit.shared()
+	_dstTitles = $TitleAnimPlayer
+	_dstTitles.connect("animation_started", self, "_dstOnTitleCard")
 	_dstSkipArrival()
 
 func _dstSkipArrival():
-	if not cutscene or si == null or not DiveSkipTransit.shared().getValue("skipTransit"):
+	if not cutscene or si == null or not _dstModel.getValue("skipTransit"):
 		return
 	var seconds = totalCutsceneTime
 	# Game.gd _process brakes the ship along dvel = initialSpeed - Vector2(1, 0) * desiredAcceleration * eclapsedTime.
@@ -59,7 +63,7 @@ func _dstSkipArrival():
 	# Game.gd _process ends the cutscene on its next frame, with its own code: the ship's cutscene off, the autopilot's
 	# end values, the time scale.
 	eclapsedTime = seconds
-	var titles = $TitleAnimPlayer
+	var titles = _dstTitles
 	if titles.current_animation == "intro":
 		titles.seek(titles.current_animation_length, true)
 	var ship = si
@@ -73,8 +77,8 @@ func _dstSkipArrival():
 # from the remass the departure leaves, as in the cutscene.
 func _on_exitingRing():
 	._on_exitingRing()
-	var titles = $TitleAnimPlayer
-	if titles.current_animation == "exit" and si != null and DiveSkipTransit.shared().getValue("skipTransit"):
+	var titles = _dstTitles
+	if titles.current_animation == "exit" and si != null and _dstModel.getValue("skipTransit"):
 		_dstBurn = _dstEscapeBurn(si)
 		DiveSkipTransit.playThrough(titles, "exit", funcref(self, "_dstChargeExitStretch"))
 
@@ -87,11 +91,11 @@ func _dstChargeExitStretch(seconds):
 # Deferred: _process starts "helpless" after setting up the rescue (the reactor off, the cargo claimed), and the
 # rescue is played through once that frame's processing is done.
 func _dstOnTitleCard(animName):
-	if animName == "helpless" and DiveSkipTransit.shared().getValue("skipRescue"):
+	if animName == "helpless" and _dstModel.getValue("skipRescue"):
 		call_deferred("_dstSkipRescue")
 
 func _dstSkipRescue():
-	var titles = $TitleAnimPlayer
+	var titles = _dstTitles
 	if titles.current_animation == "helpless":
 		DiveSkipTransit.playThrough(titles, "helpless", funcref(self, "_dstChargeStretch"))
 
@@ -104,15 +108,15 @@ func _dstChargeStretch(seconds):
 func _on_gameOver():
 	var starting = gamerunning
 	._on_gameOver()
-	var titles = $TitleAnimPlayer
-	if starting and titles.current_animation == "gameover" and DiveSkipTransit.shared().getValue("skipGameOver"):
+	var titles = _dstTitles
+	if starting and titles.current_animation == "gameover" and _dstModel.getValue("skipGameOver"):
 		DiveSkipTransit.playThrough(titles, "gameover")
 
 # The ship emits fastTraveling when astrogation starts; while its setting is on, Ship.gd has already made the trip.
 func _onFastTravel():
 	._onFastTravel()
-	var titles = $TitleAnimPlayer
-	if titles.current_animation == "fasttravel" and DiveSkipTransit.shared().getValue("skipAstrogation"):
+	var titles = _dstTitles
+	if titles.current_animation == "fasttravel" and _dstModel.getValue("skipAstrogation"):
 		DiveSkipTransit.playThrough(titles, "fasttravel")
 
 # The pacing: while the transit skip is off, the arrival and the exit play at the transit speed, without Space. During
@@ -144,13 +148,13 @@ func _exit_tree():
 # is the game's own. On the arrival it tapers to 1x by the end, as the game's Space speed does; it is never below what
 # the game asked for (holding Space).
 func _dstTransitPace() -> float:
-	var settings = DiveSkipTransit.shared()
+	var settings = _dstModel
 	if settings.getValue("skipTransit"):
 		return 0.0
 	var speed = settings.getValue("transitSpeed")
 	if cutscene and si != null:
 		speed = lerp(speed, 1.0, clamp(eclapsedTime / totalCutsceneTime, 0.0, 1.0))
-	elif not (has_node("TitleAnimPlayer") and $TitleAnimPlayer.current_animation == "exit"):
+	elif not (_dstTitles != null and _dstTitles.current_animation == "exit"):
 		return 0.0
 	if speed <= 1.0:
 		return 0.0

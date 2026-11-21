@@ -1,5 +1,11 @@
 # ArmAltTargetSelection - Changes
 
+## 1.2.6
+- An excavator's claws are found once per excavator instead of on every choice of target, which the game asks for on
+  every physics frame while the arm has none (`_targetingClawsOf`, `_targetingClaws`).
+- The README says Godot, not the mod loader, runs `_ready` and `_physics_process` at every level of the script chain,
+  and that the mod is tested in the repository's harness.
+
 ## 1.2.5
 - The description in `Mod.manifest` is worded for players, as the root README's summary.
 

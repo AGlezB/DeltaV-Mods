@@ -5,9 +5,9 @@ extends PanelContainer
 # built from the game's own Tuning parts, the way enceladus/Tuning.tscn nests them: the header, a window with the
 # description of the selected setting (framed as the Tuning screen's), then groups of sliders and switches. Under the
 # cash group's rows, a row of the same layout shows the cash reserve they make, with its tolerance's range, its value
-# under theirs. It behaves like
-# the game's screens (enceladus/Tuning.gd, enceladus/Crew.gd): the Shower fades it in and out, Esc or the controller's
-# back button closes it, and so does focusing another entry of the menu (the screens container's `hidefoka`).
+# under theirs. It behaves like the game's screens (enceladus/Tuning.gd, enceladus/Crew.gd): the Shower fades it in and
+# out, Esc or the controller's back button closes it, and so does focusing another entry of the menu (the screens
+# container's `hidefoka`).
 
 const MarketAdvisor = preload("res://MarketAdvisor/Settings.gd")
 
@@ -146,9 +146,8 @@ func unfocus():
 # Tuning groups as Tuning.gd fillTuneableSystems builds them, in an Items box as Tuning.tscn has: one per GROUPS entry,
 # titled by it, with a row per setting of that group, in SETTINGS order: a switch (TuningBoolValue) or a slider
 # (TuningFloatValue, with the setting's range, step and value as the screen shows them, toShown, and its unit and
-# format), named by its label in the game's language. The
-# screen is filled each time it opens, so the names and the description follow a language change; the description is
-# empty until the first row takes the focus.
+# format), named by its label in the game's language. The screen is filled each time it opens, so the names and the
+# description follow a language change; the description is empty until the first row takes the focus.
 func _fill():
 	_description.text = ""
 	_keepDescriptionHeight()
@@ -170,7 +169,7 @@ func _fill():
 			var setting = MarketAdvisor.SETTINGS[key]
 			if setting.group != entry[0]:
 				continue
-			var rowName = _text(setting.label, _labelArg(setting))
+			var rowName = tr(setting.label)
 			var row = {
 				"type": setting.type,
 				"default": setting.default,
@@ -233,13 +232,9 @@ func _addCashRow(group: Node):
 		reset.mouse_filter = MOUSE_FILTER_IGNORE
 	_total = line.get_node_or_null(GAME_ROW_VALUE.get_file())
 
-# A setting's argument for its label and its description: its `labelArg`, "" for none.
-func _labelArg(setting: Dictionary) -> String:
-	return setting.get("labelArg", "")
-
-# Its argument for its description: its `descriptionArg`, or its label's.
+# A setting's argument for its description: its `descriptionArg`, "" for none.
 func _descriptionArg(setting: Dictionary) -> String:
-	return setting.get("descriptionArg", _labelArg(setting))
+	return setting.get("descriptionArg", "")
 
 # A text of i18n/en.po, with `arg` translated in its %s where there is one.
 func _text(key: String, arg: String) -> String:

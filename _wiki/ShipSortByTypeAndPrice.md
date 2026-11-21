@@ -8,6 +8,9 @@ each type the cheapest ship comes first.
 
 The Fleet list isn't changed.
 
+With the keyboard or a gamepad, the highlight starts on the first ship of the sorted list, as it does without the mod
+on the first ship of the game's.
+
 ## Works with other mods
 
 Together with [ShipHighlightTypeAndPrice](ShipHighlightTypeAndPrice), the types are grouped and stand out. It also

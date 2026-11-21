@@ -6,8 +6,8 @@ Hides the titles on the screens of the dive HUD.
 - **What:** on every HUD, the titles whose keys are in `HIDDEN_KEYS` are no longer drawn. Each HUD shows some or all
   of them, depending on its layout. The title of the LIDAR is the LIDAR's own name, for example RUNASIMI
   HIGH-RESOLUTION LIDAR. The titles keep their space, so what is under them stays where it was.
-- **What not:** the same titles on the station's Upgrades and Tuning screens and the cargo title in the geologist tab
-  of the management screen (`J` by default) are left alone. So is everything else on the HUD.
+- **What not:** the same titles on the station's Equipment and Tuning screens and the cargo title in the Geologist tab
+  of the Onboard Maintenance System (OMS, `J` by default) are left alone. So is everything else on the HUD.
 - **Why:** they take room on small screens and some cover the readings, such as the cargo hold's mass on the
   OCP-209's HUD.
 - To keep one of the titles, remove its key from `HIDDEN_KEYS` at the top of `HudHideLabels/Code.gd` inside the
@@ -18,7 +18,7 @@ Hides the titles on the screens of the dive HUD.
   `node_added` in its `_ready` and hides every `Label` whose `text` is one of `HIDDEN_KEYS` and which has a scene
   whose path starts with `DISPLAY_PREFIX` among its ancestors.
   The tag `group = Hud` in `Mod.manifest` names the part of the game it touches.
-- Each HUD is one `Display-*.tscn` (K37, Prospector and its Metric and Bald variants, EIME, HAL, AT225, OCP209,
+- Each HUD is one `Display-*.tscn` (K37, Prospector and its Metric and Bald variants, EIME, HAL, K225, OCP209,
   Kitsune, CERF). The ship's Hud (`hud/Hud.tscn`, `Huds/SYSTEM_HUD_*`) holds them as instance placeholders, and
   `hud/Hud.gd` `instance()` replaces the one in the ship's `hud.type` with the scene during the dive. The titles
   are plain Labels holding translation keys, some of them in shared sub-scenes the HUDs instance:
@@ -35,7 +35,7 @@ Hides the titles on the screens of the dive HUD.
   No game script or animation sets these properties on the titles.
 - Constants: `HIDDEN_KEYS` (a user may edit it) and `DISPLAY_PREFIX`. No members, and nothing shared with other mods.
 - Tested in a headless Godot 3.6 with the game's `HardwareLabel.gd` on trees built with the node paths of the
-  OCP-209's HUD, the Upgrades screen and the management screen (the `hud` suite of the repository's test harness).
+  OCP-209's HUD, the Equipment screen and the OMS (the `hud` suite of the repository's test harness).
   The users' wiki's screenshots (`_shots\shots.ps1`) show it in the real game, in a dive, on every HUD the Equipment
   screen offers, fitted to the same ship: no title is left, and nothing else moves.
 

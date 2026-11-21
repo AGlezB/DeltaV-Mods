@@ -1,21 +1,29 @@
-Try your ship in a fight at the station: pick the enemy ships, how far away they start and the rocks around you, then
-fight them in a stretch of ring. Your ship and your save come out of it as they went in.
+Try your ship in a fight at the station, against the enemy ships, distance and rocks you pick, with nothing carried
+over to your ship or your save.
 
 ## What changes
 
 **Opening it.** The simulator's button, *Minding Virtual Flight Service*, is on the Tuning screen, on the User Manual
 tab of the Equipment screen, and on the Examine Ship tab of the Dealer and of the Fleet. A click on it, or J, still
 starts the simulator, the station's flight simulator. With the mod, **Shift+Click** on the button, or **Shift+J**,
-opens the combat simulation instead. Point at the button to read *Shift+Click or Shift+J: CombatSimulator, a fight
-against the enemy ships you pick, in a stretch of ring.* If you bound that action to another key in the game's
-controls, hold Shift with yours: the tip names it.
+opens the combat simulation instead. If you moved J to another key in the game's controls, hold Shift with that key:
+the button shows which key it is.
+
+With a gamepad, highlight the button and press **X** while holding **LT**. Or hold **LT** and press **Back**, the
+button that starts the simulator. Like Shift+J, LT+Back works without highlighting the button.
+
+A small badge on the left of the button reminds you how. It reads *Shift*, or *LT+X* while you play with a gamepad
+(the game's *Controls* setting on *Gamepad*, or on *Auto* when you last used the gamepad). Point at the badge to read
+*Click the button while pressing Shift to open the CombatSimulator interface.* While the badge reads LT+X, it says
+*Highlight the button and press X while holding LT to open the CombatSimulator interface.*
 
 You fly the ship that screen's simulator would fly. On the Tuning screen, that is your ship as you tuned it. On the
 Equipment screen, it has the piece of equipment you are looking at, even before you buy it. On the Dealer and the
 Fleet, it is the ship you are examining, so you can try a ship in a fight before you buy it.
 
 **The combat simulation** covers the screen you opened it from, laid out like the Crew screen, with two tabs. *Start*
-and *Cancel* are at the bottom of both; Esc cancels too.
+and *Cancel* are at the bottom of both; Esc, or B on a gamepad, cancels too. With a gamepad, LB and RB switch between
+the tabs, and the right stick scrolls a description too long for its window.
 
 | Combat simulation | Ship |
 |---|---|
@@ -36,7 +44,7 @@ simulator, but it looks and sounds like a dive, without the simulator's hexagons
 - the rocks are the game's own, as in a part of the rings with the chaos and density you set (at a real spot of
   the rings that matches them, so every fight is a little different);
 - the dive's music plays;
-- bullet time (the slow motion of the Adrenaline Booster, your pilot and the smart camera) works as in a dive;
+- bullet time (the slow motion of the Adrenaline booster, your pilot and the smart camera) works as in a dive;
 - J opens the Onboard Maintenance System and Esc closes it, and time slows while it is open, as in a dive;
 - the HUD shows its map of the rings and, with the Runasimi Gravimetric USV fitted, its gravimetric readout, which the
   game hides outside the rings;
@@ -51,9 +59,9 @@ With *Disabled weapons* on, their weapons fire nothing. They still come for you 
 follow you: their weapons stay switched on, so they fight as hard as they would armed.
 
 **Ending it.** With the Onboard Maintenance System closed, Esc asks *End the combat simulation?*, with *Yes* and *No*.
-The game pauses while it asks, with the music muffled, as the pause menu does in a dive. It also asks, instead of
-opening the pause menu, when you press the controller's Start button, when the game's window loses the focus, and when
-a controller is disconnected. If your ship is destroyed, the fight ends 16 s after the explosion, as the simulator
+*No* is selected, so confirming right away takes you back to the fight. The game pauses while it asks, with the music
+muffled, as the pause menu does in a dive. It also asks, instead of opening the pause menu, when you press the
+gamepad's Start button, when the game's window loses the focus, and when a gamepad is disconnected. If your ship is destroyed, the fight ends 16 s after the explosion, as the simulator
 does. Either way the station fades back in, on the screen you left.
 
 **Nothing carries over.** What happens in the fight stays there:
@@ -76,8 +84,8 @@ does. Either way the station fades back in, on the screen you left.
 
 ## Settings
 
-Open them with Shift+Click on the simulator's button, or Shift+J. Each row has a button that resets it to its default.
-A change applies to the next fight. Each save game keeps its own settings, written to disk the next time the game
+Open them with Shift+Click on the simulator's button or Shift+J, or with a gamepad, LT+X on the highlighted button or
+LT+Back. Each row has a button that resets it to its default. A change applies to the next fight. Each save game keeps its own settings, written to disk the next time the game
 saves; a new game starts with the defaults.
 
 | Setting | What it does | Default | Range |
@@ -822,7 +830,11 @@ like 3.3 MJ, and at 200 MW it skips sizes on 64 t rocks too.
 
 <!-- wiki-values (checked by wiki.ps1)
 game-checked: 1.93.1
-CombatSimulator/i18n/en.po COMBATSIMULATOR_TOOLTIP = "%s+Click or %s+%s: %s, a fight against the enemy ships you pick, in a stretch of ring." -> Shift+Click or Shift+J: CombatSimulator, a fight against the enemy ships you pick, in a stretch of ring.
+CombatSimulator/i18n/en.po COMBATSIMULATOR_TOOLTIP = "Click the button while pressing %s to open the %s interface." -> Click the button while pressing Shift to open the CombatSimulator interface.
+CombatSimulator/i18n/en.po COMBATSIMULATOR_TOOLTIP_PAD = "Highlight the button and press %s while holding %s to open the %s interface." -> Highlight the button and press X while holding LT to open the CombatSimulator interface.
+CombatSimulator/Badge.gd PAD_MODIFIER_NAME = "LT" -> LT
+CombatSimulator/Badge.gd PAD_BUTTON_NAME = "X" -> X
+game: J and Back, the simulator's key and gamepad button (project.godot jury_rig, joypad button 10); B, which cancels (ui_cancel, button 1); LB and RB, which switch tabs (ui_page_up and ui_page_down, buttons 4 and 5); the right stick, which scrolls (ui_scroll_up2 and ui_scroll_down2, axis 3); the Controls setting's Auto and Gamepad (en.po SETTINGS_CONTROLS_AUTO, SETTINGS_CONTROLS_GAMEPAD)
 CombatSimulator/i18n/en.po COMBATSIMULATOR_TITLE = "Combat simulation" | images/CombatSimulator-dialog.png, images/CombatSimulator-ships.png
 CombatSimulator/i18n/en.po COMBATSIMULATOR_GROUP_ENEMIES = "Enemies" | images/CombatSimulator-dialog.png
 CombatSimulator/i18n/en.po COMBATSIMULATOR_GROUP_AREA = "Area" | images/CombatSimulator-dialog.png

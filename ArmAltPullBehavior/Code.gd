@@ -66,6 +66,8 @@ var _lastImpulse = Vector2() # the impulse the mod gave the target last frame (t
 var _shipAccel = Vector2() # the ship's acceleration from everything but the mod's own pull, smoothed
 var _closer = 0.0 # how far the place the target is held at has moved in from the dock slot, 0 to 1 (see _updateCloser)
 var _parkAt = Vector2() # not feeding: the place the target is held at (see _outside)
+var _claws = {} # each excavator's claws, by the excavator's instance id (see _clawsOf)
+var _drawn = 0.0 # the energy the mod's pull drew this physics frame (see _cost), shown as the arm's power
 
 func _ready():
 	_active = systemName == "SYSTEM_SALVAGE_ARM" and ship != null
@@ -109,8 +111,9 @@ func _entry():
 	for system in ENTRY_SYSTEMS:
 		var s = ship.hasSystem(system)
 		if s != null and "ref" in s and Tool.ov(s.ref):
-			var a = s.ref.get("grinder1node") if system == "SYSTEM_GRINDER" else s.ref.find_node("Claw Left", true, false)
-			var b = s.ref.get("grinder2node") if system == "SYSTEM_GRINDER" else s.ref.find_node("Claw Right", true, false)
+			var claws = _clawsOf(s.ref) if system != "SYSTEM_GRINDER" else []
+			var a = s.ref.get("grinder1node") if system == "SYSTEM_GRINDER" else claws[0]
+			var b = s.ref.get("grinder2node") if system == "SYSTEM_GRINDER" else claws[1]
 			if Tool.ov(a) and Tool.ov(b):
 				var tip = (a.global_position + b.global_position) / 2.0
 				var fa = _frontPoint(a, axis)
@@ -119,6 +122,16 @@ func _entry():
 				var front = max(0.0, max((fa - tip).dot(axis), (fb - tip).dot(axis)))
 				return [tip, half, front + _clearance, front]
 	return null
+
+# An excavator's two claws, [left, right], each null if missing. _entry runs every physics frame and find_node searches
+# the whole excavator, so they are found once per excavator, and again only if one found is gone.
+func _clawsOf(excavator) -> Array:
+	var id = excavator.get_instance_id()
+	var claws = _claws.get(id)
+	if claws == null or (claws[0] != null and not Tool.ov(claws[0])) or (claws[1] != null and not Tool.ov(claws[1])):
+		claws = [excavator.find_node("Claw Left", true, false), excavator.find_node("Claw Right", true, false)]
+		_claws[id] = claws
+	return claws
 
 # The point of a rotor or claw that reaches farthest ahead (along the axis), from its collision
 # shapes (its own position if it has none).
@@ -462,8 +475,8 @@ func _updateCloser(delta):
 
 # Measures the ship's acceleration over the last frame (`delta`), from the change in its velocity, leaving out what the
 # mod's own last impulse did to it (the ship got the opposite of it), so only the rest counts: its thrusters, knocks,
-# another arm. Allowing for its own push too, the mod would push harder for every push it gave (1.3.0 did, and flung
-# targets away). Smoothed over ACCEL_SMOOTHING.
+# another arm. Allowing for its own push too, the mod would push harder for every push it gave (an earlier version did,
+# and flung targets away). Smoothed over ACCEL_SMOOTHING.
 func _measureShip(delta):
 	var velocity = ship.linear_velocity
 	if _shipSeen:
@@ -484,6 +497,7 @@ func _cost(scalar: float, rel: Vector2, delta) -> float:
 		return 0.0
 	var pl = getPowerLimit() * 1000.0
 	var pg = ship.drawEnergy(min(p, pl * delta) if pl > 0 else p)
+	_drawn = pg
 	if damageModel:
 		if randf() < wearChance:
 			var wpd = pow((pg / delta) / powerLimit, 2) * delta * powerLimit if powerLimit else pg
@@ -519,10 +533,19 @@ func _physics_process(delta):
 			var tv = target.linear_velocity
 			var rel = _shipVelocityAt(target.global_position) - (tv if tv != null else Vector2())
 			var impulse = _pullTo(side, rel, delta)
+			_drawn = 0.0
 			if impulse.length() > 0:
 				impulse *= _cost(impulse.length(), rel, delta) / impulse.length()
 			target.apply_central_impulse(impulse)
 			ship.apply_impulse(target.global_position - ship.global_position, - impulse)
 			_lastImpulse = impulse
+			call_deferred("_showPower")
 			Tool.release(target)
 		Tool.release(ship)
+
+# The arm's power, which its OMS entry shows (hud/SystemList.gd, through ship-ctrl.gd's status of the system): the
+# game's _physics_process, which runs right after the mod's, sets it from what its own pull drew this frame
+# (DockingArm.gd: power = newPower / 1000), nothing while the mod pulls. A deferred call runs once every physics
+# callback of the step is done, so it shows what the mod's pull drew instead, as the game's formula would.
+func _showPower():
+	power = clamp(_drawn / 1000, 0, 1)

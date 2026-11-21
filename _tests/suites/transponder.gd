@@ -178,7 +178,7 @@ func checkPlayerShip():
 	cg.state = state
 	cg.state.ship = saved
 
-# The game's New Game+ screen (menu/NewGamePlus.gd, with the mod's extension) on the node paths its script reads.
+# The game's New Game Options screen (menu/NewGamePlus.gd, with the mod's extension) on the node paths its script reads.
 func checkNewGamePlus():
 	CurrentGame.game = cg
 	var script = load("res://menu/NewGamePlus.gd")
@@ -204,8 +204,8 @@ func checkNewGamePlus():
 	add_child(popup)
 	yield(get_tree(), "idle_frame")
 	var code = popup.transponderLabel.text
-	check("New Game+: the screen shows a code of the new game's ship model", code.begins_with(codeOf(cg.initialShip.model) + "-"), code)
-	check("New Game+: and the name the game makes from that code", popup.nameLabel.text == cg.generateShipNameFromTransponder(code), popup.nameLabel.text)
+	check("New Game Options: the screen shows a code of the new game's ship model", code.begins_with(codeOf(cg.initialShip.model) + "-"), code)
+	check("New Game Options: and the name the game makes from that code", popup.nameLabel.text == cg.generateShipNameFromTransponder(code), popup.nameLabel.text)
 	check("after it, no model is left set", cg._tacModel == null, cg._tacModel)
 	popup.queue_free()
 

@@ -41,10 +41,16 @@ const _MA_HIGHER = "MARKETADVISOR_HIGHER"
 const _MA_SAME = "MARKETADVISOR_SAME"
 # The caption of the parked row in the header, a translation key of i18n/en.po.
 const _MA_PARKED = "MARKETADVISOR_PARKED"
+# The market's box under its header (enceladus/MineralMarket.tscn `Details`), and in it the margins around the list of
+# sliders, whose sides the mod's row keeps.
+const _MA_DETAILS = "Details"
+const _MA_LIST_MARGIN = "MarginContainer"
+# How faint the line comparing the prices with their averages is under the advice: a share of the full opacity.
+const _MA_PRICES_OPACITY = 0.6
 # The header (enceladus/HeaderWithMoney.tscn): the box at its right with your cash (`Money`, enceladus/InGameMoney.gd)
 # and the game's own hidden row for your insurance (`Insurence`: a caption, `InsuranceLabel`, and a value, `Insurance`,
 # with its `Pinger` sound), which the parked row copies.
-const _MA_HEADER_BOX = "Details/HeaderWithMoney/VBoxContainer"
+const _MA_HEADER_BOX = _MA_DETAILS + "/HeaderWithMoney/VBoxContainer"
 const _MA_HEADER_MONEY = "Money"
 const _MA_HEADER_ROW = "Insurence"
 const _MA_HEADER_CAPTION = "InsuranceLabel"
@@ -106,12 +112,12 @@ func _maBuildParked():
 
 # The row under the sliders, inside the same side margins as their list.
 func _maBuildRow():
-	var details = get_node_or_null("Details")
+	var details = get_node_or_null(_MA_DETAILS)
 	if not details is VBoxContainer:
 		return
 	var margin = MarginContainer.new()
 	margin.name = "MarketAdvisor"
-	var listMargin = details.get_node_or_null("MarginContainer")
+	var listMargin = details.get_node_or_null(_MA_LIST_MARGIN)
 	if listMargin is MarginContainer:
 		for side in ["left", "right"]:
 			margin.add_constant_override("margin_" + side, listMargin.get_constant("margin_" + side))
@@ -128,7 +134,7 @@ func _maBuildRow():
 	_maPrices = Label.new()
 	_maPrices.autowrap = true
 	_maPrices.size_flags_horizontal = SIZE_EXPAND_FILL
-	_maPrices.modulate.a = 0.6
+	_maPrices.modulate.a = _MA_PRICES_OPACITY
 	lines.add_child(_maPrices)
 	_maButton = Button.new()
 	_maButton.text = _MA_TRADE

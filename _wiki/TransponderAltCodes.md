@@ -59,6 +59,23 @@ Things that belong to a ship add a word of their own to its code:
 
 </details>
 
+The Pilot tab of the Onboard Maintenance System lists what your ship has identified around it, with each one's code
+under its name. Here it lists an Antonoff-Titan K225 with its three drones out, two lifepods, an AI core and three
+frozen bodies, in the same place without and with the mod.
+
+<details>
+<summary><b>SPOILER ALERT</b>: the Pilot tab with one of each (click to show)</summary>
+
+**Without the mod:**
+
+![The Pilot tab without the mod: the K225 is SE1-6106, its drones SE1-6106-CS38, -CB42 and -CC49, the lifepods SE1-5038 and JG4-5374, the AI core BLT-1751, and the bodies MRS-1725 with their initials](images/TransponderAltCodes-pilot-without.png)
+
+**With the mod:**
+
+![The Pilot tab with the mod: the K225 is AK25-XFBC2, its drones AK25-XFBC2-MNC-95, -CLM-34 and -CGO-92, the lifepods PPLC-YSREM-LPD and C212-YH70H-LPD, the AI core ATLS-D3C4P-AIC, and the bodies PEGL-U7FXK-CRW with their initials](images/TransponderAltCodes-pilot-with.png)
+
+</details>
+
 What stays as it is:
 
 - Ships that already have a code keep it: your ships, and the ships the game remembers meeting. The game makes a
@@ -98,6 +115,8 @@ bug to the game's developers.
 
 Don't use it together with *AltTransponderCodes*, its old name: both would load.
 
+It works with [CombatSimulator](CombatSimulator): both can be installed together.
+
 ## Install
 
 See [Installing mods](Home#installing-mods).
@@ -110,16 +129,16 @@ TransponderAltCodes/Code.gd MODEL_CODES.TRTL-LCB = "TX37" -> TX37
 TransponderAltCodes/Code.gd MODEL_CODES.TRTL-R = "TR37" -> TR37
 TransponderAltCodes/Code.gd MODEL_CODES.TRTL-T = "TA24" -> TA24
 TransponderAltCodes/Code.gd MODEL_CODES.TRTL-44 = "MK44" -> MK44
-TransponderAltCodes/Code.gd MODEL_CODES.PROSPECTOR = "PEGL" -> PEGL
+TransponderAltCodes/Code.gd MODEL_CODES.PROSPECTOR = "PEGL" -> PEGL | images/TransponderAltCodes-pilot-with.png
 TransponderAltCodes/Code.gd MODEL_CODES.PROSPECTOR-VP = "PVUL" -> PVUL
 TransponderAltCodes/Code.gd MODEL_CODES.PROSPECTOR-LUX = "PPCK" -> PPCK
-TransponderAltCodes/Code.gd MODEL_CODES.PROSPECTOR-FAT = "PPLC" -> PPLC
+TransponderAltCodes/Code.gd MODEL_CODES.PROSPECTOR-FAT = "PPLC" -> PPLC | images/TransponderAltCodes-pilot-with.png
 TransponderAltCodes/Code.gd MODEL_CODES.PROSPECTOR-BALD = "PBLD" -> PBLD
-TransponderAltCodes/Code.gd MODEL_CODES.COTHON = "C212" -> C212
+TransponderAltCodes/Code.gd MODEL_CODES.COTHON = "C212" -> C212 | images/TransponderAltCodes-pilot-with.png
 TransponderAltCodes/Code.gd MODEL_CODES.COTHON-CHK = "C211" -> C211
 TransponderAltCodes/Code.gd MODEL_CODES.COTHON-LND = "C213" -> C213
 TransponderAltCodes/Code.gd MODEL_CODES.COTHON-V = "C217" -> C217
-TransponderAltCodes/Code.gd MODEL_CODES.AT225 = "AK25" -> AK25
+TransponderAltCodes/Code.gd MODEL_CODES.AT225 = "AK25" -> AK25 | images/TransponderAltCodes-pilot-with.png
 TransponderAltCodes/Code.gd MODEL_CODES.AT225-R = "AR25" -> AR25
 TransponderAltCodes/Code.gd MODEL_CODES.AT225-B = "AB25" -> AB25
 TransponderAltCodes/Code.gd MODEL_CODES.EIME = "EIME" -> EIME
@@ -129,14 +148,14 @@ TransponderAltCodes/Code.gd MODEL_CODES.MADCERF = "MCRF" -> MCRF
 TransponderAltCodes/Code.gd MODEL_CODES.HYBRID = "HYBR" -> HYBR
 TransponderAltCodes/Code.gd MODEL_CODES.TSUKUYOMI = "TSKY" -> TSKY
 TransponderAltCodes/Code.gd MODEL_CODES.DRONE = "RDRN" -> RDRN
-TransponderAltCodes/Code.gd MODEL_CODES.ATLAS = "ATLS" -> ATLS
+TransponderAltCodes/Code.gd MODEL_CODES.ATLAS = "ATLS" -> ATLS | images/TransponderAltCodes-pilot-with.png
 TransponderAltCodes/Code.gd MODEL_CODES.OBONTO = "OBNT" -> OBNT
-TransponderAltCodes/Code.gd SERIAL_LENGTH = 5 -> 5
+TransponderAltCodes/Code.gd SERIAL_LENGTH = 5 -> 5 | images/TransponderAltCodes-pilot-with.png
 TransponderAltCodes/Code.gd SERIAL_CHARS = "0123456789ABCDEFGHJKLMNPRSTUVWXYZ" -> I, O or Q
-TransponderAltCodes/Code.gd LIFEPOD_SUFFIX = "-LPD" -> -LPD
-TransponderAltCodes/Code.gd AI_CORE_SUFFIX = "-AIC" -> -AIC
-TransponderAltCodes/Code.gd CREW_SUFFIX = "-CRW" -> -CRW
-TransponderAltCodes/Code.gd DRONE_CODES.CC = "CGO" -> CGO
-TransponderAltCodes/Code.gd DRONE_CODES.CS = "MNC" -> MNC
-TransponderAltCodes/Code.gd DRONE_CODES.CB = "CLM" -> CLM
+TransponderAltCodes/Code.gd LIFEPOD_SUFFIX = "-LPD" -> -LPD | images/TransponderAltCodes-pilot-with.png
+TransponderAltCodes/Code.gd AI_CORE_SUFFIX = "-AIC" -> -AIC | images/TransponderAltCodes-pilot-with.png
+TransponderAltCodes/Code.gd CREW_SUFFIX = "-CRW" -> -CRW | images/TransponderAltCodes-pilot-with.png
+TransponderAltCodes/Code.gd DRONE_CODES.CC = "CGO" -> CGO | images/TransponderAltCodes-pilot-with.png
+TransponderAltCodes/Code.gd DRONE_CODES.CS = "MNC" -> MNC | images/TransponderAltCodes-pilot-with.png
+TransponderAltCodes/Code.gd DRONE_CODES.CB = "CLM" -> CLM | images/TransponderAltCodes-pilot-with.png
 -->

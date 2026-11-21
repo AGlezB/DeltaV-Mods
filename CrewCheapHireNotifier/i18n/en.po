@@ -10,9 +10,15 @@ msgstr ""
 msgid "CREWCHEAPHIRENOTIFIER_ALERT"
 msgstr "%s (*)"
 
-# The Crew entry's tooltip; the first %s is the key to hold while clicking, the second the mod's name.
+# The tooltip of the Shift badge beside the Crew entry; the first %s is the key to hold while clicking
+# the entry, the second the mod's name.
 msgid "CREWCHEAPHIRENOTIFIER_SETTINGS_TOOLTIP"
-msgstr "Click while pressing %s to open the %s settings."
+msgstr "Click the button while pressing %s to open the %s settings."
+
+# The same while the game is played with a gamepad; the first %s is the button to press on the highlighted entry, the
+# second the one to hold, the third the mod's name.
+msgid "CREWCHEAPHIRENOTIFIER_SETTINGS_TOOLTIP_PAD"
+msgstr "Highlight the button and press %s while holding %s to open the %s settings."
 
 # The Hire screen badge; the %s is the capitals of the mod's name, the first %d how many crew members with the job you
 # have hired, the second its crew limit.
@@ -45,6 +51,31 @@ msgstr "Salary tolerance"
 
 msgid "CREWCHEAPHIRENOTIFIER_CREW_LIMIT"
 msgstr "Crew limit"
+
+# The descriptions the settings screen shows for the selected row (SettingsUI.gd DESCRIPTION_SUFFIX), as the game's
+# Tuning screen shows its own: what the setting does, a blank line, then the details.
+msgid "CREWCHEAPHIRENOTIFIER_SALARY_THRESHOLD_DESC"
+msgstr ""
+"Marks Crew in the station menu while someone for hire earns this much or less.\n"
+"\n"
+"In a job whose crew is full (see Crew limit), only someone earning less than your best-paid crew member in that job "
+"counts, whatever this says."
+
+msgid "CREWCHEAPHIRENOTIFIER_SALARY_TOLERANCE_DESC"
+msgstr ""
+"Lets a hire count when their salary is close to what you already pay in that job: up to your best-paid crew "
+"member's salary there, changed by this share.\n"
+"\n"
+"Above 0 % they may earn that much more; below 0 %, they must earn that much less. A salary at or below the Salary "
+"threshold still counts on its own."
+
+msgid "CREWCHEAPHIRENOTIFIER_CREW_LIMIT_DESC"
+msgstr ""
+"How many crew members with this job you want. Once you have that many, the job is full, and only someone earning "
+"less than your best-paid crew member in it counts.\n"
+"\n"
+"Each row shows how many of that job you have hired, then the limit: in green when they are the same, in red when "
+"you have hired more."
 
 # A Crew limit row's value; the first %s is how many crew members with that job you have hired, the second the crew
 # limit the row sets.

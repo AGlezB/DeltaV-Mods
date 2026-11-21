@@ -20,8 +20,8 @@ The game starts on the title screen, where the save slots are, without the logo 
 - It works only because the extension is installed in `ModMain`'s `_init`: `ModLoader.gd` loads the mods and runs
   their `ModMain` scripts in its own `_init`, while the engine creates the autoloads, and the engine loads the main
   scene after that. An extension installed later, in `_ready`, would come too late for the boot scene.
-- Overrides `_ready` only, which does not call the parent's: the mod loader runs the base first, so `mode` is set
-  and the title screen has started loading (`Loader.prepare`) when the override runs.
+- Overrides `_ready` only, which does not call the parent's: Godot runs every level's `_ready`, the base first, so
+  `mode` is set and the title screen has started loading (`Loader.prepare`) when the override runs.
 - The override calls the game's own `go()`, which the animation calls at its end and a key press calls early
   (`_unhandled_input`), under the game's own condition, `not Settings.firstBoot`. `Settings.gd` sets `firstBoot`
   to false in `loadFromFile` once `user://settings.cfg` exists, and writes that file on every launch.
@@ -30,7 +30,7 @@ The game starts on the title screen, where the save slots are, without the logo 
 - Only in `mode == "game"`: with `--screensaver`, `Boot.gd` calls `go()` itself.
 - No constants and no members, so nothing to clash with other mods on the same script.
 - Tested only outside the game, in a headless Godot 3.6: the game's `Boot.gd` loaded by the engine as the main scene
-  after the mod is installed, as the game does, with a stub loader. It has not been checked in a real game.
+  after the mod is installed, as the game does, with a stub loader. The real check is playing the game.
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.

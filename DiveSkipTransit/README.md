@@ -4,7 +4,7 @@ Skips the cutscenes of a dive: the transit both ways (the arrival in the ring an
 launch sequence, astrogation, the rescue when you run out of remass, the game over after a meltdown, and the station's
 fade-in when you're back. Whatever a skipped cutscene would have cost in remass and in-game time is charged all the
 same. Each skip has its own switch, and the transit, when you'd rather watch it, can play faster without holding
-Space: Shift+Click Launch Ring Dive.
+Space: Shift+Click Launch Ring Dive, or with a gamepad press the buttons the Shift badge beside it names.
 
 ## Warning
 This mod changes how the game plays, though it tries not to. Compared to vanilla:
@@ -39,7 +39,7 @@ the in-game time around them, to the game's developers, check that it also happe
   Space: at 1x as in the game, at the game's own Space speed, or faster. The arrival slows back to 1x by its end, as the
   game's own fast-forward does, so you take the controls in normal time. Holding Space still gives at least the game's
   Space speed. Above it there is no sound (sounds follow the game's speed, and get shrill).
-- **The launch:** after you press Launch Ring Dive and pick the dive target, the game goes straight to the ring.
+- **The launch:** after you press Launch Ring Dive and pick the dive entry point, the game goes straight to the ring.
 - **Astrogation:** once a plotted course is complete, the ship is at once where the game's astrogation would leave it,
   short of the destination and still moving at the travel velocity, with the trip's time on the clock, and you are in
   control. The course to Enceladus is the return.
@@ -53,7 +53,10 @@ the in-game time around them, to the game's developers, check that it also happe
   burns away, its reactor's turbine burns remass, and in-game time passes. The remass left after a dive carries over
   to the next one, and the resupply before a dive tops it up for E$, so the mod charges that remass and that time.
 - **Settings:**
-  - **Shift+Click** Launch Ring Dive to open them, as the entry's tooltip says. A plain click still launches a dive.
+  - **Shift+Click** Launch Ring Dive to open them, as the Shift badge beside the entry says: it reads Shift, and
+    hovering it shows how. A plain click still launches a dive. With a gamepad (the game's *Controls* setting at
+    *Gamepad*, or at *Auto* once the gamepad was used last), the badge reads the gamepad's twin of Shift+Click instead,
+    `PAD_TEXT` in `Badge.gd`: on the highlighted entry, holding the first button and pressing the second opens them.
     The settings open where the Tuning screen does, with the same frame and the game's own Tuning switches, and close
     the way the game's screens do: Esc, the controller's B or Start button, or picking another entry of the menu.
   - At the top, under the title, a window describes the selected setting, as the game's Tuning screen does. Under it,
@@ -77,17 +80,17 @@ the in-game time around them, to the game's developers, check that it also happe
   - They are game-wide, the same for every save, and written at once to a file of the mod's own in the game's user
     folder. Every skip starts switched on. Settings from before the transit had one switch carry over: it is skipped if
     both the arrival and the return were.
-  - Opening them needs a mouse and a keyboard; a controller can use and close them.
   - Each setting's default, the speed's range, and whether a switch affects remass are in `SETTINGS` at the top of
-    `DiveSkipTransit/Settings.gd`, inside the zip. The mod's texts (the tooltip, the groups' and the rows' names, the
-    rows' descriptions, the note) are in `DiveSkipTransit/i18n/en.po`.
+    `DiveSkipTransit/Settings.gd`, inside the zip. The mod's texts (the badge's tooltips, the groups' and the rows'
+    names, the rows' descriptions, the note) are in `DiveSkipTransit/i18n/en.po`.
 
 ## For modders
-- Six scripts: `Code.gd` (the ring scene's script extension: the arrival, the return, the rescue, the game over and
+- Seven scripts: `Code.gd` (the ring scene's script extension: the arrival, the return, the rescue, the game over and
   astrogation's title card), `Ship.gd` (every ship's: astrogation), `Station.gd` (the station's: the fade-in and the
-  launch), `StationMenu.gd` (the station menu's: Shift+Click on the dive entry), `SettingsUI.gd` (the settings screen)
-  and `Settings.gd` (the settings model and the code the skips share). The texts are in `i18n/en.po`. The tag
-  `group = Game` in `Mod.manifest` names the main game script, `res://Game.gd`.
+  launch), `StationMenu.gd` (the station menu's: Shift+Click and its gamepad twin on the dive entry, and the Shift
+  badge beside it), `Badge.gd` (the badge), `SettingsUI.gd` (the settings screen) and `Settings.gd` (the settings
+  model and the code the skips share). The texts are in `i18n/en.po`. The tag `group = Game` in `Mod.manifest` names
+  the main game script, `res://Game.gd`.
 - **Playing a cutscene through** (`Settings.gd` `playThrough(player, animName, charge)`): most cutscenes are an
   animation whose method keys do the work (charge the transit, call the rescue ship, load the station or the title
   screen, enable the menu). The mod calls those keys at once, in time order (keys at the same time in track order),
@@ -187,26 +190,49 @@ the in-game time around them, to the game's developers, check that it also happe
 - **The settings** follow CrewCheapHireNotifier's pattern, with the game-wide storage of the game's own settings:
   - **Shift+Click:** `StationMenu.gd` extends `res://enceladus/EnceladusMenu.gd`, the station menu. Its `_ready` finds
     the dive entry (`RingDive`, a plain Button with the key `ENCELADUS_RETURN_TO_RING`) and the right-hand screens
-    container (`../../CanvasLayer/MarginContainer`, `enceladus/HidingMarginContainer.gd`) with its `Tuning` screen.
-    Godot 3 emits a Control's `gui_input` signal before it calls the Control's own `_gui_input`, and `accept_event()`
-    there stops the event: a left press with Shift on the enabled entry is accepted, so the entry never presses, and
-    the settings open instead. The tooltip (`hint_tooltip`, `tr(_DST_SETTINGS_TOOLTIP)`) names the key with
-    `OS.get_scancode_string(KEY_SHIFT)` and the mod's name from `Mod.manifest`; the menu's tooltip node
-    (`PlaySoundsOnTheseButtons`) reads it again on every hover, and `_notification` sets it again after a language
-    change. Without the container or its Tuning screen there are no settings, and Shift+Click is a plain click.
-  - **With CrewCheapHireNotifier**, which extends the same menu script for its Crew entry: mods load by path, so the
-    chain is game ← CrewCheapHireNotifier ← DiveSkipTransit. Both override `_ready` and `_notification`, which the
-    game's script doesn't have, and don't call the parent's: Godot runs every level by itself. Each hooks its own entry,
-    and their member names differ.
+    container (`../../CanvasLayer/MarginContainer`, `enceladus/HidingMarginContainer.gd`) with its Tuning screen
+    (`_DST_TUNING_SCREEN`). Godot 3 emits a Control's `gui_input` signal before it calls the Control's own
+    `_gui_input`, and `accept_event()` there stops the event: a left press with Shift on the enabled entry is accepted,
+    so the entry never presses, and the settings open instead. So does the gamepad's twin, `Badge.gd`
+    `isPadShortcut(event)`: `PAD_BUTTON` pressed while `PAD_MODIFIER` is held on the same gamepad. A gamepad's buttons
+    reach the highlighted control's `gui_input` as keys do, and `PAD_BUTTON` doesn't press a button. At the station the
+    game gives neither button a use (both are flight actions in `project.godot`), and no player can bind them to
+    anything else (the game's `Settings.gd` `eventToString` and `stringToEvent` handle keys and mouse buttons only).
+    Without the container or its Tuning screen there are no settings and no badge, and Shift+Click is a plain click.
+  - **The Shift badge** (`_dstMakeShiftBadge()`, with `Badge.gd`, a `PanelContainer`) tells about Shift+Click, and does
+    nothing else: it takes no focus, and stops the mouse, so a click on it does nothing. `dress(button, text,
+    padText)` gives it the entry's own frame (its `normal` stylebox, shared as is) and font colour, lettered in the
+    small font of `SMALL_FONT_THEME`. `hangBeside(button, gap)` hangs it from the entry, the menu's `separation` to its
+    right, centred on it from top to bottom: a Button doesn't lay out its children, so the badge is anchored to the
+    middle of the entry's right side and grows to its minimum size, unclipped. It reads
+    `OS.get_scancode_string(KEY_SHIFT)`, or `PAD_TEXT` while the game is played with a gamepad: the game's
+    `Settings.controlScheme`, which the game's own control hints follow (the Controls setting, or with Auto the device
+    last used, `menu/Mouse.gd`), followed through its `controlSchemeChaged` signal (the game's spelling). Its tooltip
+    (`setShiftTooltips(keyKey, padKey, modName)`) is `tr(_DST_SETTINGS_TOOLTIP)` with the key and the mod's name from
+    `Mod.manifest`, or with a gamepad `tr(_DST_SETTINGS_TOOLTIP_PAD)` with `PAD_BUTTON_NAME`, `PAD_MODIFIER_NAME` and
+    the name; it is written again on a change of scheme and on `NOTIFICATION_TRANSLATION_CHANGED`. The released game
+    draws no Godot tooltips, so `attachTooltip(tooltips)` registers the badge with the menu's tooltip node
+    (`PlaySoundsOnTheseButtons`, `menu/sfx/PlaySoundsOnTheseButtons.gd` `connectSounds`), which reads its
+    `hint_tooltip` again on every hover. The badge takes the hover itself (`_notification`), so no hover sound plays,
+    and while it is hovered the node waits `TOOLTIP_DELAY` and fades in for `TOOLTIP_FADE` instead of its own times.
+    `Badge.gd` is kept identical in every mod with a Shift badge (CombatSimulator, CrewCheapHireNotifier,
+    DealerNotifier, MarketAdvisor, ServiceNotifier), each preloading its own copy (`_DST_BADGE_SCRIPT`): what a mod
+    needs of it goes through its parameters.
+  - **With the other mods on the station menu**, which extend the same menu script for their own entries
+    (CrewCheapHireNotifier's Crew, DealerNotifier's Dealer, MarketAdvisor's Mineral Market, ServiceNotifier's
+    Services): mods load by path, so the chain is game ← CrewCheapHireNotifier ← DealerNotifier ← DiveSkipTransit ←
+    MarketAdvisor ← ServiceNotifier. Each overrides `_ready`, which the game's script doesn't have, and doesn't call
+    the parent's: Godot runs every level by itself. Each hooks its own entry, and their member names differ.
   - **The screen** (`SettingsUI.gd`) is CrewCheapHireNotifier's: one more of the right-hand screens, copying the live
     Tuning screen's theme, frame, size and place, built from the game's parts as `enceladus/Tuning.tscn` nests them
     (`Shower.tscn`; `HeaderWithMoney.tscn` titled with the entry's key; the description's window; and an `Items` box
     with one `Tuning/TuningItems.tscn` group per `GROUPS` entry, titled by it), and closed by `ui_cancel`, `pause` or
     the container's `hidefoka`. A group holds a row per setting of its `group`: a switch (`"type": "bool"`,
     `Tuning/TuningBoolValue.tscn`) or a slider (`"float"`, `Tuning/TuningFloatValue.tscn`, with the setting's `min`,
-    `max`, `step`, `unit` and `format`), named by its `label` in the game's language, with ` ` and `REMASS_MARK` after
-    it for a `remass` setting; a row whose `dimmedWhen` switch is on is dimmed (`DIMMED`). A row emits `tuningChanged`
-    when it changes and again when it gets the focus (`TuningBoolValue.gd` / `TuningFloatValue.gd` `_focus`).
+    `max` and `step`, and its `unit` and `format`), its values as the screen shows them (`toShown`), named by its
+    `label` in the game's language, with ` ` and `REMASS_MARK` after it for a `remass` setting; a row whose
+    `dimmedWhen` switch is on is dimmed (`DIMMED`). A row emits `tuningChanged` when it changes and again when it gets
+    the focus (`TuningBoolValue.gd` / `TuningFloatValue.gd` `_focus`); the screen stores its value through `fromShown`.
   - **The description's window** (`VB/WindowMargin/Window/MarginContainer/Description`, an autowrapping Label) is
     nested as `Tuning.tscn` nests the game's (`VB/WindowMargin/Window/…/Description`, without the simulator's parts),
     with the live Tuning screen's theme and margins around it, its panel and the margins inside it, copied when they
@@ -226,7 +252,10 @@ the in-game time around them, to the game's developers, check that it also happe
     also names its description, `default`, `type`, `group`; for a slider its range, step, unit and format; `remass`
     where skipping charges remass; `dimmedWhen`), in display order within its group. `getValue(key)`;
     `setValue(key, value)` takes only a bool for a switch and only a number for a slider, snapped to its step and range
-    (anything else gives the default), and, on a change only, saves and emits `settingsChanged`. `loadFromFile()`
+    (anything else gives the default), and, on a change only, saves and emits `settingsChanged`. `toShown(key, value)`
+    / `fromShown(key, shown)`, the settings API's conversion between a stored value and the one the screen shows (as
+    MODDING.md *Conventions* settles it), give the value back as it is: every setting here is shown in the units it is
+    stored in (a switch, and the transit speed as a multiple). `loadFromFile()`
     overlays the defaults with the file's values (a key missing from an older file keeps its default, or what the file
     held under the key's old names: format 2's `skipArrival` and `skipExit` give `skipTransit`, on only if both were);
     `saveToFile()` writes them. The file, `filePath` (`user://<the mod's id>.cfg`), holds one section named by the
@@ -236,23 +265,37 @@ the in-game time around them, to the game's developers, check that it also happe
   - **The texts:** `i18n/en.po`, loaded in `ModMain.gd` with `load()` and `TranslationServer.add_translation`, as the
     game loads its own `.po` files. English is Godot's fallback language, so every language shows it until it gets its
     own file.
+- **With CombatSimulator**, which extends `enceladus/Enceladus.gd` too: by path the chain is game ← CombatSimulator ←
+  DiveSkipTransit (`Station.gd`). Both override `_ready` without calling the parent's, they share no other function,
+  and their member names differ.
+- **With GeologyByMass**, which extends `ships/ship-ctrl.gd` too: by path the chain is game ← DiveSkipTransit
+  (`Ship.gd`) ← GeologyByMass. They override different functions (`fastTravelTo` here, `isValidMineralTarget`
+  there), and their member names differ.
 - Members of `Code.gd`: `DiveSkipTransit` (preload), `_DST_RING_HEADING`, `_DST_FORWARD`, `_DST_SPACE_SPEED`,
-  `_DST_MASTER_BUS`, `_dstBurn`, `_dstPace`, `_dstBaseRate`, `_dstSkipArrival()`, `_dstChargeExitStretch()`,
+  `_DST_MASTER_BUS`, `_dstBurn`, `_dstPace`, `_dstBaseRate`, `_dstModel` and `_dstTitles` (the settings and
+  `TitleAnimPlayer`, kept in `_ready` for the physics frames), `_dstSkipArrival()`, `_dstChargeExitStretch()`,
   `_dstOnTitleCard()`, `_dstSkipRescue()`, `_dstChargeStretch()`, `_dstEscapeBurn()`, `_dstChargeEscape()`,
   `_dstTransitPace()`, `_dstApplyPace()`, `_dstStopPace()` and `_dstRestoreMute()`; it overrides `_ready`,
   `_on_exitingRing`, `_on_gameOver` and `_onFastTravel`, and adds `_physics_process`, `_process` and `_exit_tree`
   (`Game.gd`'s own `_process` still runs: Godot runs every level of it). Of `Ship.gd`: `DiveSkipTransit` (preload),
   `_DST_ASTROGATION_BEFORE_JUMP`, `_DST_ASTROGATION_AFTER_JUMP`; it overrides `fastTravelTo`. Of `Station.gd`:
   `DiveSkipTransit` (preload); it overrides `_ready` and `_on_DiveTarget_launch`. Of `StationMenu.gd`:
-  `DiveSkipTransit` and `_DST_SETTINGS_UI` (preloads), `_DST_SETTINGS_TOOLTIP`, `_dstDiveButton`, `_dstDiveKey`,
-  `_dstSettingsScreen`, `_dstScreens`, `_dstTuning`, `_dstUpdateTooltip()`, `_dstOnDiveInput()` and
-  `_dstOpenSettings()`; it adds `_ready` and `_notification`, which the game's script doesn't have. No tunables.
+  `DiveSkipTransit`, `_DST_SETTINGS_UI` and `_DST_BADGE_SCRIPT` (preloads), `_DST_SETTINGS_TOOLTIP` and
+  `_DST_SETTINGS_TOOLTIP_PAD` (translation keys), `_DST_TUNING_SCREEN`, `_dstDiveButton`, `_dstDiveKey`,
+  `_dstShiftBadge`, `_dstSettingsScreen`, `_dstScreens`, `_dstTuning`, `_dstMakeShiftBadge()`, `_dstOnDiveInput()` and
+  `_dstOpenSettings()`; it adds `_ready`, which the game's script doesn't have. Of `Badge.gd`, a script of its own
+  (not an extension): `SMALL_FONT_THEME`, `TOOLTIP_DELAY`, `TOOLTIP_FADE`, `BUTTON_HOVER_MUTE` (for a badge on a
+  button, which lets the mouse through: not this one), `PAD_MODIFIER`, `PAD_BUTTON`, `PAD_MODIFIER_NAME`,
+  `PAD_BUTTON_NAME`, `PAD_TEXT`, the static `isPadShortcut(event)`, `dress()`, `hangBeside()`, `setShiftTooltips()`
+  and `attachTooltip(tooltips, focusOwner)` (with `focusOwner`, the badge's tooltip also shows while that control has
+  the focus and the game is played with a gamepad; the dive entry's badge has none). No tunables.
 - Tested only outside the game, in a headless Godot 3.6 (the harness's `skip` suite): the game's `Game.gd` on a stub
   of the ring scene with the game's own title cards and values, the game's `Enceladus.gd` with the game's `FadeInCRT`,
   the game's `ship-ctrl.gd` (with the extension) for astrogation, and the game's `EnceladusMenu.gd`,
   `HidingMarginContainer.gd`, `Shower.tscn`, `TuningItems.gd`, `TuningBoolValue.gd`, `TuningFloatValue.gd` and
   `AnalogControlSlider.gd` in a station built as its scene nests them, with stub ships holding the game's reactor
-  scripts and stub thrusters; alone and with CrewCheapHireNotifier. It has not been checked in a real game.
+  scripts and stub thrusters, and the badge and the gamepad's twin with either control scheme; alone and with
+  CrewCheapHireNotifier. The real check is playing the game.
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.

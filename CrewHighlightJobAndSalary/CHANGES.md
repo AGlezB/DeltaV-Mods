@@ -1,5 +1,9 @@
 # CrewHighlightJobAndSalary - Changes
 
+## 1.0.5
+- How long a new entry is left before it is painted is the constant `SETTLE_TIME`.
+- The README is laid out as the others: *What it does and why*, *For modders*.
+
 ## 1.0.4
 - The README's *Disclaimer* no longer names the author.
 
