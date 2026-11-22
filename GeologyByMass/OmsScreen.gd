@@ -1,7 +1,7 @@
 extends "res://hud/Hud.gd"
 
-# GeologyByMass's OMS tab, added to every OMS right after the Geologist tab: the switch, the base mass and each
-# mineral's extra mass (SettingsUI.gd), which the ship's rule reads from the ship's config (Settings.gd, Code.gd).
+# GeologyByMass's OMS tab, added to every OMS right after the Geologist tab: the switch, and each mineral's switch and
+# least mass (SettingsUI.gd), which the ship's rule reads from the ship's config (Settings.gd, Code.gd).
 #
 # Stacking: instance falls through to the parent with `.instance()`; new members start with `_`.
 

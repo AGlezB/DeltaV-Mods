@@ -113,8 +113,8 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
      → `hud/Hud.gd` (its OMS tab, added right after the Geologist tab as GeologyByMass adds its own).
    - GeologyByMass: `Code.gd` → `ships/ship-ctrl.gd` (the rule every row of the Geologist tab is judged by,
      `isValidMineralTarget`); `OmsScreen.gd` → `hud/Hud.gd` (its OMS tab, added right after the Geologist tab from
-     `instance()`); `GeologistTab.gd` → `hud/SystemMineralList.gd` (the Geologist tab's rows, whose Minimum values and
-     their column's title it hides while its switch is on).
+     `instance()`); `GeologistTab.gd` → `hud/SystemMineralList.gd` (the Geologist tab's rows, whose mineral switches and
+     Minimum values it disables and dims while its switch is on).
    - LidarLouderPing: `Code.gd` → `hud/LIDAR.gd`.
    - MarketAdvisor: `Code.gd` → `enceladus/MineralMarket.gd` (the Mineral Market: the row of advice and the Trade
      button at its bottom, which trades through the market's own slider rows, the row under your cash in its header
@@ -198,8 +198,8 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
   the two). Both keep their entries in the HUD's `mineralConfig`, each under its own mod id. Their member names must
   stay distinct. Loaded together in `drones` (every order). DroneAltPriorities's plants still ask the ship which chunks
   pass their row (`_dapCheck`), so with GeologyByMass's switch on, the identified chunks they rank are the ones its
-  masses let through (an unidentified one passes by the game's rule); the arm mods keep the game's `isValidTarget`,
-  which asks the same.
+  switches and masses let through (an unidentified one passes by the game's rule); the arm mods keep the game's
+  `isValidTarget`, which asks the same.
 - DiveSkipTransit (`Ship.gd`) and GeologyByMass (`Code.gd`) both extend `ships/ship-ctrl.gd`, every ship's script,
   from `_init`: by path the chain is game ← DiveSkipTransit ← GeologyByMass. They override different functions
   (DiveSkipTransit `fastTravelTo`, GeologyByMass `isValidMineralTarget`). Their member names must stay distinct. Loaded

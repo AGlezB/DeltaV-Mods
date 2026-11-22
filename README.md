@@ -59,7 +59,8 @@ These change how something works in a dive, compared to vanilla. Each one's wiki
   on the chunks with the most valuable ore (haul drones also on those near the excavator), instead of the heaviest,
   fastest ones, and stay on a chunk until a much better one comes.
 - [GeologyByMass](../../wiki/GeologyByMass#changes-how-the-game-plays): with its switch on, which chunks keep a full info box, and
-  which ones the arm and the drones go for, depends on ore mass instead of value.
+  which ones the arm and the drones go for, depends on the mass of the minerals switched on in its tab, instead of
+  value and each row's minerals.
 - [TransponderAltCodes](../../wiki/TransponderAltCodes#changes-how-the-game-plays): a ship's model shows in its
   transponder code, on the LIDAR and in the Pilot tab, before the ship is in sight.
 

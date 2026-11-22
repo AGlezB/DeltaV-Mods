@@ -1,5 +1,40 @@
 # GeologyByMass - Changes
 
+## 2.0.0
+- The mod's OMS tab has a switch in front of each mineral's name. With the mod's switch on, an identified chunk passes
+  every row of the Geologist tab when it holds at least the least mass of a mineral switched on there: the rows' own
+  mineral switches no longer count. So with H2O switched on, chunks with enough water keep a full info box too, though
+  the HUD's row can't switch H2O on. The switches start as the game's own for a new row: every mineral on but H2O.
+- The *Base* slider is gone: each mineral's slider is now its least mass. Saved settings keep every threshold: a
+  mineral's base plus its extra mass becomes its least mass, up to the slider's most.
+- After each mineral's least mass, what that mass is worth at the day's price.
+- At the bottom of the tab, a line on the geologist aboard: a warning when there is none (no info boxes, so no masses),
+  else the best one's Education and the most error the game's estimates have at that level.
+- While the switch is on, the Geologist tab no longer hides the *Minimum value* of the rows the mod judges, nor its
+  column's title: those rows' mineral switches and *Minimum value* stay in place, with their values, disabled and
+  dimmed. The cargo containers' rows are left alone, as before.
+- `Settings.gd`: `BASE_MASS`, `getBaseMass` / `setBaseMass`, `getExtraMass` / `setExtraMass` and `extraMassIn`
+  removed; `EXTRA_MASS` renamed `MIN_MASS`, with a new `setMinMass`; `getMinMass` gives the least mass as stored; new
+  `MINERAL_SWITCH`, `mineralDefault`, `isMineralOn` / `setMineralOn`; `massRule()` gives the least mass of each mineral
+  switched on. `FORMAT_VERSION` bumped: the saved entry holds `minMass` and `mineralOn` for every mineral; format 2's
+  `baseMass` and `extraMass` and format 1's `minMass` are still read, and the first change rewrites the entry.
+- `SettingsUI.gd`: a grid of four columns (switch, name, least mass, worth); `EXTRA_FORMAT`, `TOTAL_FORMAT`,
+  `DESCRIPTION_SUFFIX`, `_baseSlider`, `_totals`, `_showTotals()`, `_showTotal()` and `_onBaseMassChanged()` removed;
+  `_onExtraMassChanged()` renamed `_onMinMassChanged()`; new `GAME_TOOLTIP`, `GAME_GEOLOGIST`, `GEOLOGIST`,
+  `NO_GEOLOGIST`, `MASS_FORMAT`, `VALUE_FORMAT`, `PERCENT_FORMAT`, `_switches`, `_values`, `_geologist`, `_link()`,
+  `_showValues()`, `_showValue()`, `_geologistLine()` and `_onMineralToggled()`. With a gamepad, the D-pad goes down
+  from the switch at the top into the mineral switches, up and down either column, and left and right between a row's
+  switch and its slider's value.
+- `GeologistTab.gd`: `_GEOLOGY_BY_MASS_GAME_DISABLED`, `_GEOLOGY_BY_MASS_HEADER`, `_GEOLOGY_BY_MASS_GAME_HEADER`,
+  `_geologyByMassHidden`, `_geologyByMassPrices()`, `_geologyByMassHeader()` and `_geologyByMassPriceBoxes()` replaced
+  by `_GEOLOGY_BY_MASS_VALUE`, `_GEOLOGY_BY_MASS_BAR`, `_GEOLOGY_BY_MASS_GAME`, `_geologyByMassOverridden`,
+  `_geologyByMassOverride()` and `_geologyByMassControls()`.
+- Texts: `GEOLOGYBYMASS_BASE_MASS` and `GEOLOGYBYMASS_BASE_MASS_DESC` removed; `GEOLOGYBYMASS_EXTRA_MASS` renamed
+  `GEOLOGYBYMASS_MIN_MASS`; new `GEOLOGYBYMASS_MINERAL_SWITCH`, `GEOLOGYBYMASS_GEOLOGIST` and
+  `GEOLOGYBYMASS_NO_GEOLOGIST`; `GEOLOGYBYMASS_ENABLED` and `GEOLOGYBYMASS_HINT` reworded.
+- README: the mineral switches, the least masses and their worth, the line on the geologist, the disabled controls,
+  the members; the *Warning* names the NT Mining Companion's row too.
+
 ## 1.4.0
 - With a gamepad, the D-pad goes down from the switch at the top of the mod's OMS tab through the *Base* slider and
   each mineral's, and back up, and no longer leaves the tab (`SettingsUI.gd` `_linkFocus()`).

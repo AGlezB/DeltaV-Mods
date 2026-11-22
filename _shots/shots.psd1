@@ -118,18 +118,19 @@
 		)
 	}
 	# The mod's OMS tab (GBM), in a dive (J opens the OMS), with an example set where it is stored (Settings.gd: the
-	# HUD's mineralConfig, under the mod's id): the switch on, a base of 200 kg, and extra masses growing by 200 kg from
-	# the dearest mineral to the cheapest by the game's base prices (CurrentGame.mineralPrices: Be, W, V, Pt, Pd, Fe,
-	# H2O). Then the Geologist tab's rows, in both runs: with the switch on, their Minimum values and that column's title
-	# are hidden (the fixture's ship has only the HUD's row).
+	# HUD's mineralConfig, under the mod's id): the switch on, H2O switched on too (the other minerals' switches at their
+	# defaults, on), and least masses growing by 200 kg from the dearest mineral to the cheapest by the game's base prices
+	# (CurrentGame.mineralPrices: Be, W, V, Pt, Pd, Fe, H2O). The crop takes in the line on the geologist at the bottom
+	# (the fixture's hire). Then the Geologist tab's rows, in both runs: with the switch on, their mineral switches and
+	# Minimum values are disabled and dimmed (the fixture's ship has only the HUD's row).
 	GeologyByMass = @{
 		Steps = @(
 			'load', 'wait|10'
 			'dive', 'wait|5'
 			'action|jury_rig', 'wait|2'
-			'with:set|ship:Hud|mineralConfig/AGlezB.GeologyByMass|{"enabled": true, "baseMass": 200, "extraMass": {"Be": 200, "W": 400, "V": 600, "Pt": 800, "Pd": 1000, "Fe": 1200, "H2O": 1400}}'
+			'with:set|ship:Hud|mineralConfig/AGlezB.GeologyByMass|{"enabled": true, "minMass": {"Be": 200, "W": 400, "V": 600, "Pt": 800, "Pd": 1000, "Fe": 1200, "H2O": 1400}, "mineralOn": {"H2O": true}}'
 			'with:tab|{oms}|GEOLOGYBYMASS_TAB', 'wait|2'
-			'with:shot|settings|320,2,965,425'
+			'with:shot|settings|320,2,965,500'
 			'tab|{oms}|CREW_OCCUPATION_GEOLOGIST', 'wait|2'
 			'shot|geologist|320,2,965,105'
 		)

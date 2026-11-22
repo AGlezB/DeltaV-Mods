@@ -261,15 +261,25 @@ func translateLevel(lvl: float, translation):
 		lvl -= step
 	return translation[min(nr, translation.size()) - 1]
 
-# The crew stats CrewBio.gd compares an entry's with (its showStats): nobody's, and no derived stats.
+# The crew stats CrewBio.gd compares an entry's with (its showStats): nobody's.
 func makeEmptyStats():
 	var stats = {"active": 0, "salary": 0}
 	for o in occupations:
 		stats[o] = {"experience": 0, "talent": 0}
 	return stats
 
+# As the game's for the one stat a mod reads, the geologist's Price prediction accuracy (GeologyByMass's line on the
+# geologist aboard); the others aren't derived.
 func deriveStats(stats):
+	stats.CREW_STATS_GEOLOGIST_PREDICTION = clamp(0.1 * (1 - stats.CREW_OCCUPATION_GEOLOGIST.talent) + 0.9 * (stats.CREW_OCCUPATION_GEOLOGIST.talent), 0, 1)
 	return stats
+
+# As the game's: in the dive crew (`active`), and not on leave.
+func isCrewMemberActive(member: Dictionary) -> bool:
+	if not member.get("active", false):
+		return false
+	var leave = member.get("leave", 0) - getInGameTimestamp()
+	return not (leave > 0)
 
 func getCrewStats(_includeInactive = false, _butNotOnLeave = false, _includeMorale = true):
 	return makeEmptyStats()

@@ -13,12 +13,13 @@ extends "res://ships/ship-ctrl.gd"
 # value and it holds a mineral switched on in the row; a chunk not yet identified, when its LIDAR return reaches the
 # row's albedo (GAME.md, Geologist).
 #
-# With the switch on, for the player's ship, an identified chunk passes a row when it holds, of some mineral switched
-# on in that row, at least the base mass plus that mineral's extra mass (Settings.gd massRule); its value and the row's
-# Minimum value no longer count. One set of masses serves every row. The masses are the info box's
-# own (MineralMark.gd scanParent, with the geologist's error), which the box stores in the ship's identifiedObjects
-# (identifyMinerals / identifyValue -> ship-ctrl.gd addIdentifiedObject). A chunk not yet identified, the switch off,
-# a row without mineral targeting or another ship: the game decides.
+# With the switch on, for the player's ship, an identified chunk passes every row when it holds, of some mineral
+# switched on in the mod's tab, at least that mineral's least mass (Settings.gd massRule); the row's own mineral
+# switches, its Minimum value and the chunk's value no longer count (GeologistTab.gd disables those controls meanwhile).
+# One set of switches and masses serves every row, so the HUD's row too counts Water when the mod's switch for it is on.
+# The masses are the info box's own (MineralMark.gd scanParent, with the geologist's error), which the box stores in the
+# ship's identifiedObjects (identifyMinerals / identifyValue -> ship-ctrl.gd addIdentifiedObject). A chunk not yet
+# identified, the switch off, a row without mineral targeting or another ship: the game decides.
 #
 # Stacking: the parent's _ready etc. are never called (Godot runs every level by itself); isValidMineralTarget falls
 # through to the parent with `.isValidMineralTarget()`; new members start with `_`.
@@ -33,13 +34,12 @@ func isValidMineralTarget(object: RigidBody2D, config: Dictionary) -> bool:
 	var identified = identifiedObjects.get(hash(object))
 	if identified == null or not identified[0] is Dictionary:
 		return .isValidMineralTarget(object, config)
-	var settings = _geologyByMass()
-	var rule = settings.massRule()
+	var rule = _geologyByMass().massRule()
 	if rule == null:
 		return .isValidMineralTarget(object, config)
 	var masses = identified[0]
-	for mineral in config.minerals:
-		if mineral in masses and masses[mineral] >= rule.base + settings.extraMassIn(rule, mineral):
+	for mineral in rule:
+		if mineral in masses and masses[mineral] >= rule[mineral]:
 			return true
 	return false
 

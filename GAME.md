@@ -117,6 +117,22 @@ presses, B and Start close a screen (`ui_cancel`, `pause`), LB and RB switch tab
 mouse does.
 
 ## Crew stats
+
+Each occupation's two stats, one from talent (shown as Education, `CREW_EDUCATION`) and one from experience
+(`CREW_EXPERIENCE`), as `CurrentGame.skillMatrix` pairs them:
+
+| Occupation | From Education (talent) | From Experience |
+|---|---|---|
+| Pilot | Adrenal slowdown (`CREW_STATS_PILOT_ADRENALINE`) | Course anticipation (`CREW_STATS_PILOT_ANTICIPATION`) |
+| Mechanic | Jury-rig efficiency (`CREW_STATS_MECHANIC_JURYRIG`) | Repair limit (`CREW_STATS_MECHANIC_FIX`) |
+| Geologist | Price prediction accuracy (`CREW_STATS_GEOLOGIST_PREDICTION`), also the info boxes' estimation error | Mineral discovery range (`CREW_STATS_GEOLOGIST_RANGE`) |
+| Astrogator | Tactical awareness range (`CREW_STATS_ASTROGATOR_RANGE`) | Coordinate tracking time (`CREW_STATS_ASTROGATOR_TIME`) |
+
+A crew entry shows each of the two as one of four levels, by quarters of its value from 0 to 1 (`translateLevel`,
+`talentLevels`, `experienceLevels`): below 0.25 Self-taught / No experience, below 0.5 Basic / Beginner, below 0.75
+High / Journeyman, else Master / Expert (`CREW_EDUCATION_NO`, `_BASIC`, `_HIGH`, `_MASTER`; `CREW_EXPERIENCE_NO`,
+`_BEGINNER`, `_JOURNEYMAN`, `_EXPERT`). The levels go by the member's own value, morale left out.
+
 - The crew's value for an occupation is the best among the dive crew in it, not counting those on leave, raised by
   that member's good morale and lowered by bad (see *Morale*; `CurrentGame.getCrewStats`).
 - Each occupation's talent and experience give one stat each, shown on Your Crew (`deriveStats`, `skillMatrix`).

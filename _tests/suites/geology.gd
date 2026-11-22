@@ -2,18 +2,20 @@ extends "res://harness/suite.gd"
 
 # GeologyByMass: with the switch on its OMS tab on, the player's ship judges an identified chunk, for every row of the
 # Geologist tab (the HUD's for the info boxes, an arm's, a drone plant's), by the mass of each mineral switched on in
-# that row, against the base mass plus that mineral's extra mass, instead of by its value (ships/ship-ctrl.gd
-# isValidMineralTarget, which every system asks with its own row); the settings live in the HUD's mineralConfig (the
-# ship's "hud.config"), next to the Geologist tab's own, and a format-1 entry (1.0.0's minMass) still loads; the tab
-# comes right after the Geologist tab, with a row for every mineral of the market, H2O too. The rule runs on ships of
-# the game's ship-ctrl.gd (with the mod, its extension), out of the tree, compared with the same ship on the game's
-# script where the game decides. The tab runs on HUDs from harness/geology_hud.tscn (the game's Hud.gd, with an
-# Inventory placeholder of harness/geology_oms.tscn: the game's OMS.gd and TabsWithGamepadControl.gd, and the OMS's
-# four role tabs) on harness/geology_ship.gd, whose isValidMineralTarget records each call in place of the game's
-# rule. While the switch is on, the Geologist tab (the game's hud/SystemMineralList.gd, with the mod its extension,
-# added to that OMS's Geologist tab) hides its rows' Minimum values and that column's title. The mod's settings
-# descriptions and constants are read from the mod, so any value of them passes. The control checks run on the game's
-# own Hud.gd, ship-ctrl.gd and SystemMineralList.gd.
+# the mod's tab, against that mineral's least mass, instead of by its value and the row's own mineral switches
+# (ships/ship-ctrl.gd isValidMineralTarget, which every system asks with its own row); the settings live in the HUD's
+# mineralConfig (the ship's "hud.config"), next to the Geologist tab's own, and the entries of the earlier formats
+# (1.0.0's minMass, 1.1.0's base and extra masses) still load; the tab comes right after the Geologist tab, with a row
+# for every mineral of the market, H2O too: its switch, its name, its least mass and what that is worth at the day's
+# price, and at the bottom a line on the geologist aboard. The rule runs on ships of the game's ship-ctrl.gd (with the
+# mod, its extension), out of the tree, compared with the same ship on the game's script where the game decides. The
+# tab runs on HUDs from harness/geology_hud.tscn (the game's Hud.gd, with an Inventory placeholder of
+# harness/geology_oms.tscn: the game's OMS.gd and TabsWithGamepadControl.gd, and the OMS's four role tabs) on
+# harness/geology_ship.gd, whose isValidMineralTarget records each call in place of the game's rule. While the switch
+# is on, the Geologist tab (the game's hud/SystemMineralList.gd, with the mod its extension, added to that OMS's
+# Geologist tab) disables and dims the mineral switches and the Minimum values of the rows the mod judges. The mod's
+# settings descriptions and constants are read from the mod, so any value of them passes. The control checks run on
+# the game's own Hud.gd, ship-ctrl.gd and SystemMineralList.gd.
 
 const MOD = "GeologyByMass"
 const SETTINGS = "res://GeologyByMass/Settings.gd"
@@ -25,6 +27,9 @@ const GEOLOGIST_LIST = "res://hud/SystemMineralList.gd"
 const TABS = "MarginContainer/VBoxContainer/TabHintContainer/TabContainer"
 const GEOLOGIST = "CREW_OCCUPATION_GEOLOGIST"
 const ROLE_TABS = ["CREW_OCCUPATION_MECHANIC", "CREW_OCCUPATION_ASTROGATOR", "CREW_OCCUPATION_GEOLOGIST", "CREW_OCCUPATION_PILOT"]
+# A Minimum value control's value, the button that opens its bar, and the bar (hud/components/PriceLabel.tscn).
+const PRICE_VALUE = "Box/MarginContainer/Label"
+const PRICE_BAR = "Box/HSlider"
 
 var _bodies = []
 var _ships = []
@@ -52,8 +57,8 @@ func idle(count = 2):
 		yield(get_tree(), "idle_frame")
 
 # A press and release of a gamepad button (JOY_*), as Input delivers a player's: the actions it is bound to follow
-# (Godot's defaults: the D-pad moves the focus), then the focused control gets it. Input hands parsed events on at the
-# next frame, so this waits for it.
+# (Godot's defaults: the D-pad moves the focus, button 0 is ui_accept), then the focused control gets it. Input hands
+# parsed events on at the next frame, so this waits for it.
 func tapJoy(button):
 	yield(get_tree(), "idle_frame")
 	for pressed in [true, false]:
@@ -159,6 +164,40 @@ func controls(list, method) -> Dictionary:
 				found[connection.binds[0]] = c
 	return found
 
+# The list's mineral switches, a list by the system of their row, as SystemMineralList.gd updateSystems connects them
+# (toggled -> toggle); rows being freed left out.
+func mineralSwitches(list) -> Dictionary:
+	var found = {}
+	for c in list.get_children():
+		if c.is_queued_for_deletion() or not c.has_signal("toggled"):
+			continue
+		for connection in c.get_signal_connection_list("toggled"):
+			if connection.target == list and connection.method == "toggle":
+				if not found.has(connection.binds[0]):
+					found[connection.binds[0]] = []
+				found[connection.binds[0]].append(c)
+	return found
+
+# How the list's rows look and answer: for each mineral switch its state, `disabled` and `modulate`; for each Minimum
+# value and Minimum Albedo control whether it shows, its value, whether its button opens its bar (`disabled`), whether
+# its bar can be dragged (`editable`) and its `modulate`. By control, so two looks of the same rows compare with same().
+func look(list) -> Dictionary:
+	var state = {}
+	for switches in mineralSwitches(list).values():
+		for s in switches:
+			state[s] = [s.pressed, s.disabled, s.modulate]
+	for method in ["value", "albedo"]:
+		for c in controls(list, method).values():
+			state[c] = [shown(c), c.value, c.get_node(PRICE_VALUE).disabled, c.get_node(PRICE_BAR).editable, c.modulate]
+	return state
+
+# The part of `state` (a look) for `nodes`.
+func lookOf(state, nodes) -> Dictionary:
+	var part = {}
+	for n in nodes:
+		part[n] = state[n]
+	return part
+
 # The Minimum value column's title: the last cell of the list's first row (SystemMineralList.gd updateSystems); rows
 # being freed left out.
 func header(list):
@@ -171,22 +210,6 @@ func header(list):
 # Whether a Minimum value control shows its slider and its value (PriceLabel.gd: disabled hides both).
 func shown(control) -> bool:
 	return control.box.visible and control.label.visible
-
-# Whether no control of the list has a focus neighbour on a hidden Minimum value (SystemMineralList.gd adjustFocus).
-func focusSkipsHidden(list) -> bool:
-	var hidden = []
-	for c in controls(list, "value").values():
-		if not shown(c):
-			hidden.append(c.label.get_path())
-	for c in list.get_children():
-		if c.is_queued_for_deletion():
-			continue
-		var n = c.label if "label" in c and c.label else c
-		if n is Control:
-			for side in ["focus_neighbour_left", "focus_neighbour_right", "focus_neighbour_top", "focus_neighbour_bottom"]:
-				if hidden.has(n.get(side)):
-					return false
-	return true
 
 # The game's own answer for `body` on `ship`, with `config`.
 func gameAnswer(ship, body, config) -> bool:
@@ -206,9 +229,51 @@ func inside(desc) -> float:
 		at = desc.min + desc.step
 	return float(at)
 
-# What the tab shows after a mineral's slider: its least mass, base plus extra.
-func totalText(tab, unit, kg) -> String:
-	return (tab.TOTAL_FORMAT + unit) % CurrentGame.formatThousands(kg)
+# What the tab shows after a mineral's slider: what `kg` of it is worth at the day's price.
+func worthText(tab, mineral, kg) -> String:
+	return tab.VALUE_FORMAT % CurrentGame.formatThousands(kg * CurrentGame.getMineralMarketPricePerKg(mineral))
+
+# The line the tab should show for a best geologist of `talent`: the Education level the game shows for it, and the most
+# error the game's estimates have at that level, rounded to a whole %, found by trying talents across the level (the
+# error of the boxes' masses is within ±(1 - CREW_STATS_GEOLOGIST_PREDICTION), hud/MineralMark.gd).
+func geologistText(tab, talent) -> String:
+	var levels = CurrentGame.talentLevels
+	var level = CurrentGame.translateLevel(talent, levels)
+	var most = 0.0
+	for i in 101:
+		var t = i / 100.0
+		if CurrentGame.translateLevel(t, levels) == level:
+			var stats = CurrentGame.makeEmptyStats()
+			stats[GEOLOGIST].talent = t
+			most = max(most, 1.0 - CurrentGame.deriveStats(stats).CREW_STATS_GEOLOGIST_PREDICTION)
+	return tr(tab.GEOLOGIST) % [tr(level), tab.PERCENT_FORMAT % int(round(most * 100))]
+
+# A crew member for CurrentGame.state.crew: `aboard`, in the dive crew (CurrentGame.isCrewMemberActive), unless on leave.
+func member(occupation, talent, aboard = true, onLeave = false) -> Dictionary:
+	var m = {"occupation": occupation, "talent": talent, "experience": 0.5, "active": aboard}
+	if onLeave:
+		m.leave = CurrentGame.getInGameTimestamp() + 24 * 3600
+	return m
+
+# The game's tooltip node (menu/sfx/PlaySoundsOnTheseButtons.gd) among `node`'s children, or null.
+func tooltipNode(node):
+	for c in node.get_children():
+		if c.has_method("connectSounds"):
+			return c
+	return null
+
+# The tooltip `node` carries: its own, or once `tips` (a tooltip node) has taken it in, what it keeps for the node.
+func tipOf(node, tips) -> String:
+	if node.hint_tooltip != "":
+		return node.hint_tooltip
+	return tips.tooltips.get(node, "") if tips != null else ""
+
+# Shows the tab again (another tab first), as the player does, which refreshes what it shows.
+func reopen(tabs, index):
+	tabs.current_tab = 0
+	yield(idle(), "completed")
+	tabs.current_tab = index
+	yield(idle(), "completed")
 
 func run():
 	var mod = hasMod(MOD)
@@ -242,12 +307,9 @@ func run():
 
 	var model = load(SETTINGS)
 	var enabledDesc = model.ENABLED
-	var base = model.BASE_MASS
-	var extra = model.EXTRA_MASS
-	var b = inside(base) # a base and an extra mass inside their ranges
-	var e = inside(extra)
-	var k = b + e # the least mass they give
-	var most = base.max + extra.max + 1 # above any least mass
+	var mass = model.MIN_MASS
+	var k = inside(mass) # a least mass inside the range, above its minimum
+	var most = mass.max + 1 # above any least mass
 	var settings = hud._geologyByMass()
 	var modId = settings.modId()
 	var tabName = hud._GEOLOGY_BY_MASS_TAB
@@ -259,13 +321,13 @@ func run():
 	var index = names(tabs).find(tabName)
 	# get_tab_title gives the node's name; the TabContainer draws it through tr(), as it draws the role tabs' keys.
 	check("its title is its key, which has a translation", index != -1 and tabs.get_tab_title(index) == tabName and tr(tabName) != tabName, tabs.get_tab_title(index) if index != -1 else "")
-	var shown = []
+	var showing = []
 	for c in tabs.get_children():
-		shown.append(c.visible)
-	var expectShown = []
+		showing.append(c.visible)
+	var expectVisible = []
 	for i in tabs.get_child_count():
-		expectShown.append(i == tabs.current_tab)
-	check("only the current tab shows", shown == expectShown, shown)
+		expectVisible.append(i == tabs.current_tab)
+	check("only the current tab shows", showing == expectVisible, showing)
 	ship.emit_signal("instance")
 	hud.instance()
 	yield(idle(), "completed")
@@ -279,42 +341,43 @@ func run():
 	var grid = tab._grid
 	check("the switch is the Geologist tab's (MineralSystemToggle), and shows the stored state", toggle is CheckButton and toggle.get_script().resource_path == "res://hud/components/MineralSystemToggle.gd" and toggle.pressed == settings.isEnabled())
 	var kids = grid.get_children()
-	var baseName = kids[0]
-	var baseSlider = kids[1]
-	var baseBar = baseSlider.get_node("Box/HSlider")
-	var baseEmpty = kids[2]
-	check("the base row comes first: its name is its key, which has a translation, in the Geologist tab's names (MineralLabel), taking no focus; nothing in the third column", grid.columns == 3 and baseName.get_script().resource_path == "res://hud/components/MineralLabel.gd" and baseName.text == base.label and tr(base.label) != base.label and baseName.focus_mode == Control.FOCUS_NONE and baseSlider == tab._baseSlider and baseEmpty.get_class() == "Control" and baseEmpty.get_child_count() == 0)
-	check("the base slider is the Minimum value control with BASE_MASS's range, step, unit and tooltip, and shows the stored base", baseSlider.get_script().resource_path == "res://hud/components/PriceLabel.gd" and baseBar.min_value == base.min and baseBar.max_value == base.max and baseBar.step == base.step and baseBar.hint_tooltip == base.label + "_DESC" and tr(baseBar.hint_tooltip) != baseBar.hint_tooltip and baseSlider.format == "%s " + base.unit and baseSlider.value == settings.getBaseMass() and baseSlider.label.text == baseSlider.format % CurrentGame.formatThousands(baseSlider.value), baseSlider.label.text)
 	var minerals = []
-	var totals = {}
+	var switchesOk = true
 	var colours = true
 	var ranges = true
 	var values = true
-	for i in range(3, kids.size() - 2, 3):
-		var label = kids[i]
-		var slider = kids[i + 1]
-		var total = kids[i + 2]
-		minerals.append(label.mineral)
-		totals[label.mineral] = total
-		colours = colours and label.modulate == CurrentGame.specificMineralColors.get(label.mineral, Color.white) and label.focus_mode == Control.FOCUS_NONE
-		var bar = slider.get_node("Box/HSlider")
-		ranges = ranges and slider.get_script().resource_path == "res://hud/components/PriceLabel.gd" and bar.min_value == extra.min and bar.max_value == extra.max and bar.step == extra.step and bar.hint_tooltip == extra.label and slider.format == tab.EXTRA_FORMAT + extra.unit
-		values = values and slider.value == settings.getExtraMass(label.mineral) and slider.label.text == slider.format % CurrentGame.formatThousands(slider.value) and total is Label and total.text == totalText(tab, extra.unit, settings.getMinMass(label.mineral))
-	check("then one row per mineral of the market, H2O too, in the order of the Geologist tab's columns", minerals == CurrentGame.mineralPrices.keys() and minerals == settings.minerals() and minerals.has("H2O") and kids.size() == 3 * (minerals.size() + 1), minerals)
-	check("each name is the Geologist tab's, in the mineral's colour, and takes no focus", colours)
-	check("each mineral's slider is the Minimum value control with EXTRA_MASS's range, step and tooltip, and the extra mass as EXTRA_FORMAT", ranges)
+	for i in range(0, kids.size() - 3, 4):
+		var mineralSwitch = kids[i]
+		var label = kids[i + 1]
+		var slider = kids[i + 2]
+		var worth = kids[i + 3]
+		var m = label.mineral
+		minerals.append(m)
+		switchesOk = switchesOk and mineralSwitch is CheckButton and mineralSwitch.get_script().resource_path == "res://hud/components/MineralSystemToggle.gd" and mineralSwitch == tab._switches.get(m) and mineralSwitch.pressed == settings.isMineralOn(m)
+		colours = colours and label.get_script().resource_path == "res://hud/components/MineralLabel.gd" and label.modulate == CurrentGame.specificMineralColors.get(m, Color.white) and label.focus_mode == Control.FOCUS_NONE
+		var bar = slider.get_node(PRICE_BAR)
+		ranges = ranges and slider.get_script().resource_path == "res://hud/components/PriceLabel.gd" and slider == tab._sliders.get(m) and bar.min_value == mass.min and bar.max_value == mass.max and bar.step == mass.step and bar.hint_tooltip == mass.label and slider.label.hint_tooltip == mass.label and slider.format == tab.MASS_FORMAT + mass.unit
+		values = values and slider.value == settings.getMinMass(m) and slider.label.text == slider.format % CurrentGame.formatThousands(slider.value) and worth is Label and worth == tab._values.get(m) and worth.text == worthText(tab, m, settings.getMinMass(m))
+	check("a grid of four columns, one row per mineral of the market, H2O too, in the order of the Geologist tab's columns", grid.columns == 4 and minerals == CurrentGame.mineralPrices.keys() and minerals == settings.minerals() and minerals.has("H2O") and kids.size() == 4 * minerals.size(), minerals)
+	check("each row starts with a switch, the Geologist tab's (MineralSystemToggle), showing the mineral's stored state", switchesOk)
+	var gameDefaults = true
+	for m in minerals:
+		gameDefaults = gameDefaults and tab._switches[m].pressed == CurrentGame.traceMinerals.has(m)
+	check("the mineral switches start as the game's own for a new row: every trace mineral on, H2O off", gameDefaults and not tab._switches["H2O"].pressed)
+	check("then its name, the Geologist tab's, in the mineral's colour, taking no focus", colours)
+	check("then its slider, the Minimum value control with MIN_MASS's range, step, unit and tooltip, the mass as MASS_FORMAT", ranges)
 	var widths = []
 	var wide = true
-	for i in range(1, kids.size(), 3):
-		var bar = kids[i].get_node("Box/HSlider")
+	for i in range(2, kids.size(), 4):
+		var bar = kids[i].get_node(PRICE_BAR)
 		widths.append(bar.rect_size.x)
 		wide = wide and bar.rect_min_size.x == tab.SLIDER_WIDTH and bar.rect_size.x == tab.SLIDER_WIDTH
-	check("each bar, the base's too, is the tab's SLIDER_WIDTH wide, once laid out", wide and widths.size() == minerals.size() + 1, widths)
+	check("each bar is the tab's SLIDER_WIDTH wide, once laid out", wide and widths.size() == minerals.size(), widths)
 	var header = toggle.get_parent()
 	var title = header.get_child(header.get_child_count() - 1)
 	var gap = title.rect_position.x - (toggle.rect_position.x + toggle.rect_size.x)
 	check("the switch's label stands the tab's TOGGLE_SPACING after it, once laid out", header is HBoxContainer and title is Label and title != toggle and gap == tab.TOGGLE_SPACING, gap)
-	check("each mineral's slider shows its stored extra mass, and its total the base plus that", values)
+	check("each slider shows its stored mass, and after it what that mass is worth at the day's price, as VALUE_FORMAT", values)
 	check("the rows are dimmed while the switch is off, and not while it is on", (grid.modulate == Color.white) == settings.isEnabled() and (settings.isEnabled() or grid.modulate.a < 1.0), grid.modulate)
 
 	var before = settings.isEnabled()
@@ -323,20 +386,26 @@ func run():
 	toggle.pressed = true
 	check("switched on, the rows are not dimmed", grid.modulate == Color.white, grid.modulate)
 	toggle.pressed = false
-	check("switched off, the rows are dimmed, the base row too", grid.modulate.a < 1.0 and baseSlider.get_parent() == grid, grid.modulate)
+	check("switched off, the rows are dimmed", grid.modulate.a < 1.0, grid.modulate)
+	tab._switches["H2O"].pressed = true
+	check("pressing a mineral's switch stores it", settings.isMineralOn("H2O") and hud.mineralConfig[modId].get("mineralOn", {}).get("H2O") == true, hud.mineralConfig[modId])
+	tab._switches["H2O"].pressed = false
+	check("and pressing it again stores that", not settings.isMineralOn("H2O") and hud.mineralConfig[modId].mineralOn.H2O == false)
 	var first = minerals[0]
-	var firstSlider = kids[4]
-	firstSlider.get_node("Box/HSlider").value = e
-	check("moving a mineral's slider stores its extra mass", settings.getExtraMass(first) == e and hud.mineralConfig[modId].extraMass.get(first) == e, settings.getExtraMass(first))
-	check("and shows it with a plus, in the mod's unit, and its total", firstSlider.label.text == "+%s %s" % [CurrentGame.formatThousands(e), extra.unit] and totals[first].text == totalText(tab, extra.unit, base.default + e), [firstSlider.label.text, totals[first].text])
-	baseBar.value = b
-	var all = true
-	for m in totals:
-		all = all and totals[m].text == totalText(tab, extra.unit, b + settings.getExtraMass(m))
-	check("moving the base slider stores it, and every total follows", settings.getBaseMass() == b and hud.mineralConfig[modId].baseMass == b and all and totals[first].text == totalText(tab, extra.unit, k), totals[first].text)
-	check("the base slider shows the mass in the mod's unit", baseSlider.label.text == "%s %s" % [CurrentGame.formatThousands(b), base.unit], baseSlider.label.text)
-	firstSlider.get_node("Box/HSlider").value = extra.default
-	baseBar.value = base.default
+	var firstSlider = tab._sliders[first]
+	firstSlider.get_node(PRICE_BAR).value = k
+	check("moving a slider stores its mineral's mass", settings.getMinMass(first) == k and hud.mineralConfig[modId].get("minMass", {}).get(first) == k, settings.getMinMass(first))
+	check("and shows it in the mod's unit, and what it is worth after it", firstSlider.label.text == "%s %s" % [CurrentGame.formatThousands(k), mass.unit] and tab._values[first].text == worthText(tab, first, k), [firstSlider.label.text, tab._values[first].text])
+	var price = CurrentGame.mineralPrices[first]
+	var cheapText = tab._values[first].text
+	CurrentGame.mineralPrices[first] = price * 3
+	yield(reopen(tabs, index), "completed")
+	var dearText = worthText(tab, first, k)
+	var shownText = tab._values[first].text
+	CurrentGame.mineralPrices[first] = price
+	yield(reopen(tabs, index), "completed")
+	check("each time the tab shows, the worth follows the day's price", shownText == dearText and dearText != cheapText and tab._values[first].text == cheapText, [cheapText, shownText, dearText])
+	firstSlider.get_node(PRICE_BAR).value = mass.default
 
 	tabs.current_tab = 0
 	tabs.get_node("CREW_OCCUPATION_MECHANIC/Fix").grab_focus()
@@ -345,41 +414,92 @@ func run():
 	yield(idle(), "completed")
 	check("choosing the tab focuses its switch", tabs.get_focus_owner() == toggle, tabs.get_focus_owner())
 
-	# With a gamepad: the D-pad goes down from the switch through the base slider's value and each mineral's to the last,
-	# and back up, and stays in the tab at either end and to the sides; each value carries its slider's description,
-	# which the slider's own tooltip node shows when it gets the focus.
-	var chain = [toggle]
+	# The line at the bottom, on the geologist aboard: who counts is the dive crew (CurrentGame.isCrewMemberActive)
+	var warning = tr(tab.NO_GEOLOGIST)
+	CurrentGame.state.crew = {}
+	yield(reopen(tabs, index), "completed")
+	check("no crew: the line warns that there is no Geologist on board", tab._geologist.text == warning and warning != tab.NO_GEOLOGIST and tab._geologist.get_parent() == grid.get_parent() and tab._geologist.get_index() > grid.get_index(), tab._geologist.text)
+	var nobody = []
+	for crew in [{"P": member("CREW_OCCUPATION_PILOT", 1.0)}, {"G": member(GEOLOGIST, 1.0, false)}, {"G": member(GEOLOGIST, 1.0, true, true)}]:
+		CurrentGame.state.crew = crew
+		nobody.append(tab._geologistLine())
+	check("no Geologist in the dive crew: the warning, with only a Pilot, a Geologist not aboard or one on leave", nobody == [warning, warning, warning], nobody)
+	var lines = []
+	var expectLines = []
+	for talent in [0.0, 0.2, 0.25, 0.4, 0.6, 0.74, 0.8, 1.0]:
+		CurrentGame.state.crew = {"G": member(GEOLOGIST, talent)}
+		lines.append(tab._geologistLine())
+		expectLines.append(geologistText(tab, talent))
+	var levelsSeen = []
+	for talent in [0.0, 0.25, 0.5, 0.75]:
+		var line = geologistText(tab, talent)
+		if not levelsSeen.has(line):
+			levelsSeen.append(line)
+	check("a Geologist aboard: their Education, as the game shows it, and the most error the game's estimates have at that level", lines == expectLines and levelsSeen.size() == CurrentGame.talentLevels.size(), lines)
+	CurrentGame.state.crew = {"A": member(GEOLOGIST, 0.3), "B": member(GEOLOGIST, 0.99, false), "C": member("CREW_OCCUPATION_PILOT", 0.99), "D": member(GEOLOGIST, 0.6), "E": member(GEOLOGIST, 0.95, true, true)}
+	var best = tab._geologistLine()
+	check("several: the best Geologist in the dive crew", best == geologistText(tab, 0.6) and best != geologistText(tab, 0.3) and best != geologistText(tab, 0.99), best)
+	yield(reopen(tabs, index), "completed")
+	check("the line follows the crew each time the tab shows", tab._geologist.text == best, tab._geologist.text)
+	CurrentGame.state.crew = {}
+	yield(reopen(tabs, index), "completed")
+
+	# With a gamepad: down from the switch at the top to the first row's switch, up and down a column (the switches, or
+	# the sliders' values), left and right between a row's switch and its slider's value, and nowhere out of the tab;
+	# each switch and each value carries its description, which its own tooltip node shows when it gets the focus.
+	var switchColumn = []
+	var valueColumn = []
 	var described = true
-	for i in range(1, kids.size(), 3):
-		chain.append(kids[i].label)
-		described = described and kids[i].label.hint_tooltip == (base.label + "_DESC" if i == 1 else extra.label)
-	check("gamepad: each slider's value carries its description, the base's and the minerals'", described)
+	for m in minerals:
+		var mineralSwitch = tab._switches[m]
+		var value = tab._sliders[m].label
+		switchColumn.append(mineralSwitch)
+		valueColumn.append(value)
+		var switchTip = tipOf(mineralSwitch, tooltipNode(mineralSwitch))
+		var valueTip = tipOf(value, tooltipNode(tab._sliders[m].get_node("Box")))
+		described = described and switchTip == model.MINERAL_SWITCH.label and tr(switchTip) != switchTip and valueTip == mass.label and tr(valueTip) != valueTip
+	check("gamepad: each mineral's switch carries its description, taken in by a game's tooltip node of its own, and each slider's value its own", described)
+	var firstTips = tooltipNode(switchColumn[0])
+	switchColumn[0].grab_focus()
+	yield(idle(), "completed")
+	check("gamepad: a mineral's switch shows its description when it gets the focus", firstTips != null and firstTips.tooltipPosition.visible and firstTips.tooltipLabel.text == model.MINERAL_SWITCH.label, firstTips.tooltipLabel.text if firstTips != null else null)
 	var beforeWalk = hud.mineralConfig.get(modId, {}).duplicate(true)
-	var down = []
-	for i in range(1, chain.size()):
+	var lastRow = minerals.size() - 1
+	var walk = []
+	toggle.grab_focus()
+	for button in [JOY_DPAD_UP, JOY_DPAD_LEFT, JOY_DPAD_RIGHT]:
+		yield(tapJoy(button), "completed")
+		walk.append(tabs.get_focus_owner())
+	check("gamepad: up, left and right stay on the switch at the top", walk == [toggle, toggle, toggle], walk)
+	walk = []
+	for i in minerals.size() + 1:
 		yield(tapJoy(JOY_DPAD_DOWN), "completed")
-		down.append(tabs.get_focus_owner())
-	yield(tapJoy(JOY_DPAD_DOWN), "completed")
-	down.append(tabs.get_focus_owner())
-	var last = chain[chain.size() - 1]
-	check("gamepad: down goes from the switch through the base slider's value and each mineral's, and stays on the last", down == chain.slice(1, chain.size() - 1) + [last], down)
-	var sides = []
-	for node in [last, chain[1], toggle]:
-		node.grab_focus()
-		for button in [JOY_DPAD_LEFT, JOY_DPAD_RIGHT]:
+		walk.append(tabs.get_focus_owner())
+	check("gamepad: down goes from it through each mineral's switch, and stays on the last", walk == switchColumn + [switchColumn[lastRow]], walk)
+	walk = []
+	for i in [0, lastRow]:
+		switchColumn[i].grab_focus()
+		for button in [JOY_DPAD_RIGHT, JOY_DPAD_RIGHT, JOY_DPAD_LEFT, JOY_DPAD_LEFT]:
 			yield(tapJoy(button), "completed")
-			sides.append(tabs.get_focus_owner() == node)
-	check("gamepad: left and right stay where they are, on a mineral's value, the base's and the switch", not sides.has(false), sides)
-	last.grab_focus()
-	var up = []
-	for i in range(chain.size() - 1):
-		yield(tapJoy(JOY_DPAD_UP), "completed")
-		up.append(tabs.get_focus_owner())
-	yield(tapJoy(JOY_DPAD_UP), "completed")
-	up.append(tabs.get_focus_owner())
-	var back = chain.slice(0, chain.size() - 2)
-	back.invert()
-	check("gamepad: up goes back to the switch, and stays there", up == back + [toggle], up)
+			walk.append(tabs.get_focus_owner())
+	check("gamepad: right goes from a switch to its row's value and stays there, left back to the switch and stays there", walk == [valueColumn[0], valueColumn[0], switchColumn[0], switchColumn[0], valueColumn[lastRow], valueColumn[lastRow], switchColumn[lastRow], switchColumn[lastRow]], walk)
+	walk = []
+	valueColumn[0].grab_focus()
+	for i in minerals.size():
+		yield(tapJoy(JOY_DPAD_DOWN), "completed")
+		walk.append(tabs.get_focus_owner())
+	check("gamepad: down goes through each slider's value, and stays on the last", walk == valueColumn.slice(1, lastRow) + [valueColumn[lastRow]], walk)
+	var upValues = valueColumn.duplicate()
+	upValues.invert()
+	var upSwitches = switchColumn.duplicate()
+	upSwitches.invert()
+	walk = []
+	for column in [valueColumn, switchColumn]:
+		column[lastRow].grab_focus()
+		for i in minerals.size():
+			yield(tapJoy(JOY_DPAD_UP), "completed")
+			walk.append(tabs.get_focus_owner())
+	check("gamepad: up goes back through either column, and from the first row to the switch at the top", walk == upValues.slice(1, lastRow) + [toggle] + upSwitches.slice(1, lastRow) + [toggle], walk)
 	check("gamepad: walking the tab changes nothing", same(hud.mineralConfig.get(modId, {}), beforeWalk), hud.mineralConfig.get(modId))
 
 	# The HUD: its info boxes ask the ship, with the HUD's row, whatever the switch
@@ -395,48 +515,45 @@ func run():
 	var heavy = chunk(s, {"Be": most}, 1.0)
 	check("switched off, the game decides", asGame(s, heavy, [row(CurrentGame.traceMinerals), row(CurrentGame.traceMinerals, 1e12)], [true, false]))
 	rule.setEnabled(true)
-	rule.setBaseMass(b)
 	for m in rule.minerals():
-		rule.setExtraMass(m, e)
-	check("below a mineral's base plus extra mass: refused", not s.isValidMineralTarget(chunk(s, {"Be": k - 1}), hudRow))
-	check("at a mineral's base plus extra mass: passes", s.isValidMineralTarget(chunk(s, {"Be": k}), hudRow))
-	check("above a mineral's base plus extra mass: passes", s.isValidMineralTarget(chunk(s, {"Be": k + 1}), hudRow))
-	hudRow.minerals.erase("Be")
-	check("a mineral switched off in the row doesn't count, however much there is", not s.isValidMineralTarget(chunk(s, {"Be": most}), hudRow))
-	hudRow.minerals.append("Be")
+		rule.setMinMass(m, k)
+	check("below a mineral's least mass: refused", not s.isValidMineralTarget(chunk(s, {"Be": k - 1}), hudRow))
+	check("at a mineral's least mass: passes", s.isValidMineralTarget(chunk(s, {"Be": k}), hudRow))
+	check("above a mineral's least mass: passes", s.isValidMineralTarget(chunk(s, {"Be": k + 1}), hudRow))
+	check("H2O, switched off on the tab at first: refused however much, even in a row with it switched on", not s.isValidMineralTarget(chunk(s, {"H2O": most}), hudRow) and not s.isValidMineralTarget(chunk(s, {"H2O": most}), row(["H2O"])))
+	rule.setMineralOn("H2O", true)
+	check("H2O switched on on the tab: it counts for the HUD's row too, which can't switch it on", s.isValidMineralTarget(chunk(s, {"H2O": k}), hudRow) and not s.isValidMineralTarget(chunk(s, {"H2O": k - 1}), hudRow) and not hudRow.minerals.has("H2O"))
+	rule.setMineralOn("H2O", false)
+	check("the row's own switches no longer count: a mineral switched on on the tab passes a row without it", s.isValidMineralTarget(chunk(s, {"Fe": k}), row(["Be"])) and s.isValidMineralTarget(chunk(s, {"Fe": k}), row([])))
+	rule.setMineralOn("Be", false)
+	check("a mineral switched off on the tab doesn't count, however much there is, even switched on in the row", not s.isValidMineralTarget(chunk(s, {"Be": most}), hudRow) and hudRow.minerals.has("Be"))
+	rule.setMineralOn("Be", true)
 	check("one of two minerals reaching its mass is enough", s.isValidMineralTarget(chunk(s, {"Be": k - 1, "Fe": k}), hudRow))
 	check("two minerals both below their mass: refused", not s.isValidMineralTarget(chunk(s, {"Be": k - 1, "Fe": k - 1}), hudRow))
-	check("only minerals not switched on: refused", not s.isValidMineralTarget(chunk(s, {"H2O": most}), hudRow))
 	check("no minerals: refused", not s.isValidMineralTarget(chunk(s, {}), hudRow))
 	hudRow.minValue = 1e12
 	var cheap = chunk(s, {"Be": k}, 1.0)
 	check("the Minimum value no longer counts: a cheap chunk with the mass passes, where the game refuses it", s.isValidMineralTarget(cheap, hudRow) and not gameAnswer(s, cheap, hudRow))
 	hudRow.minValue = 0
 	check("the value no longer counts: a rich chunk without the mass is refused", not s.isValidMineralTarget(chunk(s, {"Be": k - 1}, 1e12), hudRow))
-	rule.setExtraMass("Fe", extra.min)
-	check("each mineral's own extra mass counts: Fe without one needs only the base, Be still needs base plus extra", s.isValidMineralTarget(chunk(s, {"Fe": b + extra.min}), hudRow) and not s.isValidMineralTarget(chunk(s, {"Fe": b + extra.min - 1}), hudRow) and not s.isValidMineralTarget(chunk(s, {"Be": k - 1}), hudRow))
+	rule.setMinMass("Fe", mass.min)
+	check("each mineral's own mass counts: Fe at its minimum passes with that, Be still needs its own", s.isValidMineralTarget(chunk(s, {"Fe": float(mass.min)}), hudRow) and not s.isValidMineralTarget(chunk(s, {"Be": k - 1}), hudRow))
 	for m in rule.minerals():
-		rule.setExtraMass(m, extra.min)
-	var alone = true
-	for m in hudRow.minerals:
-		alone = alone and s.isValidMineralTarget(chunk(s, {m: b + extra.min}), hudRow) and not s.isValidMineralTarget(chunk(s, {m: b + extra.min - 1}), hudRow)
-	check("with no extra masses the base alone decides, for every switched-on mineral", alone and not hudRow.minerals.empty())
-	var short = chunk(s, {"Fe": b + extra.min - 1})
-	var under = s.isValidMineralTarget(short, hudRow)
-	rule.setBaseMass(base.min)
-	check("the base moves every mineral's least mass: lowered, a chunk short of it passes", not under and s.isValidMineralTarget(short, hudRow))
-	check("every slider at its minimum: any switched-on mineral passes, as the game with no Minimum value", s.isValidMineralTarget(chunk(s, {"Fe": float(base.min + extra.min)}), hudRow) and not s.isValidMineralTarget(chunk(s, {"H2O": most}), hudRow))
+		rule.setMinMass(m, mass.min)
+	var any = true
+	for m in CurrentGame.traceMinerals:
+		any = any and s.isValidMineralTarget(chunk(s, {m: float(mass.min)}), hudRow)
+	check("every mass at its minimum: any mineral switched on that the chunk holds is enough, a switched-off one never", any and not s.isValidMineralTarget(chunk(s, {"H2O": most}), hudRow))
+	for m in rule.minerals():
+		rule.setMineralOn(m, false)
+	check("every mineral switched off on the tab: no identified chunk passes", not s.isValidMineralTarget(chunk(s, {"Be": most, "Fe": most, "H2O": most}), hudRow))
+	for m in rule.minerals():
+		rule.setMineralOn(m, rule.mineralDefault(m))
+		rule.setMinMass(m, k)
 
-	# An arm's or a drone plant's row: its own switches, H2O among them, its own Minimum value and albedo; the same masses
-	rule.setBaseMass(b)
-	for m in rule.minerals():
-		rule.setExtraMass(m, e)
-	var w = inside(extra) + extra.step if inside(extra) + extra.step <= extra.max else extra.min # an H2O extra other than e
-	rule.setExtraMass("H2O", w)
+	# An arm's or a drone plant's row: its own switches, H2O among them, its own Minimum value and albedo
 	var armRow = row(["H2O", "Be"], 1e12, 50.0)
-	check("a row with H2O switched on: H2O counts, against the base plus its own extra mass", s.isValidMineralTarget(chunk(s, {"H2O": b + w}), armRow) and not s.isValidMineralTarget(chunk(s, {"H2O": b + w - 1}), armRow) and w != e)
-	check("the HUD's row, without H2O, refuses that chunk", not s.isValidMineralTarget(chunk(s, {"H2O": most}), hudRow))
-	check("each row its own switches: Fe counts in the HUD's row, not in a row without it", s.isValidMineralTarget(chunk(s, {"Fe": k}), hudRow) and not s.isValidMineralTarget(chunk(s, {"Fe": most}), armRow))
+	check("a row with H2O switched on: H2O still counts only once switched on on the tab", not s.isValidMineralTarget(chunk(s, {"H2O": most}), armRow))
 	var poor = chunk(s, {"Be": k}, 1.0)
 	check("the row's Minimum value and albedo don't count for an identified chunk with the mass, which the game refuses", s.isValidMineralTarget(poor, armRow) and not gameAnswer(s, poor, armRow))
 	check("a chunk not yet identified: the game decides, by the row's albedo", asGame(s, unidentified(), [row(["H2O", "Be"]), row(["H2O", "Be"], 0.0, 50.0)], [true, false]))
@@ -452,8 +569,8 @@ func run():
 	rule.setEnabled(false)
 	check("switched off again, the game decides the arm's row", asGame(s, poor, [armRow, row(["H2O", "Be"])], [false, true]))
 
-	# The Geologist tab: its rows' Minimum values and that column's title, hidden while the switch is on. The rows: the
-	# HUD itself, an arm and a cargo container's dock, whose Minimum value the game hides.
+	# The Geologist tab: the mineral switches and Minimum values of the rows the mod judges, disabled and dimmed while
+	# the switch is on. The rows: the HUD itself, an arm and a cargo container's dock, whose Minimum value the game hides.
 	settings.setEnabled(false)
 	var list = makeGeologist(tabs)
 	var arm = system(ship, false, 3000.0)
@@ -464,7 +581,9 @@ func run():
 	tabs.current_tab = geologistIndex
 	yield(idle(), "completed")
 	var prices = controls(list, "value")
-	check("switched off, the Geologist tab shows each row's Minimum value as the game: the HUD's and the arm's, not the dock's", prices.size() == 3 and shown(prices[hud]) and shown(prices[arm]) and not shown(prices[dock]))
+	var switches = mineralSwitches(list)
+	var gameLook = look(list)
+	check("switched off, the Geologist tab as the game: the HUD's and the arm's Minimum value shown, not the dock's, and each row's mineral switches", prices.size() == 3 and shown(prices[hud]) and shown(prices[arm]) and not shown(prices[dock]) and switches.size() == 3 and not switches[hud].empty() and not switches[arm].empty() and not switches[dock].empty())
 	var priceTitle = header(list)
 	var priceTitleFocus = priceTitle.focus_mode
 	var listWidth = list.get_combined_minimum_size().x
@@ -475,29 +594,58 @@ func run():
 	var configBefore = JSON.print(ship.shipConfig)
 	tabs.current_tab = geologistIndex
 	yield(idle(), "completed")
-	check("switched on, once the Geologist tab shows: the HUD's and the arm's Minimum value hidden, the dock's still", not shown(prices[hud]) and not shown(prices[arm]) and not shown(prices[dock]))
-	var albedos = controls(list, "albedo")
-	check("the Minimum Albedo controls stay as the game set them: the arm's shown, the HUD's and the dock's hidden", albedos.size() == 3 and shown(albedos[arm]) and not shown(albedos[hud]) and not shown(albedos[dock]))
-	check("the focus skips the hidden Minimum values", focusSkipsHidden(list))
-	check("switched on: the column's title empty, taking no focus, and the column takes no room", priceTitle.text == "" and priceTitle.focus_mode == Control.FOCUS_NONE and list.get_combined_minimum_size().x < listWidth, [priceTitle.text, priceTitle.focus_mode, list.get_combined_minimum_size().x, listWidth])
+	var dim = list.modulateDisabled
+	var off = true
+	for sys in [hud, arm]:
+		for mineralSwitch in switches[sys]:
+			off = off and mineralSwitch.disabled and mineralSwitch.modulate == dim and mineralSwitch.pressed == gameLook[mineralSwitch][0]
+	check("switched on, once the Geologist tab shows: every mineral switch of the HUD's and the arm's rows disabled and dimmed, as the game dims a switch a row can't use, still showing its state", off)
+	var dimmed = true
+	for p in [prices[hud], prices[arm]]:
+		dimmed = dimmed and shown(p) and p.value == gameLook[p][1] and p.get_node(PRICE_VALUE).disabled and not p.get_node(PRICE_BAR).editable and p.modulate == dim
+	check("their Minimum values still shown, with their values, dimmed, the value's button disabled and the bar not draggable", dimmed)
+	var nowLook = look(list)
+	var dockNodes = switches[dock] + [prices[dock]]
+	check("the dock's row as the game set it", same(lookOf(nowLook, dockNodes), lookOf(gameLook, dockNodes)))
+	var albedos = controls(list, "albedo").values()
+	check("the Minimum Albedo controls as the game set them", albedos.size() == 3 and same(lookOf(nowLook, albedos), lookOf(gameLook, albedos)))
+	check("the column's title as the game's, taking focus, and the list as wide", priceTitle.text == "HUD_MIN_PRICE" and priceTitle.focus_mode == priceTitleFocus and list.get_combined_minimum_size().x == listWidth, [priceTitle.text, priceTitle.focus_mode, list.get_combined_minimum_size().x, listWidth])
+	var hudSwitch = switches[hud][0]
+	var armValue = prices[arm].get_node(PRICE_VALUE)
+	var armBar = prices[arm].get_node(PRICE_BAR)
+	hudSwitch.grab_focus()
+	yield(tapJoy(JOY_BUTTON_0), "completed")
+	var switchHeld = tabs.get_focus_owner() == hudSwitch and hudSwitch.pressed == gameLook[hudSwitch][0]
+	armValue.grab_focus()
+	yield(tapJoy(JOY_BUTTON_0), "completed")
+	check("a disabled switch keeps its focus, and A changes nothing; A on a disabled Minimum value doesn't open its bar", switchHeld and tabs.get_focus_owner() == armValue, tabs.get_focus_owner())
 	check("the Geologist tab stores nothing", JSON.print(ship.shipConfig) == configBefore)
 	tabs.current_tab = index
 	yield(idle(), "completed")
 	settings.setEnabled(false)
 	tabs.current_tab = geologistIndex
 	yield(idle(), "completed")
-	check("switched off again: back as the game set them, with their values", shown(prices[hud]) and shown(prices[arm]) and not shown(prices[dock]) and prices[arm].value == arm.getMinValue() and prices[hud].value == hud.getMinValue())
-	check("switched off again: the title back, with the game's focus, and the column's room", priceTitle.text == "HUD_MIN_PRICE" and priceTitle.focus_mode == priceTitleFocus and list.get_combined_minimum_size().x == listWidth, [priceTitle.text, priceTitle.focus_mode, list.get_combined_minimum_size().x, listWidth])
+	check("switched off again: every control back as the game set it, with its value", same(look(list), gameLook) and prices[arm].value == arm.getMinValue() and prices[hud].value == hud.getMinValue())
+	armValue.grab_focus()
+	yield(tapJoy(JOY_BUTTON_0), "completed")
+	var opened = tabs.get_focus_owner() == armBar
+	yield(tapJoy(JOY_BUTTON_0), "completed")
+	check("and A on the arm's Minimum value opens its bar again, as in the game", opened)
 	settings.setEnabled(true)
 	ship.emit_signal("systemsChanged", ship.getSystems())
-	var rebuilt = controls(list, "value")
-	check("rows built anew while it is on: hidden at once", rebuilt.size() == 3 and rebuilt[hud] != prices[hud] and not shown(rebuilt[hud]) and not shown(rebuilt[arm]) and not shown(rebuilt[dock]))
-	var rebuiltTitle = header(list)
-	check("rows built anew while it is on: the new title empty, taking no focus", rebuiltTitle != priceTitle and rebuiltTitle.text == "" and rebuiltTitle.focus_mode == Control.FOCUS_NONE, [rebuiltTitle.text, rebuiltTitle.focus_mode])
+	var rebuiltPrices = controls(list, "value")
+	var rebuiltSwitches = mineralSwitches(list)
+	var atOnce = rebuiltPrices.size() == 3 and rebuiltPrices[hud] != prices[hud] and shown(rebuiltPrices[hud]) and rebuiltPrices[hud].get_node(PRICE_VALUE).disabled and rebuiltPrices[arm].get_node(PRICE_VALUE).disabled and not shown(rebuiltPrices[dock])
+	for sys in [hud, arm]:
+		for mineralSwitch in rebuiltSwitches[sys]:
+			atOnce = atOnce and mineralSwitch.disabled and mineralSwitch.modulate == dim
+	check("rows built anew while it is on: disabled and dimmed at once", atOnce)
 	ship.playerControlled = false
 	yield(idle(), "completed")
-	check("another ship's Geologist tab: as the game", shown(rebuilt[hud]) and shown(rebuilt[arm]) and not shown(rebuilt[dock]))
-	check("another ship's Geologist tab: the title as the game's", rebuiltTitle.text == "HUD_MIN_PRICE" and rebuiltTitle.focus_mode == priceTitleFocus, [rebuiltTitle.text, rebuiltTitle.focus_mode])
+	var asGameAgain = not rebuiltPrices[hud].get_node(PRICE_VALUE).disabled and rebuiltPrices[arm].get_node(PRICE_BAR).editable and rebuiltPrices[arm].modulate != dim
+	for mineralSwitch in rebuiltSwitches[arm]:
+		asGameAgain = asGameAgain and not mineralSwitch.disabled
+	check("another ship's Geologist tab: as the game", asGameAgain)
 	ship.playerControlled = true
 	settings.setEnabled(false)
 
@@ -517,59 +665,71 @@ func run():
 	var hud2 = makeHud(ship2)
 	var s2 = hud2._geologyByMass()
 	var config = hud2.mineralConfig
-	var defaults = s2.isEnabled() == enabledDesc.default and s2.getBaseMass() == float(base.default)
+	var defaults = s2.isEnabled() == enabledDesc.default
 	for m in s2.minerals():
-		defaults = defaults and s2.getExtraMass(m) == float(extra.default) and s2.getMinMass(m) == float(base.default + extra.default)
-	check("a ship without the mod's entry gets the defaults", defaults)
+		defaults = defaults and s2.getMinMass(m) == float(mass.default) and s2.isMineralOn(m) == CurrentGame.traceMinerals.has(m) and s2.mineralDefault(m) == CurrentGame.traceMinerals.has(m)
+	check("a ship without the mod's entry gets the defaults, the switches the game's own for a new row", defaults)
 	s2.setEnabled(enabledDesc.default)
-	s2.setBaseMass(base.default)
-	s2.setExtraMass("Be", extra.default)
+	s2.setMinMass("Be", mass.default)
+	s2.setMineralOn("Be", true)
+	s2.setMineralOn("H2O", false)
 	check("reading, or setting a value already held, stores nothing", not config.has(modId), config.keys())
 	check("the minerals are every one of the market, H2O too, whatever the HUD can switch on (onlyMinerals)", s2.minerals() == CurrentGame.mineralPrices.keys() and hud2.onlyMinerals, s2.minerals())
-	s2.setExtraMass("Be", extra.min - extra.step)
-	var low = s2.getExtraMass("Be")
-	s2.setExtraMass("Be", extra.max + extra.step)
-	var high = s2.getExtraMass("Be")
-	s2.setExtraMass("Be", extra.min + extra.step * 1.4)
-	var between = s2.getExtraMass("Be")
-	s2.setExtraMass("Be", "lots")
-	var text = s2.getExtraMass("Be")
-	check("an extra mass set is clamped to the range, snapped to a step, a non-number gives the default", low == extra.min and high == extra.max and between == extra.min + extra.step and text == float(extra.default), [low, high, between, text])
-	s2.setBaseMass(base.min - base.step)
-	low = s2.getBaseMass()
-	s2.setBaseMass(base.max + base.step)
-	high = s2.getBaseMass()
-	s2.setBaseMass(base.min + base.step * 1.4)
-	between = s2.getBaseMass()
-	s2.setBaseMass("lots")
-	text = s2.getBaseMass()
-	check("the base set is clamped to the range, snapped to a step, a non-number gives the default", low == base.min and high == base.max and between == base.min + base.step and text == float(base.default), [low, high, between, text])
+	s2.setMinMass("Be", mass.min - mass.step)
+	var low = s2.getMinMass("Be")
+	s2.setMinMass("Be", mass.max + mass.step)
+	var high = s2.getMinMass("Be")
+	s2.setMinMass("Be", mass.min + mass.step * 1.4)
+	var between = s2.getMinMass("Be")
+	s2.setMinMass("Be", "lots")
+	var text = s2.getMinMass("Be")
+	check("a mass set is clamped to the range, snapped to a step, a non-number gives the default", low == mass.min and high == mass.max and between == mass.min + mass.step and text == float(mass.default), [low, high, between, text])
 	var game = {"minerals": config.minerals.duplicate(), "minValue": config.minValue, "albedo": config.albedo}
 	s2.setEnabled(not enabledDesc.default)
-	s2.setBaseMass(b)
-	s2.setExtraMass("Be", e)
+	s2.setMinMass("Be", k)
+	s2.setMineralOn("H2O", true)
 	var entry = config.get(modId, {})
-	check("stored under the mod's id, with the format and the mod's version", entry.get("formatVersion") == model.FORMAT_VERSION and entry.get("modVersion") == manifestVersion() and s2.modVersion() == manifestVersion() and entry.get("enabled") == (not enabledDesc.default) and entry.get("baseMass") == b and entry.get("extraMass", {}).get("Be") == e and entry.size() == 5, entry)
+	var everyMineral = entry.get("minMass", {}).keys() == s2.minerals() and entry.get("mineralOn", {}).keys() == s2.minerals()
+	check("stored under the mod's id, with the format and the mod's version, and every mineral's mass and switch", entry.get("formatVersion") == model.FORMAT_VERSION and entry.get("modVersion") == manifestVersion() and s2.modVersion() == manifestVersion() and entry.get("enabled") == (not enabledDesc.default) and entry.get("minMass", {}).get("Be") == k and entry.get("mineralOn", {}).get("H2O") == true and everyMineral and entry.size() == 5, entry)
 	check("the Geologist tab's own settings are untouched", config.minerals == game.minerals and config.minValue == game.minValue and config.albedo == game.albedo and config.size() == 4, config.keys())
 	check("stored in the ship's config itself (hud.config), as the game's are", ship2.getConfig("hud.config") == config and ship2.shipConfig.hud.config.has(modId))
 	var ship3 = makeShip(JSON.parse(JSON.print(ship2.shipConfig)).result)
 	var s3 = makeHud(ship3)._geologyByMass()
-	check("after a save and load (JSON) the values are back", s3.isEnabled() == (not enabledDesc.default) and s3.getBaseMass() == b and s3.getExtraMass("Be") == e and s3.getMinMass("Be") == k, [s3.isEnabled(), s3.getBaseMass(), s3.getExtraMass("Be")])
-	config[modId] = {"enabled": "yes", "baseMass": base.max * 2, "extraMass": {"Be": extra.min - extra.step, "Fe": "lots", "Pd": extra.max * 2, "V": extra.min + extra.step * 2.6}}
-	check("a hand-edited entry is clamped, snapped, and non-values give the defaults", s2.isEnabled() == enabledDesc.default and s2.getBaseMass() == base.max and s2.getExtraMass("Be") == extra.min and s2.getExtraMass("Fe") == float(extra.default) and s2.getExtraMass("Pd") == extra.max and s2.getExtraMass("V") == extra.min + 3 * extra.step, [s2.isEnabled(), s2.getBaseMass(), s2.getExtraMass("Be"), s2.getExtraMass("Fe"), s2.getExtraMass("Pd"), s2.getExtraMass("V")])
-	config[modId] = {"enabled": true, "baseMass": "lots", "extraMass": [1, 2], "minMass": {"Be": e}}
-	check("a base that isn't a number, or extra masses that aren't a dictionary, give the defaults; minMass is read only without extraMass", s2.getBaseMass() == float(base.default) and s2.getExtraMass("Be") == float(extra.default))
+	check("after a save and load (JSON) the values are back", s3.isEnabled() == (not enabledDesc.default) and s3.getMinMass("Be") == k and s3.isMineralOn("H2O") and s3.isMineralOn("Fe"), [s3.isEnabled(), s3.getMinMass("Be"), s3.isMineralOn("H2O")])
+	config[modId] = {"enabled": "yes", "minMass": {"Be": mass.min - mass.step, "Fe": "lots", "Pd": mass.max * 2, "V": mass.min + mass.step * 2.6}, "mineralOn": {"Be": "yes", "H2O": true, "Fe": false}}
+	check("a hand-edited entry is clamped, snapped, and non-values give the defaults", s2.isEnabled() == enabledDesc.default and s2.getMinMass("Be") == mass.min and s2.getMinMass("Fe") == float(mass.default) and s2.getMinMass("Pd") == mass.max and s2.getMinMass("V") == mass.min + 3 * mass.step and s2.isMineralOn("Be") and s2.isMineralOn("H2O") and not s2.isMineralOn("Fe"), [s2.isEnabled(), s2.getMinMass("Be"), s2.getMinMass("Fe"), s2.getMinMass("Pd"), s2.getMinMass("V"), s2.isMineralOn("Be")])
+	config[modId] = {"enabled": true, "minMass": [1, 2], "mineralOn": "all"}
+	var notDictionaries = true
+	for m in s2.minerals():
+		notDictionaries = notDictionaries and s2.getMinMass(m) == float(mass.default) and s2.isMineralOn(m) == s2.mineralDefault(m)
+	check("masses or switches that aren't a dictionary give the defaults", notDictionaries)
 
-	# An entry stored by format 1 (no base; each mineral's least mass in minMass)
-	config[modId] = {"formatVersion": 1, "modVersion": "stored", "enabled": true, "minMass": {"Be": e}}
-	check("a format-1 entry's minMass reads as the extra masses, with the default base", s2.isEnabled() and s2.getBaseMass() == float(base.default) and s2.getExtraMass("Be") == e and s2.getMinMass("Be") == base.default + e and s2.getExtraMass("Fe") == float(extra.default))
-	var changed = base.max if base.default != base.max else base.min # a base other than the default
-	s2.setBaseMass(changed)
+	# Entries stored by earlier formats: format 1 kept each mineral's least mass in minMass, format 2 a base for every
+	# mineral (baseMass) and each mineral's extra mass on top of it (extraMass); neither had mineral switches.
+	var changed = mass.max if mass.default != mass.max else mass.min # a mass other than the default
+	config[modId] = {"formatVersion": 1, "modVersion": "stored", "enabled": true, "minMass": {"Be": k}}
+	var oldSwitches = true
+	for m in s2.minerals():
+		oldSwitches = oldSwitches and s2.isMineralOn(m) == s2.mineralDefault(m)
+	check("a format-1 entry's minMass reads as the least masses, the switches as their defaults", s2.isEnabled() and s2.getMinMass("Be") == k and s2.getMinMass("Fe") == float(mass.default) and oldSwitches)
+	s2.setMinMass("Fe", changed)
 	entry = config.get(modId, {})
-	check("its first change stores it in this format, minMass as extraMass", entry.get("formatVersion") == model.FORMAT_VERSION and entry.get("enabled") == true and entry.get("baseMass") == changed and entry.get("extraMass", {}).get("Be") == e and not entry.has("minMass"), entry)
+	check("its first change stores it in this format", entry.get("formatVersion") == model.FORMAT_VERSION and entry.get("enabled") == true and entry.get("minMass", {}).get("Be") == k and entry.get("minMass", {}).get("Fe") == changed and entry.get("mineralOn", {}).get("H2O") == false and entry.size() == 5, entry)
+	var base = mass.step # a base and an extra mass, and a pair whose sum is past the range
+	var extra = k
+	var stored2 = {"formatVersion": 2, "modVersion": "stored", "enabled": true, "baseMass": base, "extraMass": {"Be": extra, "Pt": mass.max}}
+	config[modId] = stored2.duplicate(true)
+	oldSwitches = true
+	for m in s2.minerals():
+		oldSwitches = oldSwitches and s2.isMineralOn(m) == s2.mineralDefault(m)
+	check("a format-2 entry keeps every threshold: the base plus each extra, the base alone without one, the slider's most past it", s2.isEnabled() and s2.getMinMass("Be") == base + extra and s2.getMinMass("Fe") == base and s2.getMinMass("Pt") == mass.max and oldSwitches, [s2.getMinMass("Be"), s2.getMinMass("Fe"), s2.getMinMass("Pt")])
+	check("reading it stores nothing", same(config[modId], stored2), config[modId])
+	s2.setMineralOn("V", false)
+	entry = config.get(modId, {})
+	check("its first change stores it in this format, with every mineral's least mass", entry.get("formatVersion") == model.FORMAT_VERSION and entry.get("minMass", {}).get("Be") == base + extra and entry.get("minMass", {}).get("Fe") == base and entry.get("mineralOn", {}).get("V") == false and not entry.has("baseMass") and not entry.has("extraMass") and entry.size() == 5, entry)
 
 	# A preheated ship: the HUD's _ready builds the OMS before it loads mineralConfig from the ship
-	var stored = {"formatVersion": model.FORMAT_VERSION, "modVersion": "stored", "enabled": not enabledDesc.default, "baseMass": b, "extraMass": {"Be": e}}
+	var stored = {"formatVersion": model.FORMAT_VERSION, "modVersion": "stored", "enabled": not enabledDesc.default, "minMass": {"Be": k}, "mineralOn": {"H2O": true, "Be": false}}
 	var hot = {"minerals": CurrentGame.traceMinerals.duplicate(), "minValue": 0, "albedo": 0}
 	hot[modId] = stored
 	var ship4 = makeShip({"hud": {"config": hot}}, true)
@@ -580,12 +740,13 @@ func run():
 	check("a preheated ship's OMS gets the tab", tab4 != null)
 	if tab4 != null:
 		var beSlider = tab4._sliders.get("Be")
-		var beTotal = tab4._totals.get("Be")
-		check("and it shows the ship's stored values", tab4._toggle.pressed == stored.enabled and tab4._baseSlider.value == b and beSlider != null and beSlider.value == e and beTotal != null and beTotal.text == totalText(tab4, extra.unit, k) and (tab4._grid.modulate == Color.white) == stored.enabled, [tab4._toggle.pressed, tab4._baseSlider.value, beSlider.value if beSlider != null else null, beTotal.text if beTotal != null else null])
+		var beValue = tab4._values.get("Be")
+		check("and it shows the ship's stored values", tab4._toggle.pressed == stored.enabled and tab4._switches.H2O.pressed and not tab4._switches.Be.pressed and tab4._switches.Fe.pressed and beSlider != null and beSlider.value == k and beValue != null and beValue.text == worthText(tab4, "Be", k) and (tab4._grid.modulate == Color.white) == stored.enabled, [tab4._toggle.pressed, beSlider.value if beSlider != null else null, beValue.text if beValue != null else null])
 		check("and stores nothing on its own", hud4.mineralConfig[modId] == stored and stored.modVersion == "stored")
 
 	# The texts (i18n/en.po), also in a language without them (Godot's fallback, en)
-	var keys = [tabName, enabledDesc.label, load(UI).HINT, base.label, base.label + "_DESC", extra.label]
+	var ui = load(UI)
+	var keys = [tabName, enabledDesc.label, ui.HINT, model.MINERAL_SWITCH.label, mass.label, ui.GEOLOGIST, ui.NO_GEOLOGIST]
 	var translated = true
 	for key in keys:
 		translated = translated and tr(key) != key

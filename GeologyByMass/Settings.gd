@@ -1,35 +1,31 @@
 extends Reference
 
 # GeologyByMass's settings for one ship, shared by Code.gd (the ship's rule), OmsScreen.gd and SettingsUI.gd (the
-# mod's OMS tab): the switch at the top of the tab, the base mass and each mineral's extra mass on top of it. They live
-# where the game keeps the HUD's Geologist tab settings, the ship's config "hud.config" (hud/Hud.gd _ready: its
+# mod's OMS tab): the switch at the top of the tab, and for each mineral a switch and the least mass. They live where
+# the game keeps the HUD's Geologist tab settings, the ship's config "hud.config" (hud/Hud.gd _ready: its
 # mineralConfig), under the mod's id from Mod.manifest, and are changed in place, as Hud.gd setMinValue changes the
 # Minimum value. So they are saved, loaded and carried with the ship exactly as the game's own are, and the rule reads
 # the same entry the tab writes. Reading never writes: a ship that never had the mod's entry gets the defaults.
 
-# The switch: on, the masses below decide which identified chunks pass every row of the Geologist tab (the info boxes,
-# the arm, the drones), in place of each row's Minimum value. The default is declared here only.
+# The switch: on, the mod's mineral switches and masses decide which identified chunks pass every row of the Geologist
+# tab (the info boxes, the arm, the drones), in place of each row's mineral switches and Minimum value. The default is
+# declared here only.
 const ENABLED = {
 	"label": "GEOLOGYBYMASS_ENABLED",
 	"default": false,
 }
 
-# The base slider: the least mass of every mineral, in kg as the geologist estimates it, for an identified chunk to
-# pass a row; each mineral's extra mass is added to it. `label` names its row, and `label` + SettingsUI.gd
-# DESCRIPTION_SUFFIX is its tooltip. Each value is declared here only.
-const BASE_MASS = {
-	"label": "GEOLOGYBYMASS_BASE_MASS",
-	"default": 0,
-	"min": 0,
-	"max": 5000,
-	"step": 50,
-	"unit": "kg",
+# One switch per mineral, in front of its name: on, the mineral counts for every row, in place of the rows' own
+# switches. `label` is its tooltip. Its default is the game's own for a new row of the Geologist tab (mineralDefault).
+const MINERAL_SWITCH = {
+	"label": "GEOLOGYBYMASS_MINERAL_SWITCH",
 }
 
-# One slider per mineral: the mass of it needed on top of the base, in kg. `label` is its tooltip. One description for
-# every mineral's slider; each value is declared here only.
-const EXTRA_MASS = {
-	"label": "GEOLOGYBYMASS_EXTRA_MASS",
+# One slider per mineral: the least mass of it, in kg as the geologist estimates it, for an identified chunk to pass
+# while the mineral's switch is on. `label` is its tooltip. One description for every mineral's slider; each value is
+# declared here only.
+const MIN_MASS = {
+	"label": "GEOLOGYBYMASS_MIN_MASS",
 	"default": 0,
 	"min": 0,
 	"max": 5000,
@@ -38,8 +34,10 @@ const EXTRA_MASS = {
 }
 
 # The layout of the saved entry. Renaming a saved key without a migration is a major version. Format 1 (the first
-# release's) had no base and kept each mineral's least mass in "minMass", which reads as its extra mass.
-const FORMAT_VERSION = 2
+# release's) kept each mineral's least mass in "minMass", as format 3 does; format 2 kept a base for every mineral in
+# "baseMass" and each mineral's extra mass on top of it in "extraMass", whose sum reads as the least mass; neither had
+# mineral switches, which read as their defaults.
+const FORMAT_VERSION = 3
 
 const HUD_CONFIG = "hud.config" # the HUD's mineralConfig in the ship's config (Hud.gd getSlotName("config"))
 
@@ -54,9 +52,8 @@ func _init(ship):
 func available() -> bool:
 	return _config() != null
 
-# The minerals with a slider, in the order of the Geologist tab's columns: every mineral of the market
-# (CurrentGame.mineralPrices, hud/SystemMineralList.gd), Water too. The HUD's row can switch on only the ores
-# (CurrentGame.traceMinerals, for a system with onlyMinerals); the arm's and the drones' rows can switch on any.
+# The minerals with a switch and a slider, in the order of the Geologist tab's columns: every mineral of the market
+# (CurrentGame.mineralPrices, hud/SystemMineralList.gd), Water too.
 func minerals() -> Array:
 	return CurrentGame.mineralPrices.keys()
 
@@ -69,41 +66,42 @@ func setEnabled(how):
 		return
 	_entry().enabled = how
 
-# The least mass of `mineral` for a chunk to pass a row: the base plus the mineral's extra mass.
-func getMinMass(mineral) -> float:
-	return getBaseMass() + getExtraMass(mineral)
+# A mineral's switch before anything is stored: the game's own default for a new row, on for the trace minerals
+# (CurrentGame.traceMinerals; Hud.gd, DockingArm.gd and drone-plant.gd _ready), so off for Water.
+func mineralDefault(mineral) -> bool:
+	return mineral in CurrentGame.traceMinerals
 
-func getBaseMass() -> float:
-	return _baseIn(_saved())
+func isMineralOn(mineral) -> bool:
+	return _switchIn(_saved(), mineral)
 
-func setBaseMass(kg):
-	kg = _clamped(kg, BASE_MASS)
-	if not available() or kg == getBaseMass():
+func setMineralOn(mineral, how):
+	how = bool(how)
+	if not available() or how == isMineralOn(mineral):
 		return
-	_entry().baseMass = kg
+	_entry().mineralOn[mineral] = how
 
-# Any mineral, also one without a slider: the default unless the entry holds a value for it.
-func getExtraMass(mineral) -> float:
-	return _clamped(_savedExtra().get(mineral), EXTRA_MASS)
+# The least mass of `mineral` for a chunk to pass while its switch is on.
+func getMinMass(mineral) -> float:
+	return _massIn(_saved(), mineral)
 
-# The rule Code.gd judges by, with the saved entry read once: null with the switch off, else the base mass and the
-# saved extra masses by mineral (read each with extraMassIn). The rule runs for every target the arm and the drones
-# look at, and every read of the ship's config takes its lock.
+func setMinMass(mineral, kg):
+	kg = _clamped(kg, MIN_MASS)
+	if not available() or kg == getMinMass(mineral):
+		return
+	_entry().minMass[mineral] = kg
+
+# The rule Code.gd judges by, with the saved entry read once: null with the switch off, else the least mass of each
+# mineral switched on, by mineral. The rule runs for every target the arm and the drones look at, and every read of the
+# ship's config takes its lock.
 func massRule():
 	var saved = _saved()
 	if not _enabledIn(saved):
 		return null
-	return {"base": _baseIn(saved), "extra": _extraIn(saved)}
-
-# A mineral's extra mass in a rule from massRule, as getExtraMass reads it.
-func extraMassIn(rule: Dictionary, mineral) -> float:
-	return _clamped(rule.extra.get(mineral), EXTRA_MASS)
-
-func setExtraMass(mineral, kg):
-	kg = _clamped(kg, EXTRA_MASS)
-	if not available() or kg == getExtraMass(mineral):
-		return
-	_entry().extraMass[mineral] = kg
+	var rule = {}
+	for mineral in minerals():
+		if _switchIn(saved, mineral):
+			rule[mineral] = _massIn(saved, mineral)
+	return rule
 
 func modId() -> String:
 	return str(_manifestValue("mod_information", "id", _folder().get_file()))
@@ -132,35 +130,38 @@ func _saved() -> Dictionary:
 	var saved = config.get(modId())
 	return saved if saved is Dictionary else {}
 
-# The saved extra masses by mineral; format 1's "minMass" where the entry has no "extraMass".
-func _savedExtra() -> Dictionary:
-	return _extraIn(_saved())
-
-# The switch, the base mass and the extra masses in a saved entry (`saved`, from _saved).
+# The switch, a mineral's switch and its least mass in a saved entry (`saved`, from _saved), of any format.
 func _enabledIn(saved: Dictionary) -> bool:
 	var enabled = saved.get("enabled", ENABLED.default)
 	return enabled if enabled is bool else ENABLED.default
 
-func _baseIn(saved: Dictionary) -> float:
-	return _clamped(saved.get("baseMass"), BASE_MASS)
+func _switchIn(saved: Dictionary, mineral) -> bool:
+	var switches = saved.get("mineralOn")
+	var on = switches.get(mineral) if switches is Dictionary else null
+	return on if on is bool else mineralDefault(mineral)
 
-func _extraIn(saved: Dictionary) -> Dictionary:
-	var masses = saved.get("extraMass", saved.get("minMass"))
-	return masses if masses is Dictionary else {}
+func _massIn(saved: Dictionary, mineral) -> float:
+	var extra = saved.get("extraMass")
+	if extra is Dictionary:
+		return _clamped(_clamped(saved.get("baseMass"), MIN_MASS) + _clamped(extra.get(mineral), MIN_MASS), MIN_MASS)
+	var masses = saved.get("minMass")
+	return _clamped(masses.get(mineral) if masses is Dictionary else null, MIN_MASS)
 
-# The entry to write to: every value as it reads now, stamped with this format and the mod's version, stored in
-# hud.config in place of the old one.
+# The entry to write to: every value as it reads now, every mineral's included, stamped with this format and the mod's
+# version, stored in hud.config in place of the old one.
 func _entry() -> Dictionary:
+	var saved = _saved()
 	var masses = {}
-	var saved = _savedExtra()
-	for mineral in saved:
-		masses[mineral] = _clamped(saved[mineral], EXTRA_MASS)
+	var switches = {}
+	for mineral in minerals():
+		masses[mineral] = _massIn(saved, mineral)
+		switches[mineral] = _switchIn(saved, mineral)
 	var entry = {
 		"formatVersion": FORMAT_VERSION,
 		"modVersion": modVersion(),
-		"enabled": isEnabled(),
-		"baseMass": getBaseMass(),
-		"extraMass": masses,
+		"enabled": _enabledIn(saved),
+		"minMass": masses,
+		"mineralOn": switches,
 	}
 	_config()[modId()] = entry
 	return entry
