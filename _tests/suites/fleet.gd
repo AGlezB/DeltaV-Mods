@@ -1,13 +1,13 @@
 extends "res://harness/suite.gd"
 
-# ShipCopyPaste: on the Fleet screen, Copy makes a ship the template, held by the Fleet screen until it closes, and
-# Paste, on the current ship's entry, makes the current ship like it when both are the same model: the differing
-# equipment bought at the Equipment screen's prices, then the template's tuning, mineral targeting, slot configs and
-# crew. The entries are the game's SystemBuyUI.gd in a stub of its scene (with the game's confirmation animations),
-# under a stub of the Fleet screen (harness/fleet_screen.gd), next to a stub of the Equipment screen
-# (harness/fleet_equipment.gd) holding the game's SystemShipUpgradeUI.gd items; the ships are harness/fleet_ship.gd,
-# and the game's state is the CurrentGame stub's. The mod's node names, animation names and texts are read from the
-# mod. The control checks run on the game's own SystemBuyUI.gd.
+# ShipCopyPaste: on the Fleet screen, Copy on another ship of the current ship's model opens a confirmation dialog that
+# makes the current ship like it, with a switch per part where the two ships differ: the settings (tuning, mineral
+# targeting, slot configs), the crew aboard, and the equipment, bought at the Equipment screen's prices. The entries are
+# the game's SystemBuyUI.gd in a stub of its scene (with the game's confirmation animations), under a stub of the Fleet
+# screen (harness/fleet_screen.gd), next to a stub of the Equipment screen (harness/fleet_equipment.gd) holding the
+# game's SystemShipUpgradeUI.gd items; the ships are harness/fleet_ship.gd, the current one with equipment that has
+# Tuning settings (harness/fleet_system.gd, harness/fleet_slot_system.gd), and the game's state is the CurrentGame
+# stub's. The mod's node names and texts are read from the mod. The control checks run on the game's own SystemBuyUI.gd.
 
 const MOD = "ShipCopyPaste"
 const ENTRY = "res://enceladus/SystemBuyUI.tscn"
@@ -38,6 +38,14 @@ const ITEMS = [
 	["hud.type", "SYSTEM_HUD_A", 0],
 ]
 
+# The current ship's equipment with Tuning settings, as getSystems() lists it: its name, its slotName ("" for one not
+# on a slot) and its settings (type, default, step).
+const SYSTEMS = [
+	["Hud", "", {"TUNE_MAX_VELOCITY": {"type": "float", "default": 40, "step": 1}, "TUNE_ACC": {"type": "float", "default": 2.8647889, "step": 0.1}, "TUNE_FBW": {"type": "bool", "default": true}}],
+	["Main", "weaponSlot.main.type_SYSTEM_DRILL", {"TUNE_ARM_POWER_LIMIT": {"type": "float", "default": 50, "step": 10}}],
+	["Left", "weaponSlot.left.type_SYSTEM_GUN", {"TUNE_LASER_POWER": {"type": "float", "default": 3, "step": 1}}],
+]
+
 var screens # the station's screens: the Fleet screen, the ship market and the Equipment screen
 var fleet
 var market
@@ -45,24 +53,24 @@ var equipment
 var player # the player's ship
 var items = {} # the Equipment screen's items by system and slot
 
-# The template, in repair.
-func templateShip() -> Dictionary:
+# The ship copied, in repair.
+func copiedShip() -> Dictionary:
 	return {"model": MODEL, "transponder": "SE1-0001", "madeIn": 100, "faction": "player", "maintaineceUntil": NOW + 9000, "config": {
 		"weaponSlot": {
 			"main": {"type": "SYSTEM_ARM", "config": {"minerals": ["Pt"], "minValue": 5, "albedo": 0.1}},
-			"left": {"type": "SYSTEM_TWIST", "config": {"minerals": ["W"]}},
+			"left": {"type": "SYSTEM_GUN", "config": {"minerals": ["W"]}},
 		},
 		"propulsion": {"main": "SYSTEM_ENGINE_B", "rcs": "SYSTEM_RCS_A"},
 		"fuel": {"capacity": 50000.0, "initial": 100.0},
-		"reactor": {"power": 12.0},
+		"reactor": {"power": 8.0},
 		"hud": {"type": "SYSTEM_HUD_A", "config": {"minerals": ["Pt", "Pd"], "minValue": 3000, "albedo": 0.2, "AGlezB.GeologyByMass": {"enabled": true}}},
-		"tuning": {"Hud": {"TUNE_MAX_VELOCITY": 50}, "weaponSlot": {"main": {"type_SYSTEM_ARM": {"TUNE_ARM_POWER_LIMIT": 70}}, "left": {"type_SYSTEM_TWIST": {"TUNE_X": 1}}}},
+		"tuning": {"Hud": {"TUNE_MAX_VELOCITY": 50}, "weaponSlot": {"main": {"type_SYSTEM_ARM": {"TUNE_ARM_POWER_LIMIT": 70}}, "left": {"type_SYSTEM_GUN": {"TUNE_LASER_POWER": 3}}}},
 		"preferredCrew": ["Ann", "Bob"],
 		"damage": {"Main_SYSTEM_ARM": {"wear": 0.5}},
 		"processedCargo": {"Fe": 10.0},
 	}}
 
-# The spare, the current ship: no lidar or ammo entries the template has, and the template's lidar and ammo the same.
+# The spare, the current ship: lidar and ammo entries the copied ship lacks, which read the same as its missing ones.
 func spareShip() -> Dictionary:
 	return {"model": MODEL, "transponder": "SE1-0002", "madeIn": 200, "faction": "player", "config": {
 		"weaponSlot": {
@@ -83,7 +91,7 @@ func spareShip() -> Dictionary:
 	}}
 
 func otherModelShip() -> Dictionary:
-	var other = templateShip()
+	var other = copiedShip()
 	other.model = OTHER_MODEL
 	other.transponder = "SE1-0003"
 	other.erase("maintaineceUntil")
@@ -144,6 +152,16 @@ func makeScreens():
 			item.storyFlagMin = spec[5]
 		list.add_child(item)
 		items[spec[1] + "@" + spec[0]] = item
+
+# The player's ship's equipment with Tuning settings (SYSTEMS), as getSystems() gives it.
+func makeSystems():
+	for spec in SYSTEMS:
+		var system = load("res://harness/fleet_slot_system.gd" if spec[1] != "" else "res://harness/fleet_system.gd").new()
+		if spec[1] != "":
+			system.slotName = spec[1]
+		system.tuneables = spec[2].duplicate(true)
+		player.add_child(system)
+		player.systems[spec[0]] = {"name": spec[0], "ref": system}
 
 # An entry as Dealer.gd doAddShips makes one: a ship of the config (the current one's a copy, as
 # CurrentGame.getOwnedShips builds it), `owned` and `tradeIn` set before it enters the list, `current` after.
@@ -236,16 +254,64 @@ func fitsRow(entry, width: float, nodes: Array) -> bool:
 		ok = ok and r.position.x >= row.position.x - 0.5 and r.end.x <= row.end.x + 0.5
 	return ok
 
-# The dialog's list of `lines`, each with the mod's bullet.
-func bullets(entry, lines: Array) -> String:
-	var out = []
-	for line in lines:
-		out.append(tr(entry._SHIP_COPY_PASTE_TEXT_BULLET) % line)
-	return PoolStringArray(out).join("\n")
+# Opens the entry's dialog with Copy, closing it with Cancel first if it shows.
+func open(entry):
+	var dialog = entry.get_node_or_null(entry._SHIP_COPY_PASTE_DIALOG_NODE)
+	if dialog != null and dialog.visible:
+		press(dialog.get_cancel())
+		yield(idle(), "completed")
+	press(entry.get_node("HBox/" + entry._SHIP_COPY_PASTE_COPY_NODE))
+	yield(idle(3), "completed")
 
-# A piece bought, as the dialog lists it: its name (the Equipment item's, here its system key) and price.
-func itemLine(entry, system: String, price) -> String:
-	return tr(entry._SHIP_COPY_PASTE_TEXT_ITEM_PRICE) % [tr(system), CurrentGame.formatThousands(price)]
+# Each row of the dialog: "switch:on" or "switch:off" where it shows its switch, "label:<text>" where its label.
+func states(entry) -> Dictionary:
+	var out = {}
+	for part in entry._shipCopyPasteRows:
+		var value = entry._shipCopyPasteRows[part].get_node("HBoxContainer/Value")
+		var state = entry._shipCopyPasteStates[part]
+		out[part] = ("switch:" + ("on" if value.pressed else "off")) if value.visible else ("label:" + state.text)
+	return out
+
+func allOn() -> Dictionary:
+	return {"settings": "switch:on", "crew": "switch:on", "equipment": "switch:on"}
+
+# A row's switch, flipped as a click flips it.
+func toggle(entry, part, on):
+	entry._shipCopyPasteRows[part].get_node("HBoxContainer/Value").pressed = on
+
+func valueNode(entry, part):
+	return entry._shipCopyPasteRows[part].get_node("HBoxContainer/Value")
+
+# The dialog's equipment list: [name, value] per line.
+func listed(entry) -> Array:
+	var out = []
+	var kids = entry._shipCopyPasteList.get_children()
+	for i in range(0, kids.size(), 2):
+		out.append([kids[i].text, kids[i + 1].text])
+	return out
+
+# A line of the list as the dialog writes it: the name bulleted, and the value as is.
+func line(entry, name: String, value: String) -> Array:
+	return [tr(entry._SHIP_COPY_PASTE_TEXT_BULLET) % tr(name), value]
+
+# A line of money: a cost (from 0 up) negative, a refund positive.
+func money(entry, name: String, price: float) -> Array:
+	var text = entry._SHIP_COPY_PASTE_TEXT_COST if price >= 0 else entry._SHIP_COPY_PASTE_TEXT_GAIN
+	return line(entry, name, tr(text) % CurrentGame.formatThousands(abs(price)))
+
+# The dialog's layout: the rows and the list only as wide as they need, centered under the question, which fits on one
+# line; the gap between names and values.
+func checkWidths(entry, label):
+	var parts = entry._shipCopyPasteParts
+	var title = entry._shipCopyPasteTitle
+	var font = entry._shipCopyPasteProseFont if entry._shipCopyPasteProseFont != null else entry._shipCopyPasteList.get_font("font", "Label")
+	var gap = int(ceil(font.get_height() * entry._SHIP_COPY_PASTE_COLUMN_GAP))
+	var seps = [entry._shipCopyPasteList.get_constant("hseparation")]
+	for part in entry._shipCopyPasteRows:
+		seps.append(entry._shipCopyPasteRows[part].get_node("HBoxContainer").get_constant("separation"))
+	var centers = [parts.get_global_rect().get_center().x, title.get_global_rect().get_center().x]
+	check(label + ": the rows and the list only as wide as they need (COLUMN_GAP between names and values), centered under the question", abs(parts.rect_size.x - parts.get_combined_minimum_size().x) < 1 and abs(centers[0] - centers[1]) <= 1 and seps == [gap, gap, gap, gap], [parts.rect_size.x, parts.get_combined_minimum_size().x, centers, seps, gap])
+	check(label + ": the question on one line, as wide as it needs or as the rows", title.get_line_count() == 1 and abs(title.rect_size.x - max(parts.rect_size.x, entry._shipCopyPasteLineWidth(title, title.text))) < 1, [title.get_line_count(), title.rect_size.x, parts.rect_size.x])
 
 # The game's bindings (its project.godot): ui_cancel is Esc, B (button 1) and Start (button 11); pause is Esc and Start.
 func bindGameKeys():
@@ -285,7 +351,7 @@ func run():
 	CurrentGame.time = NOW
 	CurrentGame.money = 1000000
 	CurrentGame.state.ship = spareShip()
-	CurrentGame.state.garage = [templateShip(), otherModelShip()]
+	CurrentGame.state.garage = [copiedShip(), otherModelShip()]
 	CurrentGame.state.shipNames = {"SE1-0001": "Tortoise", "SE1-0002": "Hare"}
 	# The crew the ships' lists name, hired (the game's state.crew, by full name).
 	CurrentGame.state.crew = {"Ann": {"fullName": "Ann"}, "Bob": {"fullName": "Bob"}, "Cid": {"fullName": "Cid"}}
@@ -294,109 +360,70 @@ func run():
 	# Before the items are made: each caches its slot's count the first time it is priced (SystemShipUpgradeUI.gd
 	# getNumber), until the next playerShipChanged.
 	player.slots["propulsion.main"] = 2
+	makeSystems()
 	CurrentGame.playerShip = player
 	makeScreens()
 	var list = fleet.get_node("Items")
 	var spare = makeEntry(list, CurrentGame.state.ship.duplicate(true), true, true)
-	var template = makeEntry(list, CurrentGame.state.garage[0], true, false)
+	var copied = makeEntry(list, CurrentGame.state.garage[0], true, false)
 	var other = makeEntry(list, CurrentGame.state.garage[1], true, false)
 	var sale = makeEntry(market.get_node("Items"), saleShip(), false, false)
 	yield(idle(3), "completed")
 	if not mod:
-		check("control: Fleet entries get no Copy or Paste", names(spare.get_node("HBox")) == GAME_BOX and names(template.get_node("HBox")) == GAME_BOX, names(spare.get_node("HBox")))
+		check("control: Fleet entries get no Copy", names(spare.get_node("HBox")) == GAME_BOX and names(copied.get_node("HBox")) == GAME_BOX, names(spare.get_node("HBox")))
 		check("control: nor does the market's entry", names(sale.get_node("HBox")) == GAME_BOX)
 		check("control: the entry's confirmation has only the game's panels, and the entry no dialog", names(spare.get_node("ConfirmationCenter")) == ["BuyPanel", "SellPanel"] and spare.get_child_count() == load(ENTRY).instance().get_child_count())
 		_free()
 		return
 
 	var copyName = spare._SHIP_COPY_PASTE_COPY_NODE
-	var pasteName = spare._SHIP_COPY_PASTE_PASTE_NODE
+	var spacerName = spare._SHIP_COPY_PASTE_SPACER_NODE
 	var dialogName = spare._SHIP_COPY_PASTE_DIALOG_NODE
-	var meta = spare._SHIP_COPY_PASTE_TEMPLATE
-	var entries = [spare, template, other]
+	var entries = [spare, copied, other]
 	var copy = {}
-	var paste = {}
+	var spacer = {}
 	for e in entries:
 		copy[e] = e.get_node_or_null("HBox/" + copyName)
-		paste[e] = e.get_node_or_null("HBox/" + pasteName)
+		spacer[e] = e.get_node_or_null("HBox/" + spacerName)
 
 	# The buttons
-	check("the market's entry gets no Copy or Paste", names(sale.get_node("HBox")) == GAME_BOX, names(sale.get_node("HBox")))
+	check("the market's entry gets nothing", names(sale.get_node("HBox")) == GAME_BOX, names(sale.get_node("HBox")))
 	var expected = GAME_BOX.duplicate()
-	expected.insert(GAME_BOX.find("Use"), pasteName)
+	expected.insert(GAME_BOX.find("Use"), spacerName)
 	expected.insert(GAME_BOX.find("Use"), copyName)
 	var placed = true
 	for e in entries:
 		placed = placed and names(e.get_node("HBox")) == expected
-	check("every Fleet entry gets Copy, then Paste, right before Use", placed, names(spare.get_node("HBox")))
+	check("every Fleet entry gets Copy, then a spacer, right before Use", placed, names(spare.get_node("HBox")))
 	var use = spare.get_node("HBox/Use")
 	var likeUse = true
 	for e in entries:
-		for b in [copy[e], paste[e]]:
-			likeUse = likeUse and b is Button and b.flat == use.flat and b.shortcut_in_tooltip == use.shortcut_in_tooltip and b.has_node("SmoothScrollTo")
-	check("they are copies of Use (flat, its smooth scrolling)", likeUse)
-	check("one button per entry, never one that can't be used: Copy on the other ships' entries, Paste on the current ship's", copy[template].visible and copy[other].visible and not copy[spare].visible and paste[spare].visible and not paste[template].visible and not paste[other].visible)
+		likeUse = likeUse and copy[e] is Button and copy[e].flat == use.flat and copy[e].shortcut_in_tooltip == use.shortcut_in_tooltip and copy[e].has_node("SmoothScrollTo")
+	check("Copy is a copy of Use (flat, its smooth scrolling)", likeUse)
+	var spacerNode = spacer[spare]
+	check("Copy on the other ships' entries; on the current ship's, the spacer in its place, of Copy's size, the mouse and the focus passing by", copy[copied].visible and copy[other].visible and not copy[spare].visible and spacerNode.visible and not spacer[copied].visible and not spacer[other].visible and spacerNode.rect_min_size == copy[spare].get_combined_minimum_size() and spacerNode.rect_min_size.x > 0 and spacerNode.mouse_filter == Control.MOUSE_FILTER_IGNORE and spacerNode.focus_mode == Control.FOCUS_NONE, [spacerNode.rect_min_size, copy[spare].get_combined_minimum_size()])
+	yield(idle(), "completed")
 	var columns = []
 	for e in entries:
-		var shownButton = paste[e] if e == spare else copy[e]
-		columns.append([shownButton.get_global_rect().position.x, e.get_node("HBox/Use").get_global_rect().position.x])
-	check("in the same spot on every entry, so the entries' buttons line up", columns[0] == columns[1] and columns[1] == columns[2], columns)
-	check("Copy enabled on the other ship of the current ship's model, with its tooltip", not copy[template].disabled and copy[template].hint_tooltip == spare._SHIP_COPY_PASTE_TIP_COPY)
+		columns.append([e.get_node("HBox/V").get_global_rect().position.x, e.get_node("HBox/Use").get_global_rect().position.x])
+	check("the details and Use at the same x on every entry, the current ship's too", columns[0] == columns[1] and columns[1] == columns[2], columns)
+	check("Copy enabled on the other ship of the current ship's model, with its tooltip", not copy[copied].disabled and copy[copied].hint_tooltip == spare._SHIP_COPY_PASTE_TIP_COPY)
 	check("disabled on a ship of another model, the tooltip saying so", copy[other].disabled and copy[other].hint_tooltip == spare._SHIP_COPY_PASTE_TIP_COPY_MODEL)
-	check("with nothing copied, Paste is disabled, the tooltip saying to copy a ship of this model first", paste[spare].disabled and paste[spare].hint_tooltip == spare._SHIP_COPY_PASTE_TIP_PASTE_NOTHING)
-	var uses = []
-	template.connect("use", self, "_recordUse", [uses])
-	press(copy[template])
-	press(copy[template])
-	check("pressing Copy doesn't switch ships (no `use`)", uses.empty())
 	var useIcon = use.icon
 	var useData = useIcon.get_data() if useIcon != null else null
 	check("the Use button shows the game's icon, whose pixels can be read", useIcon is Texture and useData is Image, useIcon)
 	if useData is Image:
 		var colours = inks(useData)
 		var copyIcon = copy[spare].icon
-		var pasteIcon = paste[spare].icon
-		check("the icons have the Use icon's size and flags", copyIcon.get_size() == useIcon.get_size() and pasteIcon.get_size() == useIcon.get_size() and copyIcon.flags == useIcon.flags and pasteIcon.flags == useIcon.flags, [copyIcon.get_size(), useIcon.get_size()])
+		check("Copy's icon has the Use icon's size and flags", copyIcon.get_size() == useIcon.get_size() and copyIcon.flags == useIcon.flags, [copyIcon.get_size(), useIcon.get_size()])
 		check("the Use icon has light and dark pixels", colours[0] != null and colours[1] != null, colours)
-		check("the icons are drawn in its colours: light strokes with a dark edge (the means of its light and dark pixels)", colours[1] != null and drawnIn(copyIcon, colours) and drawnIn(pasteIcon, colours), colours)
-		check("and differ from each other and from the Use icon", pixels(copyIcon) != pixels(pasteIcon) and pixels(copyIcon) != useData.get_data())
-
-	# The template
-	var before = JSON.print(CurrentGame.state)
-	press(copy[template])
-	check("Copy makes the ship the template, held by the Fleet screen", fleet.get_meta(meta) == "SE1-0001" if fleet.has_meta(meta) else false)
-	var mark = template.get_node("HBox/V/Owned").modulate
-	check("the template's Copy shows pressed, in the Owned label's colour, with the template's tooltip", copy[template].pressed and copy[template].modulate == mark and copy[template].hint_tooltip == spare._SHIP_COPY_PASTE_TIP_TEMPLATE)
-	check("the other entry's Copy doesn't", not copy[other].pressed and copy[other].modulate == Color.white)
-	check("Paste is enabled, with its tooltip", not paste[spare].disabled and paste[spare].hint_tooltip == spare._SHIP_COPY_PASTE_TIP_PASTE)
-	press(copy[other])
-	press(copy[spare])
-	check("pressing a disabled or hidden Copy (another model, the current ship) changes nothing", fleet.get_meta(meta) == "SE1-0001" and copy[template].pressed and not copy[other].pressed and not copy[spare].pressed and not paste[spare].disabled)
-	press(copy[template])
-	check("pressing the template's Copy again forgets it, and Paste is disabled again", not fleet.has_meta(meta) and not copy[template].pressed and paste[spare].disabled and paste[spare].hint_tooltip == spare._SHIP_COPY_PASTE_TIP_PASTE_NOTHING)
-	press(copy[template])
-	fleet.visible = false
-	check("closing the Fleet screen forgets the template", not fleet.has_meta(meta))
-	fleet.visible = true
+		check("Copy's icon is drawn in its colours: light strokes with a dark edge (the means of its light and dark pixels), and differs from it", colours[1] != null and drawnIn(copyIcon, colours) and pixels(copyIcon) != useData.get_data(), colours)
+	switchTo(copied, spare)
 	yield(idle(), "completed")
-	check("reopened, there is no template, and Paste is disabled", not copy[template].pressed and paste[spare].disabled)
-	check("Copy, forgetting and closing wrote nothing to the game's state", JSON.print(CurrentGame.state) == before)
-
-	# The template survives switches while the screen stays open
-	press(copy[template])
-	switchTo(template, spare)
-	check("switched to the template itself: it is still the template; its entry shows Paste, disabled (nothing else of the model is copied), the old current ship's shows Copy, enabled", fleet.get_meta(meta) == "SE1-0001" and paste[template].visible and paste[template].disabled and not copy[template].visible and copy[spare].visible and not copy[spare].disabled and not paste[spare].visible)
-	switchTo(spare, template)
-	check("switched back to the spare: the template's entry shows Copy again, enabled and pressed, and the spare's Paste, enabled", fleet.get_meta(meta) == "SE1-0001" and copy[template].visible and not copy[template].disabled and copy[template].pressed and not paste[template].visible and paste[spare].visible and not paste[spare].disabled and not copy[spare].visible)
-	press(copy[template])
-
-	# A template that was sold
-	press(copy[template])
-	var sold = garageConfig("SE1-0001")
-	CurrentGame.state.garage.erase(sold)
-	spare.checkCurrentAndOwned()
-	check("a template no longer owned (sold) is forgotten, and Paste is disabled", not fleet.has_meta(meta) and paste[spare].disabled)
-	CurrentGame.state.garage.insert(0, sold)
+	check("switched to the copied ship: its entry gets the spacer, the old current ship's Copy, enabled", spacerNode.visible == false and copy[spare].visible and not copy[spare].disabled and not copy[copied].visible and spacer[copied].visible)
+	switchTo(spare, copied)
+	yield(idle(), "completed")
+	check("switched back: as before", spacerNode.visible and not copy[spare].visible and copy[copied].visible and not copy[copied].disabled and not spacer[copied].visible)
 
 	# The prices, as the Equipment screen sets them for the current ship (Upgrades.gd updatePricesAndAvailability):
 	# the main slot's damaged piece has a trade-in value and a repair time; the others, the installed piece's price.
@@ -411,57 +438,78 @@ func run():
 	var engine = (8000 - 3000) * 2
 	var fuel = (4000 - 1000) * 1
 	var total = arm + engine + fuel
-	var unfit = [tr("SYSTEM_TWIST"), "reactor.power %s" % CurrentGame.formatThousands(12.0)]
-	var notCopiedAlways = []
-	for key in spare._SHIP_COPY_PASTE_TEXT_NOT_COPIED_ALWAYS:
-		notCopiedAlways.append(tr(key))
-	var unfitLines = []
-	for piece in unfit:
-		unfitLines.append(tr(spare._SHIP_COPY_PASTE_TEXT_UNFIT) % piece)
-	var settingsLines = [tr(spare._SHIP_COPY_PASTE_TEXT_TUNING), tr(spare._SHIP_COPY_PASTE_TEXT_TARGETING), tr(spare._SHIP_COPY_PASTE_TEXT_FILTERS)]
-	var crewLine = tr(spare._SHIP_COPY_PASTE_TEXT_CREW) % "Ann, Bob"
+	var repairs = line(spare, spare._SHIP_COPY_PASTE_TEXT_REPAIRS, Tool.readableTimeSpan(7200))
 	var question = tr(spare._SHIP_COPY_PASTE_TEXT_CONFIRM) % ["Hare", "Tortoise"]
-	var repairsLine = tr(spare._SHIP_COPY_PASTE_TEXT_REPAIRS) % Tool.readableTimeSpan(7200)
+	var sameLabel = "label:" + tr(spare._SHIP_COPY_PASTE_TEXT_SAME)
+
+	# The comparisons
+	var noList = spare._shipCopyPasteCrew(null)
+	check("a ship without a crew list has no crew", noList is Array and noList.empty(), noList)
+	check("values compare by what they hold: arrays in any order, ints as floats", spare._shipCopyPasteEqual({"a": [1, "b"]}, {"a": ["b", 1.0]}))
+	check("a key more differs, and so does another element or count", not spare._shipCopyPasteEqual({"a": 1}, {"a": 1, "b": 1}) and not spare._shipCopyPasteEqual([1, 2], [1, 3]) and not spare._shipCopyPasteEqual([1, 1, 2], [1, 2, 2]))
+	var tuned = spare._shipCopyPasteTuning({"tuning": {"a": {"type_X": {"t": 1}, "type_Y": {"t": 2}}}}, {"tuning": {}}, {"a.type": "X"})
+	check("a piece kept that the ship flown has no Tuning entries for loses the copied ship's; the others stay", not tuned.a.has("type_X") and tuned.a.has("type_Y"), tuned)
+	tuned = spare._shipCopyPasteTuning({"tuning": {"a": {"type_X": {"t": 1}}}}, {"tuning": {"a": {"type_X": {"t": 5}}}}, {"a.type": "X"})
+	check("a piece kept keeps its own Tuning entries", tuned.a.type_X.t == 5, tuned)
 
 	# The confirmation dialog
-	press(copy[template])
 	var stateBefore = JSON.print(CurrentGame.state)
-	var templateBefore = JSON.print(garageConfig("SE1-0001"))
-	check("no dialog before the first Paste", spare.get_node_or_null(dialogName) == null)
-	press(paste[spare])
+	var copiedBefore = JSON.print(garageConfig("SE1-0001"))
+	var uses = []
+	copied.connect("use", self, "_recordUse", [uses])
+	press(copy[other])
+	press(copy[spare])
 	yield(idle(3), "completed")
-	var dialog = spare.get_node_or_null(dialogName)
-	check("Paste first brings the Equipment screen's prices up to date", equipment.repriced == 1, equipment.repriced)
-	check("then opens a confirmation dialog as the game's own (a ConfirmationDialog without a title), the entry's Buy confirmation untouched", dialog is ConfirmationDialog and dialog.visible and dialog.window_title == "" and not spare.get_node("ConfirmationCenter/BuyPanel").visible and names(spare.get_node("ConfirmationCenter")) == ["BuyPanel", "SellPanel"])
+	check("a disabled or hidden Copy (another model, the current ship) opens nothing", spare.get_node_or_null(dialogName) == null and other.get_node_or_null(dialogName) == null and copied.get_node_or_null(dialogName) == null)
+	press(copy[copied])
+	yield(idle(3), "completed")
+	var dialog = copied.get_node_or_null(dialogName)
+	check("Copy first brings the Equipment screen's prices up to date", equipment.repriced == 1, equipment.repriced)
+	check("then opens a confirmation dialog as the game's own (a ConfirmationDialog without a title), a child of the copied ship's entry, the entry's Buy confirmation untouched", dialog is ConfirmationDialog and dialog.visible and dialog.window_title == "" and not copied.get_node("ConfirmationCenter/BuyPanel").visible and names(copied.get_node("ConfirmationCenter")) == ["BuyPanel", "SellPanel"])
+	check("Copy doesn't switch ships (no `use`)", uses.empty())
 	if not dialog is ConfirmationDialog:
 		_free()
 		return
 	var ok = dialog.get_ok()
 	var cancel = dialog.get_cancel()
-	var title = spare._shipCopyPasteTitle
-	var lists = spare._shipCopyPasteLists
-	var summary = spare._shipCopyPasteSummary
-	var prose = spare.get_node("HBox/Margin").get_font("font", "Label")
+	var title = copied._shipCopyPasteTitle
+	var parts = copied._shipCopyPasteParts
+	var prose = copied.get_node("HBox/Margin").get_font("font", "Label")
 	check("in the entry's menu theme (the game's window frame), with the game's OK and CANCEL, Cancel focused", dialog.get_stylebox("panel", "WindowDialog") == load("res://menu/MenuTheme.tres").get_stylebox("panel", "WindowDialog") and ok.text == spare._SHIP_COPY_PASTE_OK and cancel.text == spare._SHIP_COPY_PASTE_CANCEL and dialog.get_focus_owner() == cancel, dialog.get_focus_owner())
-	check("its question names the ship flown and the template, in the menu font", title.text == question and title.get_font("font") == spare.get_font("font"), title.text)
-	var copied = [itemLine(spare, "SYSTEM_ARM", arm), itemLine(spare, "SYSTEM_ENGINE_B", engine), itemLine(spare, "SYSTEM_FUEL_50", fuel)] + settingsLines + [crewLine]
-	check("Copied: each piece bought, as the Equipment screen names it, with its price; the tuning, the mineral targeting, the slots' mineral filters; the crew aboard", lists[0].text == bullets(spare, copied), lists[0].text)
-	check("Not copied: what isn't sold here (the lidar the template lacks reads as the ship's default, the ammo it lacks as none), then what Paste never copies", lists[1].text == bullets(spare, unfitLines + notCopiedAlways), lists[1].text)
-	var headings = [lists[0].get_parent().get_child(0).text, lists[1].get_parent().get_child(0).text]
-	check("under their headings, side by side, in the Fleet screen's prose font (the entry's thumbnail margin's)", headings == [spare._SHIP_COPY_PASTE_TEXT_COPIED, spare._SHIP_COPY_PASTE_TEXT_NOT_COPIED] and lists[0].get_font("font") == prose and lists[1].get_font("font") == prose and prose != spare.get_font("font") and lists[0].get_global_rect().position.y == lists[1].get_global_rect().position.y and lists[0].get_global_rect().end.x <= lists[1].get_global_rect().position.x, headings)
-	check("the summary: the equipment's price and the repair time, in the prose font", summary.text == PoolStringArray([tr(spare._SHIP_COPY_PASTE_TEXT_PRICE) % CurrentGame.formatThousands(total), repairsLine]).join("\n") and summary.get_font("font") == prose, summary.text)
+	check("its question names the ship flown and the copied ship, in the menu font", title.text == question and title.get_font("font") == copied.get_font("font"), title.text)
+	var order = []
+	for c in parts.get_parent().get_children():
+		order.append(c.get_class())
+	for c in parts.get_children():
+		order.append(c.name if c.name.begins_with(MOD) else c.get_class())
+	check("the question, then Ship settings, Crew aboard and Equipment, the list under it", order == ["Label", "VBoxContainer", MOD + "Settings", MOD + "Crew", MOD + "Equipment", "GridContainer"], order)
+	var rowNames = []
+	var rowsLikeTuning = true
+	for part in copied._shipCopyPasteRows:
+		var row = copied._shipCopyPasteRows[part]
+		rowNames.append(row.get_node("HBoxContainer/Name").text)
+		rowsLikeTuning = rowsLikeTuning and not row.get_node("HBoxContainer/Reset").visible and not row.get_node("HBoxContainer/Name").clip_text
+	check("each row the game's Tuning switch, named by the mod's text, without its reset button, the name never clipped", rowNames == spare._SHIP_COPY_PASTE_ROWS.values() and rowsLikeTuning, rowNames)
+	check("every part differs: a switch on each row, on", same(states(copied), allOn()), states(copied))
+	var bought = [money(spare, "SYSTEM_ARM", arm), money(spare, "SYSTEM_ENGINE_B", engine), money(spare, "SYSTEM_FUEL_50", fuel), money(spare, spare._SHIP_COPY_PASTE_TEXT_TOTAL, total), repairs]
+	check("under Equipment: each piece bought, as the Equipment screen names it, with its price (the lidar the copied ship lacks reads as the ship's default, the ammo it lacks as none), then the total and the repair time", listed(copied) == bought, listed(copied))
+	var kids = copied._shipCopyPasteList.get_children()
+	var minus = spare._SHIP_COPY_PASTE_COLOR_MINUS_FALLBACK
+	check("the costs in the Fleet screen's colour for a cost, the repair time uncoloured, the values right-aligned, in the prose font", kids[1].modulate == minus and kids[7].modulate == minus and kids[9].modulate == Color.white and kids[1].align == Label.ALIGN_RIGHT and kids[0].get_font("font") == prose and prose != copied.get_font("font"), [kids[1].modulate, kids[9].modulate])
+	yield(idle(3), "completed")
+	var rightEdges = [kids[1].get_global_rect().end.x, valueNode(copied, "settings").get_global_rect().end.x, valueNode(copied, "equipment").get_global_rect().end.x]
+	check("the values' right edge lines up with the switches'", abs(rightEdges[0] - rightEdges[1]) < 2 and abs(rightEdges[1] - rightEdges[2]) < 2, rightEdges)
 	var screen = dialog.get_viewport_rect()
 	var box = dialog.get_global_rect()
-	check("each list as wide as its share of the screen (COLUMN_SHARE); the dialog on the screen, centered", abs(lists[0].rect_size.x - screen.size.x * spare._SHIP_COPY_PASTE_COLUMN_SHARE) < 1 and abs(lists[1].rect_size.x - lists[0].rect_size.x) < 1 and screen.encloses(box) and (box.position + box.size / 2 - screen.size / 2).length() <= 1, [lists[0].rect_size.x, box, screen])
-	check("and at its least size: as tall as its content", abs(box.size.y - dialog.get_combined_minimum_size().y) < 1, [box.size, dialog.get_combined_minimum_size()])
-	check("the entry keeps the list's width", fitsRow(spare, LIST_WIDTH, []), spare.rect_size.x)
+	check("the dialog on the screen, centered, at its least size", screen.encloses(box) and (box.position + box.size / 2 - screen.size / 2).length() <= 1 and (box.size - dialog.get_combined_minimum_size()).length() < 1, [box, screen])
+	checkWidths(copied, "the dialog")
+	check("the entry keeps the list's width", fitsRow(copied, LIST_WIDTH, []), copied.rect_size.x)
 	press(cancel)
 	yield(idle(), "completed")
-	check("Cancel closes it, the focus back on Paste", not dialog.visible and paste[spare].has_focus())
+	check("Cancel closes it, the focus back on Copy", not dialog.visible and copy[copied].has_focus())
 	check("and nothing changed", JSON.print(CurrentGame.state) == stateBefore)
 	bindGameKeys()
-	press(paste[spare])
-	yield(idle(3), "completed")
+	yield(open(copied), "completed")
 	var cancels = fleet.cancels
 	yield(tap(escKey()), "completed")
 	yield(idle(), "completed")
@@ -470,138 +518,236 @@ func run():
 	yield(idle(), "completed")
 	check("(with the dialog closed, Esc reaches the Fleet screen)", fleet.cancels == cancels + 1)
 
-	# Not enough money
+	# Not enough money: only while the equipment is switched on
 	CurrentGame.money = total - 1
-	press(paste[spare])
-	yield(idle(3), "completed")
-	check("above the player's money, OK is disabled and the summary says so", ok.disabled and summary.text.ends_with("\n" + tr(spare._SHIP_COPY_PASTE_TEXT_NO_MONEY)), summary.text)
+	yield(open(copied), "completed")
+	check("above the player's money, with the equipment on, OK reads Insufficient funds and is disabled", ok.text == spare._SHIP_COPY_PASTE_TEXT_NO_MONEY and ok.disabled, ok.text)
 	press(ok)
 	check("and pressing it changes nothing", dialog.visible and JSON.print(CurrentGame.state) == stateBefore and CurrentGame.money == total - 1)
+	toggle(copied, "equipment", false)
+	check("the equipment switched off: OK reads OK again, enabled", ok.text == spare._SHIP_COPY_PASTE_OK and not ok.disabled, ok.text)
 	press(cancel)
 	yield(idle(), "completed")
 	CurrentGame.money = 1000000
 
+	# The D-pad, and a switch turned off that gets the focus again
+	yield(open(copied), "completed")
+	check("reopened, every switch is on again", same(states(copied), allOn()), states(copied))
+	var path = []
+	for i in 3:
+		yield(tapJoy(JOY_DPAD_UP), "completed")
+		path.append(dialog.get_focus_owner())
+	for i in 3:
+		yield(tapJoy(JOY_DPAD_DOWN), "completed")
+		path.append(dialog.get_focus_owner())
+	var want = [valueNode(copied, "equipment"), valueNode(copied, "crew"), valueNode(copied, "settings"), valueNode(copied, "crew"), valueNode(copied, "equipment"), cancel]
+	check("the D-pad goes up from Cancel through the switches, and back down to Cancel", path == want, path)
+	check("walking the switches changes none", same(states(copied), allOn()), states(copied))
+	toggle(copied, "settings", false)
+	valueNode(copied, "equipment").grab_focus()
+	valueNode(copied, "settings").grab_focus()
+	yield(idle(), "completed")
+	check("a switch turned off stays off when it gets the focus again (the Tuning switch sends its value then)", states(copied).settings == "switch:off" and copied._shipCopyPasteRows.settings.tune.current == false, states(copied))
+	press(cancel)
+	yield(idle(), "completed")
+
 	# A plan that changed while the dialog showed
-	press(paste[spare])
-	yield(idle(3), "completed")
+	yield(open(copied), "completed")
 	for s in ["SYSTEM_FUEL_20", "SYSTEM_FUEL_50"]:
 		items[s + "@fuel.capacity"].setValuesDiscount(2000)
 	fuel = (4000 - 2000) * 1
 	total = arm + engine + fuel
-	copied[2] = itemLine(spare, "SYSTEM_FUEL_50", fuel)
+	bought[2] = money(spare, "SYSTEM_FUEL_50", fuel)
+	bought[3] = money(spare, spare._SHIP_COPY_PASTE_TEXT_TOTAL, total)
 	press(ok)
-	check("a price changed since it showed: OK shows the new plan and pastes nothing", dialog.visible and lists[0].text == bullets(spare, copied) and summary.text.begins_with(tr(spare._SHIP_COPY_PASTE_TEXT_PRICE) % CurrentGame.formatThousands(total)) and not ok.disabled and JSON.print(CurrentGame.state) == stateBefore, summary.text)
+	check("a price changed since it showed: OK shows the new plan and pastes nothing", dialog.visible and listed(copied) == bought and not ok.disabled and JSON.print(CurrentGame.state) == stateBefore, listed(copied))
 
-	# Paste
+	# Every part pasted
 	var config = CurrentGame.state.ship.config
 	var moneyBefore = CurrentGame.money
 	var logsBefore = CurrentGame.logs.size()
 	var spareBefore = spareShip()
-	var templateConfig = templateShip().config
+	var copiedConfig = copiedShip().config
 	var validatedBefore = CurrentGame.validated.size()
 	press(ok)
 	yield(idle(), "completed")
 	check("OK buys the differing pieces at the shown total", CurrentGame.money == moneyBefore - total, [CurrentGame.money, moneyBefore - total])
 	check("each fitted as the Equipment screen fits it: the slot's damage cleared, its value set", player.cleared == ["weaponSlot.main.type", "propulsion.main", "fuel.capacity"] and config.weaponSlot.main.type == "SYSTEM_ARM" and config.propulsion.main == "SYSTEM_ENGINE_B" and same(config.fuel.capacity, 50000.0), player.cleared)
-	check("pieces already the same, and pieces not sold, left as they are", config.propulsion.rcs == "SYSTEM_RCS_A" and config.weaponSlot.left.type == "SYSTEM_GUN" and same(config.reactor.power, 8.0) and config.lidar.type == "SYSTEM_LIDAR_DOPPLER" and same(config.ammo.capacity, 0.0) and config.hud.type == "SYSTEM_HUD_A")
-	check("the repair time grows by the pieces' replacement time, counted from now, not the template's", CurrentGame.state.ship.get("maintaineceUntil") == NOW + 7200, CurrentGame.state.ship.get("maintaineceUntil"))
+	check("pieces already the same left as they are", config.propulsion.rcs == "SYSTEM_RCS_A" and config.weaponSlot.left.type == "SYSTEM_GUN" and same(config.reactor.power, 8.0) and config.lidar.type == "SYSTEM_LIDAR_DOPPLER" and same(config.ammo.capacity, 0.0) and config.hud.type == "SYSTEM_HUD_A")
+	check("the repair time grows by the pieces' replacement time, counted from now, not the copied ship's", CurrentGame.state.ship.get("maintaineceUntil") == NOW + 7200, CurrentGame.state.ship.get("maintaineceUntil"))
 	var logged = CurrentGame.logs.back() if CurrentGame.logs.size() == logsBefore + 1 else []
 	check("the purchase is logged as the Equipment screen logs it", logged.size() == 2 and logged[0] == "LOG_EVENT_UPGRADE" and same(logged[1], {"LOG_EVENT_DETAILS_COST": -total, "SYSTEM_ARM": -arm, "SYSTEM_ENGINE_B": -engine, "SYSTEM_FUEL_50": -fuel}), logged)
-	var tuning = templateConfig.tuning.duplicate(true)
-	tuning.weaponSlot.left["type_SYSTEM_GUN"] = {"TUNE_LASER_POWER": 3}
-	check("the tuning is the template's (a value the spare tuned and the template didn't is gone), with the spare's own for the piece it kept", same(config.tuning, tuning), config.tuning)
-	check("the mineral targeting is the template's, other mods' entries in it too", same(config.hud.config, templateConfig.hud.config))
-	check("the slot configs are the template's, but for the slot kept", same(config.weaponSlot.main.config, templateConfig.weaponSlot.main.config) and same(config.weaponSlot.left.config, spareBefore.config.weaponSlot.left.config))
-	check("the crew list is the template's", same(config.preferredCrew, templateConfig.preferredCrew))
-	check("and the game puts it aboard at once (validateEmployment, after the list is written), not only when the docked ship is rebuilt", CurrentGame.validated.size() == validatedBefore + 1 and same(CurrentGame.validated.back(), templateConfig.preferredCrew), CurrentGame.validated)
+	check("the tuning is the copied ship's (a value the spare tuned and the copied ship didn't is gone)", same(config.tuning, copiedConfig.tuning), config.tuning)
+	check("the mineral targeting is the copied ship's, other mods' entries in it too", same(config.hud.config, copiedConfig.hud.config))
+	check("the slot configs are the copied ship's", same(config.weaponSlot.main.config, copiedConfig.weaponSlot.main.config) and same(config.weaponSlot.left.config, copiedConfig.weaponSlot.left.config))
+	check("the crew list is the copied ship's", same(config.preferredCrew, copiedConfig.preferredCrew))
+	check("and the game puts it aboard at once (validateEmployment, after the list is written), not only when the docked ship is rebuilt", CurrentGame.validated.size() == validatedBefore + 1 and same(CurrentGame.validated.back(), copiedConfig.preferredCrew), CurrentGame.validated)
 	var full = CurrentGame.state.ship
 	check("identity, damage, cargo and consumables are the spare's", full.transponder == "SE1-0002" and full.model == MODEL and full.madeIn == 200 and full.faction == "player" and same(config.damage, spareBefore.config.damage) and same(config.currentCargo, spareBefore.config.currentCargo) and same(config.processedCargo, spareBefore.config.processedCargo) and same(config.fuel.initial, 20000.0))
-	check("the template is untouched", JSON.print(garageConfig("SE1-0001")) == templateBefore)
+	check("the copied ship is untouched", JSON.print(garageConfig("SE1-0001")) == copiedBefore)
 	config.hud.config.minValue = -1
-	check("(changing the pasted mineral targeting leaves the template's)", garageConfig("SE1-0001").config.hud.config.minValue == 3000)
-	config.hud.config.minValue = templateConfig.hud.config.minValue
+	check("(changing the pasted mineral targeting leaves the copied ship's)", garageConfig("SE1-0001").config.hud.config.minValue == 3000)
+	config.hud.config.minValue = copiedConfig.hud.config.minValue
 	check("then, as after a switch, the Fleet screen's shipChanged and addShips", fleet.changed == 1 and fleet.added == 1, [fleet.changed, fleet.added])
-	check("the dialog closes, the focus back on Paste", not dialog.visible and paste[spare].has_focus())
+	check("the dialog closes, the focus back on Copy", not dialog.visible and copy[copied].has_focus())
 
-	# A refund: the template's piece is cheaper than the one fitted
+	# A refund: the copied ship's piece is cheaper than the one fitted. A Tuning value stored on the ship flown only, as
+	# the Tuning screen stores what it shows (the default, snapped to its step), reads the same as none.
 	garageConfig("SE1-0001").config.propulsion.main = "SYSTEM_ENGINE_A"
 	for s in ["SYSTEM_ENGINE_A", "SYSTEM_ENGINE_B"]:
 		items[s + "@propulsion.main"].setValuesDiscount(8000)
 	var refund = (8000 - 3000) * 2
+	config.tuning.Hud.TUNE_ACC = 2.9
 	moneyBefore = CurrentGame.money
 	var maintenance = CurrentGame.state.ship.maintaineceUntil
-	press(paste[spare])
-	yield(idle(3), "completed")
-	check("a cheaper piece: listed with its refund, the summary shows the refund, and no repair time when the piece replaced isn't damaged", lists[0].text == bullets(spare, [tr(spare._SHIP_COPY_PASTE_TEXT_ITEM_REFUND) % ["SYSTEM_ENGINE_A", CurrentGame.formatThousands(refund)]] + settingsLines + [crewLine]) and summary.text == tr(spare._SHIP_COPY_PASTE_TEXT_REFUND) % CurrentGame.formatThousands(refund), [lists[0].text, summary.text])
+	yield(open(copied), "completed")
+	kids = copied._shipCopyPasteList.get_children()
+	check("a cheaper piece: listed with its refund, positive, in the Fleet screen's colour for a gain, then the total; no repair time when the piece replaced isn't damaged", listed(copied) == [money(spare, "SYSTEM_ENGINE_A", -refund), money(spare, spare._SHIP_COPY_PASTE_TEXT_TOTAL, -refund)] and kids[1].modulate == spare._SHIP_COPY_PASTE_COLOR_PLUS_FALLBACK, listed(copied))
+	check("the settings read Same where the Tuning screen shows the same, and so does the crew", same(states(copied), {"settings": sameLabel, "crew": sameLabel, "equipment": "switch:on"}), states(copied))
 	press(ok)
 	yield(idle(), "completed")
 	check("OK pays the refund, and the repair time stays", CurrentGame.money == moneyBefore + refund and config.propulsion.main == "SYSTEM_ENGINE_A" and CurrentGame.state.ship.maintaineceUntil == maintenance, [CurrentGame.money, moneyBefore + refund])
 
-	# The same equipment: settings and crew only. The template has no crew list (the game keeps one only once the crew
-	# changed while the ship was flown): its crew is unknown.
+	# The settings differ only in the Tuning entries of the piece the equipment buys: with the equipment off, that piece
+	# isn't fitted, and they read the same.
+	config.weaponSlot.main.type = "SYSTEM_DRILL"
+	garageConfig("SE1-0001").config.tuning.weaponSlot.main.type_SYSTEM_ARM.TUNE_ARM_POWER_LIMIT = 80
+	yield(open(copied), "completed")
+	var armOnly = [money(spare, "SYSTEM_ARM", arm), money(spare, spare._SHIP_COPY_PASTE_TEXT_TOTAL, arm), repairs]
+	check("the piece bought tuned otherwise on the copied ship: the settings differ", same(states(copied), {"settings": "switch:on", "crew": sameLabel, "equipment": "switch:on"}) and listed(copied) == armOnly, [states(copied), listed(copied)])
+	toggle(copied, "equipment", false)
+	check("the equipment switched off: the settings read Same, the list stays, and with nothing switched on OK is disabled", same(states(copied), {"settings": sameLabel, "crew": sameLabel, "equipment": "switch:off"}) and listed(copied) == armOnly and ok.disabled, states(copied))
+	toggle(copied, "equipment", true)
+	check("switched on again: the settings' switch is back, on", states(copied).settings == "switch:on" and not ok.disabled, states(copied))
+	press(cancel)
+	yield(idle(), "completed")
+
+	# The equipment off and the settings on: the pieces kept keep their own Tuning entries and slot configs.
 	garageConfig("SE1-0001").config.tuning.Hud.TUNE_MAX_VELOCITY = 60
-	garageConfig("SE1-0001").config.erase("preferredCrew")
+	garageConfig("SE1-0001").config.tuning.weaponSlot.main["type_SYSTEM_DRILL"] = {"TUNE_ARM_POWER_LIMIT": 90}
+	garageConfig("SE1-0001").config.weaponSlot.main.config = {"minerals": ["Pd"]}
+	config.tuning.weaponSlot.main["type_SYSTEM_DRILL"] = {"TUNE_ARM_POWER_LIMIT": 20}
+	var mainBefore = config.weaponSlot.main.config.duplicate(true)
+	yield(open(copied), "completed")
+	toggle(copied, "equipment", false)
+	check("the equipment switched off, the settings still differ (another setting)", states(copied).settings == "switch:on", states(copied))
 	moneyBefore = CurrentGame.money
 	logsBefore = CurrentGame.logs.size()
 	var cleared = player.cleared.size()
 	validatedBefore = CurrentGame.validated.size()
-	press(paste[spare])
-	yield(idle(3), "completed")
-	var crewUnknown = tr(spare._SHIP_COPY_PASTE_TEXT_CREW_UNKNOWN) % "Tortoise"
-	check("the same equipment: only the settings copied, the template's unknown crew among what isn't, and nothing to buy", lists[0].text == bullets(spare, settingsLines) and lists[1].text == bullets(spare, unfitLines + [crewUnknown] + notCopiedAlways) and summary.text == tr(spare._SHIP_COPY_PASTE_TEXT_SAME) and not ok.disabled, [lists[0].text, lists[1].text, summary.text])
 	press(ok)
 	yield(idle(), "completed")
-	check("OK buys nothing, logs nothing, adds no repair time", CurrentGame.money == moneyBefore and CurrentGame.logs.size() == logsBefore and player.cleared.size() == cleared and CurrentGame.state.ship.maintaineceUntil == maintenance)
-	check("and copies the settings; with the template's crew unknown, the spare's crew list is left as it is, and nothing is put aboard", config.tuning.Hud.TUNE_MAX_VELOCITY == 60 and same(config.get("preferredCrew"), templateConfig.preferredCrew) and CurrentGame.validated.size() == validatedBefore, config.get("preferredCrew"))
-	garageConfig("SE1-0001").config.preferredCrew = []
-	press(paste[spare])
+	var tuning = garageConfig("SE1-0001").config.tuning.duplicate(true)
+	tuning.weaponSlot.main["type_SYSTEM_DRILL"] = {"TUNE_ARM_POWER_LIMIT": 20}
+	check("OK with the equipment off buys nothing, logs nothing, adds no repair time", CurrentGame.money == moneyBefore and CurrentGame.logs.size() == logsBefore and player.cleared.size() == cleared and CurrentGame.state.ship.maintaineceUntil == maintenance and config.weaponSlot.main.type == "SYSTEM_DRILL")
+	check("the tuning is the copied ship's, with the ship's own entries for the piece it keeps", same(config.tuning, tuning), config.tuning)
+	check("the slot whose piece is kept keeps its config", same(config.weaponSlot.main.config, mainBefore), config.weaponSlot.main.config)
+	check("the crew, the same, isn't put aboard again", CurrentGame.validated.size() == validatedBefore)
+
+	# Pieces the Equipment screen doesn't sell, or doesn't make available
+	garageConfig("SE1-0001").config.weaponSlot.left.type = "SYSTEM_TWIST"
+	garageConfig("SE1-0001").config.reactor.power = 12.0
+	yield(open(copied), "completed")
+	kids = copied._shipCopyPasteList.get_children()
+	var unfit = tr(spare._SHIP_COPY_PASTE_TEXT_UNFIT)
+	check("a piece that can't be fitted: Incompatible equipment in place of the switch", states(copied).equipment == "label:" + tr(spare._SHIP_COPY_PASTE_TEXT_INCOMPATIBLE), states(copied))
+	check("the list holds only those pieces, each with the reason, uncoloured: a system by its name, a number by its slot", listed(copied) == [line(spare, "SYSTEM_TWIST", unfit), line(spare, "reactor.power %s" % CurrentGame.formatThousands(12.0), unfit)] and kids[1].modulate == Color.white, listed(copied))
 	yield(idle(3), "completed")
-	check("a template whose crew list is empty: nobody aboard", lists[0].text == bullets(spare, settingsLines + [tr(spare._SHIP_COPY_PASTE_TEXT_CREW_NOBODY)]), lists[0].text)
-	# The game drops someone fired from the current ship's list only (CurrentGame.gd fireCrewmember).
-	dialog.hide()
+	checkWidths(copied, "incompatible equipment")
+	check("with nothing else to paste, OK is disabled", ok.disabled and states(copied).settings == sameLabel and states(copied).crew == sameLabel, states(copied))
+	press(cancel)
+	yield(idle(), "completed")
+	garageConfig("SE1-0001").config.weaponSlot.left.type = "SYSTEM_GUN"
+	garageConfig("SE1-0001").config.reactor.power = 8.0
+
+	# The crew. The game drops someone fired from the current ship's list only (CurrentGame.gd fireCrewmember).
 	garageConfig("SE1-0001").config.preferredCrew = ["Ann", "Gone"]
-	press(paste[spare])
-	yield(idle(3), "completed")
-	check("a template whose list still names someone fired since: only those still employed are listed", lists[0].text == bullets(spare, settingsLines + [tr(spare._SHIP_COPY_PASTE_TEXT_CREW) % "Ann"]), lists[0].text)
+	yield(open(copied), "completed")
+	check("a copied crew list that names someone fired since differs", states(copied).crew == "switch:on", states(copied))
+	toggle(copied, "equipment", false)
+	validatedBefore = CurrentGame.validated.size()
 	press(ok)
 	yield(idle(), "completed")
-	check("and only they are copied", same(config.get("preferredCrew"), ["Ann"]), config.get("preferredCrew"))
+	check("OK puts aboard only those still in your crew", same(config.preferredCrew, ["Ann"]) and CurrentGame.validated.size() == validatedBefore + 1 and same(CurrentGame.validated.back(), ["Ann"]), config.preferredCrew)
+	garageConfig("SE1-0001").config.erase("preferredCrew")
+	yield(open(copied), "completed")
+	check("a copied ship without a crew list has no crew: with someone aboard, the crew's switch", states(copied).crew == "switch:on", states(copied))
+	toggle(copied, "equipment", false)
+	validatedBefore = CurrentGame.validated.size()
+	press(ok)
+	yield(idle(), "completed")
+	var nobody = config.get("preferredCrew")
+	check("OK leaves an empty crew list, put aboard", nobody is Array and nobody.empty() and CurrentGame.validated.size() == validatedBefore + 1, nobody)
+	yield(open(copied), "completed")
+	check("with nobody aboard either, the crew reads Same", states(copied).crew == sameLabel, states(copied))
+	press(cancel)
+	yield(idle(), "completed")
+	config.preferredCrew = ["Ann", "Bob"]
+	garageConfig("SE1-0001").config.preferredCrew = ["Bob", "Ann"]
+	yield(open(copied), "completed")
+	check("the same crew in another order reads Same", states(copied).crew == sameLabel, states(copied))
+
+	# A long question wraps at MAX_WIDTH_SHARE of the screen, and the rows stay as narrow as they were
+	var narrow = parts.rect_size.x
+	var long = "Make a ship with a name long enough to pass half of the screen on one line like another ship with a long name too?"
+	title.text = long
+	copied._shipCopyPasteWidths(long)
+	copied._shipCopyPasteDialogFit()
+	yield(idle(3), "completed")
+	var most = floor(title.get_viewport_rect().size.x * copied._SHIP_COPY_PASTE_MAX_WIDTH_SHARE)
+	check("a long question wraps at the screen's share, the rows as narrow as before", abs(title.rect_min_size.x - max(most, parts.rect_size.x)) < 1 and title.get_line_count() > 1 and abs(parts.rect_size.x - narrow) < 1, [title.rect_min_size.x, most, title.get_line_count(), parts.rect_size.x, narrow])
+	press(cancel)
+	yield(idle(), "completed")
+
+	# Everything the same
+	var copiedFull = garageConfig("SE1-0001")
+	var at = CurrentGame.state.garage.find(copiedFull)
+	var sameFull = CurrentGame.state.ship.duplicate(true)
+	sameFull.transponder = "SE1-0001"
+	CurrentGame.state.garage[at] = sameFull
+	yield(open(copied), "completed")
+	check("the same ship: Same on every row, no list, OK disabled", same(states(copied), {"settings": sameLabel, "crew": sameLabel, "equipment": sameLabel}) and not copied._shipCopyPasteList.visible and ok.disabled, states(copied))
+	press(cancel)
+	yield(idle(), "completed")
+	CurrentGame.state.garage[at] = copiedFull
 
 	# An empty slot holds the slot's default item, as the Equipment screen counts it (Upgrades.gd
 	# updatePricesAndAvailability): None on one ship and nothing on the other are the same.
 	var none = items["SYSTEM_NONE@weaponSlot.left.type"]
 	none.default = true
-	var templateLeft = garageConfig("SE1-0001").config.weaponSlot.left.duplicate(true)
+	var copiedLeft = garageConfig("SE1-0001").config.weaponSlot.left.duplicate(true)
 	garageConfig("SE1-0001").config.weaponSlot.left = {"type": "SYSTEM_NONE"}
 	var spareLeft = config.weaponSlot.left.duplicate(true)
 	config.weaponSlot.erase("left")
 	player.useConfig(CurrentGame.state.ship)
 	var plan = spare._shipCopyPastePlan(garageConfig("SE1-0001"), player, equipment.get_node("Items").get_children())
-	var leftBought = false
-	for item in plan.buy:
-		leftBought = leftBought or item.slot == "weaponSlot.left.type"
-	check("an empty slot and its default item (None) count as the same: nothing bought for it, nothing listed as not copied", not leftBought and not plan.kept.has("weaponSlot.left.type"), [plan.buy.size(), plan.kept.keys()])
+	check("an empty slot and its default item (None) count as the same: the slot doesn't differ", not plan.differing.has("weaponSlot.left.type"), plan.differing.keys())
 	garageConfig("SE1-0001").config.weaponSlot.erase("left")
 	config.weaponSlot.left = {"type": "SYSTEM_NONE"}
 	player.useConfig(CurrentGame.state.ship)
 	plan = spare._shipCopyPastePlan(garageConfig("SE1-0001"), player, equipment.get_node("Items").get_children())
-	leftBought = false
-	for item in plan.buy:
-		leftBought = leftBought or item.slot == "weaponSlot.left.type"
-	check("and the other way round", not leftBought and not plan.kept.has("weaponSlot.left.type"), [plan.buy.size(), plan.kept.keys()])
+	check("and the other way round", not plan.differing.has("weaponSlot.left.type"), plan.differing.keys())
 	none.default = false
-	garageConfig("SE1-0001").config.weaponSlot.left = templateLeft
+	garageConfig("SE1-0001").config.weaponSlot.left = copiedLeft
 	config.weaponSlot.left = spareLeft
 	player.useConfig(CurrentGame.state.ship)
 
-	# Closing the Fleet screen with the dialog open
+	# The copied ship sold, or the Fleet screen closed, while the dialog shows
+	yield(open(copied), "completed")
+	var sold = garageConfig("SE1-0001")
+	CurrentGame.state.garage.erase(sold)
+	copied.checkCurrentAndOwned()
+	check("the copied ship no longer owned (sold): Copy disabled, and the dialog closes", copy[copied].disabled and not dialog.visible)
+	CurrentGame.state.garage.insert(0, sold)
+	copied.checkCurrentAndOwned()
+	yield(open(copied), "completed")
 	fleet.visible = false
-	check("closing the Fleet screen closes the dialog, and forgets the template", not dialog.visible and not fleet.has_meta(meta))
+	check("closing the Fleet screen closes the dialog", not dialog.visible)
 	fleet.visible = true
 	yield(idle(), "completed")
 
 	# The texts (i18n/en.po), also in a language without them (Godot's fallback, en)
-	var keys = [spare._SHIP_COPY_PASTE_TIP_COPY, spare._SHIP_COPY_PASTE_TIP_TEMPLATE, spare._SHIP_COPY_PASTE_TIP_COPY_MODEL, spare._SHIP_COPY_PASTE_TIP_PASTE, spare._SHIP_COPY_PASTE_TIP_PASTE_NOTHING,spare._SHIP_COPY_PASTE_TEXT_CONFIRM, spare._SHIP_COPY_PASTE_TEXT_COPIED, spare._SHIP_COPY_PASTE_TEXT_NOT_COPIED, spare._SHIP_COPY_PASTE_TEXT_BULLET, spare._SHIP_COPY_PASTE_TEXT_ITEM_PRICE, spare._SHIP_COPY_PASTE_TEXT_ITEM_REFUND, spare._SHIP_COPY_PASTE_TEXT_TUNING, spare._SHIP_COPY_PASTE_TEXT_TARGETING, spare._SHIP_COPY_PASTE_TEXT_FILTERS, spare._SHIP_COPY_PASTE_TEXT_CREW, spare._SHIP_COPY_PASTE_TEXT_CREW_NOBODY, spare._SHIP_COPY_PASTE_TEXT_UNFIT, spare._SHIP_COPY_PASTE_TEXT_CREW_UNKNOWN, spare._SHIP_COPY_PASTE_TEXT_PRICE, spare._SHIP_COPY_PASTE_TEXT_REFUND, spare._SHIP_COPY_PASTE_TEXT_SAME, spare._SHIP_COPY_PASTE_TEXT_REPAIRS, spare._SHIP_COPY_PASTE_TEXT_NO_MONEY] + Array(spare._SHIP_COPY_PASTE_TEXT_NOT_COPIED_ALWAYS)
+	var keys = [spare._SHIP_COPY_PASTE_TIP_COPY, spare._SHIP_COPY_PASTE_TIP_COPY_MODEL, spare._SHIP_COPY_PASTE_TEXT_CONFIRM, spare._SHIP_COPY_PASTE_TEXT_BULLET, spare._SHIP_COPY_PASTE_TEXT_SAME, spare._SHIP_COPY_PASTE_TEXT_INCOMPATIBLE, spare._SHIP_COPY_PASTE_TEXT_UNFIT, spare._SHIP_COPY_PASTE_TEXT_COST, spare._SHIP_COPY_PASTE_TEXT_GAIN, spare._SHIP_COPY_PASTE_TEXT_TOTAL, spare._SHIP_COPY_PASTE_TEXT_REPAIRS, spare._SHIP_COPY_PASTE_TEXT_NO_MONEY] + spare._SHIP_COPY_PASTE_ROWS.values()
 	var translated = true
 	for key in keys:
 		translated = translated and tr(key) != key
@@ -615,14 +761,13 @@ func run():
 	TranslationServer.set_locale(locale)
 
 	# With a gamepad: an entry with the game's tooltip node (SystemBuyUI.tscn has one), which takes in the entry's
-	# buttons a node per frame from its _ready on, Copy and Paste among them, since the entry adds them in its own
-	# _ready. The tooltip then shows when a button gets the focus, as on hover, so the D-pad shows why Copy is disabled.
+	# buttons a node per frame from its _ready on, Copy among them, since the entry adds it in its own _ready. The
+	# tooltip then shows when a button gets the focus, as on hover, so the D-pad shows why Copy is disabled.
 	var pad = makeEntry(list, otherModelShip(), true, false, "res://harness/dealer_entry.tscn")
 	yield(idle(60), "completed")
 	var tooltips = pad.get_node("PlaySoundsOnTheseButtons")
 	var padCopy = pad.get_node("HBox/" + copyName)
-	var padPaste = pad.get_node("HBox/" + pasteName)
-	check("gamepad: the entry's tooltip node takes Copy and Paste in", tooltips.tooltips.has(padCopy) and tooltips.tooltips.has(padPaste), tooltips.tooltips.keys())
+	check("gamepad: the entry's tooltip node takes Copy in", tooltips.tooltips.has(padCopy), tooltips.tooltips.keys())
 	padCopy.grab_focus()
 	check("gamepad: a disabled Copy shows why when it gets the focus", padCopy.disabled and tooltips.tooltipPosition.visible and tooltips.tooltipLabel.text == pad._SHIP_COPY_PASTE_TIP_COPY_MODEL, tooltips.tooltipLabel.text)
 	var padUse = pad.get_node("HBox/Use")

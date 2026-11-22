@@ -230,9 +230,14 @@
 			'load', 'wait|10'
 			'press|{menu}/OwnedShips', 'wait|4'
 			'shot|fleet|560,470,1020,275'
-			'with:clickfind|{screens}/Owned|ShipCopyPasteCopy|0', 'wait|1'
-			'with:clickfind|{screens}/Owned|ShipCopyPastePaste|0', 'wait|2'
-			'with:shot|dialog|355,295,890,307'
+			# The ship flown set apart from the spare of its model, so that every row of the dialog differs: less
+			# ammunition (bought back), a dearer autopilot (refunded), its mineral targeting and fewer crew aboard.
+			'with:set|/root/CurrentGame|state/ship/config/ammo/capacity|0'
+			'with:set|/root/CurrentGame|state/ship/config/autopilot/type|"SYSTEM_AUTOPILOT_MK3"'
+			'with:set|/root/CurrentGame|state/ship/config/hud/config/minValue|1000'
+			'with:set|/root/CurrentGame|state/ship/config/preferredCrew|["Crystal Selwyn", "Sally Kingsley"]'
+			'with:clickfind|{screens}/Owned|ShipCopyPasteCopy|0', 'wait|2'
+			'with:shot|dialog|510,281,580,338'
 		)
 	}
 	ShipHighlightTypeAndPrice = @{

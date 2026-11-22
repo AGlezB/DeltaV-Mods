@@ -54,7 +54,7 @@ These pages explain what each mod does, for players. The code, and the notes for
   without risking it. Its page also explains every ship and weapon in a fight.
 - [DealerNotifier](DealerNotifier): the station menu tells you when a ship you are waiting for is for sale, and the
   Dealer shows you which one.
-- [ShipCopyPaste](ShipCopyPaste): copies one ship's setup onto another ship of the same model.
+- [ShipCopyPaste](ShipCopyPaste): makes the ship you fly like another ship of the same model, in the parts you choose.
 - [ShipHighlightTypeAndPrice](ShipHighlightTypeAndPrice): makes each ship's type stand out in the Dealer and Fleet
   lists.
 - [ShipSortByTypeAndPrice](ShipSortByTypeAndPrice): sorts the Dealer's ships by type, then by price.

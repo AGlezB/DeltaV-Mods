@@ -679,7 +679,7 @@ mouse_filter = 2
 '@
 # A Fleet entry (enceladus\SystemBuyUI.tscn, as enceladus\Dealer.gd instances it): the game's node paths, script, values
 # and connections, the Use and OK icons, the confirmation's frame and margins, and the confirmation animations read from
-# the game's scene (ShipCopyPaste copies BuyShow and BuyHide), and the game's themes (menu\MenuTheme.tres for the entry,
+# the game's scene, and the game's themes (menu\MenuTheme.tres for the entry,
 # hud\TNTRL-theme.tres for its labels' grid), so sizes and looks are the game's; the picture's sprite placed, scaled and
 # flipped and the Buy button's margins as the game's scene has them (DealerNotifier's settings rows copy them); without
 # the other textures, the lights and environment of the ship's view, the smooth scrolling (a bare node in its place

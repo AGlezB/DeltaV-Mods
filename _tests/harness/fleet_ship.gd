@@ -22,6 +22,7 @@ var defaultLidar = "SYSTEM_LIDAR_DOPPLER" # ship-ctrl.gd's
 var upgradeLimits = {}
 var slots = {} # how many systems each slot has (getNumberOfSlots); 1 where not given
 var cleared = [] # the slots clearDamageInSlot was given, in order
+var systems = {} # what getSystems gives: {name: {"name", "ref"}}, the refs harness/fleet_system.gd
 
 # The ship of a full config, as Shipyard.gd createShipByConfig keeps it: by reference.
 func useConfig(full: Dictionary):
@@ -82,7 +83,7 @@ func getShipName():
 	return CurrentGame.getShipNameByTransponder(transponder)
 
 func getSystems():
-	return {}
+	return systems
 
 func canBeSold():
 	return fullConfig.get("maintaineceUntil", 0) <= CurrentGame.getInGameTimestamp()

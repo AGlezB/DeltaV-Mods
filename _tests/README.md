@@ -301,42 +301,50 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   screen on them) and beside a market entry and an Equipment screen stub (`harness/fleet_equipment.gd`:
   `getItems`, and a count of `updatePricesAndAvailability`) holding the game's `SystemShipUpgradeUI.gd` items, whose
   prices the suite sets as the game does (`setValuesDiscount`); the ships are `harness/fleet_ship.gd` (the game's
-  config accessors, a recording `clearDamageInSlot`), the game's state the `CurrentGame` stub's (`state.ship`,
-  `state.garage`, money, log, maintenance; a `validateEmployment` that records the crew list it would put aboard).
-  Checks that the market's entry gets nothing; every Fleet entry gets Copy, then Paste, right before Use, copies of it,
-  but shows one: Copy on the other ships' entries, Paste on the current ship's; the shown button and Use at the same
-  x on every entry; Copy enabled on another ship of the current ship's model, disabled on another model, and Paste
-  disabled with nothing copied, each disabled one with the tooltip saying why; pressing Copy doesn't switch ships;
-  the icons have the Use icon's size and flags and its colours (light strokes, dark edge), and differ from it and
-  each other. The template: Copy sets it on the Fleet screen, marked in the Owned label's colour with its own tooltip;
-  Paste then enabled; pressing a disabled Copy changes nothing; pressing the template's Copy again, closing the
-  screen or selling the template forgets it and disables Paste; it survives switches while the screen stays open
-  (switched to the template itself, its entry shows Paste, disabled, and the old current ship's shows Copy, enabled;
-  back on the spare, the buttons swap back and Paste is enabled again); none of this writes to the state. The dialog: none before
-  the first Paste; Paste reprices the Equipment screen first, then opens a `ConfirmationDialog` without a title, the
-  entry's Buy confirmation untouched; in the menu theme's window frame, with the game's OK and CANCEL, Cancel focused;
-  the question naming both ships in the menu font; the Copied list (each piece bought, by its Equipment name, with its
-  price; tuning, mineral targeting, slot filters; the crew aboard) and the Not copied list (what isn't sold, a missing
-  LIDAR read as the ship's default and a missing number as none; then what Paste never copies), under their headings,
-  side by side, in the prose font (the entry's `HBox/Margin`, `Subwindow.theme`); the summary (price, repair time);
-  each list `COLUMN_SHARE` of the screen wide; the dialog on the screen, centered, at its least height; the entry's
-  width kept; Cancel closes it, the focus back on Paste, nothing changed; Esc (a real key press, with the game's
-  bindings) closes the dialog only, the Fleet screen not getting it, and with the dialog closed reaches the screen;
-  above the money, OK is disabled, the summary says so, and pressing it does nothing; a price changed while it showed
-  makes OK show the new plan without pasting. Pasting: the money, each piece fitted (damage cleared, value set) at `getNetPrice()`, pieces
-  already the same or not sold left, the repair time from now and not the template's, the log as the Equipment screen
-  logs it; the tuning replaced, the spare's own kept for the piece not sold; the mineral targeting, slot configs
-  (but the slot kept) and crew list copied, the crew put aboard at once (`validateEmployment` after the list is
-  written); identity, damage, cargo and consumables kept; the template untouched; then `shipChanged` and `addShips`,
-  the dialog closed and the focus on Paste. A refund (listed with the piece and in the summary, no repair time when the
-  piece replaced isn't damaged); the same equipment (only the settings listed, nothing to buy; nothing bought, logged
-  or added) with a template without a crew list (its unknown crew among what isn't copied, the spare's list stays,
-  nothing put aboard); an empty crew list (nobody aboard); closing the screen with the dialog open. The texts of
-  `i18n/en.po`, also in a language without them; the entries' script keeps the game's path. A template whose crew list
-  still names someone fired since lists and copies only those still employed; an empty slot and its default item
-  (None) count as the same, either way round, so nothing is bought or listed for it. With a gamepad: the entry's
-  tooltip node takes Copy and Paste in, a disabled Copy shows why when it gets the focus, and the D-pad goes from Use to
-  Copy and back. The control checks (no Copy, Paste or dialog) run on the game's own script.
+  config accessors, a recording `clearDamageInSlot`, and `getSystems`), the current one with equipment that has Tuning
+  settings (`harness/fleet_system.gd`, and `harness/fleet_slot_system.gd` for a piece on a slot, with its
+  `slotName`), the game's state the `CurrentGame` stub's (`state.ship`, `state.garage`, money, log, maintenance; a
+  `validateEmployment` that records the crew list it would put aboard).
+  Checks that the market's entry gets nothing; every Fleet entry gets Copy, then a spacer, right before Use, Copy a copy
+  of Use; Copy shows on the other ships' entries, the spacer on the current ship's (Copy's size, the mouse and the
+  focus passing by), so the details and Use sit at the same x on every entry; Copy enabled on another ship of the
+  current ship's model, disabled on another model with the tooltip saying why; Copy's icon has the Use icon's size,
+  flags and colours (light strokes, dark edge), and differs from it; switching ships swaps Copy and the spacer. The
+  comparisons: no crew list is no crew; values by what they hold (arrays in any order, ints as floats); a piece kept
+  keeps its own Tuning entries, and loses the copied ship's where it has none. The dialog: a disabled or hidden Copy
+  opens nothing; Copy reprices the Equipment screen first, then opens a `ConfirmationDialog` without a title, a child
+  of the copied ship's entry, its Buy confirmation untouched, without switching ships; in the menu theme's window
+  frame, with the game's OK and CANCEL, Cancel focused; the question naming both ships in the menu font; then the rows
+  (the game's Tuning switch, named by the mod's texts, without its reset button, never clipped), a switch on each when
+  every part differs; under Equipment, each piece bought by its Equipment name with its price (a missing LIDAR read as
+  the ship's default and a missing number as none), the total and the repair time, costs in the Fleet screen's colour
+  for a cost, right-aligned with the switches, in the prose font (the entry's `HBox/Margin`, `Subwindow.theme`); the
+  dialog on the screen, centered, at its least size; the rows and the list only as wide as they need (`COLUMN_GAP`
+  between names and values), centered under a one-line question; the entry's width kept. Cancel closes it, the focus
+  back on Copy, nothing changed; Esc (a real key press, with the game's bindings) closes the dialog only, the Fleet
+  screen not getting it, and with the dialog closed reaches the screen. With the equipment on and too little money, OK
+  reads Insufficient funds, disabled, and pressing it does nothing; the equipment off, OK again. Reopened, every switch
+  is on; the D-pad goes up from Cancel through the switches and back, changing none; a switch turned off stays off when
+  it gets the focus again. A price changed while it showed makes OK show the new plan without pasting. Pasting every
+  part: the money, each piece fitted (damage cleared, value set) at `getNetPrice()`, pieces already the same left, the
+  repair time from now and not the copied ship's, the log as the Equipment screen logs it; the tuning, mineral
+  targeting, slot configs and crew list copied, the crew put aboard at once (`validateEmployment` after the list is
+  written); identity, damage, cargo and consumables kept; the copied ship untouched; then `shipChanged` and
+  `addShips`, the dialog closed and the focus on Copy. A refund (positive, in the colour for a gain, no repair time when
+  the piece replaced isn't damaged), with the settings reading Same where the Tuning screen shows the same (a value
+  stored on one ship only, at its default snapped to its step). Settings that differ only in the bought piece's Tuning
+  entries read Same with the equipment off (the list stays, OK disabled with nothing on). The equipment off and the
+  settings on: nothing bought, logged or added; the tuning copied with the ship's own entries for the piece kept, whose
+  slot keeps its config; the same crew not put aboard again. Pieces not sold or not available: Incompatible equipment
+  in place of the switch, and only those pieces listed with the reason (a system by its name, a number by its slot).
+  The crew: a copied list naming someone fired since puts aboard only those still employed; a copied ship without a
+  list has no crew, and OK leaves an empty list, put aboard, after which the crew reads Same; the same crew in another
+  order reads Same. A long question wraps at `MAX_WIDTH_SHARE` of the screen, the rows as narrow as before; the same
+  ship reads Same on every row, with no list and OK disabled; an empty slot and its default item (None) count as the
+  same, either way round; the copied ship sold, or the Fleet screen closed, closes the dialog (Copy disabled). The texts
+  of `i18n/en.po`, also in a language without them; the entries' script keeps the game's path. With a gamepad: the
+  entry's tooltip node takes Copy in, a disabled Copy shows why when it gets the focus, and the D-pad goes from Use to
+  Copy and back. The control checks (no Copy or dialog) run on the game's own script.
 - `skip` (`suites/skip.gd`): a dive's cutscenes, the station's fade-in, and the settings, with the game's bindings for
   `cutscene_ff`, `pause` and `ui_cancel`. The mod's settings file is pointed into the suite's own project
   (`filePath`) and removed at the start and the end; a Directory opened on `res://` sees the mounted zips, read-only,
@@ -796,7 +804,7 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   `-Mods @()`), `boot` 5 (3 control checks with `-Mods @()`), `lidar` 40 (3 control checks with `-Mods @()`), `hud` 13
   (3 control checks with `-Mods @()`), `crew` 167 (171 with CrewPerfectSort too, in both load orders; the same 167 with
   DealerNotifier too; 3 control checks with `-Mods @()`), `geology` 85 (the same with DiveSkipTransit too, in both load
-  orders; 5 control checks with `-Mods @()`), `fleet` 77 (the same with ShipHighlightTypeAndPrice and
+  orders; 5 control checks with `-Mods @()`), `fleet` 95 (the same with ShipHighlightTypeAndPrice and
   ShipSortByTypeAndPrice too; 3 control checks with `-Mods @()`), `skip` 135 (138 with CrewCheapHireNotifier too, the
   same with DealerNotifier as well; the same 135 with CombatSimulator too; 13 control checks with `-Mods @()`), `dealer`
   130 (133 with CrewCheapHireNotifier and DiveSkipTransit too, in every load order, 136 with MarketAdvisor and
