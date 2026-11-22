@@ -6,15 +6,20 @@ extends "res://harness/suite.gd"
 # "exit" title cards) starts with the ship where the arrival cutscene leaves it, the game's own _process ends the
 # cutscene on its first frame, and once the ship is set up the cutscene's braking, turbine remass and in-game time are
 # charged. On the way out, the "exit" cutscene's method keys run at once, in order, each after the departure's burn,
-# the turbines and the time of the stretch before it. The settings model is game-wide, in a file the suite points into
-# its own project; Shift+Click on the station menu's dive entry (the game's EnceladusMenu.gd) opens its screen. The ship
-# is harness/skip_ship.gd, holding nodes of the game's reactor scripts and harness/skip_thruster.gd thrusters. The
-# control checks run on the game's own scripts: with the mod loaded, the bases of the extensions.
+# the turbines and the time of the stretch before it. What the game's notification panel (a stand-in,
+# harness/skip_notices.gd) is still showing when the ring scene goes to the station, the station's panel gets. The
+# settings model is game-wide, in a file the suite points into its own project;
+# Shift+Click on the station menu's dive entry (the game's EnceladusMenu.gd) opens its screen. The ship is
+# harness/skip_ship.gd, holding nodes of the game's reactor scripts and harness/skip_thruster.gd thrusters. The control
+# checks run on the game's own scripts: with the mod loaded, the bases of the extensions.
 
 const GAME_SCENE = "res://Game.tscn"
 const STATION_SCENE = "res://enceladus/Enceladus.tscn" # where Game.gd goToEnceladus goes
 const SHIP = preload("res://harness/skip_ship.gd")
 const THRUSTER = preload("res://harness/skip_thruster.gd")
+const PANEL = preload("res://harness/skip_notices.gd")
+const NOTICE_SECONDS = 0.5 # how long the stand-in notification panel's notice lasts, in real time
+const SALVAGED = "Salvaged stub" # the name of the ship the arm held, in the notice of its salvage
 const FISSION = "res://ships/Reactor.gd"
 const FUSION = "res://ships/modules/FusionReactor.gd"
 const TOLERANCE = 0.001
@@ -33,14 +38,6 @@ func _record(what):
 func _recordCutscene(how):
 	recorded.append(["cutscene", how])
 
-# The tooltip of the Shift badge beside a station menu entry (a mod's Badge.gd, a child of the entry), which holds it:
-# the entry has none of its own.
-func badgeTip(entry) -> String:
-	for child in entry.get_children():
-		var script = child.get_script()
-		if script != null and script.resource_path.ends_with("/Badge.gd"):
-			return child.hint_tooltip
-	return ""
 func run():
 	var mod = hasMod("DiveSkipTransit")
 	bindGameKeys()
@@ -415,6 +412,110 @@ func exits(mod):
 		check("exit, %s: the title card is at its last frame, black" % case[0], cardBlack(scene))
 		freeRing(ring)
 		yield(frames(1), "completed")
+	state = carriedExits(script, game)
+	if state is GDScriptFunctionState:
+		yield(state, "completed")
+
+# The game's notification panel, a stand-in (harness/skip_notices.gd) at the path the mod reads it from: Code.gd
+# _DST_NOTICES in the ring scene (as BulletTimer.tscn holds it), Station.gd _DST_STATION_NOTICES at the station.
+func addPanel(scene, path: String, seconds = NOTICE_SECONDS):
+	var parts = path.split("/")
+	var parent = scene
+	for i in parts.size() - 1:
+		var node = parent.get_node_or_null(parts[i])
+		if node == null:
+			node = Node.new()
+			node.name = parts[i]
+			parent.add_child(node)
+		parent = node
+	var panel = PANEL.new(seconds)
+	panel.name = parts[parts.size() - 1]
+	parent.add_child(panel)
+	return panel
+
+# A notice the game signals and the ring's panel shows: by default the salvage of the ship the arm holds, which
+# ships/ship-ctrl.gd escapeTheRing signals (CurrentGame.addShip: newShip) just before the way out.
+func signalNotice(panel, signalName = "newShip", args = [SALVAGED]):
+	CurrentGame.callv("emit_signal", [signalName] + args)
+	panel.notify()
+
+# Waits until the stand-in panel's notice is over (at most `limit` frames), then a few frames for the mod to see it.
+func noticeOver(panel, limit = 600):
+	while limit > 0 and panel.animation.is_playing():
+		yield(get_tree(), "idle_frame")
+		limit -= 1
+	yield(frames(3), "completed")
+
+func wentTo(scene) -> int:
+	return Loader.calls.count("go " + scene)
+
+# What the ring scene handed to the station's panel (the mod's shared settings, carriedNotices).
+func carried() -> Array:
+	return settings.carriedNotices
+
+# The way to the station while the notification panel shows a notice the game signalled: the station at once, the
+# notice handed to the station's panel, the ring's hidden and stopped, the charges as without it. A notice the panel
+# showed in full isn't handed on; every notice of the mod's list is, in order, with its handler and arguments. The game
+# alone hands nothing on.
+func carriedExits(script, game):
+	var path = script.get_script_constant_map()["_DST_NOTICES"]
+	settings.carriedNotices = []
+	var state = leave(game, 1.0, Vector2(0, 0))
+	var control = yield(state, "completed")
+	signalNotice(addPanel(control[0], path))
+	control[0].goToEnceladus()
+	check("control: the game alone goes to the station handing nothing on, even while the notification panel shows a notice", wentTo(STATION_SCENE) == 1 and carried().empty(), [Loader.calls, carried()])
+	freeRing(control)
+	yield(frames(1), "completed")
+
+	state = leave(null, 1.0, Vector2(0, 0))
+	var ring = yield(state, "completed")
+	var scene = ring[0]
+	var ship = ring[1]
+	var keys = cardKeys(scene)
+	var expected = expectedExit(ship, keys)
+	var panel = addPanel(scene, path)
+	signalNotice(panel)
+	ship.emit_signal("exitingRing")
+	check("exit with a notice showing: the cutscene's calls run, and the station at once, once, saved once", ship.events.size() == 2 and ship.events[1] == "despawnAllAsteroids" and wentTo(STATION_SCENE) == 1 and CurrentGame.saves == 1, [ship.events, Loader.calls, CurrentGame.saves])
+	check("exit with a notice showing: the notice goes to the station's panel, its handler and what the game signalled", carried() == [["_newShip", [SALVAGED]]], carried())
+	check("exit with a notice showing: the ring's panel is hidden and stopped", not panel.visible and not panel.animation.is_playing())
+	var time = ring[3] + keys[keys.size() - 1][0] + ship.transitTime
+	check("exit with a notice showing: the departure, the turbines, the transit and the time are charged as without it", abs(ship.reactiveMass - expected[1]) < TOLERANCE and is_equal_approx(CurrentGame.state.time, time), [ship.reactiveMass, expected[1], CurrentGame.state.time - time])
+	freeRing(ring)
+	yield(frames(1), "completed")
+
+	settings.carriedNotices = []
+	state = leave(null, 1.0, Vector2(0, 0))
+	ring = yield(state, "completed")
+	panel = addPanel(ring[0], path)
+	signalNotice(panel)
+	yield(noticeOver(panel), "completed")
+	ring[1].emit_signal("exitingRing")
+	check("exit after a notice shown in full: the station at once, nothing handed on", wentTo(STATION_SCENE) == 1 and carried().empty() and panel.visible, [Loader.calls, carried()])
+	freeRing(ring)
+	yield(frames(1), "completed")
+
+	settings.carriedNotices = []
+	state = leave(null, 1.0, Vector2(0, 0))
+	ring = yield(state, "completed")
+	panel = addPanel(ring[0], path)
+	panel.notify()
+	var signalled = []
+	for notice in load("res://DiveSkipTransit/Settings.gd").NOTICES:
+		var source = get_node("/root/" + notice[0])
+		var args = []
+		for info in source.get_signal_list():
+			if info.name == notice[1]:
+				for i in info.args.size():
+					args.append("%s %d" % [notice[1], i])
+		source.callv("emit_signal", [notice[1]] + args)
+		signalled.append([notice[2], args])
+	ring[1].emit_signal("exitingRing")
+	check("exit with every kind of notice showing: each goes to the station's panel, in the order signalled, its handler and the signal's arguments", carried() == signalled, carried())
+	freeRing(ring)
+	yield(frames(1), "completed")
+	settings.carriedNotices = []
 
 # ---- The rescue ----
 
@@ -461,6 +562,15 @@ func rescue(mod):
 	check("rescue: the title card is at its last frame, black", cardBlack(ring[0]))
 	freeRing(ring)
 	yield(frames(1), "completed")
+	settings.carriedNotices = []
+	state = strand(null)
+	ring = yield(state, "completed")
+	signalNotice(addPanel(ring[0], script.get_script_constant_map()["_DST_NOTICES"]), "transit")
+	yield(frames(3), "completed")
+	check("rescue with a notice showing: the rescue ship called and the station at once, the notice handed to the station's panel", Shipyard.created == [["MADCERF", "helper"]] and wentTo(STATION_SCENE) == 1 and CurrentGame.saves == 1 and carried() == [["_transit", [SALVAGED]]], [Shipyard.created, Loader.calls, carried()])
+	freeRing(ring)
+	yield(frames(1), "completed")
+	settings.carriedNotices = []
 	settings.setValue("skipRescue", false)
 	state = strand(null)
 	ring = yield(state, "completed")
@@ -475,11 +585,14 @@ func rescue(mod):
 # Where Game.gd gameOverScreen goes: its `title` (Loader.prepare returns the path).
 const TITLE_SCENE = "res://TitleScreen.tscn"
 
-# A ring two frames in, its game over just signalled (CurrentGame.gameOver, as a meltdown signals it).
-func meltDown(script):
+# A ring two frames in, its game over just signalled (CurrentGame.gameOver, as a meltdown signals it). With `notices`
+# (the mod's _DST_NOTICES), the notification panel shows a notice the game signalled just before, as the ship lost.
+func meltDown(script, notices = ""):
 	var ring = makeRing(script)
 	yield(frames(2), "completed")
 	Loader.calls.clear()
+	if notices != "":
+		signalNotice(addPanel(ring[0], notices), "lostShip")
 	CurrentGame.emit_signal("gameOver")
 	return ring
 
@@ -498,6 +611,12 @@ func gameOver(mod):
 	check("game over: the title screen at once", Loader.calls.count("go " + TITLE_SCENE) == 1 and cardBlack(ring[0]), Loader.calls)
 	CurrentGame.emit_signal("gameOver")
 	check("game over: a second game over changes nothing", Loader.calls.count("go " + TITLE_SCENE) == 1, Loader.calls)
+	freeRing(ring)
+	yield(frames(1), "completed")
+	settings.carriedNotices = []
+	state = meltDown(null, script.get_script_constant_map()["_DST_NOTICES"])
+	ring = yield(state, "completed")
+	check("game over with a notice showing: the title screen at once, which has no panel, so nothing is handed on", wentTo(TITLE_SCENE) == 1 and carried().empty(), [Loader.calls, carried()])
 	freeRing(ring)
 	yield(frames(1), "completed")
 	settings.setValue("skipGameOver", false)
@@ -696,6 +815,26 @@ func fadeIn(mod):
 	yield(frames(1), "completed")
 	settings.setValue("skipStationFadeIn", true)
 
+	# The notices the ring scene handed on (Code.gd goToEnceladus), shown by the station's panel through its own handlers.
+	var path = script.get_script_constant_map()["_DST_STATION_NOTICES"]
+	var notices = [["_newShip", [SALVAGED]], ["_levelUp", ["crew", "type", "from", "to"]], ["_transit", [SALVAGED]]]
+	for skipped in [true, false]:
+		settings.setValue("skipStationFadeIn", skipped)
+		settings.carriedNotices = notices.duplicate(true)
+		station = fadeInStation(script)
+		var panel = addPanel(station, path)
+		station._ready()
+		check("station%s: the notices handed on from the ring go to its panel's handlers, in order, and only once" % ("" if skipped else ", fade-in switch off"), panel.calls == notices and settings.carriedNotices.empty(), panel.calls)
+		station.queue_free()
+		yield(frames(1), "completed")
+	settings.setValue("skipStationFadeIn", true)
+	station = fadeInStation(script)
+	var idle = addPanel(station, path)
+	station._ready()
+	check("station: with nothing handed on, its panel gets nothing", idle.calls.empty(), idle.calls)
+	station.queue_free()
+	yield(frames(1), "completed")
+
 # ---- The settings ----
 
 func model():
@@ -846,8 +985,85 @@ func pacing():
 	freeRing(ring)
 	yield(frames(1), "completed")
 	check("pacing: leaving the ring scene puts back the game's rate, its sound and normal time", Engine.time_scale == 1.0 and CurrentGame.targetTimeScale == 1.0 and Engine.iterations_per_second == base and not muted(), [Engine.time_scale, Engine.iterations_per_second])
+
+	# At the most, with a notice showing as the ship leaves, longer than the panel's share of the exit (the exit's time
+	# over the speed): the ring's panel is hidden as the exit starts, and the station comes as soon as the exit ends, the
+	# notice handed to its panel.
+	state = pacedExit(spec.max, 3.0)
+	var leaving = yield(state, "completed")
+	var titles = leaving[1]
+	var panel = leaving[2]
+	check("pacing at the most, a notice longer than the exit leaves the panel: the ring's panel is hidden and stopped as the exit starts", titles.current_animation == "exit" and titles.is_playing() and not panel.visible and not panel.animation.is_playing())
+	state = exitOver(titles)
+	yield(state, "completed")
+	check("pacing at the most, a notice showing: the station as soon as the exit is over, once, the notice handed to its panel", not titles.is_playing() and wentTo(STATION_SCENE) == 1 and carried() == [["_newShip", [SALVAGED]]], [Loader.calls, carried()])
+	freeRing(leaving[0])
+	yield(frames(1), "completed")
+
+	# A notice that fits the panel's share of the exit plays to its end in the ring, and isn't handed on.
+	state = pacedExit(spec.max, 1.0 / 3)
+	leaving = yield(state, "completed")
+	titles = leaving[1]
+	panel = leaving[2]
+	var shown = panel.visible and panel.animation.is_playing()
+	state = noticeOver(panel)
+	yield(state, "completed")
+	var during = titles.is_playing() and panel.visible
+	state = exitOver(titles)
+	yield(state, "completed")
+	check("pacing at the most, a notice shorter than the exit leaves the panel: the ring's panel shows it to its end, and the station hands nothing on", shown and during and wentTo(STATION_SCENE) == 1 and carried().empty() and panel.visible, [shown, during, Loader.calls, carried()])
+	freeRing(leaving[0])
+	yield(frames(1), "completed")
+
+	# A second notice halfway through the exit, which the panel's share left no longer fits: the ring's panel is hidden
+	# then, and both notices go to the station's.
+	state = pacedExit(spec.max, 0.6)
+	leaving = yield(state, "completed")
+	titles = leaving[1]
+	panel = leaving[2]
+	shown = panel.visible and panel.animation.is_playing()
+	var left = 600
+	while left > 0 and titles.is_playing() and titles.current_animation_position < titles.current_animation_length / 2:
+		yield(get_tree(), "idle_frame")
+		left -= 1
+	var lost = "Lost stub"
+	signalNotice(panel, "lostShip", [lost])
+	var hidden = titles.is_playing() and not panel.visible
+	state = exitOver(titles)
+	yield(state, "completed")
+	check("pacing at the most, a second notice halfway through the exit that no longer fits: the ring's panel is hidden then, and both go to the station's", shown and hidden and wentTo(STATION_SCENE) == 1 and carried() == [["_newShip", [SALVAGED]], ["_lostShip", [lost]]], [shown, hidden, Loader.calls, carried()])
+	freeRing(leaving[0])
+	yield(frames(1), "completed")
+	settings.carriedNotices = []
 	settings.setValue("transitSpeed", spec.default)
 	settings.setValue("skipTransit", true)
+
+# A ring at `speed` whose arrival is over, the ship leaving while the stand-in panel shows the salvage's notice, which
+# lasts `share` times the exit's time over the speed (what the exit gives the panel, which plays in real time):
+# [the ring, its title card player, the panel].
+func pacedExit(speed, share):
+	settings.carriedNotices = []
+	var state = pacedRing(speed)
+	var ring = yield(state, "completed")
+	ring[0].eclapsedTime = ring[0].totalCutsceneTime
+	yield(idleFrames(3), "completed")
+	ring[1].emit_signal("setup")
+	ring[1].autopilotDesiredVelocity = ESCAPE_VELOCITY
+	ring[1].cutscene = true
+	Loader.calls.clear()
+	var titles = ring[0].get_node("TitleAnimPlayer")
+	var seconds = share * titles.get_animation("exit").length / speed
+	var panel = addPanel(ring[0], load("res://Game.gd").get_script_constant_map()["_DST_NOTICES"], seconds)
+	signalNotice(panel)
+	ring[1].emit_signal("exitingRing")
+	return [ring, titles, panel]
+
+# Waits until the exit is over (at most `limit` frames), then a few frames for the station's call.
+func exitOver(titles, limit = 600):
+	while limit > 0 and titles.is_playing():
+		yield(get_tree(), "idle_frame")
+		limit -= 1
+	yield(frames(3), "completed")
 
 # The station as enceladus/Enceladus.tscn nests the menu and the right-hand screens (as the crew suite builds it):
 # MarginContainer > HBoxContainer > Options (the menu, the game's EnceladusMenu.gd, with the dive entry and, when
@@ -862,6 +1078,7 @@ func menuStation(withCrew):
 	root.add_child(hbox)
 	var menu = VBoxContainer.new(); menu.name = "Options"
 	menu.set_script(load("res://enceladus/EnceladusMenu.gd"))
+	addMenuTooltips(menu)
 	var dive = Button.new(); dive.name = "RingDive"; dive.text = DIVE_KEY
 	menu.add_child(dive)
 	dive.connect("pressed", self, "_record", ["dive"])
@@ -1074,8 +1291,8 @@ func settingsScreen():
 	yield(tap(escKey()), "completed")
 	yield(frames(40), "completed")
 	check("screen: Esc closes it after the game's fade", not screen.visible)
-	# With a gamepad: the Shift badge reads the gamepad twin while the game is played with one, and X pressed on the
-	# highlighted entry while LT is held opens the settings, as Shift+Click does (Badge.gd).
+	# With a gamepad: the Shift badge reads the gamepad twin while the game is played with one, and PAD_BUTTON pressed on
+	# the highlighted entry while PAD_MODIFIER is held opens the settings, as Shift+Click does (Badge.gd).
 	var shiftBadge = s.menu._dstShiftBadge
 	var padModifier = shiftBadge.PAD_MODIFIER
 	var padButton = shiftBadge.PAD_BUTTON
@@ -1090,26 +1307,28 @@ func settingsScreen():
 	var padKey = s.menu._DST_SETTINGS_TOOLTIP_PAD
 	var padExpected = tr(padKey) % [shiftBadge.PAD_BUTTON_NAME, shiftBadge.PAD_MODIFIER_NAME, settings.modName()]
 	check("gamepad: its tooltip tells about the gamepad twin with a gamepad, and about Shift+Click again with keyboard and mouse", padTip == padExpected and keyTip == tip % [keyText, settings.modName()] and tr(padKey) != padKey, [padTip, keyTip])
+	# A gamepad shows no hover: with one, the badge's tooltip shows while the entry, where the D-pad lands, has the focus.
+	shiftBadgeTipChecks("tooltip", s.dive, s.logs, s.menu.get_node("PlaySoundsOnTheseButtons"), tip % [keyText, settings.modName()], padExpected)
 	Settings.controlScheme = Settings.control.gamepad
 	var launched = recorded.size()
 	s.dive.grab_focus()
 	yield(tapJoy(padButton), "completed")
 	yield(frames(5), "completed")
-	check("gamepad: X alone on the highlighted entry does nothing", not screen.visible and recorded.size() == launched, recorded)
+	check("gamepad: PAD_BUTTON alone on the highlighted entry does nothing", not screen.visible and recorded.size() == launched, recorded)
 	yield(holdJoy(padModifier, true), "completed")
 	s.dive.disabled = true
 	yield(tapJoy(padButton), "completed")
 	yield(frames(5), "completed")
-	check("gamepad: LT+X on a disabled entry does nothing", not screen.visible and recorded.size() == launched, recorded)
+	check("gamepad: PAD_MODIFIER+PAD_BUTTON on a disabled entry does nothing", not screen.visible and recorded.size() == launched, recorded)
 	s.dive.disabled = false
 	s.logs.grab_focus()
 	yield(tapJoy(padButton), "completed")
 	yield(frames(5), "completed")
-	check("gamepad: LT+X with another entry highlighted doesn't open these settings", not screen.visible and recorded.size() == launched, recorded)
+	check("gamepad: PAD_MODIFIER+PAD_BUTTON with another entry highlighted doesn't open these settings", not screen.visible and recorded.size() == launched, recorded)
 	s.dive.grab_focus()
 	yield(tapJoy(padButton), "completed")
 	yield(frames(5), "completed")
-	check("gamepad: LT+X on the highlighted dive entry opens the settings and doesn't launch", screen.visible and recorded.size() == launched, recorded)
+	check("gamepad: PAD_MODIFIER+PAD_BUTTON on the highlighted dive entry opens the settings and doesn't launch", screen.visible and recorded.size() == launched, recorded)
 	yield(holdJoy(padModifier, false), "completed")
 	yield(tapJoy(JOY_BUTTON_1), "completed")
 	yield(frames(40), "completed")

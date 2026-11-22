@@ -169,14 +169,6 @@ func entry(s) -> String:
 func marked(s) -> String:
 	return tr(s.menu._DN_ALERT) % tr(KEY)
 
-# The tooltip of the Shift badge beside a station menu entry (a mod's Badge.gd, a child of the entry), which holds it:
-# the entry has none of its own.
-func badgeTip(entry) -> String:
-	for child in entry.get_children():
-		var script = child.get_script()
-		if script != null and script.resource_path.ends_with("/Badge.gd"):
-			return child.hint_tooltip
-	return ""
 func settingsTip(s) -> String:
 	return tr(s.menu._DN_SETTINGS_TOOLTIP) % [OS.get_scancode_string(KEY_SHIFT), manifestValue("mod_information", "name")]
 
@@ -219,6 +211,7 @@ func station(withDealer = true):
 		services = Button.new(); services.name = "Services"; services.text = SERVICES_KEY
 		menu.add_child(services)
 	var logs = Button.new(); logs.name = "Logs"; logs.text = "ENCELADUS_LOGS"
+	addMenuTooltips(menu)
 	menu.add_child(logs)
 	hbox.add_child(menu)
 	var layer = CanvasLayer.new(); layer.name = "CanvasLayer"
@@ -1008,8 +1001,8 @@ func screen():
 	s.logs.grab_focus()
 	yield(frames(40), "completed")
 	check("focusing another menu entry hides it, as it hides the game's screens", not screen.visible)
-	# With a gamepad: the Shift badge reads the gamepad twin while the game is played with one, and X pressed on the
-	# highlighted entry while LT is held opens the settings, as Shift+Click does (Badge.gd).
+	# With a gamepad: the Shift badge reads the gamepad twin while the game is played with one, and PAD_BUTTON pressed on
+	# the highlighted entry while PAD_MODIFIER is held opens the settings, as Shift+Click does (Badge.gd).
 	var shiftBadge = s.menu._dnShiftBadge
 	var padModifier = shiftBadge.PAD_MODIFIER
 	var padButton = shiftBadge.PAD_BUTTON
@@ -1023,25 +1016,27 @@ func screen():
 	check("gamepad: the Shift badge reads Shift with keyboard and mouse, the gamepad twin with a gamepad, and Shift again", keyRead == keyText and padRead == shiftBadge.PAD_TEXT and shiftBadge._label.text == keyText, [keyRead, padRead, shiftBadge._label.text])
 	var padExpected = tr(s.menu._DN_SETTINGS_TOOLTIP_PAD) % [shiftBadge.PAD_BUTTON_NAME, shiftBadge.PAD_MODIFIER_NAME, manifestValue("mod_information", "name")]
 	check("gamepad: its tooltip tells about the gamepad twin with a gamepad, and about Shift+Click again with keyboard and mouse", padTip == padExpected and keyTip == settingsTip(s) and tr(s.menu._DN_SETTINGS_TOOLTIP_PAD) != s.menu._DN_SETTINGS_TOOLTIP_PAD, [padTip, keyTip])
+	# A gamepad shows no hover: with one, the badge's tooltip shows while the entry, where the D-pad lands, has the focus.
+	shiftBadgeTipChecks("tooltip", s.market, s.owned, s.menu.get_node("PlaySoundsOnTheseButtons"), settingsTip(s), padExpected)
 	Settings.controlScheme = Settings.control.gamepad
 	s.market.grab_focus()
 	yield(tapJoy(padButton), "completed")
 	yield(frames(5), "completed")
-	check("gamepad: X alone on the highlighted entry does nothing", not screen.visible and not s.dealer.visible)
+	check("gamepad: PAD_BUTTON alone on the highlighted entry does nothing", not screen.visible and not s.dealer.visible)
 	yield(holdJoy(padModifier, true), "completed")
 	s.market.disabled = true
 	yield(tapJoy(padButton), "completed")
 	yield(frames(5), "completed")
-	check("gamepad: LT+X on a disabled entry does nothing", not screen.visible and not s.dealer.visible)
+	check("gamepad: PAD_MODIFIER+PAD_BUTTON on a disabled entry does nothing", not screen.visible and not s.dealer.visible)
 	s.market.disabled = false
 	s.logs.grab_focus()
 	yield(tapJoy(padButton), "completed")
 	yield(frames(5), "completed")
-	check("gamepad: LT+X with another entry highlighted doesn't open these settings", not screen.visible and not s.dealer.visible)
+	check("gamepad: PAD_MODIFIER+PAD_BUTTON with another entry highlighted doesn't open these settings", not screen.visible and not s.dealer.visible)
 	s.market.grab_focus()
 	yield(tapJoy(padButton), "completed")
 	yield(frames(5), "completed")
-	check("gamepad: LT+X on the highlighted Dealer entry opens the settings, not the Dealer screen", screen.visible and not s.dealer.visible)
+	check("gamepad: PAD_MODIFIER+PAD_BUTTON on the highlighted Dealer entry opens the settings, not the Dealer screen", screen.visible and not s.dealer.visible)
 	yield(holdJoy(padModifier, false), "completed")
 	yield(tap(escKey()), "completed")
 	yield(frames(40), "completed")

@@ -305,14 +305,6 @@ func everySavedJob(saved, value) -> bool:
 			return false
 	return true
 
-# The tooltip of the Shift badge beside a station menu entry (a mod's Badge.gd, a child of the entry), which holds it:
-# the entry has none of its own.
-func badgeTip(entry) -> String:
-	for child in entry.get_children():
-		var script = child.get_script()
-		if script != null and script.resource_path.ends_with("/Badge.gd"):
-			return child.hint_tooltip
-	return ""
 # The Crew entry's tooltip, in the language set now.
 func settingsTip(menu) -> String:
 	return tr(menu._CHEAP_HIRE_SETTINGS_TOOLTIP) % [OS.get_scancode_string(KEY_SHIFT), manifestValue("mod_information", "name")]
@@ -340,6 +332,7 @@ func station(withTuning = true):
 	menu.add_child(crew)
 	var logs = Button.new(); logs.name = "Logs"; logs.text = LOGS_KEY
 	menu.add_child(logs)
+	addMenuTooltips(menu)
 	hbox.add_child(menu)
 	var layer = CanvasLayer.new(); layer.name = "CanvasLayer"
 	root.add_child(layer)
@@ -1145,8 +1138,8 @@ func run():
 	yield(frames(40), "completed")
 	check("focusing another menu entry hides it, as it hides the game's screens", opening and not screen.visible)
 
-	# With a gamepad: the Shift badge reads the gamepad twin while the game is played with one, and X pressed on the
-	# highlighted entry while LT is held opens the settings, as Shift+Click does (Badge.gd).
+	# With a gamepad: the Shift badge reads the gamepad twin while the game is played with one, and PAD_BUTTON pressed on
+	# the highlighted entry while PAD_MODIFIER is held opens the settings, as Shift+Click does (Badge.gd).
 	var shiftBadge = s.menu._cheapHireShiftBadge
 	var padModifier = shiftBadge.PAD_MODIFIER
 	var padButton = shiftBadge.PAD_BUTTON
@@ -1164,26 +1157,28 @@ func run():
 	var germanTip = shiftBadge.hint_tooltip
 	TranslationServer.set_locale("en")
 	check("the badge's tooltip follows a change of language by itself, and back", germanTip == SETTINGS_TOOLTIP_DE % [keyText, manifestValue("mod_information", "name")] and shiftBadge.hint_tooltip == settingsTip(s.menu), [germanTip, shiftBadge.hint_tooltip])
+	# A gamepad shows no hover: with one, the badge's tooltip shows while the entry, where the D-pad lands, has the focus.
+	shiftBadgeTipChecks("tooltip", s.crew, s.logs, s.menu.get_node("PlaySoundsOnTheseButtons"), settingsTip(s.menu), padExpected, true)
 	Settings.controlScheme = Settings.control.gamepad
 	var opened = s.crewScreen.opened
 	s.crew.grab_focus()
 	yield(tapJoy(padButton), "completed")
 	yield(frames(5), "completed")
-	check("gamepad: X alone on the highlighted entry does nothing", not screen.visible and s.crewScreen.opened == opened)
+	check("gamepad: PAD_BUTTON alone on the highlighted entry does nothing", not screen.visible and s.crewScreen.opened == opened)
 	yield(holdJoy(padModifier, true), "completed")
 	s.crew.disabled = true
 	yield(tapJoy(padButton), "completed")
 	yield(frames(5), "completed")
-	check("gamepad: LT+X on a disabled entry does nothing", not screen.visible and s.crewScreen.opened == opened)
+	check("gamepad: PAD_MODIFIER+PAD_BUTTON on a disabled entry does nothing", not screen.visible and s.crewScreen.opened == opened)
 	s.crew.disabled = false
 	s.logs.grab_focus()
 	yield(tapJoy(padButton), "completed")
 	yield(frames(5), "completed")
-	check("gamepad: LT+X with another entry highlighted doesn't open these settings", not screen.visible and s.crewScreen.opened == opened)
+	check("gamepad: PAD_MODIFIER+PAD_BUTTON with another entry highlighted doesn't open these settings", not screen.visible and s.crewScreen.opened == opened)
 	s.crew.grab_focus()
 	yield(tapJoy(padButton), "completed")
 	yield(frames(5), "completed")
-	check("gamepad: LT+X on the highlighted Crew entry opens the settings, not the Crew screen", screen.visible and screen.get_node("Shower").current_animation == "show" and s.crewScreen.opened == opened)
+	check("gamepad: PAD_MODIFIER+PAD_BUTTON on the highlighted Crew entry opens the settings, not the Crew screen", screen.visible and screen.get_node("Shower").current_animation == "show" and s.crewScreen.opened == opened)
 	yield(holdJoy(padModifier, false), "completed")
 	yield(tapJoy(JOY_BUTTON_1), "completed")
 	yield(frames(40), "completed")

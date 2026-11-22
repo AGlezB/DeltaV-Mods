@@ -27,12 +27,16 @@ that fair.
 **Watching the transit instead:** switch its skip off, and the transit plays at the speed you set, without holding
 Space, from 1x up to 24x. Faster than 3x it plays without sound, and a slow computer may not reach the speed you set.
 
+**The game's notices**, such as *Acquired* with the name of a ship you salvaged, take a few seconds in the upper half
+of the screen. When the station loads at once, or the trip back plays too fast for them, they show at the station
+instead.
+
 ## Settings
 
 Hold **Shift** and click *Launch Ring Dive* to open the settings (a plain click still launches a dive). With a
 gamepad, highlight *Launch Ring Dive*, hold **LT** and press **X**. The small badge beside the entry reminds you how:
 it reads *Shift*, or *LT+X* while you play with a gamepad (the game's *Controls* setting at *Gamepad*, or at *Auto*
-once you use the gamepad), and pointing at it tells you what to do.
+once you use the gamepad), and pointing at it, or highlighting the entry with a gamepad, tells you what to do.
 
 The settings show where the Tuning screen does, and close with Esc (B on a gamepad) or when you pick another entry of
 the menu. At the top, a window explains the setting you have selected. The skips marked (\*) take remass.

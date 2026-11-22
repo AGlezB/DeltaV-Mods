@@ -32,10 +32,10 @@ Services.
     `PAD_MODIFIER` button and press the `PAD_BUTTON` one (constants of `ServiceNotifier/Badge.gd`). A plain click still
     opens the Services screen. A small badge beside the entry says so: it reads Shift, or the gamepad twin as
     `PAD_TEXT` names it while the game is played with a gamepad (the game's *Controls* setting, or with *Auto* the
-    device last used). Hovering it shows the `SERVICENOTIFIER_SETTINGS_TOOLTIP` text, or with a gamepad the
-    `SERVICENOTIFIER_SETTINGS_TOOLTIP_PAD` one. The settings open where the Services screen does, with the same frame,
-    and close the way the game's screens do: Esc, the gamepad's B or Start button, or picking another entry of the
-    menu.
+    device last used). Hovering it shows the `SERVICENOTIFIER_SETTINGS_TOOLTIP` text; with a gamepad, which shows no
+    hover, highlighting the entry shows the `SERVICENOTIFIER_SETTINGS_TOOLTIP_PAD` one. The settings open where the
+    Services screen does, with the same frame, and close the way the game's screens do: Esc, the gamepad's B or Start
+    button, or picking another entry of the menu.
   - Laid out as the Tuning screen: a window with the description of the selected service, then a group of switches per
     kind of service, *After a cooldown* and *Compensation*, a switch per service, named as the game names it. Hovering
     a switch shows the `SERVICENOTIFIER_SWITCH` text.
@@ -75,11 +75,10 @@ Services.
   - Shift+Click and its gamepad twin (`Badge.gd` `isPadShortcut`), the Shift badge and its tooltip, and the settings
     screen's place are CrewCheapHireNotifier's (see its README): the press is accepted in the button's `gui_input`, so
     the Services screen stays closed. The badge (`_snMakeShiftBadge()`, kept in `_snShiftBadge`) hangs beside the
-    entry; its tooltips are `_SN_SETTINGS_TOOLTIP` and, with a gamepad, `_SN_SETTINGS_TOOLTIP_PAD`; the entry itself
-    has none.
-    Without the right-hand screens' container or its Services screen (`_SN_SERVICES_SCREEN`) there is no settings
-    screen, no Shift badge and no mark, Shift+Click is a plain click and its gamepad twin does nothing. A menu without
-    a Services entry is left alone.
+    entry; its tooltips are `_SN_SETTINGS_TOOLTIP` and, with a gamepad, `_SN_SETTINGS_TOOLTIP_PAD`, shown on hover and,
+    with a gamepad, while the entry has the focus (its `focusOwner`); the entry itself has none. Without the right-hand
+    screens' container or its Services screen (`_SN_SERVICES_SCREEN`) there is no settings screen, no Shift badge and no
+    mark, Shift+Click is a plain click and its gamepad twin does nothing. A menu without a Services entry is left alone.
   - **`Badge.gd`** is the same file in every mod that has a Shift badge, CrewCheapHireNotifier's among them, whose
     README lists its members: keep the copies identical.
 - **The rule** (`Settings.gd`): `kindOf(row)` is a key of `KINDS`, `"cooldown"` for a row with `cooldownHours` above 0,

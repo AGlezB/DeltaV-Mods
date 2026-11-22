@@ -1,10 +1,10 @@
 # CombatSimulator - ΔV: Rings of Saturn
 
 Shift+Click on the simulator's button, or Shift plus its key, runs a fight at the station instead of the simulator (a
-gamepad has twins of both, and a badge on the button names them): against the enemy ships you pick, at the distance
-you pick, among the rocks of a part of the rings with the chaos and density you pick, with as much remass as you pick.
-It looks and plays like a dive, and nothing of it carries over to the save. The mod's page in the users' wiki also
-explains every ship and weapon of the game in a fight.
+gamepad has twins of both, and a Shift badge on the button is the reminder): against the enemy ships you pick, at the
+distance you pick, among the rocks of a part of the rings with the chaos and density you pick, with as much remass as
+you pick. It looks and plays like a dive, and nothing of it carries over to the save. The mod's page in the users' wiki
+also explains every ship and weapon of the game in a fight.
 
 | Combat simulation | Ship |
 |---|---|
@@ -111,7 +111,8 @@ explains every ship and weapon of the game in a fight.
     name. The released game moves Godot's tooltips off the screen and draws its own through `PlaySoundsOnTheseButtons`
     (`_CS_GAME_TOOLTIPS`), none of which covers these buttons, so one of its own sits on the dialog's layer:
     `connectSounds` registers each button (its hover and focus sounds; the button's own tooltip stays empty, so it
-    shows none), and `attachTooltip()` the badge, whose tooltip shows while the mouse is on it.
+    shows none), and `attachTooltip()` the badge, whose tooltip shows while the mouse is on it and, with a gamepad,
+    which shows no hover, while the button, its `focusOwner`, has the focus.
   - **The ship flown** (`_csOpen()`): the button's nearest ancestor with one of the properties in `_CS_CONFIGS`, what
     each screen's `_on_LaunchVR_pressed` sends the simulator (Tuning and Equipment their `previewedConfig`, the Dealer
     and the Fleet their `currentConfig`). Without a config, nothing opens, as nothing would start. The dialog's
@@ -130,8 +131,8 @@ explains every ship and weapon of the game in a fight.
   `PAD_BUTTON_NAME`, `PAD_TEXT`): at the station the game gives neither button a use, and players can't rebind them
   (the game's `Settings.gd` binds keys and mouse buttons only). It reads the `Settings` autoload through a variable
   (`_gameSettings()`), since the mods' scripts are compiled before the engine creates it. Used here: `dress()`,
-  `attachTooltip()` (without its `focusOwner`), `setShiftTooltips()`, `isPadShortcut()` and the `PAD_*` constants;
-  `hangBeside()` is for the other mods' badges beside a button.
+  `attachTooltip()` (with the button as its `focusOwner`), `setShiftTooltips()`, `isPadShortcut()` and the `PAD_*`
+  constants; `hangBeside()` is for the other mods' badges beside a button.
 - **The dialog** (`SettingsUI.gd`, a CanvasLayer on the layer of the station's screens, read from the CanvasLayer
   holding the Tuning screen, else `LAYER_FALLBACK`; the station root's last child, so its `_input` comes first and Esc
   or `pause` cancel there) is an exclusive `Popup` covering the screen it was opened from (the screen's rectangle, or
@@ -142,7 +143,8 @@ explains every ship and weapon of the game in a fight.
   without that screen; the arena's end confirmation takes it too), with a description window nested as
   `enceladus/Tuning.tscn` nests its own (`GAME_WINDOW_MARGIN`, `GAME_WINDOW`, `GAME_WINDOW_INSIDE`), kept at
   `DESCRIPTION_LINES` lines (a longer text scrolls), and Start and Cancel (`START`, `CANCEL`) at the bottom, which
-  `attachTooltips()` registers with the station's tooltip node for the game's focus and hover sounds.
+  `attachTooltips()` registers with the mod's own tooltip node on the dialog's layer (`Code.gd` `_csTooltips`) for the
+  game's focus and hover sounds.
   - **With a gamepad:** the tab script switches tabs in its own `_input`, which runs first (a child's), and lets the
     press through at the first or last tab, where the screen behind, whose tabs use the same script
     (`enceladus/Dealer.tscn`, `Upgrades.tscn`), would switch its own; so while the dialog is open its `_input` marks
@@ -196,7 +198,11 @@ explains every ship and weapon of the game in a fight.
     set, `test`, the `sim` zone, `SHIP_META`), with `CurrentGame.playerShip` swapped first, since the OMS's
     Astrogator tab reads it in its `_ready`;
   - fills the field as the arrival cutscene of a dive does (`_prefill()`: the ring scene's arrival length,
-    `GAME_ARRIVAL_SECONDS`, or `ARRIVAL_SECONDS_FALLBACK`, over the field's `spawnEvery`, at the cutscene's radius);
+    `GAME_ARRIVAL_SECONDS`, or `ARRIVAL_SECONDS_FALLBACK`, over the field's `spawnEvery`, at the cutscene's radius),
+    over several frames, the arena still hidden (`_filling`): from the frame after Start, each frame makes spawns for
+    `PREFILL_FRAME_MS` and leaves the rest for the next, since all in one frame they would stall the game for a moment
+    the player sees, and between frames the field has its own radius back for the spawns it makes itself; then `start()`
+    goes on;
   - spawns the enemies (`_spawnEnemies()`, `_buildEnemy()`): `BUILDERS` gives the game's builder for a model (the
     event's script, its method and arguments, values set first, and the node of `story/TheRing.tscn`, `GAME_EVENTS`,
     whose values it takes: the Big Bad Wolf's), `NEW_BUILDS` the models built new, any other model gets
@@ -209,10 +215,11 @@ explains every ship and weapon of the game in a fight.
   handled: Esc closes the OMS when it is open, and otherwise `pause` asks (`confirmEnd()`): the tree paused and the
   first effect of the `MUSIC_BUS` bus on, as the dive's pause menu does, with No (the confirmation's cancel button)
   focused, as in the game's own confirmations (`PauseLayer.gd`), so pausing and then accepting goes back to the run
-  rather than ending it. `end()` runs once, on Yes or on the ship's `removal` (the game removes it after the explosion,
-  `Tool.remove`): it fades out, then `_cleanup()` removes the viewport's contents, and an idle frame later puts back the
-  player's ship, `inventoryMode`, the time scale, the pirates' faction, the global offset, the save's tables
-  (`_restore()`), the station and the focus.
+  rather than ending it. While the field fills, `_input` forwards nothing, and `pause` only asks once the arena shows
+  (`_endAsked`): until then the arena, and the confirmation with it, is hidden. `end()` runs once, on Yes or on the
+  ship's `removal` (the game removes it after the explosion, `Tool.remove`): it fades out, then `_cleanup()` removes the
+  viewport's contents, and an idle frame later puts back the player's ship, `inventoryMode`, the time scale, the
+  pirates' faction, the global offset, the save's tables (`_restore()`), the station and the focus.
 - **The save guard.** The fight's ships write into the save whatever their zone:
   - The tables of `CurrentGame.state` they write (`SAVE_TABLES`, each with where the game writes it) are copied at
     Start and put back at the end, in place, since `Factions.gd` and the game hold those dictionaries; a table the save

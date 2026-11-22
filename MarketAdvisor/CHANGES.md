@@ -1,5 +1,11 @@
 # MarketAdvisor - Changes
 
+## 1.2.1
+- With a gamepad, the Shift badge's tooltip shows while the Mineral Market entry is highlighted: a gamepad shows no
+  hover (`attachTooltip()` with the entry as its `focusOwner`).
+- Comments in `StationMenu.gd` name `Badge.gd`'s `PAD_BUTTON` instead of the button it holds.
+- README: the badge's tooltip with a gamepad.
+
 ## 1.2.0
 - A Shift badge beside the station menu's Mineral Market entry tells how to open the settings: it reads Shift with
   keyboard and mouse, and the gamepad's twin of Shift+Click (`PAD_TEXT` in `Badge.gd`) while the game is played with

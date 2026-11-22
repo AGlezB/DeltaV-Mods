@@ -613,6 +613,26 @@ sad one below minus that. The dive HUD's crew faces (`hud/CrewFaceOnDive.tscn`) 
 - Maintenance drones fix the most damaged system of the ship, or of a friendly ship within reach, up to
   `repairLimit`.
 
+## Notification panel
+
+- Each notice is a 4 s animation of the panel's `AnimationPlayer` (`achievement/Notifications.tscn`: `acquired`,
+  `lost`, `inTransit`, `level`, `gone`, `achieved`, `achieved-rare`, `poi`, `establish`, `updated`, `money`), played in
+  real time whatever the time scale (`Notifications.gd` `_process`: `playback_speed = 1 / Engine.time_scale`).
+- Its handlers, connected in `_ready`, fill in the notice's labels and play it, first waiting for the one playing to
+  end (`yield(animation, "animation_finished")`): `_newShip` (`CurrentGame.newShip`, *Acquired*), `_lostShip`
+  (`lostShip`, *Catastrophic Craft Failure*), `_transit` (`transit`, *Interlunar Transit Confirmed*), `_levelUp`
+  (`levelUp`), `_gone` (`crewGone` and `crewInactive`) and `_achieve` (`Achivements.achivedOffline`, *Achievement
+  Unlocked*; none in a game's first `staleAchievementTime` seconds). `_onPoiFound` (`poiDiscovered`) and the money's
+  (`moneyChangedBy`, summed up while it shows) queue theirs on the player instead.
+- In *Acquired*, the title fades in over the first 0.6 s, and the ship's name from 0.7 s, brightest at 1.3 s.
+- The ring scene's panel is in `BulletTimer.tscn` (`NotificationsLayer`). The station's, in `enceladus/Enceladus.tscn`
+  (`NotificationLayer`), shows no money notice (`suppresMoney`): the station shows the money itself.
+- Leaving the ring brings notices. `ship-ctrl.gd` `escapeTheRing` (the exit) and `Game.gd` `sendHelp` (the rescue)
+  let every ship and drone take its leave (`handleExitToEnceladus`): the player's drones send their cargo on
+  (`claimCargo` emits `transit`), and the player's ship, unless helpless, salvages the ship the arm holds
+  (`CurrentGame.addShip` emits `newShip`; see *Salvage*). Both cutscenes end in `Game.gd` `goToEnceladus`, which loads
+  the station and drops the ring scene's panel with whatever it still had to show.
+
 ## Physics rate
 
 With Dynamic Temporal Simulation Simplification on, `Settings.gd` `_process` moves the rate once a second towards the

@@ -1,5 +1,13 @@
 # CrewCheapHireNotifier - Changes
 
+## 1.10.1
+- With a gamepad, the Shift badge's tooltip shows while the Crew entry is highlighted: a gamepad shows no hover
+  (`attachTooltip()` with the entry as its `focusOwner`).
+- Comments in `Code.gd` name `Badge.gd`'s `PAD_BUTTON` instead of the button it holds.
+- This file: 1.10.0's entry on `Badge.gd` corrected: of the Hire screen badge it holds only the tooltip, and
+  `HireScreen.gd` `_cheapHireBadge()` still builds its look.
+- README: the badge's tooltip with a gamepad.
+
 ## 1.10.0
 - Shift+Click has a gamepad twin: on the highlighted Crew entry, the `PAD_BUTTON` button pressed while the
   `PAD_MODIFIER` one is held opens the settings too (constants of the new `Badge.gd`).
@@ -11,8 +19,8 @@
   setting does, then the details.
 - The Hire screen badge's tooltip shows sooner, without the hover sound; with a gamepad, it shows while the entry's
   Hire button has the focus.
-- New script, `Badge.gd` (the same file in every mod that has a Shift badge): the Shift badge and the Hire screen badge,
-  their look and their tooltips, and the gamepad's twin of Shift+Click. Constants `PAD_MODIFIER`, `PAD_BUTTON`,
+- New script, `Badge.gd` (the same file in every mod that has a Shift badge): the Shift badge's look and tooltip, the
+  Hire screen badge's tooltip, and the gamepad's twin of Shift+Click. Constants `PAD_MODIFIER`, `PAD_BUTTON`,
   `PAD_MODIFIER_NAME`, `PAD_BUTTON_NAME`, `PAD_TEXT`, `SMALL_FONT_THEME`, `TOOLTIP_DELAY`, `TOOLTIP_FADE` and
   `BUTTON_HOVER_MUTE`; `isPadShortcut()`, `dress()`, `hangBeside()`, `setShiftTooltips()` and `attachTooltip()`.
 - `i18n/en.po`: `CREWCHEAPHIRENOTIFIER_SETTINGS_TOOLTIP` reworded (it is the badge's); new

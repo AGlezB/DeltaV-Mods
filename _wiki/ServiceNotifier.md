@@ -28,7 +28,8 @@ changes.
 
 Hold **Shift** and click the Services entry to open the settings (a plain click still opens Services). With a
 gamepad, highlight the Services entry, hold **LT** and press **X**. The small badge beside the entry reminds you: it
-reads **Shift**, or **LT+X** while you play with a gamepad. Point at it with the mouse to see how to open the settings.
+reads **Shift**, or **LT+X** while you play with a gamepad. Point at it with the mouse, or highlight the entry with a
+gamepad, to see how to open the settings.
 
 The settings show where Services does, laid out like the Tuning screen: at the top, what the switch you have selected
 does, followed by the game's own offer for that service; below it, a switch for each service, in two groups, **After

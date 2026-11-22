@@ -68,8 +68,9 @@ report a bug to the game's developers.
 ## Works with other mods
 
 [DroneAltPriorities](DroneAltPriorities) also adds a tab right after the *Geologist* tab: both show, this mod's **GBM**
-tab first. With this mod's switch on, DroneAltPriorities ranks only the chunks the masses let through, and
-[ArmAltTargetSelection](ArmAltTargetSelection) picks the arm's target only among those the arm's row lets through.
+tab first. With this mod's switch on, DroneAltPriorities ranks only the identified chunks the masses let through, then
+the ones not identified yet, and [ArmAltTargetSelection](ArmAltTargetSelection) picks the arm's target only among
+those the arm's row lets through.
 
 ## Install
 

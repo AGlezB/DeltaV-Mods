@@ -110,6 +110,9 @@ const PLACEMENT_RANDOMNESS = 100
 const PLACEMENT_TRIES = 8
 # The fade in and out, in seconds.
 const FADE_SECONDS = 1.0
+# How long the prefill may spawn for in each frame, in ms: the rest of its spawns wait for the next frame, so a start
+# doesn't stall the game.
+const PREFILL_FRAME_MS = 8
 
 # The save's tables the arena's ships write whatever their zone: copied at Start, restored in place at the end.
 # dispositions: every AI ship's entry, made as it is set up (ships/ship-ctrl.gd setDummy) and written by hits;
@@ -125,6 +128,8 @@ var _tween = null
 var _confirm = null
 var _running = false
 var _ending = false
+var _filling = false
+var _endAsked = false
 var _field = null
 var _map = null
 var _ship = null
@@ -208,7 +213,9 @@ func isRunning() -> bool:
 
 # Starts a run with the ship `sim` (what the screen's simulator would have flown); `lastFocus` gets the focus back at
 # the end. Nothing happens without the station's ring map to build the stretch of ring from, and then `lastFocus` gets
-# the focus back at once: the dialog that asked has closed, and a gamepad has nothing else to hold on to.
+# the focus back at once: the dialog that asked has closed, and a gamepad has nothing else to hold on to. The field
+# fills over several frames (_prefill), with the arena still hidden and taking no input; the enemies come and the arena
+# fades in once it is full.
 func start(sim, lastFocus):
 	if _running:
 		return
@@ -239,9 +246,16 @@ func start(sim, lastFocus):
 	if not _buildShip(sim):
 		_cleanup()
 		return
-	_prefill(state)
+	_filling = true
+	yield(_prefill(state), "completed")
+	_filling = false
+	if not _running or _ending:
+		return
 	_spawnEnemies()
 	_fadeIn()
+	if _endAsked:
+		_endAsked = false
+		confirmEnd()
 
 # Copies of the save's tables the ships write (SAVE_TABLES); a table the save lacks is remembered as null.
 func _snapshot():
@@ -370,17 +384,26 @@ func _buildShip(sim) -> bool:
 	return true
 
 # As the field fills around the ship during a dive's arrival cutscene: as many spawns as it makes in that time (the
-# ring scene's arrival length over the field's spawnEvery), with the cutscene's spawn radius.
+# ring scene's arrival length over the field's spawnEvery), with the cutscene's spawn radius. All in one frame they
+# would stall the game for a moment the player sees, so each frame makes them for PREFILL_FRAME_MS, starting on the
+# frame after Start; between frames the radius is the field's own again, for the spawns it makes itself
+# (AsteroidSpawner.gd _physics_process).
 func _prefill(state):
 	var seconds = _ringValue(state, ".", GAME_ARRIVAL_SECONDS)
 	if not (seconds is float or seconds is int):
 		seconds = ARRIVAL_SECONDS_FALLBACK
 	var spawns = int(seconds / _field.spawnEvery)
-	var radius = _field.minSpawnRadius
-	_field.minSpawnRadius = _field.cutsceneSpawnRadius
-	for i in spawns:
-		_field.spawnProperThings(0)
-	_field.minSpawnRadius = radius
+	while true:
+		yield(get_tree(), "idle_frame")
+		if spawns <= 0 or not _running or _ending or not is_instance_valid(_field):
+			return
+		var radius = _field.minSpawnRadius
+		_field.minSpawnRadius = _field.cutsceneSpawnRadius
+		var started = OS.get_ticks_usec()
+		while spawns > 0 and OS.get_ticks_usec() - started < PREFILL_FRAME_MS * 1000:
+			_field.spawnProperThings(0)
+			spawns -= 1
+		_field.minSpawnRadius = radius
 
 # The enemies, placed by the field as it places event ships (spawnByBlueprint: the zone set, the spot clear of rocks),
 # at rest. Grouped: one bearing and distance, side by side across it; else each on its own.
@@ -524,7 +547,10 @@ func _input(event):
 			get_tree().set_input_as_handled()
 			_confirm.hide()
 		return
-	if not _ending:
+	if _filling:
+		if event.is_action_pressed("pause"):
+			confirmEnd()
+	elif not _ending:
 		if event.is_action_pressed("jury_rig_cancel") and CurrentGame.inventoryMode:
 			_viewport.input(event)
 		elif event.is_action_pressed("pause"):
@@ -536,9 +562,13 @@ func _input(event):
 # Asks whether to end the run, pausing the game as the dive's pause menu does: the tree paused (the arena, the
 # station's time and wages), the Music bus's low-pass filter on. Also what the station's pause menu does during a run
 # (PauseMenu.gd). Cancel has the focus, as in the game's own confirmations (PauseLayer.gd), so the pause button and then
-# accept go back to the run rather than end it.
+# accept go back to the run rather than end it. While the field fills, the arena (and the confirmation with it) is still
+# hidden: the confirmation waits until the arena shows.
 func confirmEnd():
 	if not _running or _ending or _confirm.visible:
+		return
+	if _filling:
+		_endAsked = true
 		return
 	_pause(true)
 	_confirm.popup_centered_minsize()
@@ -608,5 +638,7 @@ func _cleanup():
 	visible = false
 	_running = false
 	_ending = false
+	_filling = false
+	_endAsked = false
 	_pauseStation(false)
 	_lastFocus = null

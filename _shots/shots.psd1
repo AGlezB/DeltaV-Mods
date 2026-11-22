@@ -11,17 +11,18 @@
 # Also: other mods loaded in both runs, when the view needs them. TimeoutSeconds: seconds before each of the mod's runs
 # is stopped, where they take longer than shots.ps1's default.
 @{
-	# The dialog (Shift+Click on the Tuning screen's simulator button), its first tab and its ship tab. Then, drawn
-	# alone (ShotRenderer's ship and weapon steps, which need no screen): one ship per series of Shipyard.ships (its
-	# base model, Shipyard.gd configAlias; the variants' reactors sit the same), but the habitat (OBONTO, no ship), with
-	# where hits damage its reactors; and every weapon, mounted on a ship and hardpoint
-	# that take it (the TNTRL's high-stress main hardpoint, its side one for the SPC), with its cone and reach; the
-	# Tsukuyomi's built-in turrets (ships/modules/PDT.tscn, never on a hardpoint) as its scene mounts them.
+	# The Tuning screen's simulator button, in both runs: with the mod, its Shift badge. The dialog (Shift+Click on that
+	# button), its first tab and its ship tab. Then, drawn alone (ShotRenderer's ship and weapon steps, which need no
+	# screen): one ship per series of Shipyard.ships (its base model, Shipyard.gd configAlias; the variants' reactors sit
+	# the same), but the habitat (OBONTO, no ship), with where hits damage its reactors; and every weapon, mounted on a
+	# ship and hardpoint that take it (the TNTRL's high-stress main hardpoint, its side one for the SPC), with its cone
+	# and reach; the Tsukuyomi's built-in turrets (ships/modules/PDT.tscn, never on a hardpoint) as its scene mounts them.
 	CombatSimulator = @{
 		TimeoutSeconds = 480
 		Steps = @(
 			'load', 'wait|10'
 			'press|{menu}/ShipTuning', 'wait|3'
+			'shot|button|570,412,1005,56'
 			'with:shiftclick|{screens}/Tuning/VB/WindowMargin/Window/VBoxContainer/MarginContainer2/LaunchVR', 'wait|2'
 			'with:shot|dialog|545,15,1055,875'
 			'with:tab|CombatSimulatorDialog/Popup/Root/TabHintContainer/Tabs|1', 'wait|4'

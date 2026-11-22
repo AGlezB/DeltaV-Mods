@@ -36,7 +36,8 @@ when you change a setting.
 
 Hold **Shift** and click the Crew entry to open the settings (a plain click still opens the Crew screen). With a
 gamepad, highlight the Crew entry, hold **LT** and press **X**. The small badge beside the entry reminds you: it reads
-**Shift**, or **LT+X** while you play with a gamepad. Point at it with the mouse to see how to open the settings.
+**Shift**, or **LT+X** while you play with a gamepad. Point at it with the mouse, or highlight the entry with a gamepad,
+to see how to open the settings.
 
 The settings show where the Tuning screen does, and close with Esc (B on a gamepad) or when you pick another entry of
 the menu. At the top, a window tells you what the setting you have selected does. A change applies at once. Each save

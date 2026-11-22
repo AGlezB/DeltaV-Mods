@@ -17,12 +17,15 @@ extends Node
 #   press|<path>                  presses a button (its pressed signal)
 #   shiftclick|<path>             Shift+Click on a control (its gui_input signal), as the mods' settings open
 #   pressfind|<path>|<name>|<n>   presses the n-th (from 0) visible node named <name> under <path>
+#   timepressfind|<path>|<name>|<n>
+#                                 pressfind, and prints how long the press took, its handlers included (a frame that
+#                                 long is a stall the player sees)
 #   click|<path>                  clicks a control with the mouse, as a player does (input events at its centre)
 #   clickfind|<path>|<name>|<n>   clicks the n-th (from 0) visible node named <name> under <path>
 #   action|<action>               presses and releases an input action, as its key does (jury_rig, J, opens the OMS)
 #   set|<path>|<property>[/<key>...]|<json>
 #                                 sets a node's property, or a key of a dictionary it holds (missing ones are made), to
-#                                 a JSON value
+#                                 a JSON value; on the way, a key of an object (a script's instance) reads its property
 #   call|<path>|<method>|<json>   calls a node's method with the values of a JSON array as its arguments (JSON numbers
 #                                 are floats); an absolute path reaches an autoload (/root/CurrentGame)
 #   tab|<path>|<n or name>        shows tab n, or the tab with that node name, of a TabContainer
@@ -276,6 +279,17 @@ func _ready():
 					found[int(parts[3])].emit_signal("pressed")
 				else:
 					printerr("SHOTRENDERER: no node ", parts[2], " number ", parts[3], " under ", parts[1])
+			"timepressfind":
+				var timed = []
+				var timedUnder = _node(parts[1])
+				if timedUnder:
+					_find(timedUnder, parts[2], timed)
+				if timed.size() > int(parts[3]):
+					var started = OS.get_ticks_usec()
+					timed[int(parts[3])].emit_signal("pressed")
+					print("SHOTRENDERER timed ", parts[2], ": ", (OS.get_ticks_usec() - started) / 1000.0, " ms")
+				else:
+					printerr("SHOTRENDERER: no node ", parts[2], " number ", parts[3], " under ", parts[1])
 			"click":
 				yield(_click(_node(parts[1])), "completed")
 			"clickfind":
@@ -366,6 +380,9 @@ func _assign(node, keys, value):
 		return
 	var holder = node.get(keys[0])
 	for i in range(1, keys.size() - 1):
+		if holder is Object:
+			holder = holder.get(keys[i])
+			continue
 		if not holder is Dictionary:
 			break
 		if not holder.get(keys[i]) is Dictionary:

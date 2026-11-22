@@ -1,5 +1,18 @@
 # CombatSimulator - Changes
 
+## 1.1.1
+- Fix: Start no longer stalls the game for a moment. The field fills over several frames, from the one after Start,
+  with the arena hidden until it is full; Esc meanwhile asks to end the run once the arena shows. `CombatLayer.gd`: new
+  `PREFILL_FRAME_MS`, `_filling` and `_endAsked`.
+- With a gamepad, the Shift badge's tooltip shows while the simulator's button is highlighted: a gamepad shows no hover
+  (`attachTooltip()` with the button as its `focusOwner`).
+- Comments in `Code.gd` name `Badge.gd`'s `PAD_*` constants instead of the buttons they hold.
+- This file: 1.1.0's entry on `DESCRIPTION_SUFFIX` corrected (`Settings.gd` already had it; only the copies in
+  `SettingsUI.gd` and `ShipList.gd` went), and `SettingsUI.gd`'s new members added to it.
+- README: Start and Cancel register with the mod's own tooltip node, on the dialog's layer, not the station's; the
+  Shift badge on the simulator's button reminds of the shortcuts without naming them; the field filled over several
+  frames; the badge's tooltip with a gamepad.
+
 ## 1.1.0
 - With a gamepad, the dialog opens with the twin of Shift+Click, `PAD_BUTTON` pressed on the highlighted simulator's
   button while `PAD_MODIFIER` is held (`Badge.gd` `isPadShortcut`), and with the twin of Shift plus the simulator's
@@ -25,8 +38,9 @@
   `_CS_TOOLTIP_PAD`, `_CS_KEY_HINT`, `_CS_BADGE_SCRIPT`, `_CS_SHIFT_BADGE`, `_csMakeShiftBadge()` and
   `_csIsShortcut()`; `_notification`, `_csUpdateTooltip()` and `_csActionKey()` removed, since the badge follows the
   control scheme and the language by itself.
-- `DESCRIPTION_SUFFIX` (from `SettingsUI.gd` and `ShipList.gd`) and `GAME_TUNING_ITEMS` (from both) moved to
-  `Settings.gd`. `SettingsUI.gd`'s `pageTheme` is a member, which the end confirmation takes. `CombatLayer.gd`'s
+- `GAME_TUNING_ITEMS` (from `SettingsUI.gd` and `ShipList.gd`) moved to `Settings.gd`, and both use `Settings.gd`'s
+  `DESCRIPTION_SUFFIX` instead of copies of their own. `SettingsUI.gd`'s `pageTheme` is a member, which the end
+  confirmation takes; new `_startCancel`, `_descriptionScroll` and `_process`. `CombatLayer.gd`'s
   `setup(station, simulation, confirmTheme)` takes the simulator's layer and that theme; its `GAME_THEME`,
   `STATION_SIMULATION`, `STATION_SIMULATION_UPSCALE` and `STATION_TUNING` removed, `SIMULATION_UPSCALE` added,
   `_upscale` and `_picture` no longer members.

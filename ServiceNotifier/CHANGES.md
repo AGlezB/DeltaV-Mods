@@ -1,5 +1,11 @@
 # ServiceNotifier - Changes
 
+## 1.1.1
+- With a gamepad, the Shift badge's tooltip shows while the Services entry is highlighted: a gamepad shows no hover
+  (`attachTooltip()` with the entry as its `focusOwner`).
+- Comments in `Code.gd` name `Badge.gd`'s `PAD_BUTTON` instead of the button it holds.
+- README: the badge's tooltip with a gamepad.
+
 ## 1.1.0
 - Shift+Click has a gamepad twin: on the highlighted Services entry, the `PAD_BUTTON` button pressed while the
   `PAD_MODIFIER` one is held opens the settings too (constants of the new `Badge.gd`).

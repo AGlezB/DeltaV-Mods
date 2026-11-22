@@ -4,7 +4,8 @@ extends Reference
 # instance (shared()) holds whether each skip is on, and the transit's speed while it isn't skipped. They are
 # game-wide, a player's choice for every save, kept in a ConfigFile in user:// as the game keeps its own settings
 # (Settings.gd loadFromFile / saveToFile), and written at every change. Below them, the code the skips share (static):
-# playing a cutscene through at once, and charging what its seconds would have cost.
+# playing a cutscene through at once, and charging what its seconds would have cost; and the notices of the game's
+# notification panel that the ring scene hands to the station (NOTICES, carriedNotices).
 
 signal settingsChanged()
 
@@ -89,9 +90,25 @@ const REACTOR_SCRIPT = "res://ships/Reactor.gd"
 const UNITS_PER_METRE = 10.0
 # Kilograms in a tonne: the game's ship masses are in t (ships/ship-ctrl.gd computeCurrentMass).
 const KG_PER_TONNE = 1000.0
+# The notices of the game's notification panel, as achievement/Notifications.gd _ready connects them: the autoload, its
+# signal and the panel's handler. Not the money's: the station's panel hides it (enceladus/Enceladus.tscn
+# suppresMoney), as the station shows the money itself.
+const NOTICES = [
+	["CurrentGame", "newShip", "_newShip"],
+	["CurrentGame", "lostShip", "_lostShip"],
+	["CurrentGame", "transit", "_transit"],
+	["CurrentGame", "levelUp", "_levelUp"],
+	["CurrentGame", "crewGone", "_gone"],
+	["CurrentGame", "crewInactive", "_gone"],
+	["CurrentGame", "poiDiscovered", "_onPoiFound"],
+	["Achivements", "achivedOffline", "_achieve"],
+]
 
 var cfg = {}
 var filePath = "" # the settings file: user://<the mod's id>.cfg unless set otherwise
+# Not a setting, and not saved: the notices the ring scene's panel was still showing or had queued when the ring scene
+# went to the station (Code.gd goToEnceladus), each [handler, args], for the station's panel to show (Station.gd).
+var carriedNotices = []
 var _manifest = null
 
 # The one instance, kept as metadata of this script: Godot 3 has no static variables, and every script that preloads

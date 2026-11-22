@@ -36,8 +36,8 @@ them. Point at a slider, or at **Reset to defaults**, to read what it does. Each
 its drones, saved with your game.
 
 With a gamepad, the D-pad moves down from the switch through the sliders to **Reset to defaults**, and back up, and
-the description of what you select shows under it. Press A on a slider to change it with left and right, then A or B
-when you are done.
+the description of the slider or button you select shows under it. Press A on a slider to change it with left and
+right, then A or B when you are done.
 
 ![The DAP tab, switched on, with the Ore value, Ore mass and Intake sliders and the Reset to defaults button](images/DroneAltPriorities-settings.png)
 

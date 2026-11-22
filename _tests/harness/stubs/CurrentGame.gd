@@ -22,6 +22,15 @@ signal moodChange(mood, delta)
 signal inventoryModeChange(state)
 signal pauseGame(how)
 signal inGameTimePassed(delta)
+# The notices of the game's notification panel (achievement/Notifications.gd), as CurrentGame.gd declares them:
+# DiveSkipTransit connects each by its count of arguments.
+signal poiDiscovered(name, type, param)
+signal levelUp(member, type, from, to)
+signal newShip(name)
+signal lostShip(name)
+signal transit(name)
+signal crewGone(member)
+signal crewInactive(member)
 
 # The game's crew occupations and level keys (CurrentGame.gd), for the Hire screen's entries.
 var occupations = ["CREW_OCCUPATION_PILOT", "CREW_OCCUPATION_MECHANIC", "CREW_OCCUPATION_GEOLOGIST", "CREW_OCCUPATION_ASTROGATOR"]

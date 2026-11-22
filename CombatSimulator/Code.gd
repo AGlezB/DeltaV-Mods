@@ -2,10 +2,11 @@ extends "res://enceladus/Enceladus.gd"
 
 # CombatSimulator's extension of the station (enceladus/Enceladus.gd): Shift+Click on the simulator's button, or Shift
 # plus its key (the game's jury_rig action, J by default), opens the dialog (SettingsUI.gd) instead of the simulator,
-# and its Start runs the arena (CombatLayer.gd) with the ship that screen's simulator would fly. With a gamepad, LT+X on
-# the highlighted button (Badge.gd isPadShortcut) or LT+Back (the action's gamepad button) does the same. Each button
-# gets a Shift badge inside it, on the left, whose tooltip says so; it reads LT+X with a gamepad. The station is rebuilt
-# after every load and new game, so the save's settings load here.
+# and its Start runs the arena (CombatLayer.gd) with the ship that screen's simulator would fly. With a gamepad,
+# Badge.gd's PAD_BUTTON on the highlighted button while its PAD_MODIFIER is held (isPadShortcut), or the action's
+# gamepad button (Back) while PAD_MODIFIER is held, does the same. Each button gets a Shift badge inside it, on the
+# left, whose tooltip says so; it reads PAD_TEXT with a gamepad. The station is rebuilt after every load and new game,
+# so the save's settings load here.
 # Godot 3 runs _ready and _input at every level of the script chain by itself: neither calls the parent's.
 
 const CombatSimulator = preload("res://CombatSimulator/Settings.gd")
@@ -87,7 +88,8 @@ func _csFindButtons(node):
 # which centres it, leaves beside it). Without the J, inside the margin the button keeps around its text (its normal
 # stylebox's). A Button doesn't lay out its children, so the badge hangs from it directly, anchored to the middle of its
 # left side, and grows right, up and down to its minimum size. On the button, it lets the mouse through: a click on it
-# is the button's, as if it weren't there. Its tooltip is shown by the dialog's tooltip node.
+# is the button's, as if it weren't there. Its tooltip is shown by the dialog's tooltip node: on hover, and with a
+# gamepad, which shows no hover, while the button is highlighted.
 func _csMakeShiftBadge(button):
 	var badge = _CS_BADGE_SCRIPT.new()
 	badge.name = _CS_SHIFT_BADGE
@@ -108,23 +110,24 @@ func _csMakeShiftBadge(button):
 	badge.grow_vertical = Control.GROW_DIRECTION_BOTH
 	badge.mouse_filter = Control.MOUSE_FILTER_PASS
 	button.add_child(badge)
-	badge.attachTooltip(_csTooltips)
+	badge.attachTooltip(_csTooltips, button)
 	badge.setShiftTooltips(_CS_TOOLTIP, _CS_TOOLTIP_PAD, CombatSimulator.shared().modName())
 
 # Shift+Click opens the dialog instead of the simulator, and so does its gamepad twin on the highlighted button
 # (Badge.gd isPadShortcut). A click's gui_input signal comes before the button's own _gui_input, and accepting the press
-# there keeps the button from pressing; the gamepad's X does nothing to a button.
+# there keeps the button from pressing; Badge.gd's PAD_BUTTON does nothing to a button.
 func _csOnButtonInput(event, button):
 	var shiftClick = event is InputEventMouseButton and event.pressed and event.button_index == BUTTON_LEFT and event.shift
 	if (shiftClick or _CS_BADGE_SCRIPT.isPadShortcut(event)) and not button.disabled:
 		button.accept_event()
 		_csOpen(button)
 
-# Shift plus the simulator's key, or its gamepad button (Back) while LT is held, opens the dialog. An action bound to a
-# key alone also matches it with Shift held (is_action_pressed), while the button's shortcut matches the key exactly, so
-# without the mod Shift+J does nothing at the station; a gamepad's buttons carry no modifiers, so without the mod LT+Back
-# is Back, which starts the simulator. The event is marked handled, and the button's shortcut, which Godot checks after
-# _input (BaseButton's _unhandled_input), never sees it. Nothing at the station polls the action.
+# Shift plus the simulator's key, or its gamepad button (Back) while Badge.gd's PAD_MODIFIER is held, opens the dialog.
+# An action bound to a key alone also matches it with Shift held (is_action_pressed), while the button's shortcut
+# matches the key exactly, so without the mod Shift+J does nothing at the station; a gamepad's buttons carry no
+# modifiers, so without the mod Back while PAD_MODIFIER is held is Back, which starts the simulator. The event is
+# marked handled, and the button's shortcut, which Godot checks after _input (BaseButton's _unhandled_input), never sees
+# it. Nothing at the station polls the action.
 func _input(event):
 	if not _csIsShortcut(event):
 		return
@@ -139,7 +142,7 @@ func _input(event):
 			return
 
 # Shift plus the simulator's key and nothing else held, or its gamepad button while the gamepad twin's modifier
-# (Badge.gd PAD_MODIFIER, LT) is held on the same gamepad.
+# (Badge.gd PAD_MODIFIER) is held on the same gamepad.
 func _csIsShortcut(event) -> bool:
 	if not (event is InputEventKey or event is InputEventJoypadButton):
 		return false

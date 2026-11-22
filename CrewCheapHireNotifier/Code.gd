@@ -64,12 +64,12 @@ func _updateCheapHire():
 
 # The Shift badge (Badge.gd), in the entry's own frame and font colour, to the right of the entry, the menu's gap
 # between entries away (Badge.gd hangBeside). Its tooltip, only where Shift+Click opens the settings, is shown by the
-# menu's PlaySoundsOnTheseButtons.
+# menu's PlaySoundsOnTheseButtons: on hover, and with a gamepad, which shows no hover, while the entry is highlighted.
 func _makeCheapHireShiftBadge(button):
 	var badge = _CHEAP_HIRE_BADGE_SCRIPT.new()
 	badge.dress(button, OS.get_scancode_string(KEY_SHIFT), _CHEAP_HIRE_BADGE_SCRIPT.PAD_TEXT)
 	badge.hangBeside(button, get_constant("separation"))
-	badge.attachTooltip(get_node_or_null("PlaySoundsOnTheseButtons"))
+	badge.attachTooltip(get_node_or_null("PlaySoundsOnTheseButtons"), button)
 	badge.setShiftTooltips(_CHEAP_HIRE_SETTINGS_TOOLTIP, _CHEAP_HIRE_SETTINGS_TOOLTIP_PAD, _cheapHireModel.modName())
 	return badge
 
@@ -82,7 +82,7 @@ func _cheapHireAvailable() -> bool:
 
 # Shift+Click opens the settings instead of the Crew screen, and so does its gamepad twin on the highlighted entry
 # (Badge.gd isPadShortcut). A click's gui_input signal comes before the button's own _gui_input, and accepting the
-# press there keeps the button from pressing; the gamepad's X does nothing to a button.
+# press there keeps the button from pressing; Badge.gd's PAD_BUTTON does nothing to a button.
 func _onCrewInput(event):
 	var shiftClick = event is InputEventMouseButton and event.pressed and event.button_index == BUTTON_LEFT and event.shift
 	if (shiftClick or _CHEAP_HIRE_BADGE_SCRIPT.isPadShortcut(event)) and not _cheapHireButton.disabled:

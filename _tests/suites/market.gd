@@ -100,6 +100,7 @@ func station(withMarket = true, services = SERVICES):
 	root.add_child(hbox)
 	var menu = VBoxContainer.new(); menu.name = "Options"
 	menu.set_script(load(MENU_SCRIPT))
+	addMenuTooltips(menu)
 	var marketEntry = Button.new(); marketEntry.name = "MineralMarket"; marketEntry.text = MARKET_KEY
 	menu.add_child(marketEntry)
 	var servicesEntry = Button.new(); servicesEntry.name = "Services"; servicesEntry.text = SERVICES_KEY
@@ -283,14 +284,6 @@ func parkedValue(s) -> String:
 	var r = s.market.get_node_or_null(PARKED_ROW)
 	return r.get_node("Insurance").text if r != null else "no row"
 
-# The tooltip of the Shift badge beside a station menu entry (a mod's Badge.gd, a child of the entry), which holds it:
-# the entry has none of its own.
-func badgeTip(entry) -> String:
-	for child in entry.get_children():
-		var script = child.get_script()
-		if script != null and script.resource_path.ends_with("/Badge.gd"):
-			return child.hint_tooltip
-	return ""
 func run():
 	bindGameKeys()
 	addTranslations()
@@ -319,13 +312,14 @@ func control():
 	yield(frames(5), "completed")
 	check("control: the market's entry keeps its key, and has no tooltip", s.marketEntry.text == MARKET_KEY and s.marketEntry.hint_tooltip == "", s.marketEntry.text)
 	check("control: the market has no row of the mod's, at the bottom or in the header", not s.market.has_node("Details/MarketAdvisor") and not s.market.has_node(PARKED_ROW))
-	# The gamepad twin of Shift+Click (the mod's Badge.gd, not loaded here: LT and X).
+	# The gamepad twin of Shift+Click, with the buttons of Badge.gd's PAD_MODIFIER and PAD_BUTTON (a control run can't
+	# read them).
 	s.marketEntry.grab_focus()
 	yield(holdJoy(JOY_L2, true), "completed")
 	yield(tapJoy(JOY_XBOX_X), "completed")
 	yield(holdJoy(JOY_L2, false), "completed")
 	yield(frames(5), "completed")
-	check("control: LT+X on the highlighted entry opens nothing", not s.market.visible and s.screens.get_node_or_null(SCREEN) == null)
+	check("control: PAD_MODIFIER+PAD_BUTTON on the highlighted entry opens nothing", not s.market.visible and s.screens.get_node_or_null(SCREEN) == null)
 	click(s.marketEntry, true)
 	yield(frames(40), "completed")
 	check("control: Shift+Click opens the market", s.market.visible)
@@ -818,8 +812,8 @@ func screen():
 	click(s.logs, false)
 	yield(frames(40), "completed")
 	check("screen: focusing another entry of the menu closes it", reopened and not screen.visible)
-	# With a gamepad: the Shift badge reads the gamepad twin while the game is played with one, and X pressed on the
-	# highlighted entry while LT is held opens the settings, as Shift+Click does (Badge.gd).
+	# With a gamepad: the Shift badge reads the gamepad twin while the game is played with one, and PAD_BUTTON pressed on
+	# the highlighted entry while PAD_MODIFIER is held opens the settings, as Shift+Click does (Badge.gd).
 	var shiftBadge = s.menu._maShiftBadge
 	var padModifier = shiftBadge.PAD_MODIFIER
 	var padButton = shiftBadge.PAD_BUTTON
@@ -835,25 +829,27 @@ func screen():
 	var padKey = s.menu._MA_SETTINGS_TOOLTIP_PAD
 	var padExpected = tr(padKey) % [shiftBadge.PAD_BUTTON_NAME, shiftBadge.PAD_MODIFIER_NAME, modName]
 	check("gamepad: its tooltip tells about the gamepad twin with a gamepad, and about Shift+Click again with keyboard and mouse", padTip == padExpected and keyTip == tr(s.menu._MA_SETTINGS_TOOLTIP) % [keyText, modName] and tr(padKey) != padKey, [padTip, keyTip])
+	# A gamepad shows no hover: with one, the badge's tooltip shows while the entry, where the D-pad lands, has the focus.
+	shiftBadgeTipChecks("tooltip", s.marketEntry, s.logs, s.menu.get_node("PlaySoundsOnTheseButtons"), tr(s.menu._MA_SETTINGS_TOOLTIP) % [keyText, modName], padExpected)
 	Settings.controlScheme = Settings.control.gamepad
 	s.marketEntry.grab_focus()
 	yield(tapJoy(padButton), "completed")
 	yield(frames(5), "completed")
-	check("gamepad: X alone on the highlighted entry does nothing", not screen.visible and not s.market.visible)
+	check("gamepad: PAD_BUTTON alone on the highlighted entry does nothing", not screen.visible and not s.market.visible)
 	yield(holdJoy(padModifier, true), "completed")
 	s.marketEntry.disabled = true
 	yield(tapJoy(padButton), "completed")
 	yield(frames(5), "completed")
-	check("gamepad: LT+X on a disabled entry does nothing", not screen.visible and not s.market.visible)
+	check("gamepad: PAD_MODIFIER+PAD_BUTTON on a disabled entry does nothing", not screen.visible and not s.market.visible)
 	s.marketEntry.disabled = false
 	s.logs.grab_focus()
 	yield(tapJoy(padButton), "completed")
 	yield(frames(5), "completed")
-	check("gamepad: LT+X with another entry highlighted doesn't open these settings", not screen.visible and not s.market.visible)
+	check("gamepad: PAD_MODIFIER+PAD_BUTTON with another entry highlighted doesn't open these settings", not screen.visible and not s.market.visible)
 	s.marketEntry.grab_focus()
 	yield(tapJoy(padButton), "completed")
 	yield(frames(5), "completed")
-	check("gamepad: LT+X on the highlighted market entry opens the settings, not the market", screen.visible and not s.market.visible)
+	check("gamepad: PAD_MODIFIER+PAD_BUTTON on the highlighted market entry opens the settings, not the market", screen.visible and not s.market.visible)
 	yield(holdJoy(padModifier, false), "completed")
 	yield(tap(escKey()), "completed")
 	yield(frames(40), "completed")

@@ -40,9 +40,9 @@ a trade is due.
   - **Shift+Click** the Mineral Market entry to open them, as the Shift badge beside the entry says: it reads Shift,
     and hovering it shows how. A plain click still opens the market. With a gamepad (the game's *Controls* setting at
     *Gamepad*, or at *Auto* once the gamepad was used last), the badge reads the gamepad's twin of Shift+Click instead,
-    `PAD_TEXT` in `Badge.gd`: on the highlighted entry, holding the first button and pressing the second opens them.
-    They open where the market does, with the same frame, and close the way the game's screens do: Esc, the
-    controller's B or Start button, or picking another entry of the menu.
+    `PAD_TEXT` in `Badge.gd`, and highlighting the entry shows how: on the highlighted entry, holding the first button
+    and pressing the second opens them. They open where the market does, with the same frame, and close the way the
+    game's screens do: Esc, the controller's B or Start button, or picking another entry of the menu.
   - Laid out as the Tuning screen: a window with the description of the selected setting, then two groups:
     - *Cash reserve*: *Use scientific notation* (instead of thousands, millions and billions), *Amount* and *Power of
       ten*, two sliders that make the reserve, the amount times ten to the power, and *Tolerance*, in percent; then a

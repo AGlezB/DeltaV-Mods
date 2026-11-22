@@ -1,5 +1,13 @@
 # DealerNotifier - Changes
 
+## 1.2.1
+- With a gamepad, the Shift badge's tooltip shows while the Dealer entry is highlighted: a gamepad shows no hover
+  (`attachTooltip()` with the entry as its `focusOwner`).
+- Comments in `Code.gd` name `Badge.gd`'s `PAD_BUTTON` instead of the button it holds.
+- This file: 1.2.0's entry on `Badge.gd` corrected: of the Dealer screen's badge it holds only the tooltip, and
+  `DealerScreen.gd` `_dnBadge()` still builds its look.
+- README: the badge's tooltip with a gamepad.
+
 ## 1.2.0
 - Shift+Click has a gamepad twin: on the highlighted Dealer entry, the `PAD_BUTTON` button pressed while the
   `PAD_MODIFIER` one is held opens the settings too (constants of the new `Badge.gd`).
@@ -12,8 +20,8 @@
 - Fix: the settings' list opens at its top, with the Condition group's title in sight.
 - The Dealer screen's badge: its tooltip shows sooner, without the hover sound (nor the ship name's again); with a
   gamepad, it shows while the ship's name has the focus.
-- New script, `Badge.gd` (the same file in every mod that has a Shift badge): the Shift badge and the Dealer screen's
-  badge, their look and their tooltips, and the gamepad's twin of Shift+Click. Constants `PAD_MODIFIER`, `PAD_BUTTON`,
+- New script, `Badge.gd` (the same file in every mod that has a Shift badge): the Shift badge's look and tooltip, the
+  Dealer screen badge's tooltip, and the gamepad's twin of Shift+Click. Constants `PAD_MODIFIER`, `PAD_BUTTON`,
   `PAD_MODIFIER_NAME`, `PAD_BUTTON_NAME`, `PAD_TEXT`, `SMALL_FONT_THEME`, `TOOLTIP_DELAY`, `TOOLTIP_FADE` and
   `BUTTON_HOVER_MUTE`; `isPadShortcut()`, `dress()`, `hangBeside()`, `setShiftTooltips()` and `attachTooltip()`.
 - `i18n/en.po`: `DEALERNOTIFIER_SETTINGS_TOOLTIP` reworded (it is the badge's); new

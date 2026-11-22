@@ -1,5 +1,21 @@
 # DiveSkipTransit - Changes
 
+## 1.1.1
+- Fix: the game's notices that leaving the ring brings (*Acquired* with the name of the ship the arm held, a drone's
+  cargo in transit) were cut short when the station loaded at once, and with the transit played fast, *Acquired* stood
+  on screen without the ship's name. What the ring's notification panel still had to show when the ring scene goes to
+  the station now shows on the station's, in full; a sped-up exit too short for the panel hides the ring's from its
+  start.
+- With a gamepad, the Shift badge's tooltip shows while the Launch Ring Dive entry is highlighted: a gamepad shows no
+  hover (`attachTooltip()` with the entry as its `focusOwner`). Comments in `StationMenu.gd` name `Badge.gd`'s
+  `PAD_BUTTON` instead of the button it holds.
+- `Code.gd`: new `_DST_NOTICES`, `_dstNotices`, `_dstHidden`, `_dstFitNotices()`, `_dstExitSecondsLeft()`,
+  `_dstNoticeSecondsLeft()`, `_dstHideNotices()`, `_dstListenToNotices()`, `_dstOnNotice1()`, `_dstOnNotice3()`,
+  `_dstOnNotice4()`, `_dstNote()`, `_dstNoticePlayer()` and `_dstNoticesShowing()`; it overrides `goToEnceladus`.
+- `Station.gd`: new `_DST_STATION_NOTICES` and `_dstShowCarriedNotices()`. `Settings.gd`: new `NOTICES` and
+  `carriedNotices` (not a setting, never saved).
+- README: the notices, at the station instead; the badge's tooltip with a gamepad.
+
 ## 1.1.0
 - A Shift badge beside the station menu's Launch Ring Dive entry tells how to open the settings: it reads Shift with
   keyboard and mouse, and the gamepad's twin of Shift+Click (`PAD_TEXT` in `Badge.gd`) while the game is played with

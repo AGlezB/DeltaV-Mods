@@ -104,10 +104,11 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
      screen copying the Dealer screen's frame); `DealerScreen.gd` → `enceladus/Dealer.gd` (the Dealer screen, whose
      refreshes tell it the stock).
    - DiveDisableAdrenalineBooster: `Code.gd` → `ships/CabinLight.gd`.
-   - DiveSkipTransit: `Code.gd` → `Game.gd` (the ring scene's cutscenes); `Station.gd` → `enceladus/Enceladus.gd` (the
-     station's fade-in and launch sequence); `StationMenu.gd` → `enceladus/EnceladusMenu.gd` (Shift+Click on the dive
-     entry opens its settings screen, as CrewCheapHireNotifier's Crew entry does); `Ship.gd` → `ships/ship-ctrl.gd`
-     (astrogation).
+   - DiveSkipTransit: `Code.gd` → `Game.gd` (the ring scene's cutscenes, and the notices its notification panel still
+     had to show when it goes to the station); `Station.gd` → `enceladus/Enceladus.gd` (the station's fade-in and
+     launch sequence, and its notification panel, which shows those notices); `StationMenu.gd` →
+     `enceladus/EnceladusMenu.gd` (Shift+Click on the dive entry opens its settings screen, as CrewCheapHireNotifier's
+     Crew entry does); `Ship.gd` → `ships/ship-ctrl.gd` (astrogation).
    - DroneAltPriorities: `Code.gd` → `weapons/drone-plant.gd` (the nanodrone plants' choice of target); `OmsScreen.gd`
      → `hud/Hud.gd` (its OMS tab, added right after the Geologist tab as GeologyByMass adds its own).
    - GeologyByMass: `Code.gd` → `ships/ship-ctrl.gd` (the rule every row of the Geologist tab is judged by,
@@ -195,8 +196,9 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
   runs first and GeologyByMass's tab ends up between the Geologist tab and DroneAltPriorities's (the other order swaps
   the two). Both keep their entries in the HUD's `mineralConfig`, each under its own mod id. Their member names must
   stay distinct. Loaded together in `drones` (every order). DroneAltPriorities's plants still ask the ship which chunks
-  pass their row (`_dapCheck`), so with GeologyByMass's switch on, the chunks they rank are the ones its masses let
-  through; the arm mods keep the game's `isValidTarget`, which asks the same.
+  pass their row (`_dapCheck`), so with GeologyByMass's switch on, the identified chunks they rank are the ones its
+  masses let through (an unidentified one passes by the game's rule); the arm mods keep the game's `isValidTarget`,
+  which asks the same.
 - DiveSkipTransit (`Ship.gd`) and GeologyByMass (`Code.gd`) both extend `ships/ship-ctrl.gd`, every ship's script,
   from `_init`: by path the chain is game ← DiveSkipTransit ← GeologyByMass. They override different functions
   (DiveSkipTransit `fastTravelTo`, GeologyByMass `isValidMineralTarget`). Their member names must stay distinct. Loaded
@@ -547,8 +549,9 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
   of Shift+J). The control gets a Shift badge (`Badge.gd` `dress`, `hangBeside`), whose text and tooltip follow the
   control scheme (see the Glossary): "Shift" and `<MOD>_SETTINGS_TOOLTIP` with keyboard and mouse, the twin and
   `<MOD>_SETTINGS_TOOLTIP_PAD` with a gamepad (`setShiftTooltips`), shown by the game's own tooltip node
-  (`attachTooltip`). The entry keeps no tooltip of its own. `Badge.gd` is the same file in each mod that has it: a
-  change to one is copied to all.
+  (`attachTooltip`): on hover, and with a gamepad, which shows no hover, while the control has the focus (its
+  `focusOwner`). The entry keeps no tooltip of its own. `Badge.gd` is the same file in each mod that has it: a change to
+  one is copied to all.
 - A mod's screen works with the D-pad and the gamepad's buttons as the game's do: the D-pad moves between its controls
   (focus neighbours where the layout alone doesn't lead there), B and Start close it (`ui_cancel`, `pause`), LB and RB
   switch its tabs, and the right stick scrolls a text that doesn't fit (`ui_scroll_up2` / `ui_scroll_down2`, at the
@@ -864,6 +867,12 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   screen's New game opens while the tutorial is off, with the new game's seed and the first ship's transponder and
   name (Reroll draws others). OK starts a new game with them (`CurrentGame.newGamePlus`); nothing carries over from
   another game.
+- **Notification panel** (no text of its own in `en.po`; its notices' titles are the `NOTIFICATION_*` keys, such as
+  `NOTIFICATION_ACQUIRED`, "Acquired"): the notices in the middle of the screen's upper half, one at a time, of a ship
+  acquired or lost, a drone's cargo in transit, a crew member's level-up or leaving, a discovery, an achievement and a
+  change of money (`achievement/Notifications.tscn`, `Notifications.gd`). The ring scene and the station each have one.
+  DiveSkipTransit has the station's show what the ring scene's had left to show. Details:
+  [GAME.md](GAME.md#notification-panel).
 - **Obonto** (`SERVICE_OBONTO`, "Obonto Habitats"): the company that keeps the SRA series of habitats in the rings,
   "for agricultural and research purposes" (`SERVICE_OBONTO_DESC`), faction `obonto` (see *Habitat*), and its
   compensation row at Services (see *Services*).
@@ -941,8 +950,9 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   marks the station menu's Services entry while one of those can be bought. Details: [GAME.md](GAME.md#services).
 - **Shift badge** (not the game's: these mods' own term): the small framed "Shift" beside a station menu entry, or on
   the simulator's button, whose Shift+Click opens a mod's settings or dialog (`Badge.gd`); it reads `PAD_TEXT`, the
-  gamepad twin, while the control scheme is the gamepad, and its tooltip says how, in either form. CombatSimulator,
-  CrewCheapHireNotifier, DealerNotifier, DiveSkipTransit, MarketAdvisor and ServiceNotifier have one.
+  gamepad twin, while the control scheme is the gamepad, and its tooltip says how, in either form: on hover, and with a
+  gamepad while the entry or button is highlighted. CombatSimulator, CrewCheapHireNotifier, DealerNotifier,
+  DiveSkipTransit, MarketAdvisor and ServiceNotifier have one.
 - **Ship models**: the kinds of ship, each with a key in `Shipyard.ships` (`TRTL`, `PROSPECTOR-VP`, …), a scene
   (`ships/RA-TRTL.tscn`) and the translation key of its name in the ship's `shipName` (`SHIP_TRTL`). The Dealer shows
   the names: K37 TNTRL, Eagle Prospector, Vulture Prospector, EIME (Eon Interstellar Model E), OCP-209, the Cothons,

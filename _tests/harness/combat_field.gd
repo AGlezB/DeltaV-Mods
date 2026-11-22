@@ -3,8 +3,11 @@ extends Node2D
 # Stub of the ring scene's asteroid field (AsteroidField.tscn, AsteroidSpawner.gd) for the combat suite: what
 # CombatSimulator's arena sets and calls, with the game's names, defaults and signatures. Its _ready reads the map and
 # reseeds the random numbers as the game's does; nothing spawns. It records the minSpawnRadius of each spawnProperThings
-# call (`spawns`), the handleMood calls (`moods`), its _process frames (`processed`; the game's advances in-game time
-# there), traceSpawns as _ready found it, and each spawnByBlueprint call (`blueprints`: [spot, spawnPointRandomness]).
+# call (`spawns`) and the idle frame it came in (`spawnFrames`), the handleMood calls (`moods`), its _process frames
+# (`processed`; the game's advances in-game time there), traceSpawns as _ready found it, and each spawnByBlueprint call
+# (`blueprints`: [spot, spawnPointRandomness]). The script's metadata `spawnEvery` and `spawnUsec`, when the field is
+# made, set its spawnEvery and how long each spawnProperThings call takes, in µs (the game's makes rocks), so a suite
+# can time the prefill with fewer, slower spawns.
 # spawnByBlueprint places the ship at the spot itself (the game's moves it by up to spawnPointRandomness when rocks are
 # in the way) and sets its zone, as the game's; it refuses as many spots as the script's metadata `refuse` says when the
 # field is made, as the game's does a spot a rock takes.
@@ -22,6 +25,8 @@ export var traceSpawns = true
 var mapInstance
 var focusObject
 var spawns = []
+var spawnFrames = []
+var spawnUsec = 0
 var moods = 0
 var processed = 0
 var tracedAtReady = null
@@ -33,6 +38,12 @@ func _init():
 	if script.has_meta("refuse"):
 		refuse = script.get_meta("refuse")
 		script.set_meta("refuse", 0)
+	if script.has_meta("spawnEvery"):
+		spawnEvery = script.get_meta("spawnEvery")
+		script.remove_meta("spawnEvery")
+	if script.has_meta("spawnUsec"):
+		spawnUsec = script.get_meta("spawnUsec")
+		script.remove_meta("spawnUsec")
 
 func _ready():
 	tracedAtReady = traceSpawns
@@ -48,6 +59,10 @@ func handleMood(_delta):
 
 func spawnProperThings(_delta):
 	spawns.append(minSpawnRadius)
+	spawnFrames.append(Engine.get_idle_frames())
+	var until = OS.get_ticks_usec() + spawnUsec
+	while OS.get_ticks_usec() < until:
+		pass
 
 func spawnByBlueprint(instance: RigidBody2D, spot, _chaos, spawnPointRandomness = 0.0, _initialLinearVelocity = Vector2(0, 0), _initialAngularVelocity = 0.0, _tries = 3):
 	blueprints.append([spot, spawnPointRandomness])

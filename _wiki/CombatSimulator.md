@@ -14,8 +14,16 @@ button that starts the simulator. Like Shift+J, LT+Back works without highlighti
 
 A small badge on the left of the button reminds you how. It reads *Shift*, or *LT+X* while you play with a gamepad
 (the game's *Controls* setting on *Gamepad*, or on *Auto* when you last used the gamepad). Point at the badge to read
-*Click the button while pressing Shift to open the CombatSimulator interface.* While the badge reads LT+X, it says
-*Highlight the button and press X while holding LT to open the CombatSimulator interface.*
+*Click the button while pressing Shift to open the CombatSimulator interface.* With a gamepad, highlighting the button
+shows *Highlight the button and press X while holding LT to open the CombatSimulator interface.*
+
+**Without the mod:**
+
+![The simulator's button on the Tuning screen, Minding Virtual Flight Service, with the J key at its right end](images/CombatSimulator-button-without.png)
+
+**With the mod:**
+
+![The same button, with the small Shift badge at its left end](images/CombatSimulator-button-with.png)
 
 You fly the ship that screen's simulator would fly. On the Tuning screen, that is your ship as you tuned it. On the
 Equipment screen, it has the piece of equipment you are looking at, even before you buy it. On the Dealer and the

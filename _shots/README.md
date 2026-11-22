@@ -62,15 +62,18 @@ ShipSortByTypeAndPrice); the arm mods have their diagrams.
   steps are listed at the top of the script: `load`, `wait`, `press` (a button's `pressed` signal), `click` and
   `clickfind` (a real mouse click, through the game's input), `shiftclick` (Shift+Click, as the mods' settings open),
   `tab` (by number or by the tab's node name), `scroll`, `set` (a node's property, or a key of a dictionary in it, to a
-  JSON value: GeologyByMass's example settings, HudHideLabels' HUD), `call` (a node's function, with the values of a
-  JSON array as its arguments; `/root/CurrentGame` reaches the autoload: DealerNotifier's runs move the clock a day
-  ahead with `advanceTimeBySeconds`, so that the Dealer's ship of the day comes up for sale) and `shot`. `pressfind`
-  presses a button found by name, without the mouse, and `action` presses an input action as its key does (`ui_cancel`
-  is Esc, `ui_down` the down arrow). For a dive: `dive` (from the station into the ring scene, without the Dive entry
-  point screen, which saves, then until the arrival cutscene is over) and `transponders` (see *The transponder
-  scenario*); there `action|jury_rig` is J, the OMS. A path starting with `ship:` starts at the player's ship, and
-  `ship:.` is the ship itself. `ship` and `weapon` draw a ship, or a weapon mounted on one, alone (see *Ship and weapon
-  pictures*). It prints `SHOTRENDERER done` after the last step: a run that ends without it fails.
+  JSON value, through an object's property on the way: GeologyByMass's example settings, HudHideLabels' HUD, the density
+  in CombatSimulator's settings model), `call` (a node's function, with the values of a JSON array as its arguments;
+  `/root/CurrentGame` reaches the autoload: DealerNotifier's runs move the clock a day ahead with
+  `advanceTimeBySeconds`, so that the Dealer's ship of the day comes up for sale) and `shot`. `pressfind` presses a
+  button found by name, without the mouse (`timepressfind` too, and prints how long the press took, its handlers
+  included, `SHOTRENDERER timed`: a frame that long is a stall the player sees, as CombatSimulator's Start was
+  measured), and `action` presses an input action as its key does (`ui_cancel` is Esc, `ui_down` the down arrow). For a
+  dive: `dive` (from the station into the ring scene, without the Dive entry point screen, which saves, then until the
+  arrival cutscene is over) and `transponders` (see *The transponder scenario*); there `action|jury_rig` is J, the OMS.
+  A path starting with `ship:` starts at the player's ship, and `ship:.` is the ship itself. `ship` and `weapon` draw a
+  ship, or a weapon mounted on one, alone (see *Ship and weapon pictures*). It prints `SHOTRENDERER done` after the last
+  step: a run that ends without it fails.
 - **`shots.psd1`**: the steps of each mod. `shot|<view>|x,y,w,h` saves that part of the window as
   `<Mod>-<view>-without.png` and `-with.png`; a step starting with `with:` runs only with the mod, and a view shot that
   way is saved once, as `<Mod>-<view>.png`. `ship|<model>|<view>` and `weapon|<system>|<model>|<slots>|<view>` are

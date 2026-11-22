@@ -390,15 +390,16 @@ func controls():
 	check("control: Shift+J starts nothing (a button's shortcut matches its key exactly), and J does", s.simulation.started.size() == 2, s.simulation.started.size())
 	yield(tap(key(KEY_J)), "completed")
 	check("control: J fires the button's shortcut, starting it", s.simulation.started.size() == 3, s.simulation.started.size())
-	# The gamepad twins (the mod's Badge.gd, not loaded here: LT, and X): a gamepad's buttons carry no modifiers, so
-	# LT+Back is Back, the shortcut's button, and LT+X is nothing.
+	# The gamepad twins, with the buttons of Badge.gd's PAD_MODIFIER and PAD_BUTTON (a control run can't read them): a
+	# gamepad's buttons carry no modifiers, so Back while PAD_MODIFIER is held is Back, the shortcut's button, and
+	# PAD_BUTTON while it is held is nothing.
 	s.vr.grab_focus()
 	yield(holdJoy(JOY_L2, true), "completed")
 	yield(tap(joyButton(JOY_XBOX_X)), "completed")
 	var afterX = s.simulation.started.size()
 	yield(tap(joyButton(JOY_SELECT)), "completed")
 	yield(holdJoy(JOY_L2, false), "completed")
-	check("control: LT+X on the highlighted button does nothing, and LT+Back starts it", afterX == 3 and s.simulation.started.size() == 4, [afterX, s.simulation.started.size()])
+	check("control: PAD_MODIFIER+PAD_BUTTON on the highlighted button does nothing, and PAD_MODIFIER+Back starts it", afterX == 3 and s.simulation.started.size() == 4, [afterX, s.simulation.started.size()])
 	s.pause.pauseGame(true)
 	check("control: the station's pause menu pauses the game and shows itself", get_tree().paused and pauseShown(s))
 	s.pause.pauseGame(false)
@@ -641,7 +642,7 @@ func dialog(s):
 	# The tooltip, on each button's Shift badge (Badge.gd), shown by the game's tooltip node.
 	var tip = tr(root._CS_TOOLTIP) % [OS.get_scancode_string(KEY_SHIFT), settings.modName()]
 	var badge = s.vr.get_node_or_null(root._CS_SHIFT_BADGE)
-	check("tooltip: the game's tooltip node is on the dialog's layer; the button's Shift badge has the tooltip, which tells about Shift+Click, and the button none", tooltips != null and tooltips.get_parent() == ui and badge != null and badgeTip(tooltips, badge) == tip and tooltips.tooltips.get(s.vr, "") == "", badgeTip(tooltips, badge) if tooltips != null and badge != null else null)
+	check("tooltip: the game's tooltip node is on the dialog's layer; the button's Shift badge has the tooltip, which tells about Shift+Click, and the button none", tooltips != null and tooltips.get_parent() == ui and badge != null and badgeTip(s.vr, tooltips) == tip and tooltips.tooltips.get(s.vr, "") == "", badgeTip(s.vr, tooltips) if tooltips != null and badge != null else null)
 	if tooltips == null or badge == null:
 		return
 	tooltips.showTooltip(badge)
@@ -651,14 +652,14 @@ func dialog(s):
 	check("tooltip: a hidden button has none yet", tooltips.tooltips.get(s.fleetVr) == "")
 	s.fleet.show()
 	yield(frames(1), "completed")
-	check("tooltip: once it shows, its badge has it", badgeTip(tooltips, s.fleetVr.get_node(root._CS_SHIFT_BADGE)) == tip, badgeTip(tooltips, s.fleetVr.get_node(root._CS_SHIFT_BADGE)))
+	check("tooltip: once it shows, its badge has it", badgeTip(s.fleetVr, tooltips) == tip, badgeTip(s.fleetVr, tooltips))
 	s.fleet.hide()
 	InputMap.action_erase_events("jury_rig")
 	InputMap.action_add_event("jury_rig", key(KEY_K))
 	s.tuning.hide()
 	s.tuning.show()
 	yield(frames(1), "completed")
-	check("tooltip: with the simulator's key rebound it stays the same, naming only Shift", badgeTip(tooltips, badge) == tip, badgeTip(tooltips, badge))
+	check("tooltip: with the simulator's key rebound it stays the same, naming only Shift", badgeTip(s.vr, tooltips) == tip, badgeTip(s.vr, tooltips))
 	InputMap.action_erase_events("jury_rig")
 	bindGameKeys()
 	var de = Translation.new()
@@ -667,7 +668,7 @@ func dialog(s):
 	TranslationServer.add_translation(de)
 	TranslationServer.set_locale("de")
 	yield(frames(1), "completed")
-	check("tooltip: it follows a language change", badgeTip(tooltips, badge) == TOOLTIP_DE % [OS.get_scancode_string(KEY_SHIFT), settings.modName()], badgeTip(tooltips, badge))
+	check("tooltip: it follows a language change", badgeTip(s.vr, tooltips) == TOOLTIP_DE % [OS.get_scancode_string(KEY_SHIFT), settings.modName()], badgeTip(s.vr, tooltips))
 	TranslationServer.set_locale("en")
 	yield(frames(1), "completed")
 	# Opening and closing.
@@ -719,9 +720,10 @@ func dialog(s):
 	yield(frames(2), "completed")
 	yield(gamepad(s), "completed")
 
-# With a gamepad: the Shift badge reads the gamepad twin while the game is played with one; X pressed on the highlighted
-# button while LT is held opens the dialog, as Shift+Click does, and Back (the simulator's button) while LT is held, as
-# Shift+J does. In the dialog, the right stick scrolls the description, and the shoulder buttons switch only its tabs.
+# With a gamepad: the Shift badge reads the gamepad twin while the game is played with one; PAD_BUTTON pressed on the
+# highlighted button while PAD_MODIFIER is held opens the dialog, as Shift+Click does, and Back (the simulator's button)
+# while PAD_MODIFIER is held, as Shift+J does. In the dialog, the right stick scrolls the description, and the shoulder
+# buttons switch only its tabs.
 func gamepad(s):
 	var root = s.root
 	var ui = root._csDialog
@@ -740,6 +742,16 @@ func gamepad(s):
 	check("gamepad: the Shift badge reads Shift with keyboard and mouse, the gamepad twin with a gamepad, and Shift again", keyRead == keyText and padRead == shiftBadge.PAD_TEXT and shiftBadge._label.text == keyText, [keyRead, padRead, shiftBadge._label.text])
 	var padExpected = tr(root._CS_TOOLTIP_PAD) % [shiftBadge.PAD_BUTTON_NAME, shiftBadge.PAD_MODIFIER_NAME, settings.modName()]
 	check("gamepad: its tooltip tells about the gamepad twin with a gamepad, and about Shift+Click again with keyboard and mouse", padTip == padExpected and keyTip == tr(root._CS_TOOLTIP) % [keyText, settings.modName()] and tr(root._CS_TOOLTIP_PAD) != root._CS_TOOLTIP_PAD, [padTip, keyTip])
+
+	# A gamepad shows no hover: with one, the badge's tooltip shows while the button, where the D-pad lands, has the
+	# focus. Another button on the screen to move the focus to.
+	var elsewhere = Button.new()
+	elsewhere.text = "Elsewhere"
+	s.tuning.add_child(elsewhere)
+	yield(frames(1), "completed")
+	shiftBadgeTipChecks("tooltip", s.vr, elsewhere, root._csTooltips, tr(root._CS_TOOLTIP) % [keyText, settings.modName()], padExpected)
+	elsewhere.queue_free()
+	yield(frames(1), "completed")
 	Settings.controlScheme = Settings.control.gamepad
 	# A screen whose tabs use the game's tab script, as the Dealer's and the Equipment screen's do. With the dialog
 	# closed, the shoulder buttons are the screen's.
@@ -756,7 +768,7 @@ func gamepad(s):
 	behind.current_tab = 0
 	s.vr.grab_focus()
 	yield(tap(joyButton(padButton)), "completed")
-	check("gamepad: X alone on the highlighted button does nothing", not ui.isOpen() and started.size() == count, started.size())
+	check("gamepad: PAD_BUTTON alone on the highlighted button does nothing", not ui.isOpen() and started.size() == count, started.size())
 	yield(tap(joyButton(JOY_SELECT)), "completed")
 	count += 1
 	check("gamepad: Back alone still fires the button's shortcut, starting the simulator", not ui.isOpen() and started.size() == count, started.size())
@@ -764,20 +776,20 @@ func gamepad(s):
 	s.vr.disabled = true
 	yield(tap(joyButton(padButton)), "completed")
 	yield(tap(joyButton(JOY_SELECT)), "completed")
-	check("gamepad: with the button disabled, neither LT+X nor LT+Back opens it", not ui.isOpen() and started.size() == count, started.size())
+	check("gamepad: with the button disabled, neither PAD_MODIFIER+PAD_BUTTON nor PAD_MODIFIER+Back opens it", not ui.isOpen() and started.size() == count, started.size())
 	s.vr.disabled = false
 	s.vr.release_focus()
 	yield(tap(joyButton(padButton)), "completed")
-	check("gamepad: LT+X with the button not highlighted opens nothing", not ui.isOpen() and started.size() == count)
+	check("gamepad: PAD_MODIFIER+PAD_BUTTON with the button not highlighted opens nothing", not ui.isOpen() and started.size() == count)
 	s.vr.grab_focus()
 	yield(tap(joyButton(padButton)), "completed")
-	check("gamepad: LT+X on the highlighted button opens the dialog and doesn't start the simulator", ui.isOpen() and started.size() == count and root._csSim == s.tuning.previewedConfig, started.size())
+	check("gamepad: PAD_MODIFIER+PAD_BUTTON on the highlighted button opens the dialog and doesn't start the simulator", ui.isOpen() and started.size() == count and root._csSim == s.tuning.previewedConfig, started.size())
 	yield(tap(joyButton(JOY_BUTTON_1)), "completed")
 	yield(frames(2), "completed")
 	check("gamepad: B closes it, the focus back on the button", not ui.isOpen() and s.vr.get_focus_owner() == s.vr, s.vr.get_focus_owner())
 	s.vr.release_focus()
 	yield(tap(joyButton(JOY_SELECT)), "completed")
-	check("gamepad: LT+Back opens the dialog without the button highlighted, and doesn't start the simulator", ui.isOpen() and started.size() == count, started.size())
+	check("gamepad: PAD_MODIFIER+Back opens the dialog without the button highlighted, and doesn't start the simulator", ui.isOpen() and started.size() == count, started.size())
 	yield(holdJoy(padModifier, false), "completed")
 
 	# The shoulder buttons, with the dialog open: at its last tab, RB goes nowhere else.
@@ -825,12 +837,6 @@ func gamepad(s):
 	Settings.controlScheme = Settings.control.keyMouse
 
 # Focuses `button` afresh, so the game's tooltip node shows its tooltip.
-# A Shift badge's tooltip: its hint_tooltip, which Badge.gd sets as the control scheme and the language change, or, once
-# the game's tooltip node has taken it over (connectSounds, showTooltip: it empties the node's own), the node's copy.
-func badgeTip(tooltips, badge) -> String:
-	if badge.hint_tooltip != "":
-		return badge.hint_tooltip
-	return tooltips.tooltips.get(badge, "")
 
 # The dialog's groups (the game's TuningItems) and rows.
 func groups(ui) -> Array:
@@ -1043,6 +1049,15 @@ func shipsIn(field) -> Array:
 			out.append(child)
 	return out
 
+# Waits for the arena's prefill (CombatLayer.gd _prefill, spread over frames) to end, up to `limit` idle frames, and
+# at least one; true if it did.
+func waitPrefill(layer, limit = 600):
+	for i in limit:
+		yield(get_tree(), "idle_frame")
+		if not layer._filling:
+			return true
+	return false
+
 func waitEnd(layer):
 	for i in 400:
 		yield(get_tree(), "physics_frame")
@@ -1090,7 +1105,7 @@ func runOne(s):
 	inventorySignals.clear()
 	tabButton(ui, 0, "Start").emit_signal("pressed")
 	# At once, before anything moves.
-	check("run: Start closes the dialog and runs the arena", not ui.isOpen() and layer.isRunning() and layer.visible)
+	check("run: Start closes the dialog and runs the arena", not ui.isOpen() and layer.isRunning())
 	check("run: the run is known to CurrentGame (the extension's _csArena)", cg._csArena == layer and CurrentGame.get("_csArena") == layer)
 	var viewport = layer._viewport
 	var upscale = viewport.get_parent()
@@ -1108,6 +1123,11 @@ func runOne(s):
 		masks = masks and field.get(mask) == ringValue("./AsteroidField", mask) and field.get(mask) != fresh.get(mask)
 	check("run: the field traces nothing into the save, puts its ships in the sim zone, takes the ring scene's masks, the arena's map, and doesn't process", field.tracedAtReady == false and field.zone == "sim" and masks and field.mapInstance == layer._map and field.mapInstance.get_script() == load(MAP_SCRIPT) and not field.is_processing() and field.map.is_empty())
 	check("run: the field's map has the dialog's chaos and density", is_equal_approx(layer._map.chaos, settings.getValue("chaos")) and is_equal_approx(layer._map.density, settings.getValue("density")))
+	var early = shipsIn(field)
+	early.erase(layer._ship)
+	check("run: until the field is full, the arena stays hidden: no rocks spawned in Start's frame, no enemies", not layer.visible and field.spawns.empty() and early.empty(), [layer.visible, field.spawns.size(), early.size()])
+	var filled = yield(waitPrefill(layer), "completed")
+	check("run: once the field is full, the arena shows", filled and layer.visible)
 	var arrival = ringValue(".", c.GAME_ARRIVAL_SECONDS)
 	var prefill = int(arrival / field.spawnEvery)
 	var radii = true
@@ -1279,10 +1299,29 @@ func runTwo(s):
 	CurrentGame.playerShip = stationShip
 	Shipyard.created.clear()
 	fieldScript.set_meta("refuse", 1)
+	# Fewer, slower spawns, each taking a third of PREFILL_FRAME_MS and a bit, so at most three fit in a frame.
+	var arrival = ringValue(".", c.GAME_ARRIVAL_SECONDS)
+	var spawnsWanted = 24
+	fieldScript.set_meta("spawnEvery", arrival / spawnsWanted)
+	fieldScript.set_meta("spawnUsec", c.PREFILL_FRAME_MS * 1000 / 3 + 1)
 	s.vr.grab_focus()
 	yield(tap(key(KEY_J, true)), "completed")
 	tabButton(ui, 1, "Start").emit_signal("pressed")
+	var startFrame = Engine.get_idle_frames()
+	yield(tap(escKey()), "completed")
+	var askedEarly = layer._confirm.visible or get_tree().paused
+	var filled = yield(waitPrefill(layer), "completed")
 	var field = layer._field
+	var perFrame = {}
+	for frame in field.spawnFrames:
+		perFrame[frame] = perFrame.get(frame, 0) + 1
+	var most = 0
+	for frame in perFrame:
+		most = max(most, perFrame[frame])
+	var spread = filled and field.spawns.size() == int(arrival / field.spawnEvery) and field.spawnFrames[0] > startFrame and perFrame.size() > 1 and most <= 3
+	check("run 2: the prefill spreads over frames from the one after Start, PREFILL_FRAME_MS of spawns in each", spread, [field.spawns.size(), perFrame.size(), most])
+	check("run 2: Esc while the field fills asks nothing yet; the end confirmation opens once the arena shows", not askedEarly and layer.visible and layer._confirm.visible and get_tree().paused)
+	layer._confirm.get_cancel().emit_signal("pressed")
 	var ship = layer._ship
 	var enemies = shipsIn(field)
 	enemies.erase(ship)

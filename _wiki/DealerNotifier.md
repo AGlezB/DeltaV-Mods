@@ -34,7 +34,8 @@ come up for sale.
 
 Hold **Shift** and click the Dealer entry to open the settings (a plain click still opens the Dealer). With a gamepad,
 highlight the Dealer entry, hold **LT** and press **X**. The small badge beside the entry reminds you: it reads
-**Shift**, or **LT+X** while you play with a gamepad. Point at it with the mouse to see how to open the settings.
+**Shift**, or **LT+X** while you play with a gamepad. Point at it with the mouse, or highlight the entry with a gamepad,
+to see how to open the settings.
 
 The settings show where the Dealer does and look like it: at the top, the game's own description of the ship you have
 selected; below it, the switches. A long description scrolls with the mouse wheel or the right stick. The settings

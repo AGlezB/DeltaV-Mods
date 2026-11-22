@@ -43,10 +43,10 @@ Marks the Crew entry of the Enceladus Prime menu while someone cheap is for hire
     button and press the `PAD_BUTTON` one (constants of `CrewCheapHireNotifier/Badge.gd`). A plain click still opens
     the Crew screen. A small badge beside the entry says so: it reads Shift, or the gamepad twin as `PAD_TEXT` names it
     while the game is played with a gamepad (the game's *Controls* setting, or with *Auto* the device last used).
-    Hovering it shows the `CREWCHEAPHIRENOTIFIER_SETTINGS_TOOLTIP` text, or with a gamepad the
-    `CREWCHEAPHIRENOTIFIER_SETTINGS_TOOLTIP_PAD` one. The settings open where the Tuning screen does, with the same
-    frame and the game's own Tuning sliders, and close the way the game's screens do: Esc, the gamepad's B or Start
-    button, or picking another entry of the menu.
+    Hovering it shows the `CREWCHEAPHIRENOTIFIER_SETTINGS_TOOLTIP` text; with a gamepad, which shows no hover,
+    highlighting the entry shows the `CREWCHEAPHIRENOTIFIER_SETTINGS_TOOLTIP_PAD` one. The settings open where the
+    Tuning screen does, with the same frame and the game's own Tuning sliders, and close the way the game's screens do:
+    Esc, the gamepad's B or Start button, or picking another entry of the menu.
   - Under the title, a window shows what the selected setting does, then the details, as the game's Tuning screen
     describes its own settings.
   - Two groups: *Cheap hire alert* with the *Salary threshold* and the *Salary tolerance*, then *Crew limit* with one
@@ -116,8 +116,8 @@ Marks the Crew entry of the Enceladus Prime menu while someone cheap is for hire
   `Mod.manifest`, or with a gamepad `tr(_CHEAP_HIRE_SETTINGS_TOOLTIP_PAD)` with `PAD_BUTTON_NAME`, `PAD_MODIFIER_NAME`
   and the name, set again on every change of control scheme and of language (the badge's `_notification`). The Crew
   entry itself has no tooltip. The menu's own tooltip node (`PlaySoundsOnTheseButtons`, in
-  `enceladus/EnceladusMenu.tscn`) shows it through `attachTooltip()`, as it shows the Hire screen badge's (below), but
-  only on hover: it is given no control whose focus would show it.
+  `enceladus/EnceladusMenu.tscn`) shows it through `attachTooltip()`, as it shows the Hire screen badge's (below): on
+  hover, and with a gamepad, which shows no hover, while the Crew entry, its `focusOwner`, has the focus.
 - **The Hire screen:** `HireScreen.gd` is a script extension of `res://enceladus/HireableCrew.gd` (also installed in
   `ModMain.gd`), the script of the `HireableCrew` node of the Hire tab in `enceladus/Crew.tscn`. Each person is an
   `enceladus/CrewBio.tscn` entry (`CrewBio.gd`) in its `hireableCrew` list. The game keeps an entry from one day to

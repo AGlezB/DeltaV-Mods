@@ -35,7 +35,7 @@ tells you when there is a trade to make.
 Hold **Shift** and click the Mineral Market entry to open the settings (a plain click still opens the market). With a
 gamepad, highlight the Mineral Market entry, hold **LT** and press **X**. The small badge beside the entry reminds you
 how: it reads *Shift*, or *LT+X* while you play with a gamepad (the game's *Controls* setting at *Gamepad*, or at
-*Auto* once you use the gamepad), and pointing at it tells you what to do.
+*Auto* once you use the gamepad), and pointing at it, or highlighting the entry with a gamepad, tells you what to do.
 
 The settings show where the market does, laid out like the Tuning screen: at the top, what the setting you have
 selected does; below it, the settings in two groups. They close with Esc (B on a gamepad) or when you pick another
