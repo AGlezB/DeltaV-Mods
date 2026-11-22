@@ -1,10 +1,10 @@
 extends Reference
 
-# MarketAdvisor's settings model, shared by StationMenu.gd, SettingsUI.gd and Code.gd: one instance (shared()) holds the
-# current values. They are kept per save game, in the game's UI store (CurrentGame.state.ui, which
-# CurrentGame.saveToFile writes with the rest of the state), under the mod's id from Mod.manifest, as
-# CrewCheapHireNotifier's are: each save has its own money, and so its own floor. The same entry holds the tonnes the
-# Trade button bought to keep cash in (parked), which aren't a setting.
+# MarketAdvisor's settings model, shared by Code.gd, SettingsUI.gd and StationMenu.gd (which reads only alertMark): one
+# instance (shared()) holds the current values. They are kept per save game, in the game's UI store
+# (CurrentGame.state.ui, which CurrentGame.saveToFile writes with the rest of the state), under the mod's id from
+# Mod.manifest, as CrewCheapHireNotifier's are: each save has its own money, and so its own floor. The same entry holds
+# the tonnes the Trade button bought to keep cash in (parked), which aren't a setting.
 
 signal settingsChanged()
 
@@ -85,6 +85,14 @@ const SETTINGS = {
 	# Whether the ore in storage beyond the parked tonnes is sold too, on its best day of the stay.
 	"sellOre": {
 		"label": "MARKETADVISOR_SELL_ORE",
+		"default": true,
+		"type": "bool",
+		"group": "trade",
+	},
+	# Whether the station menu's Mineral Market entry shows the alert mark while the advice is to trade now
+	# (StationMenu.gd).
+	"alertMark": {
+		"label": "MARKETADVISOR_ALERT_ENTRY",
 		"default": true,
 		"type": "bool",
 		"group": "trade",

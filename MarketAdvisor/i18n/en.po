@@ -10,13 +10,13 @@ msgstr ""
 msgid "MARKETADVISOR_ALERT"
 msgstr "%s (*)"
 
-# The tooltip of the Shift badge beside the station menu's Mineral Market entry; the first %s is the key to hold
-# while clicking the entry, the second the mod's name.
+# The tooltip of the Shift badge beside the Mineral Market's Trade button; the first %s is the key to hold while
+# clicking the button, the second the mod's name.
 msgid "MARKETADVISOR_SETTINGS_TOOLTIP"
 msgstr "Click the button while pressing %s to open the %s settings."
 
-# The same while the game is played with a gamepad; the first %s is the button to press on the highlighted entry, the
-# second the one to hold, the third the mod's name.
+# The same while the game is played with a gamepad; the first %s is the button to press on the highlighted Trade
+# button, the second the one to hold, the third the mod's name.
 msgid "MARKETADVISOR_SETTINGS_TOOLTIP_PAD"
 msgstr "Highlight the button and press %s while holding %s to open the %s settings."
 
@@ -104,6 +104,16 @@ msgstr ""
 "\n"
 "At the end of a dive, pick Store Minerals instead of Sell all, so the ore can wait for that day. Oddities are sold "
 "either way. With Trade all ores, the cash goes back into ore."
+
+msgid "MARKETADVISOR_ALERT_ENTRY"
+msgstr "Mark the Mineral Market entry"
+
+msgid "MARKETADVISOR_ALERT_ENTRY_DESC"
+msgstr ""
+"Puts (*) after the Mineral Market entry of the station menu while the Trade button has trades to make.\n"
+"\n"
+"Switch it off if you'd rather check the market yourself, or if another mod marks that entry too. The Trade button "
+"works the same either way."
 
 # The caption of the row in the Mineral Market's header, under your cash, with what the ore the Trade button bought to
 # keep your cash in would sell for today (written like the game's "Insured for").

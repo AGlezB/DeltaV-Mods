@@ -6,10 +6,10 @@ a trade is due.
 
 ## What it does and why
 - **What:** a row at the bottom of the Mineral Market: a line of advice, a line comparing today's prices with each
-  chart's average, and a Trade button that makes exactly the trades the advice names. With your cash above the cash
-  reserve's range, it buys ore with the cash above the reserve; below the range, it sells that ore back up to the
-  reserve. Either way, your cash ends up within one tonne's price above the reserve. Inside the range, nothing is
-  traded.
+  chart's average, both in a small font, and a Trade button that makes exactly the trades the advice names. With your
+  cash above the cash reserve's range, it buys ore with the cash above the reserve; below the range, it sells that ore
+  back up to the reserve. Either way, your cash ends up within one tonne's price above the reserve. Inside the range,
+  nothing is traded.
 - **The range:** the reserve, give or take its *Tolerance*, a share of it you set. So a small change in your cash, such
   as a repair or a sale, doesn't make the Trade button sell ore at a bad price, or buy ore at a high one, only to match
   the reserve exactly. A trade brings your cash back to the reserve itself, the middle of the range, which leaves room
@@ -32,30 +32,36 @@ a trade is due.
 - **The header:** a row right under your cash, *Parked in ore*, with what the parked tonnes would sell for today. It is
   the game's own row for your insurance, which the market's header keeps hidden, copied.
 - **The alert mark** (the " (*)" after a menu entry's text): on the station menu's Mineral Market entry while the
-  advice is to trade now. The Services entry's mark, for services that can be bought again, is ServiceNotifier's.
+  advice is to trade now, unless *Mark the Mineral Market entry* is off. That text is all the mod changes in the menu:
+  the entry's Shift+Click is left free for other mods. The Services entry's mark, for services that can be bought
+  again, is ServiceNotifier's.
 - **Why:** the market buys and sells at the same price, with no fee, and every price drifts back towards its average.
   So cash you don't need now is better kept in ore bought below its average, and sold above it, than left idle; doing
   that by hand means reading every chart at every visit. The mark saves opening the market to check.
 - **Settings:**
-  - **Shift+Click** the Mineral Market entry to open them, as the Shift badge beside the entry says: it reads Shift,
-    and hovering it shows how. A plain click still opens the market. With a gamepad (the game's *Controls* setting at
-    *Gamepad*, or at *Auto* once the gamepad was used last), the badge reads the gamepad's twin of Shift+Click instead,
-    `PAD_TEXT` in `Badge.gd`, and highlighting the entry shows how: on the highlighted entry, holding the first button
-    and pressing the second opens them. They open where the market does, with the same frame, and close the way the
-    game's screens do: Esc, the controller's B or Start button, or picking another entry of the menu.
+  - **Shift+Click** the Trade button to open them, as the Shift badge just left of it says: it reads Shift, and
+    hovering it shows how. It works while the button is disabled too (nothing to trade), and never trades; a plain
+    click still trades. With a gamepad (the game's *Controls* setting at *Gamepad*, or at *Auto* once the gamepad was
+    used last), the badge reads the gamepad's twin of Shift+Click instead, `PAD_TEXT` in `Badge.gd`, and highlighting
+    the button (the D-pad reaches it from the last slider, disabled or not) shows how: on the highlighted button,
+    holding the first button and pressing the second opens them. They open in the market's place, with the same frame
+    and title. Esc, or the controller's B or Start button, closes them and brings the market back with the Trade
+    button highlighted; picking another entry of the menu closes them too, for that entry's screen.
   - Laid out as the Tuning screen: a window with the description of the selected setting, then two groups:
     - *Cash reserve*: *Use scientific notation* (instead of thousands, millions and billions), *Amount* and *Power of
       ten*, two sliders that make the reserve, the amount times ten to the power, and *Tolerance*, in percent; then a
       row under them with the reserve's range.
-    - *Trading*: *Trade all ores* and *Sell stored ore*.
+    - *Trading*: *Trade all ores*, *Sell stored ore* and *Mark the Mineral Market entry* (the alert mark; switch it
+      off to check the market yourself, or when another mod marks that entry too).
   - Each setting's default, range and step are in `SETTINGS` at the top of `MarketAdvisor/Settings.gd`, inside the zip.
   - Your settings and the parked tonnes are kept in your save game, each save with its own, and written to disk the
     next time the game saves. A new game, or a save made before the mod, starts from the defaults.
   - The mod's texts are in `MarketAdvisor/i18n/en.po`, inside the zip.
 
 ## For modders
-- Six scripts: `Code.gd` (the Mineral Market's script extension: the row, the header's row, trading), `StationMenu.gd`
-  (the station menu's script extension: the alert mark, opening the settings, the Shift badge beside the entry),
+- Six scripts: `Code.gd` (the Mineral Market's script extension: the row, the header's row, trading, opening the
+  settings, the Shift badge beside the Trade button), `StationMenu.gd` (the station menu's script extension: the alert
+  mark),
   `Advisor.gd` (the advice), `Badge.gd` (the badge), `SettingsUI.gd` (the settings screen) and `Settings.gd` (the
   settings model the others share). The texts are in `i18n/en.po`.
 - **The market** (GAME.md *Mineral Market*): one slider row per mineral of `CurrentGame.mineralPrices`
@@ -65,13 +71,38 @@ a trade is due.
   point a day, its last `lookAhead` hours a forecast blended by the crew's prediction error.
 - Script extension of `res://enceladus/MineralMarket.gd` (`Code.gd`), the script of the station's Mineral Market
   screen (`enceladus/MineralMarket.tscn`). The tag `group = MineralMarket` in `Mod.manifest` names it.
-  - `_ready()` (the game's runs first and builds the slider rows) builds the row under the list (`_maBuildRow()`,
-    inside the list's side margins) and the parked row (`_maBuildParked()`: a copy of the header's hidden `Insurence`
-    row, `_MA_HEADER_ROW`, without its scripts, signals and `Pinger` sound, captioned `_MA_PARKED`, its value written
-    with the `Money` label's `format`), and works the advice out again, once per frame and after the game's own
-    handlers (`_maQueue()`), on `CurrentGame`'s `dayPassed`, `hourPassed`, `moneyChanged`, `moneyOrInsuranceChanged`
-    and `employmentChanged`, on the settings' `settingsChanged` and when the screen shows.
-  - Overrides `setKidsFocus()`, calling the parent's: the sliders' focus chain goes on down to the Trade button.
+  - `_ready()` (the game's runs first and builds the slider rows) loads the save's settings (`loadFromState()`: the
+    station is built anew after every load and new game), builds the row under the list (`_maBuildRow()`, inside the
+    list's side margins, its nodes named so a path reaches the button: `Details/MarketAdvisor/Row/Trade`; its two lines
+    in the Label font of `Badge.gd`'s `SMALL_FONT_THEME`, a font override, so their colours stay the theme's) and the
+    parked row (`_maBuildParked()`: a copy of the header's hidden `Insurence` row, `_MA_HEADER_ROW`, without its
+    scripts, signals and `Pinger` sound, captioned `_MA_PARKED`, its value written with the `Money` label's `format`),
+    and works the advice out again, once per frame and after the game's own handlers (`_maQueue()`), on
+    `CurrentGame`'s `dayPassed`, `hourPassed`, `moneyChanged`, `moneyOrInsuranceChanged` and `employmentChanged`, on
+    the settings' `settingsChanged` and when the screen shows.
+  - Overrides `setKidsFocus()`, calling the parent's: the sliders' focus chain goes on down to the Trade button. A
+    disabled button keeps its focus mode, so the D-pad reaches it while there is nothing to trade.
+  - **The settings, from the Trade button.** Where the market is one of the station's right-hand screens (its parent
+    has `hidefoka`, `enceladus/HidingMarginContainer.gd`), the button's `gui_input` signal goes to
+    `_maOnTradeInput()`: a Shift+left click, or the gamepad's twin (`Badge.gd` `isPadShortcut`), accepts the event and
+    opens the settings (`_maOpenSettings()`). Godot 3 sends a control's `gui_input` signal before its own
+    `_gui_input`, and only a Button's `_gui_input` ignores it while disabled, so this works on a disabled button; the
+    accepted event never reaches an enabled one's `_gui_input`, so nothing is traded. `_maOpenSettings()` makes the
+    screen once (`SettingsUI.gd` `setup()` with the market, the sibling Tuning screen, `_MA_TUNING`, and the market
+    header's title, `_MA_HEADER_TITLE`), adds it among the right-hand screens, hides them all (`hidefoka()`) and shows
+    it. Its `closed` signal (Esc, B or Start) calls `_maOnSettingsClosed()`, which shows the market again as
+    `_on_MineralMarket_pressed` does (the `Shower`'s `show`, `setKidsFocus()`) but focuses the Trade button and keeps
+    the market's `lastFocus`, the menu entry its own Esc goes back to. Another entry of the menu taking the focus hides
+    the settings without `closed`, so the market stays hidden. Without the right-hand screens there is no badge, and
+    Shift+Click is a plain click.
+  - **The Shift badge** (`_maMakeShiftBadge()`, with `Badge.gd` `dress()`: the button's frame and font colour, the
+    small font, `PAD_TEXT` with a gamepad) is a child of the row right before the Trade button, centred on it from top
+    to bottom, stopping the mouse; `hangBeside()` isn't used, since the row's right margin reaches the panel's edge. It
+    keeps its look while the button is disabled, since Shift+Click still works then. `_maAttachTooltips()` adds the
+    game's tooltip node (`_MA_GAME_TOOLTIPS`, as each slider row has one) to the row, which shows the badge's tooltip
+    (`attachTooltip()` with the button as its `focusOwner`, `setShiftTooltips()` with `_MA_SETTINGS_TOOLTIP` and
+    `_MA_SETTINGS_TOOLTIP_PAD`): on hover, and with a gamepad while the button is highlighted. The node also takes the
+    button in, which gets the sliders' hover and focus sounds; its `hint_tooltip` stays empty, so it shows none.
   - `_maInput()` feeds `Advisor.plan()` only what the player sees: the cash, the whole tonnes held, each slider's day
     price, each parking mineral's average over the chart's history (`_maAverages()`, `_MA_AVERAGE_SAMPLES` points,
     once per chart day), and each chart's forecast for the days left until the ship's maintenance ends
@@ -97,16 +128,12 @@ a trade is due.
   cash into the range.
 - Script extension of `res://enceladus/EnceladusMenu.gd` (`StationMenu.gd`), the script of the station menu. The
   Mineral Market entry is its `MineralMarket` button, a plain button whose text is a translation key. While marked, its
-  text is `tr(_MA_ALERT) % tr(key)`; otherwise the key again. The mark follows `_maAdviceChanged`. Shift+Click and the
-  settings screen's place are CrewCheapHireNotifier's (see its README): the press is accepted in the button's
-  `gui_input`, so the market stays closed. The gamepad's twin of Shift+Click (`Badge.gd` `isPadShortcut`) and the Shift
-  badge beside the entry (`_maMakeShiftBadge()`, with `Badge.gd`: its look, its place, its text and tooltip for each
-  control scheme, `tr(_MA_SETTINGS_TOOLTIP)` or `tr(_MA_SETTINGS_TOOLTIP_PAD)`, and the menu's tooltip node that shows
-  it) are DiveSkipTransit's (see its README). Overrides `_ready` and `_notification` (the game's script has neither):
-  the station is built anew after every load and new game, so `_ready` loads the save's settings (`loadFromState()`);
-  on `NOTIFICATION_TRANSLATION_CHANGED` it writes the entry's text again, since a marked one holds translated text (the
-  badge writes its own tooltip again). Without the right-hand screens' container or the market screen there are no
-  settings, badge or mark, and Shift+Click is a plain click. It leaves every other entry alone.
+  text is `tr(_MA_ALERT) % tr(key)`; otherwise the key again. The mark follows `_maAdviceChanged` from the market
+  screen (`_MA_MARKET_SCREEN`) and the `alertMark` setting (`settingsChanged`). That text is all it changes: the entry
+  keeps the game's input, so its Shift+Click is free for other mods. Overrides `_ready` and `_notification` (the game's
+  script has neither): the menu is ready before the screens, so `_ready` only takes the shared settings, whose save
+  values the market loads; on `NOTIFICATION_TRANSLATION_CHANGED` it writes the entry's text again, since a marked one
+  holds translated text. Without the market screen there is no mark. It leaves every other entry alone.
 - **The settings model** (`Settings.gd`) follows CrewCheapHireNotifier's (`shared()`, `SETTINGS`, `cfg`, `getValue` /
   `setValue`, `loadFromState` / `saveToState`, `modId()`, `modName()`, `modVersion()`, `toShown()` / `fromShown()`).
   Each setting has a `type` (`"bool"` or `"float"`, a slider with `min`, `max`, `step`, `unit`, `format` and `shown`,
@@ -124,12 +151,13 @@ a trade is due.
   store without `settingsChanged`: not a setting). A save without `parked` takes its holdings of the parking minerals
   as parked, once.
 - **The settings screen** (`SettingsUI.gd`) is built as DiveSkipTransit's, but copies the live Mineral Market screen's
-  theme, panel, minimum size and size flags, so it opens in the market's place with its frame. Under the header (the
-  entry's key), the description window, nested as `enceladus/Tuning.tscn` nests its own (`GAME_WINDOW_MARGIN`,
-  `GAME_WINDOW`, `GAME_WINDOW_INSIDE`) with the live Tuning screen's theme, margins and panel, keeping room for
-  `DESCRIPTION_LINES` lines; then an `Items` box of `enceladus/Tuning/TuningItems.tscn` groups, one per `GROUPS`
-  entry, with a `TuningBoolValue` or `TuningFloatValue` row per setting, named by its label in the game's language, a
-  slider's range, step and value as the screen shows them (`toShown()`). Under the cash group's rows, the cash
+  theme, panel, minimum size and size flags, so it opens in the market's place with its frame. It closes as the game's
+  screens do, and emits `closed` only when Esc or the controller's B or Start button closes it, for the market to come
+  back. Under the header (the market's title), the description window, nested as `enceladus/Tuning.tscn` nests its own
+  (`GAME_WINDOW_MARGIN`, `GAME_WINDOW`, `GAME_WINDOW_INSIDE`) with the live Tuning screen's theme, margins and panel,
+  keeping room for `DESCRIPTION_LINES` lines; then an `Items` box of `enceladus/Tuning/TuningItems.tscn` groups, one
+  per `GROUPS` entry, with a `TuningBoolValue` or `TuningFloatValue` row per setting, named by its label in the game's
+  language, a slider's range, step and value as the screen shows them (`toShown()`). Under the cash group's rows, the cash
   reserve's row (`_addCashRow()`): a copy of a slider row's line without its signals, named `CASH_TOTAL`, its name and
   reset button out of reach, its value `floorText()`. On `tuningChanged` (a change, or a row taking the focus) it sets
   the row's `tune.current` (DiveSkipTransit's fix: a switch doesn't update it itself), calls `setValue` (a slider's
@@ -140,31 +168,33 @@ a trade is due.
   too: mods load by path, so the chain is game ← CrewCheapHireNotifier ← DealerNotifier ← DiveSkipTransit ←
   MarketAdvisor ← ServiceNotifier. All five override `_ready`, and all but DiveSkipTransit `_notification`, without
   calling the parent's; their members are distinct, each writes only its own entry's text, and opening one's screen
-  hides the others' (`hidefoka`). Each has its own copy of `Badge.gd`, the same script, preloaded under its own
-  constant.
-- Members of the market's extension (`Code.gd`): the signal `_maAdviceChanged`, `MarketAdvisor` and `_MA_ADVISOR`
-  (preloads), `_MA_CHART`, `_MA_AVERAGE_SAMPLES`, the translation keys `_MA_TRADE`, `_MA_TONNES`, `_MA_SELL`,
-  `_MA_BUY`, `_MA_LEAVES`, `_MA_WAIT_SELL`, `_MA_WAIT_BUY`, `_MA_WARN`, `_MA_CAPPED`, `_MA_SHORT`, `_MA_AT_FLOOR`,
+  (this mod's from the Trade button) hides the others' (`hidefoka`). Each has its own copy of `Badge.gd`, the same
+  script, preloaded under its own constant.
+- Members of the market's extension (`Code.gd`): the signal `_maAdviceChanged`, `MarketAdvisor`, `_MA_ADVISOR`,
+  `_MA_SETTINGS_UI` and `_MA_BADGE_SCRIPT` (preloads), `_MA_SETTINGS_TOOLTIP` and `_MA_SETTINGS_TOOLTIP_PAD` (the
+  badge's tooltips), `_MA_GAME_TOOLTIPS` (the game's tooltip node), `_MA_TUNING` (the Tuning screen, a sibling),
+  `_MA_CHART`, `_MA_AVERAGE_SAMPLES`, the translation keys `_MA_TRADE`, `_MA_TONNES`, `_MA_SELL`, `_MA_BUY`,
+  `_MA_LEAVES`, `_MA_WAIT_SELL`, `_MA_WAIT_BUY`, `_MA_WARN`, `_MA_CAPPED`, `_MA_SHORT`, `_MA_AT_FLOOR`,
   `_MA_VS_AVERAGE`, `_MA_LOWER`, `_MA_HIGHER`, `_MA_SAME` and `_MA_PARKED`, the paths of the market's box under its
   header and of the list's margins, `_MA_DETAILS` and `_MA_LIST_MARGIN`, `_MA_PRICES_OPACITY` (how faint the prices'
   line is), the header's paths `_MA_HEADER_BOX`, `_MA_HEADER_MONEY`, `_MA_HEADER_ROW`, `_MA_HEADER_CAPTION`,
-  `_MA_HEADER_VALUE` and `_MA_HEADER_SOUND`, `_MA_MONEY_FORMAT_FALLBACK`, `_maSettings`, `_maParkedValue`,
-  `_maMoneyFormat`, `_maAdvice`, `_maPrices`, `_maButton`, `_maPlan`, `_maAverage`, `_maAverageDay`, `_maQueued`,
-  `_maBuildParked()`, `_maBuildRow()`, `_maQueue()`, `_maRefresh()`, `_maTrade()`, `_maParkedWorth()`,
-  `_maClampedParked()`, `_maSlider()`, `_maInput()`, `_maNames()`, `_maDaysLeft()`, `_maForecast()`, `_maAverages()`,
-  `_maHistoryAverage()`, `_maAdviceText()` and `_maPricesText()`.
-- Members of the menu's extension (`StationMenu.gd`): `MarketAdvisor`, `_MA_SETTINGS_UI` and `_MA_BADGE_SCRIPT`
-  (preloads), `_MA_ALERT`, `_MA_SETTINGS_TOOLTIP` and `_MA_SETTINGS_TOOLTIP_PAD` (translation keys), `_maMarketButton`,
-  `_maMarketKey`, `_maShiftBadge`, `_maScreens`, `_maMarket`, `_maTuning`, `_maSettingsScreen`, `_maSettings`,
-  `_maTradeNow`, `_maOnAdvice()`, `_maUpdate()`, `_maMakeShiftBadge()`, `_maOnMarketInput()` and `_maOpenSettings()`.
-  Both extensions declare `_maSettings`, which is fine: they extend different game scripts. `Badge.gd`'s members are
-  listed in DiveSkipTransit's README.
+  `_MA_HEADER_VALUE`, `_MA_HEADER_SOUND` and `_MA_HEADER_TITLE`, `_MA_MONEY_FORMAT_FALLBACK`, `_maSettings`,
+  `_maParkedValue`, `_maMoneyFormat`, `_maAdvice`, `_maPrices`, `_maButton`, `_maShiftBadge`, `_maSettingsScreen`,
+  `_maPlan`, `_maAverage`, `_maAverageDay`, `_maQueued`, `_maBuildParked()`, `_maBuildRow()`, `_maMakeShiftBadge()`,
+  `_maAttachTooltips()`, `_maOnTradeInput()`, `_maOpenSettings()`, `_maOnSettingsClosed()`, `_maQueue()`,
+  `_maRefresh()`, `_maTrade()`, `_maParkedWorth()`, `_maClampedParked()`, `_maSlider()`, `_maInput()`, `_maNames()`,
+  `_maDaysLeft()`, `_maForecast()`, `_maAverages()`, `_maHistoryAverage()`, `_maAdviceText()` and `_maPricesText()`.
+- Members of the menu's extension (`StationMenu.gd`): `MarketAdvisor` (preload), `_MA_ALERT` (translation key),
+  `_MA_MARKET_SCREEN`, `_maMarketButton`, `_maMarketKey`, `_maSettings`, `_maTradeNow`, `_maOnAdvice()` and
+  `_maUpdate()`. Both extensions declare `_maSettings`, which is fine: they extend different game scripts. `Badge.gd`'s
+  members are listed in DiveSkipTransit's README.
 - Tested outside the game in a headless Godot 3.6 with the game's `EnceladusMenu.gd`, `HidingMarginContainer.gd`,
   `MineralMarket.gd`, `MineralSellSlider.gd`, `MineralPriceChart.gd`, `ServiceUI.gd`, the Tuning screen's groups and
   rows, `HeaderWithMoney.tscn` and `Shower.tscn`: the station built in code as its scene nests it, the market and the
   Services rows (which the mod leaves alone) from stubs of their scenes with the game's scripts and values, and the
-  game's market prices drawn from each save's seed, and the badge and the gamepad's twin with either control scheme
-  (the `market` suite of the repository's test harness, which also runs a year of stays); with CrewCheapHireNotifier,
+  game's market prices drawn from each save's seed, and the badge and the gamepad's twin on the Trade button, enabled
+  and disabled, with either control scheme (the `market` suite of the repository's test harness, which also runs a
+  year of stays); with CrewCheapHireNotifier,
   DealerNotifier, DiveSkipTransit and ServiceNotifier in every load order (the `dealer` suite); and in the game.
 
 ## Install

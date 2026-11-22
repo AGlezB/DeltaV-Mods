@@ -8,11 +8,26 @@ extends "res://enceladus/MineralMarket.gd"
 # forecast with the crew's geologist (enceladus/MineralPriceChart.gd). It keeps, with the save, the tonnes it bought
 # to keep cash in (parked), so it can tell them from the ore brought back from dives. The station menu shows an alert
 # mark on the Mineral Market entry while the advice is to trade now (StationMenu.gd, through _maAdviceChanged).
+# Shift+Click on the Trade button opens MarketAdvisor's settings instead of trading, even while the button is disabled,
+# and so does its gamepad twin on the highlighted button (a Shift badge beside it says so in its tooltip); closing them
+# brings the market back.
 
 signal _maAdviceChanged(tradeNow)
 
 const MarketAdvisor = preload("res://MarketAdvisor/Settings.gd")
 const _MA_ADVISOR = preload("res://MarketAdvisor/Advisor.gd")
+const _MA_SETTINGS_UI = preload("res://MarketAdvisor/SettingsUI.gd")
+# The badges' script: their look, and their tooltip as their only interaction.
+const _MA_BADGE_SCRIPT = preload("res://MarketAdvisor/Badge.gd")
+# The Shift badge's tooltip, a translation key of i18n/en.po: %s the Shift key, %s the mod's name. And the same while
+# the game is played with a gamepad (Badge.gd setShiftTooltips): the button to press, the one to hold, the mod's name.
+const _MA_SETTINGS_TOOLTIP = "MARKETADVISOR_SETTINGS_TOOLTIP"
+const _MA_SETTINGS_TOOLTIP_PAD = "MARKETADVISOR_SETTINGS_TOOLTIP_PAD"
+# The game's tooltip node (with its sounds), as each of the market's slider rows instances it.
+const _MA_GAME_TOOLTIPS = "res://menu/sfx/PlaySoundsOnTheseButtons.tscn"
+# The Tuning screen among the station's right-hand screens (the market's siblings), whose description window the
+# settings screen copies.
+const _MA_TUNING = "Tuning"
 
 # Each slider row's price chart (enceladus/MineralSellSlider.tscn), whose day, history and forecast the advice reads.
 const _MA_CHART = "VBoxContainer/MarginContainer/Chart"
@@ -56,6 +71,8 @@ const _MA_HEADER_ROW = "Insurence"
 const _MA_HEADER_CAPTION = "InsuranceLabel"
 const _MA_HEADER_VALUE = "Insurance"
 const _MA_HEADER_SOUND = "Insurance/Pinger"
+# The header's title, a translation key the label translates itself, which the settings screen's header takes.
+const _MA_HEADER_TITLE = _MA_DETAILS + "/HeaderWithMoney/MarketLabel"
 # How your cash is written where the header has no `Money` label to read it from (InGameMoney.gd `format`).
 const _MA_MONEY_FORMAT_FALLBACK = "%s E$"
 
@@ -65,6 +82,8 @@ var _maMoneyFormat = _MA_MONEY_FORMAT_FALLBACK
 var _maAdvice = null # the advice line
 var _maPrices = null # the line comparing the parking minerals with the chart's average
 var _maButton = null
+var _maShiftBadge = null # the Shift badge beside the Trade button
+var _maSettingsScreen = null # the settings screen, made on first use
 var _maPlan = null
 var _maAverage = {} # the chart's average E$/kg by mineral, for the chart's day _maAverageDay
 var _maAverageDay = null
@@ -72,9 +91,11 @@ var _maQueued = false
 
 # The base _ready runs first and builds the slider rows (`minerals`). The advice follows everything that changes it:
 # a new day or hour (prices, the stay), the money (any purchase), the crew (the geologist's forecast), the settings,
-# and the screen showing. It is worked out once per frame, after the game's own handlers.
+# and the screen showing. It is worked out once per frame, after the game's own handlers. The station is built anew
+# after every load and new game, so the settings loaded here are the save game's own.
 func _ready():
 	_maSettings = MarketAdvisor.shared()
+	_maSettings.loadFromState()
 	_maSettings.connect("settingsChanged", self, "_maQueue")
 	for signalName in ["dayPassed", "hourPassed", "moneyChanged", "moneyOrInsuranceChanged", "employmentChanged"]:
 		if CurrentGame.has_signal(signalName):
@@ -110,7 +131,10 @@ func _maBuildParked():
 		_maMoneyFormat = money.format
 	_maParkedValue = value
 
-# The row under the sliders, inside the same side margins as their list.
+# The row under the sliders, inside the same side margins as their list, its nodes named so that a path reaches the
+# Trade button (Details/MarketAdvisor/Row/Trade). Its two lines are in the small prose font the Shift badge is lettered
+# in (Badge.gd SMALL_FONT_THEME), so they don't compete with the market's headings and the button; only the font
+# changes, not the colours.
 func _maBuildRow():
 	var details = get_node_or_null(_MA_DETAILS)
 	if not details is VBoxContainer:
@@ -123,6 +147,7 @@ func _maBuildRow():
 			margin.add_constant_override("margin_" + side, listMargin.get_constant("margin_" + side))
 	details.add_child(margin)
 	var row = HBoxContainer.new()
+	row.name = "Row"
 	margin.add_child(row)
 	var lines = VBoxContainer.new()
 	lines.size_flags_horizontal = SIZE_EXPAND_FILL
@@ -136,11 +161,82 @@ func _maBuildRow():
 	_maPrices.size_flags_horizontal = SIZE_EXPAND_FILL
 	_maPrices.modulate.a = _MA_PRICES_OPACITY
 	lines.add_child(_maPrices)
+	if ResourceLoader.exists(_MA_BADGE_SCRIPT.SMALL_FONT_THEME):
+		var font = load(_MA_BADGE_SCRIPT.SMALL_FONT_THEME).get_font("font", "Label")
+		for label in [_maAdvice, _maPrices]:
+			label.add_font_override("font", font)
 	_maButton = Button.new()
+	_maButton.name = "Trade"
 	_maButton.text = _MA_TRADE
 	_maButton.size_flags_vertical = SIZE_SHRINK_CENTER
 	_maButton.connect("pressed", self, "_maTrade")
 	row.add_child(_maButton)
+	# The settings open in the market's place among the station's right-hand screens
+	# (enceladus/HidingMarginContainer.gd); without them, there is no badge and Shift+Click is a plain click.
+	if get_parent() != null and get_parent().has_signal("hidefoka"):
+		_maShiftBadge = _maMakeShiftBadge(row)
+		_maAttachTooltips(row)
+		_maButton.connect("gui_input", self, "_maOnTradeInput")
+
+# The Shift badge (Badge.gd), in the Trade button's own frame and font colour (read once the button is in the tree,
+# where the market's theme gives them), in the row right before the button, the row's gap between them, centred on it
+# from top to bottom (the row's right margin reaches the edge of the market's panel, so it can't hang beside the button
+# on the right as on a menu entry). It stops the mouse, so a click on it does nothing. It keeps that look while the
+# button is disabled: Shift+Click still opens the settings then.
+func _maMakeShiftBadge(row):
+	var badge = _MA_BADGE_SCRIPT.new()
+	badge.name = "MarketAdvisorShiftBadge"
+	badge.dress(_maButton, OS.get_scancode_string(KEY_SHIFT), _MA_BADGE_SCRIPT.PAD_TEXT)
+	badge.size_flags_vertical = SIZE_SHRINK_CENTER
+	badge.mouse_filter = MOUSE_FILTER_STOP
+	row.add_child(badge)
+	row.move_child(badge, _maButton.get_index())
+	return badge
+
+# The badge's tooltip is shown by the game's own tooltip node, one of the row's own, as each slider row has its own
+# (enceladus/MineralSellSlider.tscn): on hover, and with a gamepad, which shows no hover, while the Trade button is
+# highlighted. The node also takes the Trade button in, with the hover and focus sounds of the sliders above it; the
+# button's hint_tooltip stays empty, so it shows none.
+func _maAttachTooltips(row):
+	if not ResourceLoader.exists(_MA_GAME_TOOLTIPS):
+		return
+	var tooltips = load(_MA_GAME_TOOLTIPS).instance()
+	tooltips.name = "PlaySoundsOnTheseButtons"
+	row.add_child(tooltips)
+	_maShiftBadge.attachTooltip(tooltips, _maButton)
+	_maShiftBadge.setShiftTooltips(_MA_SETTINGS_TOOLTIP, _MA_SETTINGS_TOOLTIP_PAD, _maSettings.modName())
+
+# Shift+Click on the Trade button opens the settings instead of trading, and so does its gamepad twin on the highlighted
+# button (Badge.gd isPadShortcut), whether the button is disabled or not. A click's gui_input signal comes before the
+# button's own _gui_input, which is all a disabled button ignores, and accepting the press there keeps an enabled button
+# from pressing; Badge.gd's PAD_BUTTON does nothing to a button. A disabled button keeps its focus, so the D-pad still
+# reaches it (setKidsFocus).
+func _maOnTradeInput(event):
+	var shiftClick = event is InputEventMouseButton and event.pressed and event.button_index == BUTTON_LEFT and event.shift
+	if shiftClick or _MA_BADGE_SCRIPT.isPadShortcut(event):
+		_maButton.accept_event()
+		_maOpenSettings()
+
+# As a menu entry opens its screen: the other screens, this one too, hide (`hidefoka`), and the settings screen shows in
+# the market's place, titled as the market.
+func _maOpenSettings():
+	var screens = get_parent()
+	if _maSettingsScreen == null:
+		var title = get_node_or_null(_MA_HEADER_TITLE)
+		_maSettingsScreen = _MA_SETTINGS_UI.new()
+		_maSettingsScreen.setup(self, screens.get_node_or_null(_MA_TUNING), title.text if title is Label else "")
+		screens.add_child(_maSettingsScreen)
+		_maSettingsScreen.connect("closed", self, "_maOnSettingsClosed")
+	screens.hidefoka()
+	_maSettingsScreen.show()
+
+# Esc or the controller's back button closed the settings: the market comes back, the Trade button highlighted. As
+# _on_MineralMarket_pressed shows it, but keeping its lastFocus, the menu entry it was opened from, where its own Esc
+# goes back to.
+func _maOnSettingsClosed():
+	$Shower.play("show")
+	setKidsFocus()
+	Tool.deferCallWhenIdle(_maButton, "grab_focus")
 
 # The sliders' focus chain (setKidsFocus, set when the screen opens) goes on down to the Trade button.
 func setKidsFocus():

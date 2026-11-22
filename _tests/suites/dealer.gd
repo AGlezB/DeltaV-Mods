@@ -1105,9 +1105,9 @@ func _allPictures(screen) -> bool:
 	return true
 
 # With CrewCheapHireNotifier, DiveSkipTransit, MarketAdvisor and ServiceNotifier loaded too: five extensions of
-# EnceladusMenu.gd, each opening its own screen, which hides the others, and keeping its own tooltip. Theirs are as wide
-# as the Tuning stub, the Mineral Market or the Services screen, which leave the menu free to click, so they are opened
-# first.
+# EnceladusMenu.gd, each opening its own screen (MarketAdvisor's from the Mineral Market's Trade button), which hides
+# the others, and keeping its own tooltip. Theirs are as wide as the Tuning stub, the Mineral Market or the Services
+# screen, which leave the menu free to click, so they are opened first.
 # ShipSortByTypeAndPrice and ShipHighlightTypeAndPrice, where loaded: scene-tree observers of the Dealer's and Fleet's
 # entries (enceladus/SystemBuyUI.gd), with or without DealerNotifier. The sort: the Dealer's offers by their type as
 # shown, then by price; the highlight the Dealer put on its first entry moved to the new first one; Fleet's entries left
@@ -1210,6 +1210,13 @@ func together():
 	var tips = true
 	for other in others:
 		var button = s[other[0]]
+		# MarketAdvisor's settings open from its Trade button, at the bottom of the Mineral Market its entry opens; the
+		# entry itself has no badge.
+		if other[2] == "MarketAdvisor":
+			check("with MarketAdvisor: the Mineral Market entry has no Shift badge", shiftBadge(button) == null)
+			click(button, false)
+			yield(frames(40), "completed")
+			button = s.screens.get_node("MineralMarket")._maButton
 		click(button, true)
 		yield(frames(40), "completed")
 		var theirs = s.screens.get_node_or_null(other[1])
@@ -1217,7 +1224,7 @@ func together():
 		click(s.market, true)
 		yield(frames(40), "completed")
 		var mine = screenOf(s)
-		check("with %s: Shift+Click on its entry opens its settings, then Shift+Click on Dealer opens these and hides its" % other[2], opened and mine != null and mine.visible and not theirs.visible)
+		check("with %s: Shift+Click on its entry (MarketAdvisor: on its Trade button) opens its settings, then Shift+Click on Dealer opens these and hides its" % other[2], opened and mine != null and mine.visible and not theirs.visible)
 		tips = tips and badgeTip(button).find(other[2]) >= 0
 		yield(tap(escKey()), "completed")
 		yield(frames(40), "completed")

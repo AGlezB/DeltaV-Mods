@@ -62,13 +62,20 @@ func addMenuTooltips(menu):
 	menu.add_child(tooltips)
 	return tooltips
 
-# The Shift badge on or beside a station menu entry or button (a mod's Badge.gd, a child of it), or null.
+# The Shift badge on or beside a station menu entry or button (a mod's Badge.gd): a child of it, or the control right
+# before it in its row (MarketAdvisor's Trade button); or null.
 func shiftBadge(entry):
 	for child in entry.get_children():
-		var script = child.get_script()
-		if script != null and script.resource_path.ends_with("/Badge.gd"):
+		if _isBadge(child):
 			return child
+	var parent = entry.get_parent()
+	if parent != null and entry.get_index() > 0 and _isBadge(parent.get_child(entry.get_index() - 1)):
+		return parent.get_child(entry.get_index() - 1)
 	return null
+
+func _isBadge(node):
+	var script = node.get_script()
+	return script != null and script.resource_path.ends_with("/Badge.gd")
 
 # The tooltip of the Shift badge of `entry`, which holds it: the entry has none of its own. The game's tooltip node
 # (`tooltips`, or the menu's, beside the entry) keeps the text once it has shown it, and empties the badge's own

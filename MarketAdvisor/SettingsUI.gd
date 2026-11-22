@@ -1,13 +1,16 @@
 extends PanelContainer
 
-# MarketAdvisor's settings screen: one more of the station's right-hand screens, opened from the menu's Mineral Market
-# entry (StationMenu.gd), built as DiveSkipTransit's is. It copies the Mineral Market screen's frame and place, and is
-# built from the game's own Tuning parts, the way enceladus/Tuning.tscn nests them: the header, a window with the
+# MarketAdvisor's settings screen: one more of the station's right-hand screens, opened in the Mineral Market's place
+# from its Trade button (Code.gd), built as DiveSkipTransit's is. It copies the Mineral Market screen's frame and place,
+# and is built from the game's own Tuning parts, the way enceladus/Tuning.tscn nests them: the header, a window with the
 # description of the selected setting (framed as the Tuning screen's), then groups of sliders and switches. Under the
 # cash group's rows, a row of the same layout shows the cash reserve they make, with its tolerance's range, its value
 # under theirs. It behaves like the game's screens (enceladus/Tuning.gd, enceladus/Crew.gd): the Shower fades it in and
-# out, Esc or the controller's back button closes it, and so does focusing another entry of the menu (the screens
-# container's `hidefoka`).
+# out, Esc or the controller's back button closes it (`closed`: the market comes back), and so does focusing another
+# entry of the menu (the screens container's `hidefoka`), which opens that entry's screen instead.
+
+# Esc or the controller's back button closed the screen; another screen taking its place doesn't emit it.
+signal closed()
 
 const MarketAdvisor = preload("res://MarketAdvisor/Settings.gd")
 
@@ -131,13 +134,15 @@ func hide():
 		return
 	$Shower.play("hide")
 
+# Where the focus goes is the market's: it shows again with its Trade button highlighted (Code.gd _maOnSettingsClosed).
 func _input(event):
 	if visible and (Input.is_action_just_pressed("ui_cancel") or Input.is_action_just_pressed("pause")):
 		get_tree().set_input_as_handled()
 		hide()
-		if lastFocus:
-			lastFocus.grab_focus()
+		emit_signal("closed")
 
+# The Shower's hide calls it at its end. By then the focus is on the Trade button, or on the menu entry that took it, so
+# it only acts where nothing has the focus.
 func unfocus():
 	if lastFocus and get_focus_owner() == null:
 		lastFocus.grab_focus()

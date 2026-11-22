@@ -1,5 +1,34 @@
 # MarketAdvisor - Changes
 
+## 1.3.0
+- The settings open from the Mineral Market's Trade button: Shift+Click on it, or with a gamepad, on the highlighted
+  button, `PAD_BUTTON` while `PAD_MODIFIER` is held (`Badge.gd`), even while the button is disabled (nothing to trade),
+  and never trading. The Shift badge, with its tooltip, sits just left of the button. Esc, or the controller's B or
+  Start button, closes the settings and brings the market back with the Trade button highlighted. The station menu's
+  Mineral Market entry no longer has a badge or a Shift+Click of its own: a Shift+Click there opens the market, and the
+  entry is free for other mods.
+- New setting, *Mark the Mineral Market entry* (`alertMark`, last in the Trading group, on at first): switched off, the
+  station menu's entry never gets the alert mark. A save without it gets the default.
+- The advice and the line comparing today's prices with the chart's average are in the small font the Shift badge is
+  lettered in (`Badge.gd` `SMALL_FONT_THEME`) instead of the menu font.
+- The Trade button has the game's hover and focus sounds, as the sliders above it: the row has its own copy of the
+  game's tooltip node, which also shows the badge's tooltip.
+- `Code.gd`: `_MA_SETTINGS_UI`, `_MA_BADGE_SCRIPT`, `_MA_SETTINGS_TOOLTIP` and `_MA_SETTINGS_TOOLTIP_PAD` moved here
+  from `StationMenu.gd`; new `_MA_GAME_TOOLTIPS`, `_MA_TUNING`, `_MA_HEADER_TITLE` (the settings screen's title, the
+  market's own), `_maShiftBadge`, `_maSettingsScreen`, `_maMakeShiftBadge()`, `_maAttachTooltips()`,
+  `_maOnTradeInput()`, `_maOpenSettings()` and `_maOnSettingsClosed()`; `_ready()` loads the save's settings
+  (`loadFromState()`), which `StationMenu.gd` used to; the row and its button are named `Row` and `Trade`
+  (`Details/MarketAdvisor/Row/Trade`).
+- `StationMenu.gd` keeps only the alert mark: `_MA_SETTINGS_UI`, `_MA_SETTINGS_TOOLTIP`, `_MA_SETTINGS_TOOLTIP_PAD`,
+  `_MA_BADGE_SCRIPT`, `_maShiftBadge`, `_maScreens`, `_maMarket`, `_maTuning`, `_maSettingsScreen`,
+  `_maMakeShiftBadge()`, `_maOnMarketInput()` and `_maOpenSettings()` removed; new `_MA_MARKET_SCREEN`, the path
+  that was written inline; `_maUpdate()` also follows `settingsChanged`.
+- `SettingsUI.gd`: new signal `closed`, emitted when Esc or the controller's B or Start button closes the screen (not
+  when another screen takes its place).
+- `Settings.gd`: new `alertMark`. `i18n/en.po`: new `MARKETADVISOR_ALERT_ENTRY` and `MARKETADVISOR_ALERT_ENTRY_DESC`;
+  the comments of the badge's tooltips name the Trade button.
+- README: the settings from the Trade button, the new setting, the advice's font.
+
 ## 1.2.1
 - With a gamepad, the Shift badge's tooltip shows while the Mineral Market entry is highlighted: a gamepad shows no
   hover (`attachTooltip()` with the entry as its `focusOwner`).

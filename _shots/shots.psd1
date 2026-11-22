@@ -204,15 +204,16 @@
 		)
 	}
 	# The station menu with its alert mark (the fixture's cash is above the default cash reserve's range), the Mineral
-	# Market (its header and the mod's row at the bottom), and the settings.
+	# Market (its header, and the mod's row at the bottom with the Shift badge beside the Trade button), and the settings
+	# (Shift+Click on the Trade button).
 	MarketAdvisor = @{
 		Steps = @(
 			'load', 'wait|10'
 			'shot|menu|0,115,410,457'
 			'press|{menu}/MineralMarket', 'wait|3'
 			'shot|market|545,15,1055,875'
-			'with:shiftclick|{menu}/MineralMarket', 'wait|2'
-			'with:shot|settings|545,15,1055,720'
+			'with:shiftclick|{screens}/MineralMarket/Details/MarketAdvisor/Row/Trade', 'wait|2'
+			'with:shot|settings|545,15,1055,774'
 		)
 	}
 	# The station menu with its alert mark (the fixture's cash can buy Jameson's Insurance), and the settings.

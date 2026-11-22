@@ -22,24 +22,27 @@ tells you when there is a trade to make.
   chart's, as good as your geologist makes it. With your ship ready, it trades now.
 - **Parked in ore.** At the top of the screen, under your cash, a new line shows what the ore Trade bought would sell
   for today.
-- **The station menu.** The **Mineral Market (\*)** entry tells you there is a trade to make now. The small badge
-  beside the entry reminds you how to open the settings (see [Settings](#settings)).
+- **The station menu.** The **Mineral Market (\*)** entry tells you there is a trade to make now. You can switch that
+  off in the settings.
 
 | Without the mod | With the mod |
 |---|---|
-| ![The station menu, as the game shows it](images/MarketAdvisor-menu-without.png) | ![The station menu, with Mineral Market (*) and the Shift badge beside it](images/MarketAdvisor-menu-with.png) |
-| ![The Mineral Market, as the game shows it](images/MarketAdvisor-market-without.png) | ![The Mineral Market, with Parked in ore under your cash and, at the bottom, the advice and the Trade button](images/MarketAdvisor-market-with.png) |
+| ![The station menu, as the game shows it](images/MarketAdvisor-menu-without.png) | ![The station menu, with Mineral Market (*)](images/MarketAdvisor-menu-with.png) |
+| ![The Mineral Market, as the game shows it](images/MarketAdvisor-market-without.png) | ![The Mineral Market, with Parked in ore under your cash and, at the bottom, the advice and the Trade button with the Shift badge beside it](images/MarketAdvisor-market-with.png) |
 
 ## Settings
 
-Hold **Shift** and click the Mineral Market entry to open the settings (a plain click still opens the market). With a
-gamepad, highlight the Mineral Market entry, hold **LT** and press **X**. The small badge beside the entry reminds you
-how: it reads *Shift*, or *LT+X* while you play with a gamepad (the game's *Controls* setting at *Gamepad*, or at
-*Auto* once you use the gamepad), and pointing at it, or highlighting the entry with a gamepad, tells you what to do.
+Hold **Shift** and click the **Trade** button at the bottom of the Mineral Market to open the settings. This works
+even when the button is greyed out because there is nothing to trade, and it never trades (a plain click still
+trades). With a gamepad, highlight the Trade button (press down from the last mineral), hold **LT** and press **X**.
+The small badge just left of the button reminds you how: it reads *Shift*, or *LT+X* while you play with a gamepad
+(the game's *Controls* setting at *Gamepad*, or at *Auto* once you use the gamepad), and pointing at it, or
+highlighting the button with a gamepad, tells you what to do.
 
-The settings show where the market does, laid out like the Tuning screen: at the top, what the setting you have
-selected does; below it, the settings in two groups. They close with Esc (B on a gamepad) or when you pick another
-entry of the menu. A change applies at once. Each save game keeps its own settings.
+The settings show in the market's place, laid out like the Tuning screen: at the top, what the setting you have
+selected does; below it, the settings in two groups. Esc (B on a gamepad) closes them and brings the market back,
+with the Trade button highlighted; picking another entry of the menu closes them too. A change applies at once. Each
+save game keeps its own settings.
 
 - **Cash reserve**:
   - **Use scientific notation**: shows the cash reserve as, for example, 5e5 instead of 500K. Off at first.
@@ -54,14 +57,17 @@ entry of the menu. A change applies at once. Each save game keeps its own settin
     trading moves each price less in the months after.
   - **Sell stored ore**: Trade also sells the ore you bring back from your dives. On at first. At the end of a dive,
     pick *Store Minerals* instead of *Sell all*, so the ore can wait for its best day.
+  - **Mark the Mineral Market entry**: the station menu's Mineral Market entry tells you when there is a trade to
+    make. On at first. Switch it off if you'd rather check the market yourself, or if another mod marks that entry too.
 
 ![The settings: the description at the top, then the Cash reserve and Trading groups](images/MarketAdvisor-settings.png)
 
 ## Works with other mods
 
 It works with [CrewCheapHireNotifier](CrewCheapHireNotifier), [DealerNotifier](DealerNotifier),
-[DiveSkipTransit](DiveSkipTransit) and [ServiceNotifier](ServiceNotifier), whose settings also open with Shift and a
-click on their menu entries. ServiceNotifier marks the Services entry when a service you pick can be bought again.
+[DiveSkipTransit](DiveSkipTransit) and [ServiceNotifier](ServiceNotifier), whose settings open with Shift and a click
+on their menu entries. The Mineral Market entry is left free for other mods. ServiceNotifier marks the Services entry
+when a service you pick can be bought again.
 
 ## Install
 
@@ -95,6 +101,8 @@ MarketAdvisor/i18n/en.po MARKETADVISOR_TRADE_ALL = "Trade all ores" | images/Mar
 MarketAdvisor/Settings.gd SETTINGS.tradeAll.default = false -> Off at first
 MarketAdvisor/i18n/en.po MARKETADVISOR_SELL_ORE = "Sell stored ore" | images/MarketAdvisor-settings.png
 MarketAdvisor/Settings.gd SETTINGS.sellOre.default = true -> On at first
+MarketAdvisor/i18n/en.po MARKETADVISOR_ALERT_ENTRY = "Mark the Mineral Market entry" | images/MarketAdvisor-settings.png
+MarketAdvisor/Settings.gd SETTINGS.alertMark.default = true -> On at first
 note: 500K and 5e5, the cash reserve from the defaults of Amount and Power of ten, in both notations: change them with those
 note: 450K - 550K, the range from the defaults of Amount, Power of ten and Tolerance: change it with those
 -->

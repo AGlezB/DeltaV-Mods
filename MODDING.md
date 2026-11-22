@@ -117,10 +117,11 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
      their column's title it hides while its switch is on).
    - LidarLouderPing: `Code.gd` → `hud/LIDAR.gd`.
    - MarketAdvisor: `Code.gd` → `enceladus/MineralMarket.gd` (the Mineral Market: the row of advice and the Trade
-     button at its bottom, which trades through the market's own slider rows, and the row under your cash in its header
-     with what the ore it bought would sell for today); `StationMenu.gd` → `enceladus/EnceladusMenu.gd` (the alert
-     mark on the Mineral Market entry, and Shift+Click on it opening its settings screen, which copies the Mineral
-     Market's frame and the Tuning screen's description window).
+     button at its bottom, which trades through the market's own slider rows, the row under your cash in its header
+     with what the ore it bought would sell for today, and Shift+Click on the Trade button, even disabled, opening its
+     settings screen in the market's place, which copies the Mineral Market's frame and the Tuning screen's description
+     window); `StationMenu.gd` → `enceladus/EnceladusMenu.gd` (the alert mark on the Mineral Market entry, which a
+     setting switches off; the entry's Shift+Click is left free).
    - ServiceNotifier: `Code.gd` → `enceladus/EnceladusMenu.gd` (the alert mark on the Services entry, from the game's
      own rows of the Services screen, and Shift+Click on it opening its settings screen, which copies the Services
      screen's frame and the Tuning screen's description window).
@@ -948,11 +949,11 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   (`enceladus/ServiceUIFactionChange.gd`: Local Vilcy Branch, The Miner's Guild and Obonto Habitats), which pay off a
   faction's hostility and fear towards the player and cost nothing until it holds a grudge again. ServiceNotifier
   marks the station menu's Services entry while one of those can be bought. Details: [GAME.md](GAME.md#services).
-- **Shift badge** (not the game's: these mods' own term): the small framed "Shift" beside a station menu entry, or on
-  the simulator's button, whose Shift+Click opens a mod's settings or dialog (`Badge.gd`); it reads `PAD_TEXT`, the
-  gamepad twin, while the control scheme is the gamepad, and its tooltip says how, in either form: on hover, and with a
-  gamepad while the entry or button is highlighted. CombatSimulator, CrewCheapHireNotifier, DealerNotifier,
-  DiveSkipTransit, MarketAdvisor and ServiceNotifier have one.
+- **Shift badge** (not the game's: these mods' own term): the small framed "Shift" beside a station menu entry or
+  MarketAdvisor's Trade button, or on the simulator's button, whose Shift+Click opens a mod's settings or dialog
+  (`Badge.gd`); it reads `PAD_TEXT`, the gamepad twin, while the control scheme is the gamepad, and its tooltip says
+  how, in either form: on hover, and with a gamepad while the entry or button is highlighted. CombatSimulator,
+  CrewCheapHireNotifier, DealerNotifier, DiveSkipTransit, MarketAdvisor and ServiceNotifier have one.
 - **Ship models**: the kinds of ship, each with a key in `Shipyard.ships` (`TRTL`, `PROSPECTOR-VP`, …), a scene
   (`ships/RA-TRTL.tscn`) and the translation key of its name in the ship's `shipName` (`SHIP_TRTL`). The Dealer shows
   the names: K37 TNTRL, Eagle Prospector, Vulture Prospector, EIME (Eon Interstellar Model E), OCP-209, the Cothons,

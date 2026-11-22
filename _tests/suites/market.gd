@@ -4,9 +4,9 @@ extends "res://harness/suite.gd"
 # slider row per mineral, the game's MineralSellSlider.gd and MineralPriceChart.gd) gets a row at its bottom with the
 # advice and a Trade button that keeps the cash reserve, within its tolerance's range, by buying ore with the cash above
 # the range and selling it below, back to the reserve itself, and a row in its header with what the ore it bought
-# (parked) would sell for today. The station menu's Mineral Market entry shows an alert mark while a trade is due, and
-# opens the mod's settings with Shift+Click; its Services entry is ServiceNotifier's (the services suite), which this mod
-# leaves alone.
+# (parked) would sell for today. Shift+Click on the Trade button, even disabled, or its gamepad twin, opens the mod's
+# settings in the market's place. The station menu's Mineral Market entry shows an alert mark while a trade is due,
+# unless switched off; its Services entry is ServiceNotifier's (the services suite), which this mod leaves alone.
 #
 # The station is built in code as enceladus/Enceladus.tscn nests it: MarginContainer > HBoxContainer > Options (the
 # game's EnceladusMenu.gd, with MineralMarket, Services and Logs entries), and MarginContainer > CanvasLayer >
@@ -502,6 +502,9 @@ func market():
 		nothing = nothing and entry().parked[m] == 0
 	check("market: a new save takes what it holds of the parking minerals (nothing) as parked", nothing and parked(ma.MAIN_MINERAL) == 0, entry())
 	check("market: the line comparing today's prices with the chart's average names the parking mineral", s.market._maPrices.text.begins_with(tr(codeKeys._MA_VS_AVERAGE).split("%s")[0]) and s.market._maPrices.text.find(ma.MAIN_MINERAL) >= 0, s.market._maPrices.text)
+	var smallTheme = codeKeys._MA_BADGE_SCRIPT.get_script_constant_map().SMALL_FONT_THEME
+	var smallFont = load(smallTheme).get_font("font", "Label") if ResourceLoader.exists(smallTheme) else null
+	check("market: the advice and the line under it in the badges' small font, smaller than the Trade button's", smallFont != null and s.market._maAdvice.get_font("font") == smallFont and s.market._maPrices.get_font("font") == smallFont and smallFont.get_height() < button(s).get_font("font").get_height(), [smallFont, s.market._maAdvice.get_font("font")])
 	var box = s.market.get_node("Details/HeaderWithMoney/VBoxContainer")
 	var r = s.market.get_node_or_null(PARKED_ROW)
 	check("market: the parked row shown in the header, right under your cash", r != null and r.visible and r.get_index() == box.get_node("Money").get_index() + 1)
@@ -645,19 +648,31 @@ func full(at):
 	check("full: no alert mark", not marked(s, s.marketEntry, MARKET_KEY))
 	yield(freeStation(s), "completed")
 
-# The station menu: the market entry's tooltip and alert mark in two languages; the Services entry left alone.
+# The station menu: the market entry free of badges, with its alert mark in two languages and its switch; the Trade
+# button's Shift badge and tooltip; the Services entry left alone.
 func alerts():
 	loadSave(gameStart() + 500 * DAY)
 	var s = station()
 	yield(frames(5), "completed")
 	var menuKeys = s.menu
-	check("menu: the mod's texts are loaded (i18n/en.po)", tr(menuKeys._MA_SETTINGS_TOOLTIP) != menuKeys._MA_SETTINGS_TOOLTIP and tr(menuKeys._MA_ALERT) != menuKeys._MA_ALERT)
-	check("menu: the market entry's Shift badge has the tooltip, which tells about Shift+Click; the entry has none of its own", badgeTip(s.marketEntry) == tr(menuKeys._MA_SETTINGS_TOOLTIP) % [OS.get_scancode_string(KEY_SHIFT), manifestValue("mod_information", "name")] and s.marketEntry.hint_tooltip == "", [badgeTip(s.marketEntry), s.marketEntry.hint_tooltip])
+	var marketKeys = s.market
+	check("menu: the mod's texts are loaded (i18n/en.po)", tr(marketKeys._MA_SETTINGS_TOOLTIP) != marketKeys._MA_SETTINGS_TOOLTIP and tr(menuKeys._MA_ALERT) != menuKeys._MA_ALERT)
+	check("menu: the market entry has no Shift badge and no tooltip", shiftBadge(s.marketEntry) == null and s.marketEntry.hint_tooltip == "", s.marketEntry.get_children())
+	var rowTips = button(s).get_parent().get_node_or_null("PlaySoundsOnTheseButtons")
+	check("market: the Trade button's Shift badge, right before it in its row, has the tooltip, which tells about Shift+Click; the button has none of its own", shiftBadge(button(s)) != null and shiftBadge(button(s)).get_index() == button(s).get_index() - 1 and badgeTip(button(s), rowTips) == tr(marketKeys._MA_SETTINGS_TOOLTIP) % [OS.get_scancode_string(KEY_SHIFT), manifestValue("mod_information", "name")] and button(s).hint_tooltip == "", [badgeTip(button(s), rowTips), button(s).hint_tooltip])
+	check("market: the row's tooltip node took the Trade button in (hover and focus sounds)", rowTips != null and rowTips.tooltips.has(button(s)) and button(s).is_connected("focus_entered", rowTips, "_on_focus"))
+	var badgeLook = shiftBadge(button(s))
+	check("market: the badge wears the Trade button's frame and font colour", badgeLook.get_stylebox("panel") == button(s).get_stylebox("normal") and badgeLook._label.get_color("font_color") == button(s).get_color("font_color"))
 	check("menu: no alert marks with nothing to do", s.marketEntry.text == MARKET_KEY and s.servicesEntry.text == SERVICES_KEY, [s.marketEntry.text, s.servicesEntry.text])
 	CurrentGame.changeMoney(10500000.0)
 	yield(frames(3), "completed")
 	s.services.SERVICE_JAMESON.checkPrice()
 	check("menu: the market entry's alert mark while a trade is due", marked(s, s.marketEntry, MARKET_KEY), s.marketEntry.text)
+	check("settings: the alert mark's switch on by default", settings.getValue("alertMark") == true)
+	settings.setValue("alertMark", false)
+	check("menu: switching the alert mark off unmarks the entry at once, though a trade is due", s.marketEntry.text == MARKET_KEY and not s.market._maPlan.now.empty(), s.marketEntry.text)
+	settings.setValue("alertMark", true)
+	check("menu: and switching it on marks it again at once", marked(s, s.marketEntry, MARKET_KEY), s.marketEntry.text)
 	check("menu: the Services entry left alone, even while Jameson's Insurance can be bought (ServiceNotifier marks it)", s.servicesEntry.text == SERVICES_KEY and not s.services.SERVICE_JAMESON.buyButton.disabled, s.servicesEntry.text)
 	TranslationServer.set_locale("de")
 	yield(frames(2), "completed")
@@ -673,23 +688,22 @@ func alerts():
 	check("menu: and Shift+Click opens no settings", bare.screens.get_node_or_null(SCREEN) == null)
 	yield(freeStation(bare), "completed")
 
-# The settings screen, opened with Shift+Click on the market's entry.
+# The settings screen, opened with Shift+Click on the Trade button, disabled and enabled; Esc brings the market back.
 func screen():
 	loadSave(gameStart() + 600 * DAY)
 	settings.loadFromState()
 	var s = station()
 	yield(frames(5), "completed")
 	var ui = load(UI_SCRIPT).get_script_constant_map()
-	s.marketEntry.disabled = true
-	click(s.marketEntry, true)
-	yield(frames(5), "completed")
-	check("screen: Shift+Click on a disabled entry does nothing", s.screens.get_node_or_null(SCREEN) == null and not s.market.visible)
-	s.marketEntry.disabled = false
 	var stored = to_json(CurrentGame.state.ui)
 	click(s.marketEntry, true)
 	yield(frames(40), "completed")
+	check("screen: Shift+Click on the market's entry opens the market, no settings", s.screens.get_node_or_null(SCREEN) == null and s.market.visible)
+	check("screen: the Trade button disabled, with nothing to trade", button(s).disabled)
+	click(button(s), true)
+	yield(frames(40), "completed")
 	var screen = s.screens.get_node_or_null(SCREEN)
-	check("screen: Shift+Click on the market's entry opens the settings, not the market", screen != null and screen.visible and not s.market.visible)
+	check("screen: Shift+Click on the disabled Trade button opens the settings, in the market's place", screen != null and screen.visible and not s.market.visible)
 	if screen == null:
 		yield(freeStation(s), "completed")
 		return
@@ -737,6 +751,7 @@ func screen():
 		shown.append([g.system, labels])
 	check("screen: a group per GROUPS entry, in order, titled by it, with a row per setting of that group named by its label", same(shown, expected), shown)
 	check("screen: the notation switch first", keys[0] == "scientific" and rows[0].get_script().resource_path.ends_with("TuningBoolValue.gd"))
+	check("screen: the alert mark's switch last, in the Trading group", keys[keys.size() - 1] == "alertMark" and rows[rows.size() - 1].get_script().resource_path.ends_with("TuningBoolValue.gd") and shown[shown.size() - 1][0] == "MARKETADVISOR_GROUP_TRADE" and shown[shown.size() - 1][1].back() == tr("MARKETADVISOR_ALERT_ENTRY"), shown)
 	var values = true
 	for i in rows.size():
 		var setting = ma.SETTINGS[keys[i]]
@@ -805,16 +820,40 @@ func screen():
 	check("screen: a switch stores what it shows", settings.getValue("tradeAll"))
 	yield(tap(escKey()), "completed")
 	yield(frames(40), "completed")
-	check("screen: Esc closes it after the game's fade", not screen.visible)
-	click(s.marketEntry, true)
+	check("screen: Esc closes it after the game's fade, and the market comes back with the Trade button highlighted", not screen.visible and s.market.visible and button(s).has_focus(), [screen.visible, s.market.visible, s.market.get_focus_owner()])
+	yield(tap(escKey()), "completed")
 	yield(frames(40), "completed")
-	var reopened = screen.visible
+	check("screen: Esc again closes the market, back to its menu entry", not s.market.visible and not screen.visible and s.marketEntry.has_focus(), s.menu.get_focus_owner())
+	click(s.marketEntry, false)
+	yield(frames(40), "completed")
+	click(button(s), true)
+	yield(frames(40), "completed")
+	var reopened = screen.visible and not s.market.visible
 	click(s.logs, false)
 	yield(frames(40), "completed")
-	check("screen: focusing another entry of the menu closes it", reopened and not screen.visible)
+	check("screen: focusing another entry of the menu closes it, and the market doesn't come back", reopened and not screen.visible and not s.market.visible, [reopened, screen.visible, s.market.visible])
+	# Enabled: Shift+Click opens the settings and trades nothing; a plain click still trades. The power of ten was left
+	# at its highest above, so the settings go back to their defaults first.
+	for key in ma.SETTINGS:
+		settings.setValue(key, ma.SETTINGS[key].default)
+	click(s.marketEntry, false)
+	yield(frames(40), "completed")
+	CurrentGame.changeMoney(10500000.0)
+	yield(frames(3), "completed")
+	var money = CurrentGame.getMoney()
+	var held = CurrentGame.getMinerals(ma.MAIN_MINERAL)
+	check("screen: with cash above the reserve, the Trade button enabled", s.market.visible and not button(s).disabled)
+	click(button(s), true)
+	yield(frames(40), "completed")
+	check("screen: Shift+Click on the enabled Trade button opens the settings and trades nothing", screen.visible and not s.market.visible and CurrentGame.getMoney() == money and CurrentGame.getMinerals(ma.MAIN_MINERAL) == held, [screen.visible, s.market.visible, CurrentGame.getMoney(), money])
+	yield(tap(escKey()), "completed")
+	yield(frames(40), "completed")
+	click(button(s), false)
+	yield(frames(5), "completed")
+	check("screen: a plain click on the Trade button still trades, and opens no settings; the button disabled after", CurrentGame.getMoney() < money and CurrentGame.getMinerals(ma.MAIN_MINERAL) > held and not screen.visible and s.market.visible and button(s).disabled, [CurrentGame.getMoney(), money])
 	# With a gamepad: the Shift badge reads the gamepad twin while the game is played with one, and PAD_BUTTON pressed on
-	# the highlighted entry while PAD_MODIFIER is held opens the settings, as Shift+Click does (Badge.gd).
-	var shiftBadge = s.menu._maShiftBadge
+	# the highlighted Trade button while PAD_MODIFIER is held opens the settings, as Shift+Click does (Badge.gd).
+	var shiftBadge = s.market._maShiftBadge
 	var padModifier = shiftBadge.PAD_MODIFIER
 	var padButton = shiftBadge.PAD_BUTTON
 	var keyText = OS.get_scancode_string(KEY_SHIFT)
@@ -826,34 +865,47 @@ func screen():
 	var keyTip = shiftBadge.hint_tooltip
 	check("gamepad: the Shift badge reads Shift with keyboard and mouse, the gamepad twin with a gamepad, and Shift again", keyRead == keyText and padRead == shiftBadge.PAD_TEXT and shiftBadge._label.text == keyText, [keyRead, padRead, shiftBadge._label.text])
 	var modName = manifestValue("mod_information", "name")
-	var padKey = s.menu._MA_SETTINGS_TOOLTIP_PAD
+	var padKey = s.market._MA_SETTINGS_TOOLTIP_PAD
 	var padExpected = tr(padKey) % [shiftBadge.PAD_BUTTON_NAME, shiftBadge.PAD_MODIFIER_NAME, modName]
-	check("gamepad: its tooltip tells about the gamepad twin with a gamepad, and about Shift+Click again with keyboard and mouse", padTip == padExpected and keyTip == tr(s.menu._MA_SETTINGS_TOOLTIP) % [keyText, modName] and tr(padKey) != padKey, [padTip, keyTip])
-	# A gamepad shows no hover: with one, the badge's tooltip shows while the entry, where the D-pad lands, has the focus.
-	shiftBadgeTipChecks("tooltip", s.marketEntry, s.logs, s.menu.get_node("PlaySoundsOnTheseButtons"), tr(s.menu._MA_SETTINGS_TOOLTIP) % [keyText, modName], padExpected)
+	check("gamepad: its tooltip tells about the gamepad twin with a gamepad, and about Shift+Click again with keyboard and mouse", padTip == padExpected and keyTip == tr(s.market._MA_SETTINGS_TOOLTIP) % [keyText, modName] and tr(padKey) != padKey, [padTip, keyTip])
+	var lastSlider = s.market.minerals[s.market.minerals.size() - 1].slider
+	var rowTips = button(s).get_parent().get_node("PlaySoundsOnTheseButtons")
+	# A gamepad shows no hover: with one, the badge's tooltip shows while the Trade button, where the D-pad lands, has
+	# the focus.
+	shiftBadgeTipChecks("tooltip", button(s), lastSlider, rowTips, tr(s.market._MA_SETTINGS_TOOLTIP) % [keyText, modName], padExpected)
 	Settings.controlScheme = Settings.control.gamepad
-	s.marketEntry.grab_focus()
+	lastSlider.grab_focus()
+	yield(tapJoy(JOY_DPAD_DOWN), "completed")
+	yield(frames(2), "completed")
+	check("gamepad: down from the last slider highlights the Trade button, though disabled", button(s).disabled and button(s).has_focus(), s.market.get_focus_owner())
+	button(s).grab_focus()
 	yield(tapJoy(padButton), "completed")
 	yield(frames(5), "completed")
-	check("gamepad: PAD_BUTTON alone on the highlighted entry does nothing", not screen.visible and not s.market.visible)
+	check("gamepad: PAD_BUTTON alone on the highlighted Trade button does nothing", not screen.visible and s.market.visible)
 	yield(holdJoy(padModifier, true), "completed")
-	s.marketEntry.disabled = true
+	lastSlider.grab_focus()
 	yield(tapJoy(padButton), "completed")
 	yield(frames(5), "completed")
-	check("gamepad: PAD_MODIFIER+PAD_BUTTON on a disabled entry does nothing", not screen.visible and not s.market.visible)
-	s.marketEntry.disabled = false
-	s.logs.grab_focus()
+	check("gamepad: PAD_MODIFIER+PAD_BUTTON with a slider highlighted doesn't open the settings", not screen.visible and s.market.visible)
+	button(s).grab_focus()
 	yield(tapJoy(padButton), "completed")
-	yield(frames(5), "completed")
-	check("gamepad: PAD_MODIFIER+PAD_BUTTON with another entry highlighted doesn't open these settings", not screen.visible and not s.market.visible)
-	s.marketEntry.grab_focus()
-	yield(tapJoy(padButton), "completed")
-	yield(frames(5), "completed")
-	check("gamepad: PAD_MODIFIER+PAD_BUTTON on the highlighted market entry opens the settings, not the market", screen.visible and not s.market.visible)
+	yield(frames(40), "completed")
+	check("gamepad: PAD_MODIFIER+PAD_BUTTON on the highlighted, disabled Trade button opens the settings, not a trade", screen.visible and not s.market.visible)
 	yield(holdJoy(padModifier, false), "completed")
 	yield(tap(escKey()), "completed")
 	yield(frames(40), "completed")
-	check("gamepad: closing them highlights the entry again", not screen.visible and s.marketEntry.has_focus())
+	check("gamepad: closing them brings the market back, the Trade button highlighted again", not screen.visible and s.market.visible and button(s).has_focus(), s.market.get_focus_owner())
+	CurrentGame.changeMoney(10500000.0)
+	yield(frames(3), "completed")
+	money = CurrentGame.getMoney()
+	held = CurrentGame.getMinerals(ma.MAIN_MINERAL)
+	yield(holdJoy(padModifier, true), "completed")
+	yield(tapJoy(padButton), "completed")
+	yield(frames(40), "completed")
+	check("gamepad: on the enabled Trade button it opens the settings and trades nothing", screen.visible and not s.market.visible and CurrentGame.getMoney() == money and CurrentGame.getMinerals(ma.MAIN_MINERAL) == held)
+	yield(holdJoy(padModifier, false), "completed")
+	yield(tap(escKey()), "completed")
+	yield(frames(40), "completed")
 	Settings.controlScheme = Settings.control.keyMouse
 	for key in ma.SETTINGS:
 		settings.setValue(key, ma.SETTINGS[key].default)

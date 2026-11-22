@@ -504,8 +504,9 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   it; without a Dealer screen no tooltip and no settings. With CrewCheapHireNotifier and DiveSkipTransit
   (`-Mods CrewCheapHireNotifier,DealerNotifier,DiveSkipTransit`), and with MarketAdvisor and ServiceNotifier as well
   (`-Mods CrewCheapHireNotifier,DealerNotifier,DiveSkipTransit,MarketAdvisor,ServiceNotifier`),
-  Shift+Click on each of their entries opens their screen, then on Dealer opens this one and hides theirs, and every
-  entry's Shift badge keeps its own tooltip. The control checks (the entry keeps its key; the Dealer lists the stock and
+  Shift+Click on each of their entries (MarketAdvisor's: on the Trade button of the Mineral Market its entry opens,
+  the entry having no badge) opens their screen, then on Dealer opens this one and hides theirs, and every Shift badge
+  keeps its own tooltip. The control checks (the entry keeps its key; the Dealer lists the stock and
   no entry gets a badge) run on the game's own scripts. With ShipSortByTypeAndPrice or ShipHighlightTypeAndPrice loaded,
   with or without DealerNotifier (`-Mods ShipHighlightTypeAndPrice,ShipSortByTypeAndPrice`), each waiting its mod's
   `SETTLE_TIME`: the sort puts the Dealer's offers in order of their type as shown, then of price, moves the highlight
@@ -701,7 +702,8 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   above is bought, a shortfall sold). The market: the row at the bottom inside the list's side margins, its Trade
   button disabled with nothing to trade, the advice when the cash reserve is out of reach, a new save's holdings taken
   as parked, the line comparing
-  today's prices with the chart's average; the parked row right under your cash, a copy of the game's insurance row
+  today's prices with the chart's average, both lines in the Label font of `Badge.gd`'s `SMALL_FONT_THEME`, smaller
+  than the Trade button's; the parked row right under your cash, a copy of the game's insurance row
   without its script and sound, captioned by the mod's text, the game's row still hidden, worth nothing at first. With
   cash above the reserve: the advice to buy and what it leaves, the alert mark on the entry; Trade buys the main
   mineral through its slider (its holdings and trade log as the slider makes them), leaves what the advice said, within
@@ -713,30 +715,38 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   the reserve, each parked as bought; ore brought back during a two-day stay sold without ever selling parked tonnes,
   the stay ending at the reserve with nothing left beyond the parked tonnes; a higher reserve selling parked ore down to
   within a tonne of the cheapest ore sold that has tonnes left, the record and the parked row following. Every tonne
-  the market allows held: nothing to trade, the advice says so, no alert mark. The menu: the texts of `i18n/en.po`; the
-  market entry's tooltip, on its Shift badge (the entry has none of its own); its alert mark while a trade is due,
-  following a language change; the Services entry left alone while Jameson's Insurance can be bought (ServiceNotifier's,
-  in `services`); without the market screen, no tooltip and no settings. The screen: Shift+Click on a disabled entry
-  does nothing, on the entry opens the settings and not the market, storing nothing; the market's frame; the header,
-  then the description's window (copying the Tuning screen's), then the groups, one per `GROUPS` entry with a row per
-  setting named by its label, the notation switch first, each showing its setting, a slider with its range, step and
-  value as the screen shows them (`toShown`); the power of ten's row showing the power; the cash reserve's row under the
-  cash group, named by the mod's text, its name and reset button out of reach, its value the reserve's range,
+  the market allows held: nothing to trade, the advice says so, no alert mark. The menu and the badge: the texts of
+  `i18n/en.po`; the market entry with no Shift badge and no tooltip; the Trade button's Shift badge right before it in
+  its row, with the tooltip (the button has none of its own), in the button's frame and font colour, the row's tooltip
+  node taking the button in (its hover and focus sounds); the entry's alert mark while a trade is due, following a
+  language change; the alert mark's switch on by default, switching it off unmarking the entry at once though a trade
+  is due, and on marking it again; the Services entry left alone while Jameson's Insurance can be bought
+  (ServiceNotifier's, in `services`); without the market screen, no tooltip and no settings. The screen: Shift+Click on
+  the market's entry opens the market and no settings; Shift+Click on the disabled Trade button opens the settings in
+  the market's place, storing nothing; the market's frame; the header, then the description's window (copying the
+  Tuning screen's), then the groups, one per `GROUPS` entry with a row per setting named by its label, the notation
+  switch first, the alert mark's switch last, in the Trading group, each showing its setting, a slider with its range,
+  step and value as the screen shows them (`toShown`); the power of ten's row showing the power; the cash reserve's row
+  under the cash group, named by the mod's text, its name and reset button out of reach, its value the reserve's range,
   right-aligned under the values of the two sliders without a unit once laid out; the tolerance's row between the power
   of ten's and the cash reserve's, in its unit; each row's description on focus, with the mineral it names, storing
   nothing; the sliders and the notation switch stored and shown as they change (the tolerance stored as a fraction, the
-  range following it, the reserve alone at its lowest), a switch not switched back on focus, resets; Esc and another
-  entry close it. A year of stays from 100,000 E$, with Trade all ores off and on (ore brought back, 1 to 3 days of
-  maintenance, Trade pressed every day of the stay, money spent between stays): every stay ends inside the reserve's
-  range with the ore sold. The control checks (the entry keeps its key and gets no tooltip; no row of the mod's in the
+  range following it, the reserve alone at its lowest), a switch not switched back on focus, resets; Esc closes it and
+  brings the market back with the Trade button focused, and Esc again closes the market, back to its entry; another
+  entry closes it, and the market stays hidden; with cash above the reserve, Shift+Click on the enabled Trade button
+  opens it and trades nothing, and a plain click still trades, leaving the button disabled. A year of stays from
+  100,000 E$, with Trade all ores off and on (ore brought back, 1 to 3 days of maintenance, Trade pressed every day of
+  the stay, money spent between stays): every stay ends inside the reserve's range with the ore sold. The control checks (the entry keeps its key and gets no tooltip; no row of the mod's in the
   market; Shift+Click opens the market; `PAD_BUTTON` on the highlighted entry while `PAD_MODIFIER` is held opens
   nothing) run on the game's own scripts. With a gamepad (the `Settings` stub's `controlScheme` set as the game sets
   it): the Shift badge reads the gamepad twin and its tooltip tells about it, and both go back with keyboard and mouse;
-  `PAD_BUTTON` alone, and the twin (`PAD_BUTTON` while `PAD_MODIFIER` is held) on a disabled entry or with another entry
-  highlighted, do nothing; the twin on the highlighted entry opens the settings and not the market, and closing them
-  highlights the entry again; the Shift badge's tooltip shows with a gamepad while the entry has the focus, in its
-  gamepad wording, hidden once the focus moves on, and not when the entry gets the focus with keyboard and mouse
-  (`suite.gd` `shiftBadgeTipChecks`; the hover is checked in `crew`).
+  the Shift badge's tooltip shows with a gamepad while the Trade button has the focus, in its gamepad wording, hidden
+  once the focus moves on (to the last slider), and not when the button gets the focus with keyboard and mouse
+  (`suite.gd` `shiftBadgeTipChecks`; the hover is checked in `crew`); down from the last slider highlights the Trade
+  button, though disabled; `PAD_BUTTON` alone on it, and the twin (`PAD_BUTTON` while `PAD_MODIFIER` is held) with a
+  slider highlighted, do nothing; the twin on the highlighted, disabled Trade button opens the settings and trades
+  nothing, and closing them brings the market back with the button highlighted; on the enabled button it opens them
+  and trades nothing.
 
 - `services` (`suites/services.gd`, which extends `market.gd` for its station, saves, time, clicks and translations):
   the same station without the Mineral Market, its Services screen with the game's rows (`enceladus/Services.tscn`'s
@@ -774,12 +784,13 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   the arm's spotlight (which `DockingArm.gd` switches).
 - `_tests\harness\suite.gd` is the base of every suite: the results, the loaded mods and the masses given on the command
   line, and helpers several suites share: `frames`; `addMenuTooltips`, the game's tooltip node added to a station menu
-  built in code, as `enceladus/EnceladusMenu.tscn` has its own; `shiftBadge` and `badgeTip`, a Shift badge and its
-  tooltip; `shiftBadgeTipChecks`, the checks of a Shift badge's tooltip as that node shows it, on hover with keyboard
-  and mouse and on the entry's focus with a gamepad. In most suites' stations a mouse moved through the scene tree's
-  input shows no hover on any control, not even a plain button added to the root (cause not found); in `crew` it does,
-  so the hover is checked there only (`Badge.gd` is the same file in every mod). `harness\dive_ship.gd` is the ship
-  `dive` gives the game's `CabinLight.gd`: what it and DiveDisableAdrenalineBooster read.
+  built in code, as `enceladus/EnceladusMenu.tscn` has its own; `shiftBadge` and `badgeTip`, a Shift badge (a child of
+  its entry or button, or right before it in its row) and its tooltip; `shiftBadgeTipChecks`, the checks of a Shift
+  badge's tooltip as that node shows it, on hover with keyboard and mouse and on the entry's focus with a gamepad. In
+  most suites' stations a mouse moved through the scene tree's input shows no hover on any control, not even a plain
+  button added to the root (cause not found); in `crew` it does, so the hover is checked there only (`Badge.gd` is the
+  same file in every mod). `harness\dive_ship.gd` is the ship `dive` gives the game's `CabinLight.gd`: what it and
+  DiveDisableAdrenalineBooster read.
 - **Baseline** (both arm load orders give the same results): `units` 114 checks with both arm mods (64 with
   PullBehavior alone, 61 with TargetSelection alone), `still` 9, `moving` 16, `hold` 63, `dive` 8 (1 control check with
   `-Mods @()`), `boot` 5 (3 control checks with `-Mods @()`), `lidar` 40 (3 control checks with `-Mods @()`), `hud` 13
@@ -788,12 +799,12 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   orders; 5 control checks with `-Mods @()`), `fleet` 77 (the same with ShipHighlightTypeAndPrice and
   ShipSortByTypeAndPrice too; 3 control checks with `-Mods @()`), `skip` 135 (138 with CrewCheapHireNotifier too, the
   same with DealerNotifier as well; the same 135 with CombatSimulator too; 13 control checks with `-Mods @()`), `dealer`
-  130 (133 with CrewCheapHireNotifier and DiveSkipTransit too, in every load order, 135 with MarketAdvisor and
+  130 (133 with CrewCheapHireNotifier and DiveSkipTransit too, in every load order, 136 with MarketAdvisor and
   ServiceNotifier as well; 136 with ShipCopyPaste, ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too; 8 with the
   two ship-list mods alone; 2 control checks with `-Mods @()`), `transponder` 48 (3 control checks with `-Mods @()`; the
   same 48 with CombatSimulator too), `combat` 151 (the same with TransponderAltCodes too; 8 control checks with
   `-Mods @()`), `drones` 69 (the same in both load orders and with DroneAltPriorities alone; 3 control checks with
-  `-Mods @()`), `market` 107 (4 control checks with `-Mods @()`), `services` 52 (3 control checks with `-Mods @()`), all
+  `-Mods @()`), `market` 121 (4 control checks with `-Mods @()`), `services` 52 (3 control checks with `-Mods @()`), all
   passing; `units` gives 11 control checks with `-Mods @()`; `-Matrix` gives 16 of 16 in every combination.
   Feeding, a chunk beside the hull is in after 3.0–3.7 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.5.4 (the same pull as 1.5.0) takes 4.2–4.8 s

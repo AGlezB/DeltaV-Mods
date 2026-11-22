@@ -42,8 +42,8 @@ applies at once. Each save game keeps its own settings.
 ## Works with other mods
 
 It works with [CrewCheapHireNotifier](CrewCheapHireNotifier), [DealerNotifier](DealerNotifier),
-[DiveSkipTransit](DiveSkipTransit) and [MarketAdvisor](MarketAdvisor), whose settings also open with Shift and a click
-on their menu entries.
+[DiveSkipTransit](DiveSkipTransit) and [MarketAdvisor](MarketAdvisor), whose settings also open with Shift and a click:
+on their menu entries, and for MarketAdvisor on its Trade button.
 
 ## Install
 

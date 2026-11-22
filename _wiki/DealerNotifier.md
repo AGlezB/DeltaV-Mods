@@ -67,7 +67,8 @@ settings.
 It works with [ShipHighlightTypeAndPrice](ShipHighlightTypeAndPrice), [ShipSortByTypeAndPrice](ShipSortByTypeAndPrice)
 and [ShipCopyPaste](ShipCopyPaste), which change the Dealer's list too, and with
 [CrewCheapHireNotifier](CrewCheapHireNotifier), [DiveSkipTransit](DiveSkipTransit), [MarketAdvisor](MarketAdvisor) and
-[ServiceNotifier](ServiceNotifier), whose settings also open with Shift and a click on their menu entries.
+[ServiceNotifier](ServiceNotifier), whose settings also open with Shift and a click: on their menu entries, and for
+MarketAdvisor on its Trade button.
 
 ## Install
 
