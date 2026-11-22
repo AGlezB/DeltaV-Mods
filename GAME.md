@@ -223,10 +223,17 @@ under *EVA*). A derelict can't be hailed. It opens its conversation (`comms/conv
 by itself, once, when the player's ship comes within its `aiCuriosityDisance` (150 m; `ship-ctrl.gd` `AI.examine`).
 Unless a rescue ship (faction `helper`) is in sight (then it's taken: see *Salvage claim*), a random member of the
 dive crew reports it (`DIALOG_DERELICT_RANDOM.tscn`), and the player can send them over to restart it
-(`DIALOG_DERELICT_GO_AND_BRING_IT`), an EVA (see *EVA*). On board, they may get it running, and it joins the player's
-fleet (`getThisShip`). Or they come back with nothing, or injured (leave days, `addAgendaLeaveTime`). What they find
-varies (the `DIALOG_DERELICT_*` subtrees: brick, junk, solo dead, hole, ghost ship). The arm can also hold one until
-the dive ends at the station. Which models are derelicts, where they come from and how often: see *Salvage*.
+(`DIALOG_DERELICT_GO_AND_BRING_IT`), an EVA (see *EVA*), or pick another member of the dive crew to go. Those come as
+one reply each, `DIALOG_DERELICT_SWITCH_CREW|0` to `|11` (agenda `CREW/<n>`, the n-th of
+`CurrentGame.getActiveMembers` through `getSpecificMemberNr`), without the one reporting it, in the order the crew was
+hired: `getActiveMembers` walks `state.crew`, a dictionary in insertion order, which the save's `to_json` and
+`parse_json` keep. The largest crew is 12 (the Antonoff-Titan K225), so the 12 replies always suffice. Who reports it
+comes from the same list, by a hash of both ships' transponders (`getRandomMember`), so it is the same for a given
+derelict and ship. CrewPerfectSort lists the replies as Your Crew. On board, they may get it running, and it joins
+the player's fleet (`getThisShip`). Or they come back with nothing, or injured (leave days, `addAgendaLeaveTime`).
+What they find varies (the `DIALOG_DERELICT_*` subtrees: brick, junk, solo dead, hole, ghost ship). The arm can also
+hold one until the dive ends at the station. Which models are derelicts, where they come from and how often: see
+*Salvage*.
 
 ## Difficulty
 

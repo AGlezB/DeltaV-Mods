@@ -24,7 +24,8 @@ These pages explain what each mod does, for players. The code, and the notes for
 - [CrewCheapHireNotifier](CrewCheapHireNotifier): the station menu tells you when someone cheap is for hire, and the
   Hire screen shows you who.
 - [CrewHighlightJobAndSalary](CrewHighlightJobAndSalary): on the crew screens, each person's job and salary stand out.
-- [CrewPerfectSort](CrewPerfectSort): sorts the crew lists: people for hire by salary, your crew by job.
+- [CrewPerfectSort](CrewPerfectSort): sorts the crew lists: people for hire by salary, your crew by job, also when you
+  pick who goes over to a derelict.
 
 ### Dives
 

@@ -98,7 +98,8 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
      screen's frame and behaving like the game's screens); `HireScreen.gd` → `enceladus/HireableCrew.gd` (the Hire
      screen).
    - CrewPerfectSort: `HireableCrewSorted.gd` → `enceladus/HireableCrew.gd`; `CurrentCrewManagementSorted.gd` →
-     `enceladus/CurrentCrewManagement.gd`.
+     `enceladus/CurrentCrewManagement.gd`; `EvaCrewSorted.gd` → `CurrentGame.gd` (the autoload, which picks the crew a
+     derelict's conversation offers for an EVA).
    - DealerNotifier: `Code.gd` → `enceladus/EnceladusMenu.gd` (the Dealer entry's mark and Shift+Click, its settings
      screen copying the Dealer screen's frame); `DealerScreen.gd` → `enceladus/Dealer.gd` (the Dealer screen, whose
      refreshes tell it the stock).
@@ -182,11 +183,12 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
 - CombatSimulator, CrewCheapHireNotifier, DealerNotifier, DiveSkipTransit, MarketAdvisor and ServiceNotifier each ship
   the same `Badge.gd`, loaded from its own folder (`res://<ModName>/Badge.gd`), so the copies never clash: keep them
   identical (see *Conventions*, the gamepad twin).
-- CombatSimulator (`CurrentGame.gd`) and TransponderAltCodes (`Code.gd`) both extend `CurrentGame.gd`, the autoload,
-  from `_init`: by path the chain is game ← CombatSimulator ← TransponderAltCodes. They override different functions
-  (CombatSimulator `giveXp`, `setStory`, `recordEncounter`, `setDestinationHighlight` and `addShip`;
-  TransponderAltCodes `_ready`, `getNewTransponder`, `getTransponder`, `validateState` and `createPlayerShip`). Their
-  member names must stay distinct.
+- CombatSimulator (`CurrentGame.gd`), CrewPerfectSort (`EvaCrewSorted.gd`) and TransponderAltCodes (`Code.gd`) all
+  extend `CurrentGame.gd`, the autoload, from `_init`: by path the chain is game ← CombatSimulator ← CrewPerfectSort ←
+  TransponderAltCodes. They override different functions (CombatSimulator `giveXp`, `setStory`, `recordEncounter`,
+  `setDestinationHighlight` and `addShip`; CrewPerfectSort `getSpecificMemberNr`; TransponderAltCodes `_ready`,
+  `getNewTransponder`, `getTransponder`, `validateState` and `createPlayerShip`). Their member names must stay
+  distinct.
 - DroneAltPriorities (`OmsScreen.gd`) and GeologyByMass (`OmsScreen.gd`) both extend `hud/Hud.gd` and both add an OMS
   tab right after the Geologist tab, each from its own override of `instance()`, which calls the parent's first and
   defers the tab: by path the chain is game ← DroneAltPriorities ← GeologyByMass, so DroneAltPriorities's deferred call
@@ -417,7 +419,10 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
     that isn't a screen, for the part (CombatSimulator's `PauseMenu.gd`, the pause menu; `Hardpoint.gd`,
     `ships/WeaponSlot.gd`). Every script extension is listed in *The two ways these mods hook in*.
     Code more than one of them uses goes in `Settings.gd`, which they already share (CrewCheapHireNotifier's rule,
-    `limitFor` / `isCheapHire`; DiveSkipTransit's static helpers, `playThrough`, `chargeDv`, `chargeSeconds`).
+    `limitFor` / `isCheapHire`; DiveSkipTransit's static helpers, `playThrough`, `chargeDv`, `chargeSeconds`), and in
+    a mod without one, in `Shared.gd`: static functions in a script never instanced (`extends Reference`), reached
+    through a preload constant named for the mod as `Settings.gd` is (CrewPerfectSort's Your Crew order,
+    `yourCrewBefore`). The code is never copied into each script.
   - A script of the mod's own that isn't an extension is named for what it is: CombatSimulator's `CombatLayer.gd` (its
     arena, a layer the station's extension adds), `CombatMap.gd` (the arena's map, built on `TheRing.gd` with
     `extends` but never installed: a subclass made with `new()`, not a replacement of the game's script) and
@@ -501,7 +506,7 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
     name and, for a cooldown, how long it lasts, followed by the game's own offer for the service, as the Services
     screen shows it.
   - A mod without a settings UI has no `Settings.gd`, and no constants file either: that would only add a prefix to
-    every use.
+    every use. Code its scripts share goes in `Shared.gd` (above).
   - Settings that belong to a ship system go in the game's Tuning screen instead (`registerSubsystem` from the
     system's `onSetup`; LidarLouderPing). The game draws them, keeps them per ship with its tuning (saved with the
     game) and signals a change (`tuningChanged`), so the mod has no stored value, saving or signal of its own. With
@@ -522,7 +527,8 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
   - `i18n/<locale>.po` (`i18n/en.po`, …), in a subfolder named as the game's own `i18n/`: the mod's texts in that
     language, loaded by `ModMain.gd` (see *How the game loads a mod*). English is Godot's fallback language, so
     `en.po` covers every language until it gets its own file.
-  - CrewPerfectSort, with two extensions and no single main file, keeps its file names for now.
+  - CrewPerfectSort, with three extensions and no single main file, keeps its file names for now: each extension is
+    named for the list it sorts, with `Sorted` after it (`EvaCrewSorted.gd`, the EVA choice).
 - Tunables are commented `const`s at the top of `Code.gd`, and the README names them as what a user may edit inside
   the zip. In a mod with a settings UI they are settings in `Settings.gd`, and the README names them as settings; a
   Tuning entry's default, range and step stay constants in `Code.gd` (see above), and the README names the entry.

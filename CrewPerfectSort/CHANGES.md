@@ -1,5 +1,14 @@
 # CrewPerfectSort - Changes
 
+## 1.3.0
+- A derelict's conversation, offering to send a crew member over on EVA, lists the crew aboard as Your Crew does (by
+  job, then salary lowest first, then name) instead of in the order they were hired: a new script extension of
+  `res://CurrentGame.gd`, `EvaCrewSorted.gd`, overrides `getSpecificMemberNr` (new member `_cpsBefore`).
+- New `Shared.gd`, the code the scripts share: the Your Crew order, `yourCrewBefore`, moved there from
+  `CurrentCrewManagementSorted.gd` `_before`, which now calls it.
+- The README and the description in `Mod.manifest` name the EVA choice; the README's *For modders* tells how it was
+  tested.
+
 ## 1.2.4
 - The README is laid out as the others: *What it does and why*, *For modders*, with the game's names of the screens
   (Your Crew).

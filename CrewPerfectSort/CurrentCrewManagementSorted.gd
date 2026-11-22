@@ -1,6 +1,8 @@
 extends "res://enceladus/CurrentCrewManagement.gd"
 
-# The Your Crew screen, sorted by job, then salary (lowest first).
+# The Your Crew screen, sorted by job, then salary (lowest first): Shared.gd yourCrewBefore.
+
+const CrewPerfectSort = preload("res://CrewPerfectSort/Shared.gd")
 
 
 func fillCrew():
@@ -15,8 +17,4 @@ func fillCrew():
 
 
 func _before(a, b):
-	if a.occupation != b.occupation:
-		return a.occupation < b.occupation
-	if a.salary != b.salary:
-		return a.salary < b.salary
-	return a.fullName < b.fullName
+	return CrewPerfectSort.yourCrewBefore(a, b)

@@ -215,7 +215,11 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   crew limit) shrinks the badge to its minimum size, still right-aligned, a frame later (the controls' deferred size
   updates); the tooltip follows a language change. A new entry is
   hovered a frame after it is made, once its containers have laid it out. With CrewPerfectSort loaded too (`-Mods
-  CrewCheapHireNotifier,CrewPerfectSort`), the list is sorted and the badges stay. Then a station built as
+  CrewCheapHireNotifier,CrewPerfectSort`), the list is sorted and the badges stay; and the derelict conversation's
+  EVA choice, from the game's `CurrentGame.gd` with the extension, instanced out of the tree (its `state` set from
+  `initialState`, as entering the tree would): `getSpecificMemberNr` gives the crew aboard by job, then salary, then
+  name, from crew hired in another order, without the benched and on-leave crew, and nobody past the last, while
+  `getActiveMembers` keeps the hire order. Then a station built as
   `enceladus/Enceladus.tscn` nests it (the menu, and the game's `HidingMarginContainer.gd` with stubs of the Crew and
   Tuning screens, `harness/crew_screen.gd`), clicked through the scene tree's input: the tooltip, on the entry's Shift
   badge (the entry has none of its own), also after a language change; Shift+Click opens the settings and not the Crew
@@ -734,7 +738,7 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
 - **Baseline** (both arm load orders give the same results): `units` 114 checks with both arm mods (64 with
   PullBehavior alone, 61 with TargetSelection alone), `still` 9, `moving` 16, `hold` 63, `dive` 8 (1 control check with
   `-Mods @()`), `boot` 5 (3 control checks with `-Mods @()`), `lidar` 40 (3 control checks with `-Mods @()`), `hud` 13
-  (3 control checks with `-Mods @()`), `crew` 163 (164 with CrewPerfectSort too, in both load orders; the same 163
+  (3 control checks with `-Mods @()`), `crew` 163 (167 with CrewPerfectSort too, in both load orders; the same 163
   with DealerNotifier too; 3 control checks with `-Mods @()`), `geology` 85 (the same with DiveSkipTransit too, in
   both load orders; 5 control checks with `-Mods @()`), `fleet` 77 (the same with ShipHighlightTypeAndPrice and
   ShipSortByTypeAndPrice too; 3 control checks with `-Mods @()`), `skip` 116 (119 with CrewCheapHireNotifier too, the
@@ -757,7 +761,7 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   game, gives 0, 0, 12, 4 of 16. This ship also takes the arm's torque reaction, as the game's does (the claude.ai
   stub dropped it), which shifts some numbers in the third decimal.
 
-The harness doesn't replace the game. CrewHighlightJobAndSalary has no tests at all, and CrewPerfectSort none of its
-own: only its Hire screen sort runs, beside CrewCheapHireNotifier in `crew`. The ship-list mods have their checks in
-`dealer`, and load beside ShipCopyPaste in `fleet` without checks of their own. The real check is playing the game
-with the mods.
+The harness doesn't replace the game. CrewHighlightJobAndSalary has no tests at all, and CrewPerfectSort runs only
+beside CrewCheapHireNotifier in `crew` (its Hire screen sort and its EVA choice; its Your Crew screen isn't tested).
+The ship-list mods have their checks in `dealer`, and load beside ShipCopyPaste in `fleet` without checks of their
+own. The real check is playing the game with the mods.

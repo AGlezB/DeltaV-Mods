@@ -486,6 +486,45 @@ func manifestValue(section, key):
 func freeStation(s):
 	s.root.queue_free()
 
+# A hired member aboard (CurrentGame.isCrewMemberActive: `active`, and no leave).
+func aboard(m):
+	m["active"] = true
+	return m
+
+func fullNames(members) -> Array:
+	var out = []
+	for m in members:
+		out.append(m.fullName if m != null else null)
+	return out
+
+# CrewPerfectSort: the derelict conversation's choice of who goes on EVA (EvaCrewSorted.gd). Its replies ask
+# getSpecificMemberNr for the n-th crew member aboard (comms/ConversationPlayer.gd getAgendaMember, agenda "CREW/<n>"),
+# from the game's CurrentGame.gd with the extension, instanced out of the tree, its state set as entering the tree would
+# set it (`onready var state`: initialState, at in-game time 0).
+func evaChecks():
+	var cg = load("res://CurrentGame.gd").new()
+	cg.state = cg.initialState.duplicate(true)
+	check("with CrewPerfectSort, res://CurrentGame.gd has its EVA extension", cg.has_method("_cpsBefore"))
+	var dearPilot = aboard(member("Dear Pilot", PILOT, 3000))
+	var cheapMechanic = aboard(member("Cheap Mechanic", MECHANIC, 1000))
+	var benchedGeologist = benched(member("Benched Geologist", GEOLOGIST, 500))
+	var bellPilot = aboard(member("Bell Pilot", PILOT, 2000))
+	var leaveAstrogator = onLeave(aboard(member("Leave Astrogator", ASTROGATOR, 500)))
+	var dearMechanic = aboard(member("Dear Mechanic", MECHANIC, 2500))
+	var ashPilot = aboard(member("Ash Pilot", PILOT, 2000))
+	# Hired in this order, which isn't the Your Crew order.
+	for m in [dearPilot, cheapMechanic, benchedGeologist, bellPilot, leaveAstrogator, dearMechanic, ashPilot]:
+		cg.state.crew[m.fullName] = m
+	# The Your Crew order: by job (its key), then salary, lowest first, then name; benched and on-leave crew aren't aboard.
+	var expected = [cheapMechanic, dearMechanic, ashPilot, bellPilot, dearPilot]
+	var picked = []
+	for nr in range(expected.size() + 1):
+		picked.append(cg.getSpecificMemberNr(nr))
+	check("with CrewPerfectSort, the EVA choice lists the crew aboard by job, then salary (lowest first), then name, and nobody past the last", fullNames(picked) == fullNames(expected) + [null], fullNames(picked))
+	var hireOrder = [dearPilot, cheapMechanic, bellPilot, dearMechanic, ashPilot]
+	check("and getActiveMembers keeps the hire order, so who reports the derelict (getRandomMember) is the game's pick", fullNames(cg.getActiveMembers()) == fullNames(hireOrder), fullNames(cg.getActiveMembers()))
+	cg.free()
+
 func run():
 	var mod = hasMod("CrewCheapHireNotifier")
 	# The game's own menu script: at the root of the chain, which DealerNotifier, loaded too, extends as well.
@@ -811,6 +850,7 @@ func run():
 		var sorted = order.duplicate()
 		sorted.sort()
 		check("with CrewPerfectSort the list is sorted by salary, and the badges stay", order == sorted and badged(tab, hireEntry(tab, cheapPilot), PILOT_EN, top) and unbadged(tab, hireEntry(tab, dearPilot)), order)
+		evaChecks()
 
 	# A new day: the game keeps the entries of those still for hire, and the mod judges them again.
 	var hiredPilot = member("Hired Pilot", PILOT, h)
