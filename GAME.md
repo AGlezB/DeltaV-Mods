@@ -102,6 +102,19 @@ about one call in ten). It is the status the ship's sensors report (`getStatus`,
 fear (`aiControl`) and how fast its fear fades (`erodeDispositions`), makes a damaged ship's autopilot careful
 (`autopilotControl`), fills the bars of the HUD's ship marks (`hud/ShipMark.gd`), brings the station's EVA workers
 (`faces/EVA.gd`, see *EVA*), and gates some combat events of the rings (see *Difficulty*).
+
+## Comms line
+
+Every conversation line goes out on `CurrentGame`'s `broadcast(from, to, msg, replies)`, which every ship's HUD hears
+(`hud/Hud.gd` `gotMessage`). Only the player's ship's HUD shows it, and only a line to that ship with a message: the
+HUD's comms line (the display's `dialogDisplay` node) frees the line it showed and adds the new one, which fades
+(`comms/MessageLine.gd`, its `incoming-fade` animation), and the OMS's Comms log (`hud/OMS.gd` `dialogNode`) keeps a
+copy, with the reply buttons when there are any. A line shows the speaker's face and, in brackets, the sender's
+transponder, or "Name, Occupation" for a crew member's line (a `Conversation` with `agendaNPC`, whose
+`getAgendaMember` gives the member; `MessageLine.gd` `_ready`). Its text is the translation of the line's key, formatted
+with the dictionary `Tool.getTranslationDictionary` builds. A broadcast also cancels the reply buttons of an open
+conversation (`comms/PlayerReply.gd` `_heardBroadcast`).
+
 ## Control scheme
 
 `Settings.controlScheme` reads the setting (`cfg.ui.controller`: 1 Keyboard + Mouse, 2 Gamepad), or with Auto (0) the
@@ -699,6 +712,28 @@ frame for `timeFire` (`weapons/massdriver.gd`), so at 30 its slugs carry more en
 pulse a step; the per-hit floors of roids (`asteroid.gd` `applyKineticDamage`, `hardness`) and reactors (`Reactor.gd`
 `_on_impact`, `damageLeakThreshold`) scale with the step. Godot 3 seems to work the step's length out in 32 bits,
 which puts 1/60 s a hair over (CombatSimulator's wiki page relies on it for a few figures; not measured).
+
+## Pilot tab
+
+The tab lists the ship's `identifiedShips` (`hud/ShipList.gd`): by the object's hash, `[transponder, shipName, object,
+marked, flags]`, kept by `ships/ship-ctrl.gd` `addIdentifiedShip` and `removeIdentifiedShip`, which emit
+`identifiedShipsChanged` when a row comes, goes or changes. Each source of a row sets its own flag, and the row goes
+once no flag is left, or when its object enters the cargo hold:
+- the LIDAR (flag 1, `hud/LIDAR.gd` `_physics_process`): every object with a transponder a ray hits, unmarked; its flag
+  goes `transponderRemovalTime` (60 s of in-game time) after the last hit (`removeOldTransponders`);
+- the astrogator's marks (flag 2, `hud/ShipMark.gd` `scanTarget`), marked, also for an object with no transponder,
+  which the tab shows as UIO. `hud/AutopilotOverlay.gd` `astrogatorTacticalMarkers` marks objects of the `ships`,
+  `tactical` and `stations` groups that the LIDAR has seen, within the Tactical awareness range (see *Crew stats*), the
+  nearer the likelier (a chance of (1 − distance / range)² at each pass). A mark's flag goes while its object is in a
+  cargo hold or dead.
+
+The tab leaves out the ship's temporary cargo, and shows the bearing and distance only for a marked row
+(`hud/components/ShipOnOMSBearingDistance.gd` `compute`): the distance in metres rounded up, the bearing in whole
+degrees clockwise from the screen's up. The LIDAR also records every object a ray hits, with or without a transponder,
+for `seenExpireSeconds` (10 s of in-game time; `LIDAR.gd` `seen`, read with `hasSeen`). An object with no transponder
+gets a row only from a mark, so a pirate ship has none until the astrogator marks it, and an oddity in none of the
+three groups never has one (the Tesla, the Serenity torbernite crystal, the Singularity Core, the icosahedral ice
+crystal), nor does a pirate's lifepod or drone until it is marked.
 
 ## Point Defence Turret
 

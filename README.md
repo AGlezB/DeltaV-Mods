@@ -26,6 +26,7 @@ in its folder, has the details for modders.
 | [DroneAltPriorities](../../wiki/DroneAltPriorities) | Changes which chunk the tug and haul nanodrones work on first: the most valuable, as set on a new tab of the OMS. |
 | [GeologyByMass](../../wiki/GeologyByMass) | Judges the ore your geologist identifies by the mass of each mineral in it instead of its value, as set on a new tab of the OMS. |
 | [HudHideLabels](../../wiki/HudHideLabels) | Hides the titles on the screens of the dive HUD. |
+| [LidarContactCallout](../../wiki/LidarContactCallout) | In a dive or a simulator, a crew member calls out each new LIDAR contact on the comms line, with its bearing and distance: exact once the astrogator has marked it, approximate before. With an astrogator aboard, also the oddities the astrogator can't mark. |
 | [LidarLouderPing](../../wiki/LidarLouderPing) | The LIDAR's ping for sensor contacts plays louder, by as much as you set in the ship's Tuning. |
 | [MarketAdvisor](../../wiki/MarketAdvisor) | Keeps the cash reserve you set, within a tolerance, by putting the rest of your cash in ore at the Mineral Market, with a Trade button that trades on the best days the price charts show, and marks the Mineral Market entry when a trade is due. You set it with Shift+Click on its Trade button. |
 | [ServiceNotifier](../../wiki/ServiceNotifier) | Marks the Services entry of the Enceladus Prime menu when a service you pick can be bought again: one with a cooldown, such as The Twins or Jameson's Insurance, or a compensation to a faction. You pick the services with Shift+Click on Services. |
@@ -63,6 +64,9 @@ These change how something works in a dive, compared to vanilla. Each one's wiki
 - [GeologyByMass](../../wiki/GeologyByMass#changes-how-the-game-plays): with its switch on, which chunks keep a full info box, and
   which ones the arm and the drones go for, depends on the mass of the minerals switched on in its tab, instead of
   value and each row's minerals.
+- [LidarContactCallout](../../wiki/LidarContactCallout#changes-how-the-game-plays): the crew calls out objects with no
+  transponder once the LIDAR has seen them, with an approximate bearing and distance, before the astrogator marks them,
+  and, with an astrogator aboard, the oddities the astrogator can't mark.
 - [TransponderAltCodes](../../wiki/TransponderAltCodes#changes-how-the-game-plays): a ship's model shows in its
   transponder code, on the LIDAR and in the Pilot tab, before the ship is in sight.
 

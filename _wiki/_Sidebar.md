@@ -17,6 +17,7 @@
 
 **The HUD**
 - [HudHideLabels](HudHideLabels)
+- [LidarContactCallout](LidarContactCallout)
 - [LidarLouderPing](LidarLouderPing)
 
 **Money**

@@ -16,7 +16,8 @@ a Godot project in `TempDir\tests\project` from `_tests\`; the game's own `Docki
 `TheRing.gd`, `MarginViewportUpscale.gd`, `ViewportWithProxy.gd`, `NoBulletTime.gd`, `CanvasHidding.gd`, `MouseLayer.gd`,
 `drone-plant.gd`, `MineralMarket.gd`, `MineralSellSlider.gd`, `MineralPriceChart.gd`, `MarketChartPrice.gd`,
 `InGameMoney.gd`, `ServiceUI.gd`, `ServiceUIInsurance.gd`, `ServiceUIFactionChange.gd`, `Repairs.gd`,
-`SystemShipRepairUI.gd`, `SpecificDamageLabel.gd`, `ScrollWithAnalog.gd`, `Tool.gd`, `gdunzip.gd`,
+`SystemShipRepairUI.gd`, `SpecificDamageLabel.gd`, `ScrollWithAnalog.gd`, `Tool.gd`, `gdunzip.gd`, `MessageLine.gd`,
+`Player.gd`, `ConversationPlayer.gd`, `Display-K37.gd`, `ShipOnOMSLabel.gd`, `ShipOnOMSBearingDistance.gd`,
 `Shower.tscn`, audio buses (`default_bus_layout.tres`), the skill
 icons `CrewBio.gd` preloads and a Fleet entry's Use icon (`enceladus/Upgrades/switch.png`; their `.png.import` and
 imported `.stex`, so they load without an import step), copied from the decompiled source on every run and never
@@ -72,16 +73,26 @@ ServiceNotifier: stubs of a row of the Services screen, its insurance row and it
 `ServiceUIInsurance.tscn`, `ServiceUIFactionChange.tscn`), likewise. For ShipRepairAdvisor: the game's Repairs screen (`Repairs.tscn`,
 without its insurance row's sound, which would need an import step), its rows (`SystemShipRepairUI.tscn`) and their
 damage labels (`SpecificDamageLabel.tscn`), copied, and bare stubs of the four scenes they instance (`SmoothScrollTo.tscn`,
-with the `focusAt` the rows set on it, `Flicker.tscn`, `MoveScrollerToMatchThese.tscn`, and `MaintainenceLabel.tscn`,
-with the game's key). The `CurrentGame` stub holds
+with the `focusAt` the rows set on it and the `scrollWhenEntering` the comms line sets, `Flicker.tscn`,
+`MoveScrollerToMatchThese.tscn`, and `MaintainenceLabel.tscn`, with the game's key). For LidarContactCallout: the
+game's comms line (`comms/MessageLine.tscn`), copied, with its theme (`hud/TNTRL-theme-inventory.tres`, followed as the
+Fleet entry's themes are) and its light, control hint icon and incoming sound (their `.import` files and imported
+resources), and bare stubs of the three scenes it instances: the reply line (`comms/PlayerReply.tscn`, never made), the
+speaker's face (`faces/FaceSprite.tscn`, with the `fullName` and `gender` `MessageLine.gd` sets and the nodes the line's
+scene edits) and the control hint (`hud/components/ContextSensitiveControlDisplay.tscn`, with the members and nodes the
+line's scene sets); the hang-up icon `ConversationPlayer.gd` preloads; and the Pilot tab's label and its bearing and
+distance (`hud/components/ShipOnOMSLabel.tscn`, `ShipOnOMSBearingOrDistance.tscn`, `ShipOnOMSBearingDistance.tscn`),
+copied. The `CurrentGame` stub holds
 the game's market code: the prices drawn from a save's seed and moved by the trades in its log (`state.logs`, which
 `logEvent` keeps as the game keeps it where a suite gives the state one), the stored minerals, and the price chart's
 prediction error; and the game's crew levels (`translateLevel`), who is in the dive crew (`isCrewMemberActive`) and
 the one derived stat a mod reads, the geologist's Price prediction accuracy (`deriveStats`); and the
 game's `getMoney`, with the insurance where asked (the Repairs screen's Replace); and, for ShipSaleAdvisor and
 ShipRepairAdvisor, the game's `changeMoney` with the insurance paying first where asked, the stored ships' instances
-(`ownedShipInstances`, `removeOwnedShipByHash`) and their lock (`shipMutex`), a repair limit and a count of mechanics
-a suite sets (`getRepairLimit`, `getCrewNumberWithRole`), and the XP given (`giveXp`, recorded).
+(`ownedShipInstances`, `removeOwnedShipByHash`) and their lock (`shipMutex`), a repair limit a suite sets
+(`getRepairLimit`), and the XP given (`giveXp`, recorded); the game's count of the crew by occupation
+(`getCrewNumberWithRole`), plus mechanics a suite sets without hiring anyone; and, for LidarContactCallout, the game's
+`getCrew` and `isOddity`.
 The game's `Shipyard` (which makes the rescue ship, recorded; for the `dealer` suite, the ship models' scenes, aliases
 and default configs (`getDefaultConfigByName`, falling back to the base model's, as the game's), and a
 `createShipByConfig` that records each config, keeps it and its `config` by reference and, as the game's, registers a
@@ -117,14 +128,15 @@ the game's order), so the zip layout is tested too. Logs: `TempDir\tests\logs`. 
 Call it from a pwsh prompt or `pwsh -Command`: under `pwsh -File`, list arguments such as `-Suite still,moving` are
 not parsed as arrays. Exit code 0 = every run passed; a script error fails its run even if every check passed.
 
-The suites are ported from the claude.ai harness (DVModTestHarness 1.0.0; the original was deleted once ported),
-except `hold`, `boot`, `lidar`, `hud`, `crew`, `geology`, `fleet`, `skip`, `dealer`, `transponder`, `combat`, `drones`,
-`market`, `services`, `sale` and `repairs`. `units`, `still`, `moving` and `hold` load the two arm mods by default, `dive` loads
-DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos, `lidar` loads LidarLouderPing, `hud` loads HudHideLabels, `crew` loads CrewCheapHireNotifier,
-`geology` loads GeologyByMass, `fleet` loads ShipCopyPaste, `skip` loads DiveSkipTransit, `dealer` loads DealerNotifier,
-`transponder` loads TransponderAltCodes, `combat` loads CombatSimulator, `drones` loads DroneAltPriorities and
-GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier, `sale` loads ShipCopyPaste and
-ShipSaleAdvisor, `repairs` loads ShipRepairAdvisor.
+The suites are ported from the claude.ai harness (DVModTestHarness 1.0.0; the original was deleted once ported), except
+`hold`, `boot`, `lidar`, `hud`, `crew`, `geology`, `fleet`, `skip`, `dealer`, `transponder`, `combat`, `drones`,
+`market`, `services`, `sale`, `repairs` and `callout`. `units`, `still`, `moving` and `hold` load the two arm mods by
+default, `dive` loads DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos, `lidar` loads LidarLouderPing, `hud`
+loads HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology` loads GeologyByMass, `fleet` loads ShipCopyPaste,
+`skip` loads DiveSkipTransit, `dealer` loads DealerNotifier, `transponder` loads TransponderAltCodes, `combat` loads
+CombatSimulator, `drones` loads DroneAltPriorities and GeologyByMass, `market` loads MarketAdvisor, `services` loads
+ServiceNotifier, `sale` loads ShipCopyPaste and ShipSaleAdvisor, `repairs` loads ShipRepairAdvisor, `callout` loads
+LidarContactCallout.
 
 - `units` (`suites/units.gd`): the claude.ai unit tests (its `arm/main.gd`) nearly verbatim, on synthetic arms around
   the game's `DockingArm.gd`. TargetSelection: area geometry on turned, scaled and offset arms, reach, the strip, the
@@ -916,6 +928,68 @@ ShipSaleAdvisor, `repairs` loads ShipRepairAdvisor.
   cabin at Park's target. The screen hiding closes the confirmation; without the Equipment screen, Park disabled. The
   control checks (the game's rows, nothing of the mod at the bottom of the screen, the list's margin as the scene sets
   it) run on the game's own script.
+- `callout` (`suites/callout.gd`): HUDs from `harness/callout_hud.tscn` (the game's `Hud.gd`, its `dialogLineNode` the
+  game's comms line, `comms/MessageLine.tscn`; a display of the game's `Display-K37.gd`, `harness/callout_display.tscn`,
+  whose `Dialog` is the HUD's comms line; the geology suite's OMS, whose `Comms` is the Comms log) on
+  `harness/callout_ship.gd`, a ship stub with the zone, the Pilot tab's rows (`identifiedShips`, added and removed with
+  the game's `addIdentifiedShip` and `removeIdentifiedShip`), its transponder, `temporaryCargo`, `cutscene`,
+  `talkingWith` and a LIDAR whose `hasSeen` gives the objects the suite marks seen (`harness/callout_lidar.gd`), alone
+  in a field with objects (`harness/callout_object.gd`: a reward of its own, `inCargoHold`, `dead`, no transponder;
+  `callout_contact.gd`, the same with one, which a pirate's leaves empty); the crew is the `CurrentGame` stub's
+  `state.crew`. The OMS is built on the ship's `instance` signal; once the set-up is checked, the mod's timer is stopped
+  and the suite calls its ticks, so time passes as the mod counts it. Exact figures are the Pilot tab's (the game's
+  `ShipOnOMSBearingDistance.tscn` and its `compute`), approximate ones are read back from the text and checked against
+  their circle; the mod's constants are read from the script at the game's `Hud.gd` path and down its chain. Checks: the
+  texts of `i18n/en.po`, also in a language without them, each holding the parts the mod fills in. The set-up: in a dive
+  (zone `rings`) once the frame is idle after the OMS is built, a timer on the HUD in physics time, every
+  `_CALLOUT_TICK`, running; the rows and the game's comms lines followed; the game's `ConversationPlayer.gd`,
+  crew-spoken (`agendaNPC`), for its lines; all of it once, however often the OMS is built; the UIO text the placeholder
+  of the game's `ShipOnOMSLabel.tscn` (with a stand-in scene at that path, another label's placeholder read as it is,
+  none or an empty one giving `CALLOUT_UIO_FALLBACK`; the game's scene put back after); with the timer running, a new
+  row said in game time by `CALLOUT_SETTLE` (nothing two ticks before, said two ticks after); in the simulator (zone
+  `sim`) set up and saying a new row; nothing set up, followed or said for the zones "", null and "enceladus", or for a
+  ship that isn't the player's (a preview's). When: a new row said after `CALLOUT_SETTLE` and not a tick before, once,
+  on the HUD and in the Comms log: New, identified by its transponder, approximate, in the speaking astrogator's circle;
+  once marked, Updated with the Pilot tab's figures, once; a row marked before it is said, one exact New and no Updated;
+  a marked row with no transponder, New with the game's UIO, exact; several rows together, one numbered list
+  (`_CALLOUT_LIST` of `_CALLOUT_LIST_ITEM`s) in the order they came, the marked one exact, the oddity in none of
+  `CALLOUT_MARKABLE_GROUPS` Anomalous, which never gets an Updated when marked; an oddity in one of those groups, or one
+  of `CALLOUT_IGNORED_ODDITIES`, New; a steady trickle (a new row every `CALLOUT_SETTLE` less a tick) said once the
+  first has waited `CALLOUT_MAX_WAIT`, all in one report. Anomalous: with only a pilot aboard, an oddity with a row said
+  as New by the pilot (in the largest circle) and one with no row not sighted, so once an astrogator is aboard that one
+  is, Anomalous with the game's UIO, by the astrogator, once; one sighted while an astrogator was aboard but said by
+  someone else dropped, the rest of the report said, the list cleared. Objects with no row: a ship with no transponder
+  the LIDAR hasn't seen, nothing; seen, New with the game's UIO, approximate, once; given a marked row later, Updated,
+  exact; one without `getTransponder`, the same; seen together, only the oddities with no transponder in no markable
+  group (Anomalous), nothing for a chunk, a bullet, a ship with a transponder and no row yet, or something gone (being
+  freed, held by the arm, in a hold, dead); sighted, then given a row before it is said, said once as its row stands;
+  sighted, given a row and the row gone before it is said, dropped. Never said: the ship's own drones (its transponder
+  and a dash) and what the arm holds, while a transponder that only starts like the ship's is; a row gone before it is
+  said dropped, the others said; found again later, New; said, gone and found again, New again; nothing while the ship
+  is out of the zones or isn't the player's, said at the next tick once it is again. Who speaks (the line's "[Name,
+  Occupation]"), over several reports: an astrogator aboard, with others aboard; one of two astrogators at random, each
+  speaking, nobody else; with no astrogator, a pilot or a mechanic at random, each speaking, never the passenger; an
+  astrogator not in the dive crew or on leave, never; with nobody to speak (a passenger, someone not in the dive crew
+  and someone on leave; no crew), nothing said and the list cleared, nothing later either. The figures, drawn many times
+  for each experience (`_calloutValues`): in the circle of `CALLOUT_ERROR_RADIUS` times (1 - experience) of the distance
+  around the contact (the bearing within its angle and a degree's rounding, the distance within the circle and half a
+  step), the distance a multiple of `CALLOUT_DISTANCE_STEP`, spread over the circle; at experience 1, the Pilot tab's
+  bearing and the distance rounded to a step; a contact nearer than half a step, one step; a marked row's figures the
+  Pilot tab's all around the ship (the bearing in three digits), with no precision text, whatever the experience; said
+  by an astrogator of experience 1, approximate at the centre, an experience above 1 counting as 1; by a pilot of
+  experience 1, the largest circle, not at the centre. The holds: during a cutscene and while the ship talks with
+  another (`talkingWith`), said at the next tick after; after the game's comms line to the ship (a broadcast of a
+  `ConversationPlayer.gd`, which the game's `Hud.gd` shows), held for `CALLOUT_AFTER_COMMS` and said at the tick it has
+  passed, the game's line on the HUD freed and kept in the Comms log; not held by a comms line to another ship, nor by a
+  broadcast to the ship with no message (the game clearing its line). The line: one on the HUD and one more in the Comms
+  log, both the HUD's `dialogLineNode` with the same text; the HUD's fading (playing the game's `incoming-fade` a frame
+  later, once the engine tells it it is visible), the Comms log's not, and stale until the OMS shows; both from the ship
+  to itself through the mod's conversation, whose member is the speaker; the speaker's "[Name, Occupation]" and face
+  (`MessageLine.gd` `_ready`: name, gender, `crewTalkingColor`); with the OMS open, the Comms log's line playing the
+  game's `incoming` and the HUD's stale, hiding itself once the HUD shows again. With DroneAltPriorities and
+  GeologyByMass too (both extend `Hud.gd`), in every load order, the same checks pass. The control checks (with `-Mods
+  @()`): the HUD gets nothing of its own; the game says nothing of a new row or of an object the LIDAR has seen; the
+  game's own comms line to the ship shows on the HUD and in the Comms log.
 - `_tests\harness\rig.gd` builds the arm's node tree as the game nests it, with the values in
   `_tests\harness\vp_data.gd`; each cites its scene file and line, so re-check them after a game update. The ship
   is a stub moved by hand (it takes the arm's impulses and torque; inertia from the hull); the rotors don't collide.
@@ -930,23 +1004,25 @@ ShipSaleAdvisor, `repairs` loads ShipRepairAdvisor.
   button added to the root (cause not found); in `crew` it does, so the hover is checked there only (`Badge.gd` is the
   same file in every mod). `harness\dive_ship.gd` is the ship `dive` gives the game's `CabinLight.gd`: what it and
   DiveDisableAdrenalineBooster read.
-- **Baseline** (both arm load orders give the same results): `units` 114 checks with both arm mods (64 with
-  PullBehavior alone, 61 with TargetSelection alone), `still` 9, `moving` 16, `hold` 63, `dive` 8 (1 control check with
-  `-Mods @()`), `boot` 5 (3 control checks with `-Mods @()`), `lidar` 40 (3 control checks with `-Mods @()`), `hud` 13
-  (3 control checks with `-Mods @()`), `crew` 167 (171 with CrewPerfectSort too, in both load orders; the same 167 with
-  DealerNotifier too; 3 control checks with `-Mods @()`), `geology` 95 (the same with DiveSkipTransit too, in both load
-  orders; 5 control checks with `-Mods @()`), `fleet` 95 (the same with ShipHighlightTypeAndPrice and
-  ShipSortByTypeAndPrice too, and with ShipSaleAdvisor too, in both load orders; 3 control checks with `-Mods @()`), `skip` 135 (138 with CrewCheapHireNotifier too, the
-  same with DealerNotifier as well; the same 135 with CombatSimulator too; 13 control checks with `-Mods @()`), `dealer`
-  130 (133 with CrewCheapHireNotifier and DiveSkipTransit too, in every load order, 136 with MarketAdvisor and
-  ServiceNotifier as well; 136 with ShipCopyPaste, ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too; 8 with the
-  two ship-list mods alone; 2 control checks with `-Mods @()`), `transponder` 48 (3 control checks with `-Mods @()`; the
-  same 48 with CombatSimulator too), `combat` 151 (the same with TransponderAltCodes too; 8 control checks with
-  `-Mods @()`), `drones` 69 (the same in both load orders and with DroneAltPriorities alone; 3 control checks with
-  `-Mods @()`), `market` 124 (4 control checks with `-Mods @()`), `services` 52 (3 control checks with `-Mods @()`), `sale` 75
-  with ShipCopyPaste (in both load orders; 2 control checks with `-Mods ShipCopyPaste` and with `-Mods @()`),
-  `repairs` 156 (2 control checks with `-Mods @()`), all passing; `units` gives 11 control checks with `-Mods @()`;
-  `-Matrix` gives 16 of 16 in every combination.
+- **Baseline** (both arm load orders give the same results): `units` 114 checks with both arm mods (64 with PullBehavior
+  alone, 61 with TargetSelection alone), `still` 9, `moving` 16, `hold` 63, `dive` 8 (1 control check with `-Mods @()`),
+  `boot` 5 (3 control checks with `-Mods @()`), `lidar` 40 (3 control checks with `-Mods @()`), `hud` 13 (the same with
+  LidarContactCallout too; 3 control checks with `-Mods @()`), `crew` 167 (171 with CrewPerfectSort too, in both load
+  orders; the same 167 with DealerNotifier too; 3 control checks with `-Mods @()`), `geology` 95 (the same with
+  DiveSkipTransit too, in both load orders, and with LidarContactCallout too; 5 control checks with `-Mods @()`),
+  `fleet` 95 (the same with ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too, and with ShipSaleAdvisor too, in
+  both load orders; 3 control checks with `-Mods @()`), `skip` 135 (138 with CrewCheapHireNotifier too, the same with
+  DealerNotifier as well; the same 135 with CombatSimulator too; 13 control checks with `-Mods @()`), `dealer` 130 (133
+  with CrewCheapHireNotifier and DiveSkipTransit too, in every load order, 136 with MarketAdvisor and ServiceNotifier as
+  well; 136 with ShipCopyPaste, ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too; 8 with the two ship-list mods
+  alone; 2 control checks with `-Mods @()`), `transponder` 48 (3 control checks with `-Mods @()`; the same 48 with
+  CombatSimulator too), `combat` 151 (the same with TransponderAltCodes too; 8 control checks with `-Mods @()`),
+  `drones` 69 (the same in both load orders, with DroneAltPriorities alone and with LidarContactCallout too; 3 control
+  checks with `-Mods @()`), `market` 124 (4 control checks with `-Mods @()`), `services` 52 (3 control checks with
+  `-Mods @()`), `sale` 75 with ShipCopyPaste (in both load orders; 2 control checks with `-Mods ShipCopyPaste` and with
+  `-Mods @()`), `repairs` 156 (2 control checks with `-Mods @()`), `callout` 81 (the same with DroneAltPriorities and
+  GeologyByMass too, in every load order; 3 control checks with `-Mods @()`), all passing; `units` gives 11 control
+  checks with `-Mods @()`; `-Matrix` gives 16 of 16 in every combination.
   Feeding, a chunk beside the hull is in after 3.0–3.7 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.5.4 (the same pull as 1.5.0) takes 4.2–4.8 s
   there, and fails the 3 cases that move a chunk straight forward and then expect it held at the dock slot (it hands

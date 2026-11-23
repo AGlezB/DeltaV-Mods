@@ -39,6 +39,8 @@ These pages explain what each mod does, for players. The code, and the notes for
 ### The HUD
 
 - [HudHideLabels](HudHideLabels): hides the titles on the screens of your ship's HUD.
+- [LidarContactCallout](LidarContactCallout): a crew member calls out each new LIDAR contact on the comms line, with
+  where it is.
 - [LidarLouderPing](LidarLouderPing): makes the LIDAR's ping louder, by as much as you choose.
 
 ### Money
@@ -88,6 +90,8 @@ Most of these mods only change what you see on screen. These also change how som
   first.
 - [GeologyByMass](GeologyByMass#changes-how-the-game-plays): which chunks keep a full info box, and which ones the arm
   and the drones go for.
+- [LidarContactCallout](LidarContactCallout#changes-how-the-game-plays): your crew tells you roughly where things with
+  no transponder are, before your astrogator marks them.
 - [TransponderAltCodes](TransponderAltCodes#changes-how-the-game-plays): you can tell a ship's model from its code
   before you see it.
 

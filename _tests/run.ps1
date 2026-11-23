@@ -16,7 +16,8 @@
 	TheRing.gd, MarginViewportUpscale.gd, ViewportWithProxy.gd, NoBulletTime.gd, CanvasHidding.gd, MouseLayer.gd,
 	drone-plant.gd, MineralMarket.gd, MineralSellSlider.gd, MineralPriceChart.gd, MarketChartPrice.gd, InGameMoney.gd,
 	ServiceUI.gd, ServiceUIInsurance.gd, ServiceUIFactionChange.gd, Repairs.gd, SystemShipRepairUI.gd,
-	SpecificDamageLabel.gd, ScrollWithAnalog.gd), the
+	SpecificDamageLabel.gd, ScrollWithAnalog.gd, MessageLine.gd, Player.gd, ConversationPlayer.gd, Display-K37.gd,
+	ShipOnOMSLabel.gd, ShipOnOMSBearingDistance.gd), the
 	game's ship models (harness\transponder_models.gd, read from ships\Shipyard.gd), the game's Shower.tscn, audio buses
 	(default_bus_layout.tres), the skill icons CrewBio.gd preloads and the Fleet entry's Use icon, a stub mineral scene
 	carrying the chunk radius read from the game's, stubs of the two scenes LIDAR.gd preloads, of the Tuning parts
@@ -33,7 +34,10 @@
 	labels). For MarketAdvisor and ServiceNotifier: the rows of the Services screen (ServiceUI.tscn,
 	ServiceUIInsurance.tscn, ServiceUIFactionChange.tscn). For ShipRepairAdvisor: the game's Repairs screen
 	(Repairs.tscn, without its insurance row's sound), its rows (SystemShipRepairUI.tscn) and their damage labels
-	(SpecificDamageLabel.tscn), and bare stubs of the four helper scenes they instance.
+	(SpecificDamageLabel.tscn), and bare stubs of the four helper scenes they instance. For LidarContactCallout: the
+	game's comms line (comms\MessageLine.tscn, with its theme, light, icon and sound, and bare stubs of the three scenes
+	it instances) and the Pilot tab's label and bearing and distance (ShipOnOMSLabel.tscn,
+	ShipOnOMSBearingOrDistance.tscn, ShipOnOMSBearingDistance.tscn).
 	Packages each mod into <WorkDir>\build\<Mod>.zip
 	(as a release zip), and runs every suite with its mods loaded from those zips, the way the game loads them:
 	by an autoload, before the engine loads the main scene. Logs: <WorkDir>\logs. Nothing in the repo, the game folder
@@ -71,6 +75,8 @@
 	  Repairs.gd, with its rows of SystemShipRepairUI.gd) among the station's screens (the game's
 	  HidingMarginContainer.gd), beside stubs of the Equipment screen (with the game's SystemShipUpgradeUI.gd items) and
 	  the Fleet screen, with ships whose systems can be damaged, fixed, replaced and bought.
+	- callout: LidarContactCallout. Builds HUDs from harness\callout_hud.tscn, which holds the game's Hud.gd, with the
+	  geology suite's OMS and the game's comms line (MessageLine.tscn), on stub ships among stub objects of the field.
 
 .EXAMPLE
 	pwsh _tests\run.ps1
@@ -86,8 +92,8 @@
 #>
 [CmdletBinding()]
 param(
-	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones', 'market', 'services', 'sale', 'repairs', 'hold')]
-	[string[]] $Suite = @('units', 'still', 'moving', 'hold', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones', 'market', 'services', 'sale', 'repairs'),
+	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones', 'market', 'services', 'sale', 'repairs', 'callout', 'hold')]
+	[string[]] $Suite = @('units', 'still', 'moving', 'hold', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones', 'market', 'services', 'sale', 'repairs', 'callout'),
 	# Mod folders to load for every selected suite, in load order (the game's order: by path); @() = none.
 	# Default: each suite's own mods (see the description).
 	[string[]] $Mods,
@@ -201,18 +207,19 @@ foreach ($dir in $project, $build, $logs)
 }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'project.godot'), (Join-Path $PSScriptRoot 'main.tscn') -Destination $project
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'harness'), (Join-Path $PSScriptRoot 'suites') -Destination $project -Recurse
-foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningBoolValue.gd', 'enceladus\Tuning\TuningItems.gd', 'hud\Hud.gd', 'hud\OMS.gd', 'menu\TabsWithGamepadControl.gd', 'hud\components\PriceLabel.gd', 'hud\components\RepeatingHSlider.gd', 'hud\components\MineralLabel.gd', 'hud\components\MineralSystemToggle.gd', 'hud\SystemMineralList.gd', 'enceladus\HireableCrew.gd', 'enceladus\CrewBio.gd', 'enceladus\CurrentCrewManagement.gd', 'menu\sfx\PlaySoundsOnTheseButtons.gd', 'enceladus\SystemBuyUI.gd', 'enceladus\SystemShipUpgradeUI.gd', 'enceladus\Dealer.gd', 'enceladus\Shower.tscn', 'Game.gd', 'enceladus\Enceladus.gd', 'TransponderOnIntro.gd', 'ships\ship-ctrl.gd', 'ships\Reactor.gd', 'ships\modules\FusionReactor.gd', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres', 'CurrentGame.gd', 'story\body.gd', 'ships\modules\ClaimOwner.gd', 'ships\WeaponSlot.gd', 'story\ClaimBeacon-1.gd', 'story\ClaimBeaconForeign.gd', 'menu\NewGamePlus.gd', 'PauseLayer.gd', 'ships\modules\PDT.gd', 'hud\Video.gd', 'hud\GravimetricReadout.gd', 'weapons\massdriver.gd', 'TheRing.gd', 'enceladus\MarginViewportUpscale.gd', 'enceladus\Simulator\ViewportWithProxy.gd', 'enceladus\NoBulletTime.gd', 'enceladus\CanvasHidding.gd', 'menu\MouseLayer.gd', 'weapons\drone-plant.gd', 'enceladus\MineralMarket.gd', 'enceladus\MineralSellSlider.gd', 'enceladus\MineralPriceChart.gd', 'enceladus\Minerals\MarketChartPrice.gd', 'enceladus\InGameMoney.gd', 'enceladus\ServiceUI.gd', 'enceladus\ServiceUIInsurance.gd', 'enceladus\ServiceUIFactionChange.gd', 'enceladus\Repairs.gd', 'enceladus\SystemShipRepairUI.gd', 'enceladus\SystemShipRepairUI.tscn', 'enceladus\SpecificDamageLabel.gd', 'enceladus\SpecificDamageLabel.tscn', 'enceladus\ScrollWithAnalog.gd')
+foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningBoolValue.gd', 'enceladus\Tuning\TuningItems.gd', 'hud\Hud.gd', 'hud\OMS.gd', 'menu\TabsWithGamepadControl.gd', 'hud\components\PriceLabel.gd', 'hud\components\RepeatingHSlider.gd', 'hud\components\MineralLabel.gd', 'hud\components\MineralSystemToggle.gd', 'hud\SystemMineralList.gd', 'enceladus\HireableCrew.gd', 'enceladus\CrewBio.gd', 'enceladus\CurrentCrewManagement.gd', 'menu\sfx\PlaySoundsOnTheseButtons.gd', 'enceladus\SystemBuyUI.gd', 'enceladus\SystemShipUpgradeUI.gd', 'enceladus\Dealer.gd', 'enceladus\Shower.tscn', 'Game.gd', 'enceladus\Enceladus.gd', 'TransponderOnIntro.gd', 'ships\ship-ctrl.gd', 'ships\Reactor.gd', 'ships\modules\FusionReactor.gd', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres', 'CurrentGame.gd', 'story\body.gd', 'ships\modules\ClaimOwner.gd', 'ships\WeaponSlot.gd', 'story\ClaimBeacon-1.gd', 'story\ClaimBeaconForeign.gd', 'menu\NewGamePlus.gd', 'PauseLayer.gd', 'ships\modules\PDT.gd', 'hud\Video.gd', 'hud\GravimetricReadout.gd', 'weapons\massdriver.gd', 'TheRing.gd', 'enceladus\MarginViewportUpscale.gd', 'enceladus\Simulator\ViewportWithProxy.gd', 'enceladus\NoBulletTime.gd', 'enceladus\CanvasHidding.gd', 'menu\MouseLayer.gd', 'weapons\drone-plant.gd', 'enceladus\MineralMarket.gd', 'enceladus\MineralSellSlider.gd', 'enceladus\MineralPriceChart.gd', 'enceladus\Minerals\MarketChartPrice.gd', 'enceladus\InGameMoney.gd', 'enceladus\ServiceUI.gd', 'enceladus\ServiceUIInsurance.gd', 'enceladus\ServiceUIFactionChange.gd', 'enceladus\Repairs.gd', 'enceladus\SystemShipRepairUI.gd', 'enceladus\SystemShipRepairUI.tscn', 'enceladus\SpecificDamageLabel.gd', 'enceladus\SpecificDamageLabel.tscn', 'enceladus\ScrollWithAnalog.gd', 'comms\MessageLine.gd', 'comms\MessageLine.tscn', 'comms\Player.gd', 'comms\ConversationPlayer.gd', 'hud\Display-K37.gd', 'hud\components\ShipOnOMSLabel.gd', 'hud\components\ShipOnOMSLabel.tscn', 'hud\components\ShipOnOMSBearingOrDistance.tscn', 'hud\components\ShipOnOMSBearingDistance.gd', 'hud\components\ShipOnOMSBearingDistance.tscn')
 {
 	$target = Join-Path $project $file
 	New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
 	Copy-Item -LiteralPath (Join-Path $GameSource $file) -Destination $target
 }
 # The themes of a Fleet entry (enceladus\SystemBuyUI.tscn: menu\MenuTheme.tres for the entry, hud\TNTRL-theme.tres for
-# its labels' grid) and everything they load (fonts, styleboxes, images), found by following their res:// paths, so the
-# entry's sizes and looks are the game's. Images go through the import step below.
+# its labels' grid) and of the comms line (comms\MessageLine.tscn: hud\TNTRL-theme-inventory.tres), and everything they
+# load (fonts, styleboxes, images), found by following their res:// paths, so the entry's sizes and looks are the
+# game's. Images go through the import step below.
 $themeFiles = [Collections.Generic.List[string]]::new()
 $pending = [Collections.Generic.Queue[string]]::new()
-foreach ($t in 'menu\MenuTheme.tres', 'hud\TNTRL-theme.tres') { $pending.Enqueue($t) }
+foreach ($t in 'menu\MenuTheme.tres', 'hud\TNTRL-theme.tres', 'hud\TNTRL-theme-inventory.tres') { $pending.Enqueue($t) }
 # The entry's thumbnail margin has the Fleet screen's prose theme, a binary resource whose dependencies (a font,
 # styleboxes and images) are all MenuTheme.tres's too.
 $themeFiles.Add('enceladus\Subwindow.theme')
@@ -235,11 +242,14 @@ foreach ($file in $themeFiles | Where-Object { $_ -notmatch '\.png$' })
 	New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
 	Copy-Item -LiteralPath (Join-Path $GameSource $file) -Destination $target
 }
-# Icons as the game ships them: their import files and the imported textures they point to, so they load without an
-# import step. CrewBio.gd preloads the skill icons; a Fleet entry's Use button shows switch.png, whose size and colour
-# ShipCopyPaste's icons take, and the Buy confirmation's OK shows buy.png.
+# Icons (and a sound) as the game ships them: their import files and the imported resources they point to, so they load
+# without an import step. CrewBio.gd preloads the skill icons; a Fleet entry's Use button shows switch.png, whose size
+# and colour ShipCopyPaste's icons take, and the Buy confirmation's OK shows buy.png.
 $imports = @(Get-ChildItem -LiteralPath (Join-Path $GameSource 'enceladus\Crew') -Filter 'skill-*.png.import' | ForEach-Object { 'enceladus\Crew\' + $_.Name })
 $imports += 'enceladus\Upgrades\switch.png.import', 'enceladus\Upgrades\buy.png.import'
+# The comms line's light, control hint icon and incoming sound (comms\MessageLine.tscn), and the hang-up icon
+# comms\ConversationPlayer.gd preloads.
+$imports += 'lights\color-square.png.import', 'hud\comms.png.import', 'comms\radio_incoming.wav.import', 'hud\hangup.png.import'
 $imports += @($themeFiles | Where-Object { $_ -match '\.png$' } | ForEach-Object { $_ + '.import' })
 foreach ($import in $imports)
 {
@@ -1569,7 +1579,8 @@ text = ""
 # For ShipRepairAdvisor: the game's Repairs screen (enceladus\Repairs.tscn) without the sound of its insurance row's
 # Pinger, which would need an import step; its rows (SystemShipRepairUI.tscn and the SpecificDamageLabel.tscn they make,
 # copied above) instance three helper scenes, and the screen a fourth: bare nodes here, the smooth scrolling with the
-# focusAt the rows set on it (SmoothScrollTo.tscn), the maintenance line with the game's key (MaintainenceLabel.tscn).
+# focusAt the rows set on it and the scrollWhenEntering the comms line sets (SmoothScrollTo.tscn), the maintenance line
+# with the game's key (MaintainenceLabel.tscn).
 $repairsScene = (Get-Content -LiteralPath (Join-Path $GameSource 'enceladus\Repairs.tscn') -Raw) -replace "`r`n", "`n"
 $pingerSound = [regex]::Match($repairsScene, '(?m)^\[ext_resource path="res://menu/sfx/hover\.wav" type="AudioStream" id=(\d+)\]\n')
 if (-not $pingerSound.Success -or -not $repairsScene.Contains("stream = ExtResource( $($pingerSound.Groups[1].Value) )`n"))
@@ -1583,6 +1594,7 @@ Write-Utf8Lf (Join-Path $project 'SmoothScrollTo.tscn') @'
 
 [sub_resource type="GDScript" id=1]
 script/source = "extends Node
+export var scrollWhenEntering = false
 export var focusAt = NodePath()
 "
 
@@ -1602,6 +1614,58 @@ Write-Utf8Lf (Join-Path $project 'enceladus\MaintainenceLabel.tscn') @'
 
 [node name="MaintainenceLabel" type="Label"]
 text = "INSPECTION_MAINT"
+'@
+# For LidarContactCallout: the game's comms line (comms\MessageLine.tscn, with its MessageLine.gd and its animation
+# player's Player.gd, copied above, its theme and its light, control hint icon and incoming sound) and the conversation
+# the mod gives it (comms\ConversationPlayer.gd, copied above). Bare stubs of the three scenes the line instances: the
+# reply line (never made: a callout has no replies), the speaker's face (faces\FaceSprite.tscn: the fullName and gender
+# MessageLine.gd sets, and the nodes the line's scene edits), and the control hint
+# (hud\components\ContextSensitiveControlDisplay.tscn: the members and the nodes the line's scene sets).
+New-Item -ItemType Directory -Force (Join-Path $project 'faces') | Out-Null
+Write-Utf8Lf (Join-Path $project 'comms\PlayerReply.tscn') @'
+[gd_scene format=2]
+
+[node name="PlayerReply" type="VBoxContainer"]
+'@
+Write-Utf8Lf (Join-Path $project 'faces\FaceSprite.tscn') @'
+[gd_scene load_steps=2 format=2]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Node2D
+export var gender = 0.5
+export var fullName = ''
+"
+
+[node name="Face" type="Node2D"]
+script = SubResource( 1 )
+
+[node name="Sprite" type="Sprite" parent="."]
+
+[node name="Main light" type="Light2D" parent="."]
+
+[node name="Side light" type="Light2D" parent="."]
+
+[node name="Rim light" type="Light2D" parent="."]
+'@
+Write-Utf8Lf (Join-Path $project 'hud\components\ContextSensitiveControlDisplay.tscn') @'
+[gd_scene load_steps=2 format=2]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends MarginContainer
+export var action = ''
+export var tutorial = false
+"
+
+[node name="ContextSensitiveControlDisplay" type="MarginContainer"]
+script = SubResource( 1 )
+
+[node name="Player" type="AnimationPlayer" parent="."]
+
+[node name="Keys" type="HBoxContainer" parent="."]
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+
+[node name="C" type="Control" parent="CenterContainer"]
 '@
 
 # 2. The mods: each suite's own (or -Mods), packaged once each, or the release zip given for it.
@@ -1626,6 +1690,7 @@ $suiteMods = @{
 	services = @('ServiceNotifier')
 	sale = @('ShipCopyPaste', 'ShipSaleAdvisor')
 	repairs = @('ShipRepairAdvisor')
+	callout = @('LidarContactCallout')
 }
 $given = @{}
 foreach ($z in $ModZip)

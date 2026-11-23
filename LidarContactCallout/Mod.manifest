@@ -1,0 +1,23 @@
+[mod_information]
+
+name="LidarContactCallout"
+id="AGlezB.LidarContactCallout"
+description="The crew calls out each new LIDAR contact on the comms line, with its bearing and distance."
+author="AGlezB"
+
+[version]
+
+version_major=1
+version_minor=0
+version_bugfix=0
+
+[tags]
+
+group={
+"type": "string",
+"value": "Hud"
+}
+
+[manifest_definitions]
+
+manifest_version=2.2

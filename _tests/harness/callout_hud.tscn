@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://hud/Hud.gd" type="Script" id=1]
+[ext_resource path="res://comms/MessageLine.tscn" type="PackedScene" id=2]
+
+[node name="Hud" type="CanvasLayer"]
+script = ExtResource( 1 )
+dialogLineNode = ExtResource( 2 )
+
+[node name="Huds" type="Container" parent="."]
+
+[node name="SYSTEM_HUD_TNTRL" parent="Huds" instance_placeholder="res://harness/callout_display.tscn"]
+
+[node name="Inventory" parent="." instance_placeholder="res://harness/geology_oms.tscn"]

@@ -67,8 +67,8 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
   of them misses it. `ships/Shipyard.gd` preloads every ship scene: extending it would make every ship miss the later
   mods' extensions of ship scripts (CombatSimulator `WeaponSlot.gd` and `PDT.gd`, DiveSkipTransit `ship-ctrl.gd`,
   DiveDisableAdrenalineBooster `CabinLight.gd`, DroneAltPriorities `Hud.gd`, GeologyByMass `ship-ctrl.gd` and `Hud.gd`,
-  LidarLouderPing `LIDAR.gd`). That is why CombatSimulator has no Shipyard extension; none of the game scripts the mods
-  extend preloads a ship scene.
+  LidarContactCallout `Hud.gd`, LidarLouderPing `LIDAR.gd`). That is why CombatSimulator has no Shipyard extension;
+  none of the game scripts the mods extend preloads a ship scene.
 - `Mod.manifest` is not read by the game's loader.
 - The loader also has `addTranslationsFromCSV`, `appendNodeInScene` and `saveScene` (unused so far; the harness's
   loader offers `addTranslationsFromCSV` too). **`addTranslationsFromCSV` reads nothing from a mod's zip**: a file in
@@ -115,6 +115,8 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
      `isValidMineralTarget`); `OmsScreen.gd` → `hud/Hud.gd` (its OMS tab, added right after the Geologist tab from
      `instance()`); `GeologistTab.gd` → `hud/SystemMineralList.gd` (the Geologist tab's rows, whose mineral switches and
      Minimum values it disables and dims while its switch is on).
+   - LidarContactCallout: `Code.gd` → `hud/Hud.gd` (the player's HUD in a dive or a simulator, whose comms line it
+     adds its callouts to, as `gotMessage` adds the game's lines).
    - LidarLouderPing: `Code.gd` → `hud/LIDAR.gd`.
    - MarketAdvisor: `Code.gd` → `enceladus/MineralMarket.gd` (the Mineral Market: the row of advice and the Trade
      button at its bottom, which trades through the market's own slider rows, the row under your cash in its header
@@ -210,6 +212,10 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
   pass their row (`_dapCheck`), so with GeologyByMass's switch on, the identified chunks they rank are the ones its
   switches and masses let through (an unidentified one passes by the game's rule); the arm mods keep the game's
   `isValidTarget`, which asks the same.
+- LidarContactCallout (`Code.gd`) extends `hud/Hud.gd` too, after both by path: game ← DroneAltPriorities ←
+  GeologyByMass ← LidarContactCallout. It overrides `instance()` as they do, calling the parent's first and deferring
+  its set-up, and adds no tab, so its place in the chain changes nothing. Its member names must stay distinct from
+  theirs. Loaded together in `callout` (every order).
 - DiveSkipTransit (`Ship.gd`) and GeologyByMass (`Code.gd`) both extend `ships/ship-ctrl.gd`, every ship's script,
   from `_init`: by path the chain is game ← DiveSkipTransit ← GeologyByMass. They override different functions
   (DiveSkipTransit `fastTravelTo`, GeologyByMass `isValidMineralTarget`). Their member names must stay distinct. Loaded
@@ -708,6 +714,11 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
 - **Combat capacity** (no text of its own in `en.po`): how fit a ship is to fight, from 0 to 1, from the state of its
   equipment (`ship-ctrl.gd` `getCombatCapacity`). The AI, the HUD's ship marks and some random events read it.
   Details: [GAME.md](GAME.md#combat-capacity).
+- **Comms line** (no text of its own in `en.po`; the OMS keeps its log under `HUD_COMMS`, "Comms"): the line at the
+  edge of the HUD where a message to the player's ship shows, one at a time, with the speaker's face and, in brackets,
+  the sender's transponder or a crew member's "Name, Occupation" (`comms/MessageLine.tscn`, `MessageLine.gd`),
+  added by `hud/Hud.gd` `gotMessage` on `CurrentGame`'s `broadcast` and kept in the OMS's log (`hud/OMS.gd`
+  `dialogNode`). LidarContactCallout adds its callouts there. Details: [GAME.md](GAME.md#comms-line).
 - **Control scheme** (`SETTINGS_CONTROLS`, "Controls": Auto, Keyboard + Mouse, Gamepad): the game setting
   `Settings.cfg.ui.controller` (Auto by default), and what the game's control hints follow, `Settings.controlScheme`:
   the setting, or with Auto the device last used (`menu/Mouse.gd`), with the `controlSchemeChaged` signal (the game's
@@ -854,7 +865,8 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   sequence as soon as it starts.
 - **LIDAR** (`HUD_LIDAR`, "Doppler LIDAR"; `hud/LIDAR.gd`): the HUD's scanner of nearby objects. Its sweep plays a
   ping (the `Bleep` node) for each strong return, pitched and set in volume by the distance; a Tuning switch
-  (`doBleep`) turns the pings off.
+  (`doBleep`) turns the pings off. What it has seen (`hasSeen`) and the Pilot tab rows it adds:
+  [GAME.md](GAME.md#pilot-tab).
 - **Lifepod** (`ODDITY_LIFEPOD`, "Lifepod rescue reward"): an escape pod, `ships/Lifepod.tscn`, a ship of its own
   (`ship-ctrl.gd`) and an oddity (see *Oddity*). A ship whose scene names a `lifepod` leaves one when it explodes
   (`ship-ctrl.gd` `vanish`), with the ship's transponder, faction and speed; others float alone in the rings. Details:
@@ -905,7 +917,8 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   flight. Its tabs are named by the crew occupation keys: Mechanic, Astrogator, Geologist, Pilot. The Pilot tab (the
   pilot screen) lists what the ship has identified (`hud/ShipList.gd`, the ship's `identifiedShips`): every object
   with a transponder the LIDAR has swept, and what the astrogator's marks name (`hud/ShipMark.gd`), each with its name
-  and transponder, a button to hail it (`HUD_HAIL`), its bearing and distance and its IFF.
+  and transponder (UIO for none), a button to hail it (`HUD_HAIL`), its bearing and distance once marked, and its
+  IFF. Its Comms section (`HUD_COMMS`) is the log of the comms line. Details: [GAME.md](GAME.md#pilot-tab).
 - **Physics rate** (`SETTINGS_FPS`, "Physics Simulation FPS:"): the physics steps the game runs a second
   (`Engine.iterations_per_second`), `Settings.cfg.gameplay.fps`: 60 by default, and the menu offers 30 to 165
   (`menu/SettingsLayer.tscn`). With Dynamic Temporal Simulation Simplification on (`SETTINGS_ADAPTIVE_FPS`,
@@ -1017,6 +1030,9 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
 - **Tuning** (`ENCELADUS_SHIP_TUNING`, `enceladus/Tuning.tscn`): the station screen with the settings of each piece
   of the current ship's equipment, registered by its script with `registerSubsystem` and saved with the game (see
   *Conventions*).
+- **UIO** (no key in `en.po`: the `placeholder` of `hud/components/ShipOnOMSLabel.tscn`): what the OMS Pilot tab
+  shows in place of a transponder for an object with none (a pirate ship the astrogator has marked;
+  `ShipOnOMSLabel.gd` `set_text`). LidarContactCallout's callouts use it too.
 - **Vilcy** (`SERVICE_VILCY`, "Local Vilcy Branch"): "an organized bounty hunter group" (`SERVICE_VILCY_DESC`),
   faction `vilcy`, hostile to pirates. Its ships come in random events of the rings (`story/Vilcy.gd`) and hail a
   player with an ex-pirate in the crew (see *EVA*); its headquarters is the Big Bad Wolf (see *Tsukuyomi*). Local

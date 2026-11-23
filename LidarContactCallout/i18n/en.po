@@ -1,0 +1,36 @@
+# LidarContactCallout: the texts of its callouts, in English. Godot shows English for any language without its own
+# file (its fallback locale), so another language only needs a copy of this file with its Language and msgstr lines
+# translated, loaded in ModMain.gd.
+#
+# One callout is LIDARCONTACTCALLOUT_CONTACT, its parts filled from the others: {status} is NEW, UPDATED or ANOMALOUS;
+# {identity} is IDENTIFIED, or the game's own UIO (what the Pilot tab shows for a contact with no transponder);
+# {precision} is APPROXIMATE, or nothing when the figures are exact. Several callouts at once are LIST, each of its
+# {items} a LIST_ITEM.
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "LIDARCONTACTCALLOUT_CONTACT"
+msgstr "{status} contact, {identity}, {precision}bearing {bearing}, distance {distance}"
+
+msgid "LIDARCONTACTCALLOUT_NEW"
+msgstr "New"
+
+msgid "LIDARCONTACTCALLOUT_UPDATED"
+msgstr "Updated"
+
+msgid "LIDARCONTACTCALLOUT_ANOMALOUS"
+msgstr "Anomalous"
+
+msgid "LIDARCONTACTCALLOUT_IDENTIFIED"
+msgstr "identified {transponder}"
+
+msgid "LIDARCONTACTCALLOUT_APPROXIMATE"
+msgstr "approximate "
+
+msgid "LIDARCONTACTCALLOUT_LIST"
+msgstr "Lidar contact updates:\n{items}"
+
+msgid "LIDARCONTACTCALLOUT_LIST_ITEM"
+msgstr "{number}. {line}"

@@ -4,7 +4,8 @@ extends Node
 # Hud.gd, PriceLabel.gd, HireableCrew.gd, CrewBio.gd, SystemBuyUI.gd, SystemShipUpgradeUI.gd, Dealer.gd, Game.gd,
 # Enceladus.gd, TransponderOnIntro.gd, story/body.gd, menu/NewGamePlus.gd, InGameMoney.gd, MineralMarket.gd,
 # MineralSellSlider.gd, MineralPriceChart.gd, ServiceUI.gd, CrewCheapHireNotifier, GeologyByMass, ShipCopyPaste,
-# DiveSkipTransit, DealerNotifier, TransponderAltCodes, CombatSimulator, MarketAdvisor and ShipSaleAdvisor reach (with TheRing.gd and
+# DiveSkipTransit, DealerNotifier, TransponderAltCodes, CombatSimulator, MarketAdvisor, ShipSaleAdvisor and
+# LidarContactCallout reach (with TheRing.gd and
 # PauseLayer.gd, which connect inGameTimePassed and pauseGame), and the game scripts the bench runs (_bench\:
 # asteroid.gd isInSimulatiorRange, the PDWs' weapons ageToDamageWithSeed).
 
@@ -75,8 +76,9 @@ var usedShipsPool = [] # the models the dealer draws its used ships from, as the
 var forSale = [] # the ships getShipsAvailableForSale() returns; the dealer suite fills it
 var ownedShips = [] # the ships getOwnedShips() returns (Fleet's list); the dealer suite fills it
 # What ShipSaleAdvisor's Prepare and the Repairs screen's rows (ShipRepairAdvisor's buttons) reach: the stored ships'
-# instances by hash (the sale suite fills it) and the lock around them, the crew's repair limit (in %) and mechanics,
-# and what giveXp() was given: [talent, experience, inactive, role].
+# instances by hash (the sale suite fills it) and the lock around them, the crew's repair limit (in %) and mechanics
+# (counted by getCrewNumberWithRole besides those hired), and what giveXp() was given: [talent, experience, inactive,
+# role].
 var ownedShipInstances = {}
 var shipMutex = Mutex.new()
 var repairLimit = 99.5
@@ -323,8 +325,24 @@ func getInsurance():
 func getRepairLimit(_includeInactive = false):
 	return repairLimit
 
-func getCrewNumberWithRole(_role, _includeInactive = false):
-	return mechanics
+# As the game's: how many of the crew have `role` (any with ""), in the dive crew, or with `includeInactive` all but
+# those on leave; plus `mechanics` for the mechanics, a count a suite sets without hiring anyone.
+func getCrewNumberWithRole(role, includeInactive = false):
+	var count = mechanics if role in ["", "CREW_OCCUPATION_MECHANIC"] else 0
+	for k in state.crew:
+		var member = state.crew[k]
+		var counted = not (member.get("leave", 0) - getInGameTimestamp() > 0) if includeInactive else isCrewMemberActive(member)
+		if counted and (role == "" or member.get("occupation") == role):
+			count += 1
+	return count
+
+# As the game's: the hired crew, by full name.
+func getCrew():
+	return state.crew
+
+# As the game's: an object with a reward of its own.
+func isOddity(i):
+	return "specialPrice" in i and i.specialPrice > 0
 
 func giveXp(talent, experience, includeInactive = false, role = ""):
 	xp.append([talent, experience, includeInactive, role])
