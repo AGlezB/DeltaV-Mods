@@ -16,6 +16,8 @@ extends Node
 #   wait|<seconds>
 #   press|<path>                  presses a button (its pressed signal)
 #   shiftclick|<path>             Shift+Click on a control (its gui_input signal), as the mods' settings open
+#   shiftclickfind|<path>|<name>|<n>
+#                                 shiftclick on the n-th (from 0) visible node named <name> under <path>
 #   pressfind|<path>|<name>|<n>   presses the n-th (from 0) visible node named <name> under <path>
 #   timepressfind|<path>|<name>|<n>
 #                                 pressfind, and prints how long the press took, its handlers included (a frame that
@@ -26,6 +28,11 @@ extends Node
 #   set|<path>|<property>[/<key>...]|<json>
 #                                 sets a node's property, or a key of a dictionary it holds (missing ones are made), to
 #                                 a JSON value; on the way, a key of an object (a script's instance) reads its property
+#   used|<model>|<seed>           a used ship of a model (a key of Shipyard.ships) made and aged as the Dealer makes its
+#                                 used ships, from that seed, then stored in the fleet as a salvaged ship joins it, and
+#                                 the station built again from the save game's state; prints its prices (_used)
+#   appraise                      with the Fleet screen open, prints for each stored ship what Sell pays and what the
+#                                 ship is worth, system by system (_appraise)
 #   call|<path>|<method>|<json>   calls a node's method with the values of a JSON array as its arguments (JSON numbers
 #                                 are floats); an absolute path reaches an autoload (/root/CurrentGame)
 #   tab|<path>|<n or name>        shows tab n, or the tab with that node name, of a TabContainer
@@ -57,6 +64,19 @@ const FIXTURE_SHIP = ["WK-0001", "Wiki One"]
 const FIXTURE_SPARE = ["WK-0002", "Wiki Two"] # the same model as the ship flown
 const FIXTURE_OTHERS = [["EIME", "WK-0003", "Wiki Three"], ["COTHON", "WK-0004", "Wiki Four"]] # other models
 const FIXTURE_MONEY = 3000000
+
+# The used ships (_used), made as the Dealer makes its ship of the day (CurrentGame.gd createShipInstanceWithCache, not
+# stock): a build of the model picked from the seed plus USED_BUILD_SEED, with the damage limit USED_DAMAGE_LIMIT, or,
+# for a model with no builds, its default config and the ship's own limit. Its systems write their age damage into its
+# config once in the tree, some of them later (when idle, in physics): USED_STEADY is how long the damage must stay the
+# same before the aging counts as done.
+const USED_BUILD_SEED = 1000
+const USED_DAMAGE_LIMIT = 1.0
+const USED_STEADY = 2.0
+# The appraise step's copy of a stored ship waits APPRAISE_SETTLE seconds once set up, so that every status its systems
+# work out later (thrusters and weapons in physics) has been worked out.
+const APPRAISE_SETTLE = 3.0
+const APPRAISE_TOLERANCE = 0.05 # status points under which a listed status counts as the actual one
 
 # The transponders step: one object of each kind that carries a code, each made as the game makes it, around the
 # player's ship. Every random draw that makes a code or a name is seeded first, from SCENARIO_SEED, so both runs
@@ -270,6 +290,24 @@ func _ready():
 					click.shift = true
 					click.position = control.rect_size / 2
 					control.emit_signal("gui_input", click)
+			"shiftclickfind":
+				var shifted = []
+				var shiftUnder = _node(parts[1])
+				if shiftUnder:
+					_find(shiftUnder, parts[2], shifted)
+				if shifted.size() > int(parts[3]):
+					var shiftClick = InputEventMouseButton.new()
+					shiftClick.button_index = BUTTON_LEFT
+					shiftClick.pressed = true
+					shiftClick.shift = true
+					shiftClick.position = shifted[int(parts[3])].rect_size / 2
+					shifted[int(parts[3])].emit_signal("gui_input", shiftClick)
+				else:
+					printerr("SHOTRENDERER: no node ", parts[2], " number ", parts[3], " under ", parts[1])
+			"used":
+				yield(_used(parts[1], int(parts[2])), "completed")
+			"appraise":
+				yield(_appraise(), "completed")
 			"pressfind":
 				var found = []
 				var under = _node(parts[1])
@@ -466,6 +504,157 @@ func _newGame():
 		CurrentGame.setShipNameByTransponder(other[1], other[2])
 	CurrentGame.markStateAsValid()
 	CurrentGame.saveToFile()
+
+# --- Used ships and what selling them pays ---
+
+# The used step: a used ship of `model` made as the Dealer makes one from the seed `sd` (USED_BUILD_SEED), with the
+# model's age in the Dealer's pool (CurrentGame.usedShipsPool, its first entry for the model), set up out of sight as a
+# Dealer entry sets up its ship (SystemBuyUI.gd addShip), and left until its systems have aged it (USED_STEADY). It
+# prints what the Dealer would ask for it at setup (its entry's price), once aged from the list of systems made at setup
+# (which a Dealer entry's ship never refreshes), and once aged from a refreshed list. Then it joins the fleet as a
+# salvaged ship does (CurrentGame.addShip), its config through JSON as a save and a load put it (CurrentGame.gd
+# saveToFile, loadFromFile), and the station is built again from that state, as on coming back from a dive; nothing is
+# saved (the station doesn't save on arrival).
+func _used(model, sd):
+	yield(get_tree(), "idle_frame")
+	var age = null
+	for k in CurrentGame.usedShipsPool:
+		if k.name == model:
+			age = k.age
+			break
+	if age == null:
+		printerr("SHOTRENDERER: no ", model, " in the Dealer's used ships")
+		return
+	var ship
+	var builds = Shipyard.getBuildsFor(model)
+	if builds:
+		var rnd = CurrentGame.srai(sd + USED_BUILD_SEED, 1)
+		var cfg = builds[rnd[0] % builds.size()].duplicate(true)
+		ship = Shipyard.createShipByConfig({"config": cfg, "model": model, "faction": PICTURE_FACTION}, true, age, sd)
+		ship.damageLimit = USED_DAMAGE_LIMIT
+	else:
+		ship = Shipyard.createShipByName(model, PICTURE_FACTION, true, age, sd)
+	if ship == null:
+		printerr("SHOTRENDERER: no ship model ", model)
+		return
+	var viewport = _hiddenViewport()
+	ship.dummy = true
+	ship.setReactorState(false)
+	viewport.add_child(ship)
+	ship.preheat = false
+	ship.cutscene = true
+	if not yield(_setUp(ship), "completed"):
+		printerr("SHOTRENDERER: used ", model, " never got set up")
+		_unstage(viewport)
+		return
+	var atSetup = ship.getShipValue()
+	var damage = to_json(ship.shipConfig.get("damage", {}))
+	var steady = 0.0
+	while steady < USED_STEADY:
+		yield(get_tree().create_timer(POLL), "timeout")
+		var now = to_json(ship.shipConfig.get("damage", {}))
+		steady = steady + POLL if now == damage else 0.0
+		damage = now
+	var cached = ship.getShipValue()
+	ship.fillInSystems()
+	print("SHOTRENDERER used %s %s, %.1f years: the Dealer asks %.1f at setup, %.1f once aged (systems listed at setup), %.1f once aged (refreshed)" % [
+			model, ship.transponder, ship.getAgeYears(), atSetup, cached, ship.getShipValue()])
+	if not CurrentGame.addShip(ship):
+		printerr("SHOTRENDERER: used ", model, " ", ship.transponder, " didn't join the fleet")
+		_unstage(viewport)
+		return
+	var garage = CurrentGame.state.garage
+	garage[garage.size() - 1] = parse_json(to_json(garage[garage.size() - 1]))
+	_unstage(viewport)
+	var before = _scene().get_instance_id()
+	Loader.go(Loader.prepare(ENCELADUS))
+	while not _scene() or _scene().get_instance_id() == before or _scene().filename != ENCELADUS:
+		yield(get_tree().create_timer(POLL), "timeout")
+
+# The appraise step, with the Fleet screen open: for each of its entries but the current ship's, what Sell pays
+# (Dealer.gd sell: the entry's ship's value times the markdown; the entry's own figure too), and what the ship is worth:
+# a copy of its config set up out of sight, left APPRAISE_SETTLE seconds, its systems listed again. Then each system's
+# status in both lists, and its worst damage (current over capacity) from the copy's, marked where they differ. The
+# entry's ship is only read: its list of systems is the one Sell prices it by.
+func _appraise():
+	yield(get_tree(), "idle_frame")
+	var entries = []
+	_fleetEntries(_scene(), entries)
+	if entries.empty():
+		printerr("SHOTRENDERER: no Fleet entries to appraise")
+		return
+	for entry in entries:
+		var ship = entry.ship
+		if entry.current or not is_instance_valid(ship) or not ship.setup:
+			continue
+		var pays = ship.getShipValue() * CurrentGame.shipSellMarkdown
+		var shown = entry.sellPrice.text if "sellPrice" in entry and entry.sellPrice else "?"
+		var listed = ship.getSystems()
+		var copy = Shipyard.createShipByConfig(ship.fullConfig.duplicate(true), false)
+		var viewport = _hiddenViewport()
+		copy.dummy = true
+		copy.setReactorState(false)
+		viewport.add_child(copy)
+		copy.preheat = false
+		copy.cutscene = true
+		if not yield(_setUp(copy), "completed"):
+			printerr("SHOTRENDERER: the copy of ", ship.transponder, " never got set up")
+			_unstage(viewport)
+			continue
+		yield(get_tree().create_timer(APPRAISE_SETTLE), "timeout")
+		copy.fillInSystems()
+		var worth = copy.getShipValue() * CurrentGame.shipSellMarkdown
+		var actual = copy.getSystems()
+		print("SHOTRENDERER appraised %s %s: Sell pays %.1f (shown %s), worth %.1f, short by %.1f" % [ship.transponder,
+				ship.model, pays, shown, worth, worth - pays])
+		var names = listed.keys()
+		for n in actual.keys():
+			if not n in names:
+				names.append(n)
+		names.sort()
+		for n in names:
+			var a = listed.get(n)
+			var b = actual.get(n)
+			var differs = a == null or b == null or abs(a.status - b.status) > APPRAISE_TOLERANCE
+			print("SHOTRENDERER   %s %s: listed %s, actual %s, worst damage %s%s" % [n, (b if b else a).name,
+					"%.1f" % a.status if a else "missing", "%.1f" % b.status if b else "missing", _worstDamage(b),
+					"  DIFFERS" if differs else ""])
+		_unstage(viewport)
+
+# The Fleet screen's entries under `node` (enceladus/SystemBuyUI.gd, owned), in the screen's order.
+func _fleetEntries(node, out):
+	for child in node.get_children():
+		if "owned" in child and "current" in child and "ship" in child and child.owned:
+			out.append(child)
+		_fleetEntries(child, out)
+
+# A system's worst damage, as a share of its capacity, from its list entry's damage (current over max), or "-".
+func _worstDamage(system):
+	if system == null or system.get("damage", []).empty():
+		return "-"
+	var worst = 0.0
+	for d in system.damage:
+		if d.max > 0:
+			worst = max(worst, d.current / d.max)
+	return "%.3f" % worst
+
+# A viewport of its own world, never drawn, for a ship set up out of sight.
+func _hiddenViewport():
+	var viewport = Viewport.new()
+	viewport.own_world = true
+	viewport.size = Vector2(2, 2)
+	viewport.render_target_update_mode = Viewport.UPDATE_DISABLED
+	add_child(viewport)
+	return viewport
+
+# Whether `ship` got set up within PICTURE_SETUP_LIMIT seconds.
+func _setUp(ship):
+	yield(get_tree(), "idle_frame")
+	var waited = 0.0
+	while not ship.setup and waited < PICTURE_SETUP_LIMIT:
+		yield(get_tree().create_timer(POLL), "timeout")
+		waited += POLL
+	return ship.setup
 
 # --- The transponder scenario ---
 

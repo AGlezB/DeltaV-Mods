@@ -250,6 +250,23 @@
 			'shot|fleet|560,470,1020,275'
 		)
 	}
+	# A used K37 TNTRL made and aged as the Dealer makes its used ships, then stored as a salvaged ship joins the fleet
+	# (ShotRenderer's used step: the same ship from the same seed in both runs), and Sell pressed on it: without the mod,
+	# the game's confirmation; with it, the mod's dialog, and the note at the bottom of the Fleet screen. Then the
+	# settings: Esc closes the dialog, and Shift+Click on that Sell button opens them. Its Sell button is the fifth: the
+	# ship flown and the fixture's three other ships come first.
+	ShipSaleAdvisor = @{
+		Steps = @(
+			'load', 'wait|10'
+			'used|TRTL|11', 'wait|3'
+			'press|{menu}/OwnedShips', 'wait|6'
+			'pressfind|{screens}/Owned|Sell|4', 'wait|8'
+			'shot|sell|470,290,1130,600'
+			'with:action|ui_cancel', 'wait|1'
+			'with:shiftclickfind|{screens}/Owned|Sell|4', 'wait|3'
+			'with:shot|settings|545,15,1055,320'
+		)
+	}
 	# The OMS Pilot tab (J opens the OMS) listing one object of each kind that carries a code, around the ship in a dive
 	# (ShotRenderer's transponders step): a ship with a THI Cargo Container, an NT Mining Companion and a B8 Claim Beacon
 	# out as drones, a lifepod floating alone, a destroyed ship's lifepod, an ATLAS's AI core, and three frozen bodies.

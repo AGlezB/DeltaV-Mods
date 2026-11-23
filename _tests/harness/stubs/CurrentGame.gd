@@ -4,7 +4,7 @@ extends Node
 # Hud.gd, PriceLabel.gd, HireableCrew.gd, CrewBio.gd, SystemBuyUI.gd, SystemShipUpgradeUI.gd, Dealer.gd, Game.gd,
 # Enceladus.gd, TransponderOnIntro.gd, story/body.gd, menu/NewGamePlus.gd, InGameMoney.gd, MineralMarket.gd,
 # MineralSellSlider.gd, MineralPriceChart.gd, ServiceUI.gd, CrewCheapHireNotifier, GeologyByMass, ShipCopyPaste,
-# DiveSkipTransit, DealerNotifier, TransponderAltCodes, CombatSimulator and MarketAdvisor reach (with TheRing.gd and
+# DiveSkipTransit, DealerNotifier, TransponderAltCodes, CombatSimulator, MarketAdvisor and ShipSaleAdvisor reach (with TheRing.gd and
 # PauseLayer.gd, which connect inGameTimePassed and pauseGame), and the game scripts the bench runs (_bench\:
 # asteroid.gd isInSimulatiorRange, the PDWs' weapons ageToDamageWithSeed).
 
@@ -74,6 +74,14 @@ var playtime = {} # what addPlaytime() added, by name
 var usedShipsPool = [] # the models the dealer draws its used ships from, as the game's; the dealer suite fills it
 var forSale = [] # the ships getShipsAvailableForSale() returns; the dealer suite fills it
 var ownedShips = [] # the ships getOwnedShips() returns (Fleet's list); the dealer suite fills it
+# What ShipSaleAdvisor's Prepare reaches: the stored ships' instances by hash (the sale suite fills it) and the lock
+# around them, the crew's repair limit (in %) and mechanics, and what giveXp() was given: [talent, experience,
+# inactive, role].
+var ownedShipInstances = {}
+var shipMutex = Mutex.new()
+var repairLimit = 99.5
+var mechanics = 0
+var xp = []
 # The transponder suite's own CurrentGame (the game's script, with TransponderAltCodes' extension): this stub hands it
 # menu/NewGamePlus.gd's transponder calls, and the members this stub doesn't have (_get, _set).
 var game = null
@@ -171,11 +179,20 @@ func adrenaline(amount):
 func getPlayerShip():
 	return playerShip
 
-# As the game's, without the money hash, the achievements and the insurance, and with moneyChanged at once (the game's
-# comes a frame later, from its _process).
-func changeMoney(by, _insurance = false):
+# As the game's (the insurance first, where asked, for a cost), without the money hash and the achievements, and with
+# moneyChanged at once (the game's comes a frame later, from its _process).
+func changeMoney(by, insurance = false):
+	var asked = by
+	if insurance and by < 0:
+		var held = getInsurance()
+		if held >= -by:
+			state.insurance = held + by
+			by = 0
+		else:
+			by += held
+			state.insurance = 0
 	money += by
-	if by != 0:
+	if asked != 0:
 		emit_signal("moneyOrInsuranceChanged")
 	emit_signal("moneyChanged", money)
 
@@ -302,6 +319,17 @@ func setStory(story, to, _onlyRise = true):
 
 func getInsurance():
 	return state.get("insurance", 0)
+func getRepairLimit(_includeInactive = false):
+	return repairLimit
+
+func getCrewNumberWithRole(_role, _includeInactive = false):
+	return mechanics
+
+func giveXp(talent, experience, includeInactive = false, role = ""):
+	xp.append([talent, experience, includeInactive, role])
+
+func removeOwnedShipByHash(key):
+	ownedShipInstances.erase(key)
 
 # As the game's for a crew with nobody on leave: everyone hired is active.
 func getCrewNumbers():

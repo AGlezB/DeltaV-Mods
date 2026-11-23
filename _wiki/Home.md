@@ -57,6 +57,8 @@ These pages explain what each mod does, for players. The code, and the notes for
 - [ShipCopyPaste](ShipCopyPaste): makes the ship you fly like another ship of the same model, in the parts you choose.
 - [ShipHighlightTypeAndPrice](ShipHighlightTypeAndPrice): makes each ship's type stand out in the Dealer and Fleet
   lists.
+- [ShipSaleAdvisor](ShipSaleAdvisor): when you sell a ship, tells you if getting it ready first would bring more cash,
+  and gets it ready for you.
 - [ShipSortByTypeAndPrice](ShipSortByTypeAndPrice): sorts the Dealer's ships by type, then by price.
 - [TransponderAltCodes](TransponderAltCodes): a ship's transponder code tells you its model, and the codes of its
   drones and other things tell you whose they are.

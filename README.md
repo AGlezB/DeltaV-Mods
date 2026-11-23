@@ -31,6 +31,7 @@ in its folder, has the details for modders.
 | [ServiceNotifier](../../wiki/ServiceNotifier) | Marks the Services entry of the Enceladus Prime menu when a service you pick can be bought again: one with a cooldown, such as The Twins or Jameson's Insurance, or a compensation to a faction. You pick the services with Shift+Click on Services. |
 | [ShipCopyPaste](../../wiki/ShipCopyPaste) | On the Fleet screen, copies another ship's setup onto the ship you fly when both are the same model, in the parts you choose: its settings (the tuning and the mineral targeting), its crew aboard, and its equipment, bought at the Equipment screen's prices. |
 | [ShipHighlightTypeAndPrice](../../wiki/ShipHighlightTypeAndPrice) | Makes the type of every ship in the Dealer and Fleet lists stand out, and hides the ship image behind each row. |
+| [ShipSaleAdvisor](../../wiki/ShipSaleAdvisor) | On the Fleet screen, a ship's sell button offers to prepare the ship first when that brings more cash: its equipment taken down to the cheapest the Equipment screen offers, and fixed click by click where a fix adds more than it costs. Shift+Click on the sell button opens its settings. |
 | [ShipSortByTypeAndPrice](../../wiki/ShipSortByTypeAndPrice) | Sorts the ship list on the Dealer screen by type, then by price (cheapest first). |
 | [TransponderAltCodes](../../wiki/TransponderAltCodes) | New transponder codes say what carries them: a ship's series and model, and whether it is a ship's lifepod, its drones, an AI core or frozen crew. |
 

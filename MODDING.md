@@ -127,6 +127,10 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
      screen's frame and the Tuning screen's description window).
    - ShipCopyPaste: `Code.gd` → `enceladus/SystemBuyUI.gd` (the Fleet screen's entries; it prices through the
      Equipment screen's items).
+   - ShipSaleAdvisor: `Code.gd` → `enceladus/SystemBuyUI.gd` (the Fleet screen's entries: Sell's offer to prepare the
+     ship first and its dialog, priced through the Equipment screen's items and the Repairs screen's rules; Shift+Click
+     on Sell, or its gamepad twin, opening its settings screen among the station's screens, which copies the Fleet
+     screen's frame and the Tuning screen's description window; and a note at the bottom of the Fleet screen).
    - TransponderAltCodes: `Code.gd` → `CurrentGame.gd` (the autoload, where the game makes transponder codes, with a
      `node_added` handler, as the observers below have, for the objects whose code is built from a ship's);
      `NewGamePlusScreen.gd` → `menu/NewGamePlus.gd` (the New Game Options screen).
@@ -182,9 +186,10 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
   path the chain is game ← CombatSimulator ← DiveSkipTransit. Both override `_ready` without calling the parent's;
   CombatSimulator adds `_input` (the game's script has none), DiveSkipTransit overrides `_on_DiveTarget_launch`. Their
   member names must stay distinct.
-- CombatSimulator, CrewCheapHireNotifier, DealerNotifier, DiveSkipTransit, MarketAdvisor and ServiceNotifier each ship
-  the same `Badge.gd`, loaded from its own folder (`res://<ModName>/Badge.gd`), so the copies never clash: keep them
-  identical (see *Conventions*, the gamepad twin).
+- CombatSimulator, CrewCheapHireNotifier, DealerNotifier, DiveSkipTransit, MarketAdvisor, ServiceNotifier and
+  ShipSaleAdvisor each ship the same `Badge.gd`, loaded from its own folder (`res://<ModName>/Badge.gd`), so the copies
+  never clash: keep them identical (see *Conventions*, the gamepad twin). ShipSaleAdvisor uses its gamepad twin and
+  small font, not its badge.
 - CombatSimulator (`CurrentGame.gd`), CrewPerfectSort (`EvaCrewSorted.gd`) and TransponderAltCodes (`Code.gd`) all
   extend `CurrentGame.gd`, the autoload, from `_init`: by path the chain is game ← CombatSimulator ← CrewPerfectSort ←
   TransponderAltCodes. They override different functions (CombatSimulator `giveXp`, `setStory`, `recordEncounter`,
@@ -205,9 +210,15 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
   (DiveSkipTransit `fastTravelTo`, GeologyByMass `isValidMineralTarget`). Their member names must stay distinct. Loaded
   together in `geology` (both orders).
 - ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice find the ship entries by `node.get_script().resource_path`;
-  ShipCopyPaste extends that script, and `take_over_path` keeps the path, so they still find them (loaded together in
-  `fleet`). DealerNotifier reads the stock from the Dealer screen's entries in any order and hangs its badge in each
-  entry's name, so it works with all three.
+  ShipCopyPaste and ShipSaleAdvisor extend that script, and `take_over_path` keeps the path, so they still find them
+  (loaded together in `fleet`). DealerNotifier reads the stock from the Dealer screen's entries in any order and hangs
+  its badge in each entry's name, so it works with all three.
+- ShipCopyPaste (`Code.gd`) and ShipSaleAdvisor (`Code.gd`) both extend `enceladus/SystemBuyUI.gd`, and change only the
+  Fleet screen's entries (`owned`): by path the chain is game ← ShipCopyPaste ← ShipSaleAdvisor. Both override `_ready`
+  and `_input` (the game's script has no `_input`) without calling the parent's; ShipCopyPaste overrides
+  `checkCurrentAndOwned`, calling the parent's first, which ShipSaleAdvisor calls once Sell's offer is worked out;
+  ShipSaleAdvisor overrides `_on_Sell_pressed`, falling through to the parent's, which ShipCopyPaste leaves alone. Their
+  member names must stay distinct. Loaded together in `fleet` and `sale` (both orders).
 
 ## Packaging and releasing
 
@@ -429,9 +440,10 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
   - A script of the mod's own that isn't an extension is named for what it is: CombatSimulator's `CombatLayer.gd` (its
     arena, a layer the station's extension adds), `CombatMap.gd` (the arena's map, built on `TheRing.gd` with
     `extends` but never installed: a subclass made with `new()`, not a replacement of the game's script) and
-    `ShipList.gd` (its dialog's ship list, a tab of `SettingsUI.gd`); MarketAdvisor's `Advisor.gd` (the advice: static
-    functions of what the player can see, which touch neither the game nor the scene); `Badge.gd` (the badges, see
-    *Shift badge* in the Glossary), the same file in every mod that has one.
+    `ShipList.gd` (its dialog's ship list, a tab of `SettingsUI.gd`); MarketAdvisor's and ShipSaleAdvisor's
+    `Advisor.gd` (the advice: static functions of what the player can see, which touch neither the game nor the scene);
+    ShipSaleAdvisor's `FleetNote.gd` (its note at the bottom of the Fleet screen); `Badge.gd` (the badges, see *Shift
+    badge* in the Glossary), the same file in every mod that has one.
   - `SettingsUI.gd` is the mod's settings UI, when it has one.
   - `Settings.gd`, only in a mod with a settings UI, is the settings model `Code.gd` and `SettingsUI.gd` share, built
     like the game's own `Settings` autoload (`res://Settings.gd`: a `cfg` dict of defaults, a `ConfigFile` in
@@ -476,7 +488,7 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
       change stores (`saveToState()`) and emits `settingsChanged`; `job` is only for a per-job setting.
       `toShown(key, value)` / `fromShown(key, shown)`.
     - `loadFromState()` / `saveToState()`: settings kept per save game (CrewCheapHireNotifier's, CombatSimulator's,
-      DealerNotifier's, MarketAdvisor's, ServiceNotifier's) live in `CurrentGame.state.ui` (the game's per-save UI
+      DealerNotifier's, MarketAdvisor's, ServiceNotifier's, ShipSaleAdvisor's) live in `CurrentGame.state.ui` (the game's per-save UI
       store, `setUiValue` / `getUiValue`, written with the save as JSON, so numbers come back as floats) under the
       mod's id from `Mod.manifest`, so other authors' mods can't collide; the entry holds `formatVersion`, `modVersion`
       and one value per setting (a copy of the dictionary for a per-job setting). MarketAdvisor's also holds the tonnes
@@ -498,8 +510,8 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
     two scripts share, in its `Settings.gd`), in the mod's
     `i18n/en.po`. It is set on every `tuningChanged`, which a row emits when it changes and when it gets the focus
     (`Tuning.gd` `tuningChanged` does the same with `<key>_DESC`). Every setting has one, written as the game's
-    `TUNE_*_DESC` are: what it does, a blank line, then the details. CrewCheapHireNotifier, DiveSkipTransit and
-    MarketAdvisor have it, and so has CombatSimulator's dialog, on each of its tabs. The OMS tabs of DroneAltPriorities
+    `TUNE_*_DESC` are: what it does, a blank line, then the details. CrewCheapHireNotifier, DiveSkipTransit,
+    MarketAdvisor and ShipSaleAdvisor have it, and so has CombatSimulator's dialog, on each of its tabs. The OMS tabs of DroneAltPriorities
     and GeologyByMass have no room for the window: each row's description is its tooltip, which the game's tooltip
     node shows on hover and on focus. DealerNotifier is the exception: its switches (New and Used, then one
     per ship model) are explained by its README and its wiki page, not on the screen, at the author's choice. Its
@@ -552,7 +564,9 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
   `<MOD>_SETTINGS_TOOLTIP_PAD` with a gamepad (`setShiftTooltips`), shown by the game's own tooltip node
   (`attachTooltip`): on hover, and with a gamepad, which shows no hover, while the control has the focus (its
   `focusOwner`). The entry keeps no tooltip of its own. `Badge.gd` is the same file in each mod that has it: a change to
-  one is copied to all.
+  one is copied to all. The one exception to the badge is ShipSaleAdvisor's Shift+Click on Sell, which every entry of
+  the Fleet screen has: one note at the bottom of the screen says it for all of them instead, its text following the
+  control scheme as a badge's does (`FleetNote.gd`).
 - A mod's screen works with the D-pad and the gamepad's buttons as the game's do: the D-pad moves between its controls
   (focus neighbours where the layout alone doesn't lead there), B and Start close it (`ui_cancel`, `pause`), LB and RB
   switch its tabs, and the right stick scrolls a text that doesn't fit (`ui_scroll_up2` / `ui_scroll_down2`, at the

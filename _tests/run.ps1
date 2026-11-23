@@ -61,6 +61,9 @@
 	  MineralMarket.gd, and rows of the game's ServiceUI.gd.
 	- services: ServiceNotifier. Builds the station as market does, without the market, with rows of the game's
 	  ServiceUI.gd and ServiceUIFactionChange.gd.
+	- sale: ShipCopyPaste + ShipSaleAdvisor (both extend the Fleet entries' script). Builds the Fleet screen's entries as
+	  fleet does, among the station's screens (the game's HidingMarginContainer.gd), with stored ships whose systems
+	  can be damaged and fixed.
 
 .EXAMPLE
 	pwsh _tests\run.ps1
@@ -76,8 +79,8 @@
 #>
 [CmdletBinding()]
 param(
-	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones', 'market', 'services', 'hold')]
-	[string[]] $Suite = @('units', 'still', 'moving', 'hold', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones', 'market', 'services'),
+	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones', 'market', 'services', 'sale', 'hold')]
+	[string[]] $Suite = @('units', 'still', 'moving', 'hold', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones', 'market', 'services', 'sale'),
 	# Mod folders to load for every selected suite, in load order (the game's order: by path); @() = none.
 	# Default: each suite's own mods (see the description).
 	[string[]] $Mods,
@@ -1577,6 +1580,7 @@ $suiteMods = @{
 	drones = @('DroneAltPriorities', 'GeologyByMass')
 	market = @('MarketAdvisor')
 	services = @('ServiceNotifier')
+	sale = @('ShipCopyPaste', 'ShipSaleAdvisor')
 }
 $given = @{}
 foreach ($z in $ModZip)

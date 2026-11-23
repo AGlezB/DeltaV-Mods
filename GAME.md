@@ -214,7 +214,9 @@ its thrusters and its reactor's turbine burn remass, and in-game time passes.
   (`CurrentGame.gd` `ageToDamageWithSeed` gives it no damage), so the age alone decides. The weekly ships are made at
   most a week old (`createShipInstanceWithCache`, kept for the week); a used one gets a random share of its pool entry's
   age (15 to 200 years; `Shipyard.gd` `createShipByConfig`, `madeTimestamp` never before the model's
-  `startProductionYear`), so it is NEW only in the rare case that falls under a year.
+  `startProductionYear`), so it is NEW only in the rare case that falls under a year. Its systems write their age
+  damage into its config as they enter the tree, ahead of its setup, so the price its entry shows includes it
+  (measured in game 1.93.1), and the damage stays with the ship once bought.
 - Only `Dealer.gd` `doAddShips` asks for it: when the station loads, every in-game hour (`hourPassed`) and when the
   screen opens; a dive doesn't, and nothing signals a change.
 - A ship's transponder is the same from one refresh, visit or save to the next (`getNewTransponder` is seeded), so it
@@ -379,6 +381,27 @@ Each owned ship keeps its own config: equipment, Tuning, mineral targeting, dama
 the others in `state.garage`), and a crew list (`preferredCrew`), which the game writes only when the crew changes
 while that ship is flown (hiring, firing, who dives) and puts aboard when the player switches to it (`CurrentGame.gd`
 `validateEmployment`); a ship without one keeps whoever is aboard.
+
+- **Selling** a stored ship (`GARAGE_SELL`, `Dealer.gd` `sell`) pays its value (`ship-ctrl.gd` `getShipValue`) times
+  `CurrentGame.shipSellMarkdown` (0.9 in game 1.93.1): the price its entry and the confirmation show (`SystemBuyUI.gd`
+  `checkPrice`). Sell is disabled on the current ship and on a ship in maintenance (`canBeSold`). The Equipment screen,
+  by contrast, takes the whole value of the piece it replaces off the new one's price (`Upgrades.gd`
+  `updatePricesAndAvailability`).
+- **The value** is the hull's price (each scene's `hullPrice`) over an age factor, plus each system's value for its
+  condition (see *Repairs*), plus the slots the Equipment screen prices by their items (`Shipyard.gd`
+  `getNumericValueOfConfig`).
+- **Age** counts from the ship's build date (`madeTimestamp`). The age factor is 1 + log₂(1 + (age − 1) / 10), capped
+  at 2: a hull loses half its value by 11 years, and no more after. Inside `ship-ctrl.gd` the build date is read
+  without its getter, which keeps it after the model's `startProductionYear` (Godot 3 calls a getter only from
+  outside the script), so the year an entry shows can be later than the age priced. Besides the hull's value, age
+  decides only the damage a ship gets when the game makes it, the year an entry shows, and the Dealer's NEW ribbon (see
+  *Dealer*).
+- **An entry's ship** is a dummy whose list of systems is made once, at its setup, and never refreshed (`ship-ctrl.gd`
+  `getSystems` refreshes only the player's and AI ships), and Sell prices by that list. A stored ship's damage doesn't
+  change while it is stored, and its parts work out their condition from the saved damage before the list is made
+  (thrusters and weapons queue it in their `_ready`, ahead of the ship's `setupShip`; the reactor and the HUD read it
+  on demand), so the price is right: in game 1.93.1, measured on used ships made and aged as the Dealer makes them
+  (ShotRenderer's `used` and `appraise` steps, `_shots/README.md`).
 
 ## Frozen bodies
 
@@ -725,6 +748,22 @@ maintenance, a time stored in that ship's own config (`maintaineceUntil`, `Curre
 equipment adds to it only when the piece replaced was damaged (`ship-ctrl.gd` `getSlotTime`). A ship in maintenance
 can't dive (`Enceladus.gd` `shipPassesInspection`; the pre-flight inspection offers a hotel stay until it is done) or be
 sold, but the player can switch to another ship of the fleet, while the first one's maintenance runs on.
+
+- **A piece's value** is its `repairReplacementPrice` × (condition / 100)², × 0.8 below 100 % (`ship-ctrl.gd`
+  `getSystemPrice`), and its condition is 100 less its worst damage, as a share of that damage's capacity (each
+  system's `getStatus`). Replace costs that price less the value (`SystemShipRepairUI.gd` `replacementPrice`), so it
+  adds to the ship's value exactly what it costs.
+- **Fix** halves every damage of the piece (`doFixSystem`, `repairStepAmount`): each click takes half of what is left,
+  at the full `repairFixPrice` again, paid from the insurance first (`changeMoney(-price, true)`, see *Insurance*). A
+  click adds the most value when the worst damage is near 2/3 of its capacity. Its hours are `repairFixTime` ×
+  2 / (1 + N), N being the mechanics in the dive crew (`getMechanicMultiplier`): one mechanic leaves them as they are,
+  none doubles them.
+- **Fix is enabled** only while the piece is under the crew's Repair limit (`isFixable`, `getRepairLimit(true)`, see
+  *Crew stats*), none of its damages is past 1.5 times its capacity (`isFubar`, `maxDamageThatCanBeFixed`: then it can
+  only be replaced), and replacing would cost more than one click (`shouldBeFixed`).
+- **Each Fix or Replace** gives the mechanics a quarter of its `repairFixTime` or `repairReplacementTime` as XP
+  (`giveXp`), two Logs entries (`LOG_EVENT_REPAIR`, the second with the piece's name and price) and an achievement
+  (`FIX_PART`, `REPLACE_PART`).
 
 ## Rescue
 

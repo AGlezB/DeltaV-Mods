@@ -1,0 +1,23 @@
+[mod_information]
+
+name="ShipSaleAdvisor"
+id="AGlezB.ShipSaleAdvisor"
+description="Offers to prepare a ship for sale at the Fleet screen when fixing it and taking its equipment down to the cheapest would bring more cash."
+author="AGlezB"
+
+[version]
+
+version_major=1
+version_minor=0
+version_bugfix=0
+
+[tags]
+
+group={
+"type": "string",
+"value": "Fleet"
+}
+
+[manifest_definitions]
+
+manifest_version=2.2

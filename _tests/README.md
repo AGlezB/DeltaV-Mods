@@ -72,7 +72,10 @@ ServiceNotifier: stubs of a row of the Services screen, its insurance row and it
 the game's market code: the prices drawn from a save's seed and moved by the trades in its log (`state.logs`, which
 `logEvent` keeps as the game keeps it where a suite gives the state one), the stored minerals, and the price chart's
 prediction error; and the game's crew levels (`translateLevel`), who is in the dive crew (`isCrewMemberActive`) and
-the one derived stat a mod reads, the geologist's Price prediction accuracy (`deriveStats`).
+the one derived stat a mod reads, the geologist's Price prediction accuracy (`deriveStats`); and, for
+ShipSaleAdvisor, the game's `changeMoney` with the insurance paying first where asked, the stored ships' instances
+(`ownedShipInstances`, `removeOwnedShipByHash`) and their lock (`shipMutex`), a repair limit and a count of mechanics
+a suite sets (`getRepairLimit`, `getCrewNumberWithRole`), and the XP given (`giveXp`, recorded).
 The game's `Shipyard` (which makes the rescue ship, recorded; for the `dealer` suite, the ship models' scenes, aliases
 and default configs (`getDefaultConfigByName`, falling back to the base model's, as the game's), and a
 `createShipByConfig` that records each config, keeps it and its `config` by reference and, as the game's, registers a
@@ -110,11 +113,12 @@ not parsed as arrays. Exit code 0 = every run passed; a script error fails its r
 
 The suites are ported from the claude.ai harness (DVModTestHarness 1.0.0; the original was deleted once ported),
 except `hold`, `boot`, `lidar`, `hud`, `crew`, `geology`, `fleet`, `skip`, `dealer`, `transponder`, `combat`, `drones`,
-`market` and `services`. `units`, `still`, `moving` and `hold` load the two arm mods by default, `dive` loads
+`market`, `services` and `sale`. `units`, `still`, `moving` and `hold` load the two arm mods by default, `dive` loads
 DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos, `lidar` loads LidarLouderPing, `hud` loads HudHideLabels, `crew` loads CrewCheapHireNotifier,
 `geology` loads GeologyByMass, `fleet` loads ShipCopyPaste, `skip` loads DiveSkipTransit, `dealer` loads DealerNotifier,
 `transponder` loads TransponderAltCodes, `combat` loads CombatSimulator, `drones` loads DroneAltPriorities and
-GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
+GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier, `sale` loads ShipCopyPaste and
+ShipSaleAdvisor.
 
 - `units` (`suites/units.gd`): the claude.ai unit tests (its `arm/main.gd`) nearly verbatim, on synthetic arms around
   the game's `DockingArm.gd`. TargetSelection: area geometry on turned, scaled and offset arms, reach, the strip, the
@@ -799,7 +803,41 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   gets the focus with keyboard and mouse (`suite.gd` `shiftBadgeTipChecks`; the hover is checked in `crew`). The control
   checks (the entry keeps its key and gets no tooltip; Shift+Click and its gamepad twin open no settings) run on the
   game's own scripts.
-
+- `sale` (`suites/sale.gd`), with ShipCopyPaste loaded too, since both extend the Fleet entries' script: first the
+  advice alone (`Advisor.gd` from plain data), on a worked K37 derelict (every damaged system at 65 %, a repair limit
+  of 71 %, so one Fix click each): the clicks that add more than they cost, the thrusters' never, even paid by the
+  insurance; the slots taken down, in the data's order; the insurance paying first, then the cash; the maintenance
+  time, refunds and gain; the same with full insurance, fewer clicks with none (a click's cash gain below the minimum),
+  only what 2,000 E$ cover, every step with a minimum gain of 0, nothing with a high one; a piece at 0 % fixed in one
+  run of clicks, a run ending at the click with the most per E$, two clicks taken together where the first alone loses
+  money; a click adding less than its price dropped even when the insurance pays, one adding more taken; an undamaged
+  hardpoint piece, a damaged piece worth less than the cheapest item. Then Fleet entries built from the stub
+  `SystemBuyUI.tscn` as `fleet` builds them, under a Fleet screen stub (`harness/sale_fleet.gd`: `fleet_screen.gd`'s,
+  its list in a column and hidden on `hidefoka` as `Dealer.gd`) among the station's screens (the game's
+  `HidingMarginContainer.gd`), beside the Equipment screen stub with that derelict's items; the ships are
+  `harness/sale_ship.gd` (a fleet ship whose systems come from its config, with the Repairs screen's figures, damage
+  entries and the game's price formulas, set up a frame after entering the tree as the game's ships are, so what waits
+  for a ship's setup waits here too), also the trial ship's scene in the `Shipyard` stub, stored in the
+  `CurrentGame` stub's state (its `changeMoney` takes the insurance first where asked, as the game's). Checks: the
+  save's minimum gain loaded with the Fleet screen, a change stored; the note, once, at the bottom of the Fleet
+  screen, in the texts of `i18n/en.po`, following the control scheme. Sell disabled while the offer is worked out; the
+  dialog instead of the game's confirmation; the trial ship gone; the sale now, the sale after (the trial ship's) and
+  the gain; the line at the top, the rows (money signed, coloured as the Fleet screen's `colorPlus` and
+  `colorMinus`, none uncoloured) and the warning; Prepare, Sell and Cancel in that order, Cancel focused; the layout
+  in a 1920x1080 window (the line at the top on two lines, the warning on one, each value a column gap after its name,
+  the rows centred, the contents narrower than before they followed their texts, the dialog centred); the D-pad along
+  the buttons, stopping at the ends; B, Esc and Cancel closing it alone (the Fleet screen sees neither), Sell focused
+  again; closing with the Fleet screen; Prepare on an offer that changed meanwhile showing the new one, applying
+  nothing. The settings: Shift+Click on Sell opening the screen in the Fleet screen's place, its row and the
+  highlighted row's description, a change stored; B and Esc bringing the Fleet screen back with that Sell button
+  highlighted; `PAD_BUTTON` alone doing nothing, the twin on the highlighted Sell opening the settings, nothing sold or
+  offered; a disabled Sell opening nothing. Prepare: the slots taken down and those kept, a click halving the damage,
+  a slot taken down clearing its pieces', the maintenance, the refunds paid and the clicks paid by the insurance, the
+  logs and the mechanics' XP, the old instance dropped and the Fleet screen listing its ships again; the prepared ship
+  in maintenance with Sell disabled, and after it the game's confirmation. The dialog's Sell selling the ship as it is;
+  too little cash; below the minimum gain, the game's confirmation; an offer with no maintenance and no warning; the
+  entries' script keeping the game's path. The control checks (Sell shows the game's confirmation; no note) run on
+  the game's own script.
 - `_tests\harness\rig.gd` builds the arm's node tree as the game nests it, with the values in
   `_tests\harness\vp_data.gd`; each cites its scene file and line, so re-check them after a game update. The ship
   is a stub moved by hand (it takes the arm's impulses and torque; inertia from the hull); the rotors don't collide.
@@ -820,14 +858,15 @@ GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier.
   (3 control checks with `-Mods @()`), `crew` 167 (171 with CrewPerfectSort too, in both load orders; the same 167 with
   DealerNotifier too; 3 control checks with `-Mods @()`), `geology` 95 (the same with DiveSkipTransit too, in both load
   orders; 5 control checks with `-Mods @()`), `fleet` 95 (the same with ShipHighlightTypeAndPrice and
-  ShipSortByTypeAndPrice too; 3 control checks with `-Mods @()`), `skip` 135 (138 with CrewCheapHireNotifier too, the
+  ShipSortByTypeAndPrice too, and with ShipSaleAdvisor too, in both load orders; 3 control checks with `-Mods @()`), `skip` 135 (138 with CrewCheapHireNotifier too, the
   same with DealerNotifier as well; the same 135 with CombatSimulator too; 13 control checks with `-Mods @()`), `dealer`
   130 (133 with CrewCheapHireNotifier and DiveSkipTransit too, in every load order, 136 with MarketAdvisor and
   ServiceNotifier as well; 136 with ShipCopyPaste, ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too; 8 with the
   two ship-list mods alone; 2 control checks with `-Mods @()`), `transponder` 48 (3 control checks with `-Mods @()`; the
   same 48 with CombatSimulator too), `combat` 151 (the same with TransponderAltCodes too; 8 control checks with
   `-Mods @()`), `drones` 69 (the same in both load orders and with DroneAltPriorities alone; 3 control checks with
-  `-Mods @()`), `market` 121 (4 control checks with `-Mods @()`), `services` 52 (3 control checks with `-Mods @()`), all
+  `-Mods @()`), `market` 121 (4 control checks with `-Mods @()`), `services` 52 (3 control checks with `-Mods @()`), `sale` 75
+  with ShipCopyPaste (in both load orders; 2 control checks with `-Mods ShipCopyPaste` and with `-Mods @()`), all
   passing; `units` gives 11 control checks with `-Mods @()`; `-Matrix` gives 16 of 16 in every combination.
   Feeding, a chunk beside the hull is in after 3.0–3.7 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.5.4 (the same pull as 1.5.0) takes 4.2–4.8 s

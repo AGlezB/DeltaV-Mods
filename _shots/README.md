@@ -68,9 +68,16 @@ ShipSortByTypeAndPrice); the arm mods have their diagrams.
   `advanceTimeBySeconds`, so that the Dealer's ship of the day comes up for sale) and `shot`. `pressfind` presses a
   button found by name, without the mouse (`timepressfind` too, and prints how long the press took, its handlers
   included, `SHOTRENDERER timed`: a frame that long is a stall the player sees, as CombatSimulator's Start was
-  measured), and `action` presses an input action as its key does (`ui_cancel` is Esc, `ui_down` the down arrow). For a
-  dive: `dive` (from the station into the ring scene, without the Dive entry point screen, which saves, then until the
-  arrival cutscene is over) and `transponders` (see *The transponder scenario*); there `action|jury_rig` is J, the OMS.
+  measured), `shiftclickfind` Shift+Clicks a control found the same way (ShipSaleAdvisor's settings, from a Sell
+  button), and `action` presses an input action as its key does (`ui_cancel` is Esc, `ui_down` the down arrow). `used`
+  adds to the fleet a used ship made and aged as the Dealer makes its used ships, from a seed, so both runs get the same
+  damaged ship, stored as a salvaged ship joins the fleet, then builds the station again from that state without saving
+  (ShipSaleAdvisor's pictures); with the Fleet screen open, `appraise` prints, for each stored ship, what Sell pays and
+  what the ship is worth, system by system (GAME.md *Fleet*). Make a state with the game's own ways, as `used` does,
+  rather than by writing values into it: a value written into a ship's config after the station has built that ship
+  makes a state the game never has. For a dive: `dive` (from the station into the ring scene, without the Dive entry
+  point screen, which saves, then until the arrival cutscene is over) and `transponders` (see *The transponder
+  scenario*); there `action|jury_rig` is J, the OMS.
   A path starting with `ship:` starts at the player's ship, and `ship:.` is the ship itself. `ship` and `weapon` draw a
   ship, or a weapon mounted on one, alone (see *Ship and weapon pictures*). It prints `SHOTRENDERER done` after the last
   step: a run that ends without it fails.

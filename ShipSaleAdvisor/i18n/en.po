@@ -1,0 +1,76 @@
+# ShipSaleAdvisor: its texts, in English. Godot shows English for any language without its own file (its fallback
+# locale), so another language only needs a copy of this file with its Language and msgstr lines translated, loaded in
+# ModMain.gd. Keep each %s: the code fills them in.
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+# The note at the bottom of the Fleet screen, with keyboard and mouse; the first %s is the key to hold while clicking a
+# Sell button, the second the mod's name.
+msgid "SHIPSALEADVISOR_NOTE"
+msgstr "%s+Click any enabled sell button to open %s settings"
+
+# The same while the game is played with a gamepad; the first %s is the button to hold, the second the one to press on
+# the highlighted Sell button, the third the mod's name.
+msgid "SHIPSALEADVISOR_NOTE_PAD"
+msgstr "Hold %s and press %s on any enabled sell button to open %s settings"
+
+# The dialog the Sell button shows instead of the game's confirmation, when preparing the ship first brings more cash:
+# the line at its top, its rows, the warning under them (only when preparing puts the ship in maintenance) and its
+# buttons. The game's own Cancel button text is used for Cancel.
+msgid "SHIPSALEADVISOR_INTRO"
+msgstr "You'll make more from the sale of the ship if you prepare it first."
+
+msgid "SHIPSALEADVISOR_SALE_NOW"
+msgstr "Sale price now"
+
+msgid "SHIPSALEADVISOR_INSURANCE_COST"
+msgstr "Insurance cost"
+
+msgid "SHIPSALEADVISOR_CASH_COST"
+msgstr "Cash cost"
+
+msgid "SHIPSALEADVISOR_TIME"
+msgstr "Maintenance time"
+
+msgid "SHIPSALEADVISOR_GAIN"
+msgstr "Cash gain from the prepared sale"
+
+msgid "SHIPSALEADVISOR_WARNING"
+msgstr "WARNING: Selling the ship will have to wait until maintenance is completed."
+
+msgid "SHIPSALEADVISOR_PREPARE"
+msgstr "Prepare"
+
+msgid "SHIPSALEADVISOR_SELL"
+msgstr "Sell"
+
+# The dialog's money, written as the Fleet screen writes a trade-in: money coming in, money going out, and none; %s is
+# the amount.
+msgid "SHIPSALEADVISOR_PLUS"
+msgstr "+%s E$"
+
+msgid "SHIPSALEADVISOR_MINUS"
+msgstr "-%s E$"
+
+msgid "SHIPSALEADVISOR_ZERO"
+msgstr "%s E$"
+
+# The settings screen. Each setting has its name and, under the same key followed by SettingsUI.gd's
+# DESCRIPTION_SUFFIX, the description the screen shows while it is selected, written as the game's Tuning descriptions
+# are.
+msgid "SHIPSALEADVISOR_GROUP_SALE"
+msgstr "Selling a ship"
+
+msgid "SHIPSALEADVISOR_MIN_GAIN"
+msgstr "Minimum gain"
+
+msgid "SHIPSALEADVISOR_MIN_GAIN_DESC"
+msgstr ""
+"The least cash each step of preparing a ship for sale must bring: one Fix click at the Repairs screen, or a part "
+"taken down to the cheapest one the Equipment screen offers. The Sell button offers to prepare the ship only when the "
+"whole preparation brings at least as much.\n"
+"\n"
+"A Fix click must also add more to the ship's price than it costs, even when your insurance pays for it. Each step "
+"can add maintenance time, and a ship in maintenance can't be sold."
