@@ -29,4 +29,4 @@ msgid "GEOLOGYBYMASS_NO_GEOLOGIST"
 msgstr "WARNING: No Geologist on board. The values above will have no effect."
 
 msgid "GEOLOGYBYMASS_GEOLOGIST"
-msgstr "You have a %s Geologist. Expect up to %s variation in the mass estimation."
+msgstr "You have a Geologist with %s education. Expect up to %s variation in the mass estimation."

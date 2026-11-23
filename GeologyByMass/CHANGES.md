@@ -1,5 +1,9 @@
 # GeologyByMass - Changes
 
+## 2.0.1
+- The line on the geologist aboard reads "You have a Geologist with Basic education. …" instead of "You have a Basic
+  Geologist. …", so that the level reads as their Education's (text `GEOLOGYBYMASS_GEOLOGIST`).
+
 ## 2.0.0
 - The mod's OMS tab has a switch in front of each mineral's name. With the mod's switch on, an identified chunk passes
   every row of the Geologist tab when it holds at least the least mass of a mineral switched on there: the rows' own

@@ -50,8 +50,8 @@ In the **GBM** tab:
   - what that mass is worth at today's price, so you can compare it with a *Minimum value*.
 - At the bottom, a line on your geologist. With none in your dive crew, it gives a warning: no chunk gets an info box
   then, so the masses have no effect. Otherwise it names the Education of your best one, and how far off their
-  estimates can be: up to 90 % for a Self-taught geologist, 70 % for Basic, 50 % for High and 30 % for Master. Set the
-  masses a bit lower or higher to allow for it.
+  estimates can be: up to 90 % with Self-taught education, 70 % with Basic, 50 % with High and 30 % with Master. Set
+  the masses a bit lower or higher to allow for it.
 
 The sliders work like the ones in the *Geologist* tab. While the switch is off the rows are dimmed, but you can still
 set them. Point at a switch or a slider to read what it does. Each ship keeps its own settings, saved with your game.
@@ -100,8 +100,8 @@ GeologyByMass/i18n/en.po GEOLOGYBYMASS_MIN_MASS = "Least mass of this mineral, a
 GeologyByMass/SettingsUI.gd MASS_FORMAT = "%s " | images/GeologyByMass-settings.png
 GeologyByMass/SettingsUI.gd VALUE_FORMAT = "%s E$" | images/GeologyByMass-settings.png
 GeologyByMass/SettingsUI.gd PERCENT_FORMAT = "%s%%" | images/GeologyByMass-settings.png
-GeologyByMass/i18n/en.po GEOLOGYBYMASS_GEOLOGIST = "You have a %s Geologist. Expect up to %s variation in the mass estimation." | images/GeologyByMass-settings.png
+GeologyByMass/i18n/en.po GEOLOGYBYMASS_GEOLOGIST = "You have a Geologist with %s education. Expect up to %s variation in the mass estimation." | images/GeologyByMass-settings.png
 GeologyByMass/i18n/en.po GEOLOGYBYMASS_NO_GEOLOGIST = "WARNING: No Geologist on board. The values above will have no effect." -> a warning
-game: 90 %, 70 %, 50 % and 30 %, the most error of a Self-taught, Basic, High and Master geologist's estimates, morale left out (CurrentGame.gd deriveStats CREW_STATS_GEOLOGIST_PREDICTION at each level's lowest talent, translateLevel; hud/MineralMark.gd _ready)
+game: 90 %, 70 %, 50 % and 30 %, the most error of a geologist's estimates with Self-taught, Basic, High and Master education, morale left out (CurrentGame.gd deriveStats CREW_STATS_GEOLOGIST_PREDICTION at each level's lowest talent, translateLevel; hud/MineralMark.gd _ready)
 note: 200 kg, the least mass of Be and the step of the example in the settings picture (its steps in _shots/shots.psd1, by the game's base prices, CurrentGame.mineralPrices): change it with that
 -->
