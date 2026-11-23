@@ -15,7 +15,8 @@ a Godot project in `TempDir\tests\project` from `_tests\`; the game's own `Docki
 `NewGamePlus.gd`, `WeaponSlot.gd`, `PauseLayer.gd`, `PDT.gd`, `Video.gd`, `GravimetricReadout.gd`, `massdriver.gd`,
 `TheRing.gd`, `MarginViewportUpscale.gd`, `ViewportWithProxy.gd`, `NoBulletTime.gd`, `CanvasHidding.gd`, `MouseLayer.gd`,
 `drone-plant.gd`, `MineralMarket.gd`, `MineralSellSlider.gd`, `MineralPriceChart.gd`, `MarketChartPrice.gd`,
-`InGameMoney.gd`, `ServiceUI.gd`, `ServiceUIInsurance.gd`, `ServiceUIFactionChange.gd`, `Tool.gd`, `gdunzip.gd`,
+`InGameMoney.gd`, `ServiceUI.gd`, `ServiceUIInsurance.gd`, `ServiceUIFactionChange.gd`, `Repairs.gd`,
+`SystemShipRepairUI.gd`, `SpecificDamageLabel.gd`, `ScrollWithAnalog.gd`, `Tool.gd`, `gdunzip.gd`,
 `Shower.tscn`, audio buses (`default_bus_layout.tres`), the skill
 icons `CrewBio.gd` preloads and a Fleet entry's Use icon (`enceladus/Upgrades/switch.png`; their `.png.import` and
 imported `.stex`, so they load without an import step), copied from the decompiled source on every run and never
@@ -68,12 +69,17 @@ For MarketAdvisor: stubs of the Mineral Market (`MineralMarket.tscn`, with the m
 (`MineralSellSlider.tscn`), their price charts (`Minerals/MineralPriceChart.tscn`) and the charts' labels
 (`MarketChartPrice.tscn`), with the game's node paths, scripts, values and connections. For MarketAdvisor and
 ServiceNotifier: stubs of a row of the Services screen, its insurance row and its compensation row (`ServiceUI.tscn`,
-`ServiceUIInsurance.tscn`, `ServiceUIFactionChange.tscn`), likewise. The `CurrentGame` stub holds
+`ServiceUIInsurance.tscn`, `ServiceUIFactionChange.tscn`), likewise. For ShipRepairAdvisor: the game's Repairs screen (`Repairs.tscn`,
+without its insurance row's sound, which would need an import step), its rows (`SystemShipRepairUI.tscn`) and their
+damage labels (`SpecificDamageLabel.tscn`), copied, and bare stubs of the four scenes they instance (`SmoothScrollTo.tscn`,
+with the `focusAt` the rows set on it, `Flicker.tscn`, `MoveScrollerToMatchThese.tscn`, and `MaintainenceLabel.tscn`,
+with the game's key). The `CurrentGame` stub holds
 the game's market code: the prices drawn from a save's seed and moved by the trades in its log (`state.logs`, which
 `logEvent` keeps as the game keeps it where a suite gives the state one), the stored minerals, and the price chart's
 prediction error; and the game's crew levels (`translateLevel`), who is in the dive crew (`isCrewMemberActive`) and
-the one derived stat a mod reads, the geologist's Price prediction accuracy (`deriveStats`); and, for
-ShipSaleAdvisor, the game's `changeMoney` with the insurance paying first where asked, the stored ships' instances
+the one derived stat a mod reads, the geologist's Price prediction accuracy (`deriveStats`); and the
+game's `getMoney`, with the insurance where asked (the Repairs screen's Replace); and, for ShipSaleAdvisor and
+ShipRepairAdvisor, the game's `changeMoney` with the insurance paying first where asked, the stored ships' instances
 (`ownedShipInstances`, `removeOwnedShipByHash`) and their lock (`shipMutex`), a repair limit and a count of mechanics
 a suite sets (`getRepairLimit`, `getCrewNumberWithRole`), and the XP given (`giveXp`, recorded).
 The game's `Shipyard` (which makes the rescue ship, recorded; for the `dealer` suite, the ship models' scenes, aliases
@@ -113,12 +119,12 @@ not parsed as arrays. Exit code 0 = every run passed; a script error fails its r
 
 The suites are ported from the claude.ai harness (DVModTestHarness 1.0.0; the original was deleted once ported),
 except `hold`, `boot`, `lidar`, `hud`, `crew`, `geology`, `fleet`, `skip`, `dealer`, `transponder`, `combat`, `drones`,
-`market`, `services` and `sale`. `units`, `still`, `moving` and `hold` load the two arm mods by default, `dive` loads
+`market`, `services`, `sale` and `repairs`. `units`, `still`, `moving` and `hold` load the two arm mods by default, `dive` loads
 DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos, `lidar` loads LidarLouderPing, `hud` loads HudHideLabels, `crew` loads CrewCheapHireNotifier,
 `geology` loads GeologyByMass, `fleet` loads ShipCopyPaste, `skip` loads DiveSkipTransit, `dealer` loads DealerNotifier,
 `transponder` loads TransponderAltCodes, `combat` loads CombatSimulator, `drones` loads DroneAltPriorities and
 GeologyByMass, `market` loads MarketAdvisor, `services` loads ServiceNotifier, `sale` loads ShipCopyPaste and
-ShipSaleAdvisor.
+ShipSaleAdvisor, `repairs` loads ShipRepairAdvisor.
 
 - `units` (`suites/units.gd`): the claude.ai unit tests (its `arm/main.gd`) nearly verbatim, on synthetic arms around
   the game's `DockingArm.gd`. TargetSelection: area geometry on turned, scaled and offset arms, reach, the strip, the
@@ -743,9 +749,10 @@ ShipSaleAdvisor.
   the stay ending at the reserve with nothing left beyond the parked tonnes; a higher reserve selling parked ore down to
   within a tonne of the cheapest ore sold that has tonnes left, the record and the parked row following. Every tonne
   the market allows held: nothing to trade, the advice says so, no alert mark. The menu and the badge: the texts of
-  `i18n/en.po`; the market entry with no Shift badge and no tooltip; the Trade button's Shift badge right before it in
-  its row, with the tooltip (the button has none of its own), in the button's frame and font colour, the row's tooltip
-  node taking the button in (its hover and focus sounds); the entry's alert mark while a trade is due, following a
+  `i18n/en.po`; the market entry with no Shift badge and no tooltip; the Trade button's Shift badge inside it, at its left as
+  far in as the button keeps its text and centred top to bottom, the button making room for it with its text at the
+  right, letting the mouse through to the button, with the tooltip (the button has none of its own), in the button's
+  frame and font colour, the row's tooltip node taking the button in (its hover and focus sounds); the entry's alert mark while a trade is due, following a
   language change; the alert mark's switch on by default, switching it off unmarking the entry at once though a trade
   is due, and on marking it again; the Services entry left alone while Jameson's Insurance can be bought
   (ServiceNotifier's, in `services`); without the market screen, no tooltip and no settings. The screen: Shift+Click on
@@ -838,6 +845,77 @@ ShipSaleAdvisor.
   too little cash; below the minimum gain, the game's confirmation; an offer with no maintenance and no warning; the
   entries' script keeping the game's path. The control checks (Sell shows the game's confirmation; no note) run on
   the game's own script.
+- `repairs` (`suites/repairs.gd`): first the settings screen's estimates (`Settings.gd` `failureRate`,
+  `performanceLoss`) at every condition the target can take, against the suite's own working of their formulas from the
+  constants (the worst damage's square; the middle of the average loss and the worst case, each rounded half up), the
+  degradation between those two, neighbouring conditions with different failure rates, none at 100 %. Then the plans
+  alone (`Advisor.gd`, from plain data, each system's steps built by the Repairs screen's rules as `Code.gd` predicts
+  them: a Fix click halving the damage, Fix while under the repair limit and cheaper than Replace, Replace below the
+  game's highest repair limit). Repair's: Fix alone and its hours, Fixes then Replace where that costs less, Replace
+  where the repair limit stops Fix, beyond repair (Replace without money, the cash below zero), nothing to do where the
+  repair limit is below the target and Replace can't be paid, Fixes as far as they go, damage no repair clears, money
+  for one of two Replaces (the cheaper kept) and cash and insurance together for both, the insurance paying first (all,
+  part, none, below zero), Fixes needing no money, nothing to do; the presses (a paid Replace's Fixes, then its Replace,
+  then those beyond repair, then the Fixes alone); Replace at 100 %, which Fix can't reach, and once Fix costs no less.
+  Park's: one Fix before a trade-in where it pays, the refund growing by its gain, the hours; none where it costs more;
+  the number of Fixes with the most gained; the refunds first, in the screen's order, then the costs, cheapest first;
+  what is missing when the dearest cost's turn comes; an out-and-back's second purchase a refund right after the first,
+  which still needs the first's cash; a repair to Park's target replacing, a system no way brings there left alone and
+  listed with those given; a paid Replace kept without the money, what is missing at it, the insurance covering it, a
+  refund first paying for it; Fixes from the insurance first and purchases from the cash; nothing to do, also with only
+  systems no way brings there; Repair's own plan still dropping a Replace it can't pay. Then the game's Repairs screen
+  (`Repairs.tscn` with `Repairs.gd`, its rows `SystemShipRepairUI.tscn` with `SystemShipRepairUI.gd`) as the station
+  has it (its least width, size flags and frame, `menu/PanelWithHugeShadow.tres`), among the station's screens (the
+  game's `HidingMarginContainer.gd`), the `CurrentGame` stub's repair limit at the game's highest and one mechanic.
+  Repair, on `harness/repairs_ship.gd` (five systems: a thruster at 40 %, a HUD at 70 %, a reactor beyond repair, a
+  laser above the target, an arm held below it by what no repair clears; `harness/repairs_part.gd` their nodes): the
+  extension, the script keeping the game's path; a row per system; the table's first line the target named as the
+  setting, at its default for a save without the mod's entry, then following it; what the insurance pays, what the
+  cash pays, both and the maintenance time, the names in order, in `Badge.gd`'s small font, aligned right, the cash in
+  the normal colour; Repair enabled and named by the mod's text, Park disabled without the Equipment screen. The
+  layout: the row at the bottom of the panel, as wide as the header, the list of rows ending where it begins; Park,
+  which ends the row, as far from the panel's frame at the bottom as at the right; the Shift badge inside Repair, at its
+  left as far in as the button keeps its text, centred top to bottom, Repair making room for it with its text at the
+  right, the badge letting the mouse through and wearing Repair's frame and font colour; the table right before Repair,
+  at its own width; the D-pad down from the last row's buttons to Repair and up to the last row's Fix. The badge's
+  tooltip from the row's own tooltip node (Repair has none), placed above the badge inside the screen, the placing
+  stopping once it hides; and as `shiftBadgeTipChecks` checks it with a gamepad. A run: both buttons disabled while it
+  works; the thruster and the HUD fixed past the target, the reactor replaced, the laser and the arm untouched; the cash,
+  insurance and maintenance as the table said; the mechanics' XP for each press; the table at zero, Repair disabled.
+  Shift+Click on the badge of the disabled Repair, through the scene tree's input, opens the settings in the screen's
+  place, titled as it, its group without a title, the estimates' rows right under the slider (named by the mod's texts,
+  in the setting's unit, taking no focus, their reset buttons unseen) showing the estimates at the target and following
+  the slider, which stores the target, the slider's description; Esc brings the screen back; the table at a higher
+  target, kept in the save under the manifest's id; the cash in the rows' colour for a failed inspection while it would
+  end below zero, and back; a second run reaching the higher target. With a gamepad: the twin (`PAD_BUTTON` while
+  `PAD_MODIFIER` is held, from `Badge.gd`) on the highlighted Repair opens the settings, and B closes them with Repair
+  highlighted again. Park, on `harness/repairs_park_ship.gd` (a ship built from its config, as the game's, its
+  hardpoint's and thrusters' members with a `type` (`harness/repairs_slot_part.gd`, as the game's), and systems on
+  slots without members; its damage kept in the config by system key; also the trial ship's scene in the `Shipyard`
+  stub; RCS_B's systems worth less than its price), beside a stub of the Equipment screen (`harness/repairs_equipment.gd`:
+  the game's `updatePricesAndAvailability` and `buy`, building the ship again as the station does and recording each
+  purchase, its groups `harness/repairs_group.gd` holding the game's `SystemShipUpgradeUI.gd` items, one group not
+  shown) and of the Fleet screen (`harness/repairs_fleet.gd`, colours for money of its own): a row per system; Park
+  named by the mod's text, enabled, right of Repair at its height, the badge in Repair, Park as far from the panel's
+  frame at the bottom as at the right; the D-pad up from Park to the last row's Replace, right from Repair to Park and
+  left back. The confirmation (a laser at 60 % on the hardpoint, RCS_A thrusters with one at 99.7 %, the dearer
+  reactor at 70 %, a HUD at 99.7 % on a slot without members, the cabin at 80 % on no slot, an ammo capacity bought):
+  no title, the game's OK and CANCEL, Cancel highlighted; the question with Park's target; the lines' names without
+  "cost"; the insurance going out with - and the cash and the total coming in with +, in the Fleet screen's colours;
+  the maintenance time in the normal colour; the trial ship given the pieces bought (the other thrusters for the
+  out-and-back) and the members without damage, the rest kept, then gone, the ship and the state untouched; the HUD
+  named, at its condition rounded down to the mod's decimals; OK enabled; the dialog on the screen. Esc (a real key
+  press, with the game's bindings) closes the confirmation only, Park highlighted again, nothing changed; B closes it
+  too. OK: both buttons disabled while it works; the hardpoint emptied, the cheapest reactor and ammo capacity, the
+  thrusters out and back (the second purchase refunding what the other thrusters' systems are worth), the refunds
+  first, the laser fixed once before its trade-in, the slot not shown left alone; every other system at Park's
+  target, the HUD as it was; the cash, the insurance and the maintenance as the confirmation said; the rows made for the
+  new ship; Park disabled with nothing left to do, and highlighted. Again with a gun at 50 % and the cash below zero: the
+  note of the money missing and OK disabled; Cancel changing nothing; with the money, no insurance spent shown without
+  a sign or colour, the cash and time, then the cash and maintenance as it said, the gun traded in after two Fixes, the
+  cabin at Park's target. The screen hiding closes the confirmation; without the Equipment screen, Park disabled. The
+  control checks (the game's rows, nothing of the mod at the bottom of the screen, the list's margin as the scene sets
+  it) run on the game's own script.
 - `_tests\harness\rig.gd` builds the arm's node tree as the game nests it, with the values in
   `_tests\harness\vp_data.gd`; each cites its scene file and line, so re-check them after a game update. The ship
   is a stub moved by hand (it takes the arm's impulses and torque; inertia from the hull); the rotors don't collide.
@@ -846,7 +924,7 @@ ShipSaleAdvisor.
 - `_tests\harness\suite.gd` is the base of every suite: the results, the loaded mods and the masses given on the command
   line, and helpers several suites share: `frames`; `addMenuTooltips`, the game's tooltip node added to a station menu
   built in code, as `enceladus/EnceladusMenu.tscn` has its own; `shiftBadge` and `badgeTip`, a Shift badge (a child of
-  its entry or button, or right before it in its row) and its tooltip; `shiftBadgeTipChecks`, the checks of a Shift
+  its entry or button, beside or inside it) and its tooltip; `shiftBadgeTipChecks`, the checks of a Shift
   badge's tooltip as that node shows it, on hover with keyboard and mouse and on the entry's focus with a gamepad. In
   most suites' stations a mouse moved through the scene tree's input shows no hover on any control, not even a plain
   button added to the root (cause not found); in `crew` it does, so the hover is checked there only (`Badge.gd` is the
@@ -865,9 +943,10 @@ ShipSaleAdvisor.
   two ship-list mods alone; 2 control checks with `-Mods @()`), `transponder` 48 (3 control checks with `-Mods @()`; the
   same 48 with CombatSimulator too), `combat` 151 (the same with TransponderAltCodes too; 8 control checks with
   `-Mods @()`), `drones` 69 (the same in both load orders and with DroneAltPriorities alone; 3 control checks with
-  `-Mods @()`), `market` 121 (4 control checks with `-Mods @()`), `services` 52 (3 control checks with `-Mods @()`), `sale` 75
-  with ShipCopyPaste (in both load orders; 2 control checks with `-Mods ShipCopyPaste` and with `-Mods @()`), all
-  passing; `units` gives 11 control checks with `-Mods @()`; `-Matrix` gives 16 of 16 in every combination.
+  `-Mods @()`), `market` 124 (4 control checks with `-Mods @()`), `services` 52 (3 control checks with `-Mods @()`), `sale` 75
+  with ShipCopyPaste (in both load orders; 2 control checks with `-Mods ShipCopyPaste` and with `-Mods @()`),
+  `repairs` 156 (2 control checks with `-Mods @()`), all passing; `units` gives 11 control checks with `-Mods @()`;
+  `-Matrix` gives 16 of 16 in every combination.
   Feeding, a chunk beside the hull is in after 3.0–3.7 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.5.4 (the same pull as 1.5.0) takes 4.2–4.8 s
   there, and fails the 3 cases that move a chunk straight forward and then expect it held at the dock slot (it hands

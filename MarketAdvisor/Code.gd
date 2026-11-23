@@ -9,7 +9,7 @@ extends "res://enceladus/MineralMarket.gd"
 # to keep cash in (parked), so it can tell them from the ore brought back from dives. The station menu shows an alert
 # mark on the Mineral Market entry while the advice is to trade now (StationMenu.gd, through _maAdviceChanged).
 # Shift+Click on the Trade button opens MarketAdvisor's settings instead of trading, even while the button is disabled,
-# and so does its gamepad twin on the highlighted button (a Shift badge beside it says so in its tooltip); closing them
+# and so does its gamepad twin on the highlighted button (a Shift badge inside it says so in its tooltip); closing them
 # brings the market back.
 
 signal _maAdviceChanged(tradeNow)
@@ -82,7 +82,7 @@ var _maMoneyFormat = _MA_MONEY_FORMAT_FALLBACK
 var _maAdvice = null # the advice line
 var _maPrices = null # the line comparing the parking minerals with the chart's average
 var _maButton = null
-var _maShiftBadge = null # the Shift badge beside the Trade button
+var _maShiftBadge = null # the Shift badge inside the Trade button
 var _maSettingsScreen = null # the settings screen, made on first use
 var _maPlan = null
 var _maAverage = {} # the chart's average E$/kg by mineral, for the chart's day _maAverageDay
@@ -174,24 +174,52 @@ func _maBuildRow():
 	# The settings open in the market's place among the station's right-hand screens
 	# (enceladus/HidingMarginContainer.gd); without them, there is no badge and Shift+Click is a plain click.
 	if get_parent() != null and get_parent().has_signal("hidefoka"):
-		_maShiftBadge = _maMakeShiftBadge(row)
+		_maShiftBadge = _maMakeShiftBadge()
+		_maFitBadge()
 		_maAttachTooltips(row)
 		_maButton.connect("gui_input", self, "_maOnTradeInput")
 
 # The Shift badge (Badge.gd), in the Trade button's own frame and font colour (read once the button is in the tree,
-# where the market's theme gives them), in the row right before the button, the row's gap between them, centred on it
-# from top to bottom (the row's right margin reaches the edge of the market's panel, so it can't hang beside the button
-# on the right as on a menu entry). It stops the mouse, so a click on it does nothing. It keeps that look while the
-# button is disabled: Shift+Click still opens the settings then.
-func _maMakeShiftBadge(row):
+# where the market's theme gives them), inside the button on the left, centred on it from top to bottom, as
+# CombatSimulator's on the simulator's button: as far from the button's left edge as the button keeps its text from its
+# edges (_maBadgeInset). A Button doesn't lay out its children, so the badge hangs from it directly, anchored to the
+# middle of its left side, and grows right, up and down to its minimum size; the button makes room for it
+# (_maFitBadge). On the button, it lets the mouse through: a click on it is the button's, Shift+Click too. It keeps its
+# look while the button is disabled: Shift+Click still opens the settings then.
+func _maMakeShiftBadge():
 	var badge = _MA_BADGE_SCRIPT.new()
 	badge.name = "MarketAdvisorShiftBadge"
 	badge.dress(_maButton, OS.get_scancode_string(KEY_SHIFT), _MA_BADGE_SCRIPT.PAD_TEXT)
-	badge.size_flags_vertical = SIZE_SHRINK_CENTER
-	badge.mouse_filter = MOUSE_FILTER_STOP
-	row.add_child(badge)
-	row.move_child(badge, _maButton.get_index())
+	var inset = _maBadgeInset()
+	badge.set_anchors_preset(PRESET_CENTER_LEFT)
+	badge.margin_left = inset
+	badge.margin_right = inset
+	badge.margin_top = 0
+	badge.margin_bottom = 0
+	badge.grow_horizontal = GROW_DIRECTION_END
+	badge.grow_vertical = GROW_DIRECTION_BOTH
+	badge.mouse_filter = MOUSE_FILTER_PASS
+	_maButton.add_child(badge)
+	_maButton.align = Button.ALIGN_RIGHT
+	badge.connect("minimum_size_changed", self, "_maFitBadge")
+	_maButton.connect("minimum_size_changed", self, "_maFitBadge")
 	return badge
+
+# How far the Trade button keeps its text from its edges (its normal stylebox's left margin): the badge's distance from
+# its left edge, and the gap between the badge and the text.
+func _maBadgeInset() -> float:
+	var style = _maButton.get_stylebox("normal")
+	return style.get_margin(MARGIN_LEFT) if style != null else 0.0
+
+# The Trade button as wide as its text needs plus the badge and the gap after it, its text against its right margin, so
+# the badge never covers it: again whenever either changes size (the badge's text follows the control scheme, the
+# button's the language). The button's own minimum leaves out the width set here, so setting it settles at once.
+func _maFitBadge():
+	if _maShiftBadge == null or not is_instance_valid(_maShiftBadge):
+		return
+	var width = ceil(_maButton.get_minimum_size().x + _maShiftBadge.get_combined_minimum_size().x + _maBadgeInset())
+	if _maButton.rect_min_size.x != width:
+		_maButton.rect_min_size.x = width
 
 # The badge's tooltip is shown by the game's own tooltip node, one of the row's own, as each slider row has its own
 # (enceladus/MineralSellSlider.tscn): on hover, and with a gamepad, which shows no hover, while the Trade button is

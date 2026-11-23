@@ -302,6 +302,25 @@ corona for a few seconds, then a discharge of up to 2 s); the Singularity Core, 
 On every arrival the station fades in (`Enceladus.tscn`'s `AnimationPlayer`, `FadeInCRT`), and its menu stays disabled
 until the animation calls `disable(false)` on it, a few seconds in.
 
+## Equipment
+
+The Equipment screen prices every piece against the one fitted in its slot on the player's ship
+(`Upgrades.gd` `updatePricesAndAvailability`), and a purchase is paid from the cash alone (`buy`: `changeMoney(-price)`,
+without the insurance); a refund adds to it. Buy is disabled on a piece that costs more than the cash.
+
+- **Slots of pieces**: the hardpoints, the thrusters and the LIDAR, whose systems' scripts name their slot as their
+  `type` (`WeaponSlot.gd`, `ThrusterSlot.gd`, `LIDAR.gd`). A piece there is priced less what the fitted pieces are worth,
+  by their condition (`ship-ctrl.gd` `getSlotValue`, the sum of their `getSystemPrice`, see *Repairs*), so a damaged
+  piece trades in for less than its price; buying clears their damage (`clearDamageInSlot`), so the new piece comes in
+  full condition, and adds the replaced pieces' replacement hours to the maintenance if they were damaged
+  (`getSlotTime`).
+- **The other slots** (the reactor, the turbine, the MPU, the autopilot, the capacities, …) price a piece less the
+  fitted piece's full price, whatever its condition, and their system keeps its damage through a purchase: the damage
+  is kept in the ship's config by system (`damage`), so the new piece takes it on, its condition worked out against
+  its own capacity and its repair priced at its own prices.
+- After a purchase the station builds the player's ship anew from its config (`CurrentGame.recreatePlayerShip`); the
+  Repairs screen's rows read the ship they were made for.
+
 ## EVA
 
 In flight an EVA is only a suited sprite with a lamp (`ships/modules/EVAflight.tscn`, `EVAflight.gd`), which flies
@@ -761,6 +780,12 @@ sold, but the player can switch to another ship of the fleet, while the first on
 - **Fix is enabled** only while the piece is under the crew's Repair limit (`isFixable`, `getRepairLimit(true)`, see
   *Crew stats*), none of its damages is past 1.5 times its capacity (`isFubar`, `maxDamageThatCanBeFixed`: then it can
   only be replaced), and replacing would cost more than one click (`shouldBeFixed`).
+- **Nothing works from 99.5 % up**: Replace is offered only below 99.5 % (`isReplaceable`), and the Repair limit is at
+  most 99.5 % (`CurrentGame.getRepairLimit`), so a piece at 99.5 % or more stays there. Only a new piece from the
+  Equipment screen brings it to 100 %, and only on a slot of pieces (see *Equipment*).
+- **Replace needs money**: cash and insurance together must cover its price (`isReplaceable`), except for a piece
+  beyond repair. Fix needs none: its price comes from the insurance, then the cash, which can go below zero
+  (`CurrentGame.gd` `changeMoney`).
 - **Each Fix or Replace** gives the mechanics a quarter of its `repairFixTime` or `repairReplacementTime` as XP
   (`giveXp`), two Logs entries (`LOG_EVENT_REPAIR`, the second with the piece's name and price) and an achievement
   (`FIX_PART`, `REPLACE_PART`).

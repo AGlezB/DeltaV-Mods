@@ -1,5 +1,11 @@
 # MarketAdvisor - Changes
 
+## 1.3.1
+- The Shift badge sits inside the Trade button, on its left, as CombatSimulator's sits on the simulator's button,
+  instead of just left of it: the button widens to fit it and keeps its text on the right, clear of it, and a click on
+  the badge is the button's, Shift+Click too.
+- `Code.gd`: `_maMakeShiftBadge()` takes no row; new `_maBadgeInset()` and `_maFitBadge()`.
+
 ## 1.3.0
 - The settings open from the Mineral Market's Trade button: Shift+Click on it, or with a gamepad, on the highlighted
   button, `PAD_BUTTON` while `PAD_MODIFIER` is held (`Badge.gd`), even while the button is disabled (nothing to trade),

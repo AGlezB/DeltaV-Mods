@@ -1,0 +1,107 @@
+# ShipRepairAdvisor: its texts, in English. Godot shows English for any language without its own file (its fallback
+# locale), so another language only needs a copy of this file with its Language and msgstr lines translated, loaded in
+# ModMain.gd. Keep each %s: the code fills them in.
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+# The tooltip of the Shift badge beside the Repairs screen's Repair button; the first %s is the key to hold while
+# clicking the button, the second the mod's name.
+msgid "SHIPREPAIRADVISOR_SETTINGS_TOOLTIP"
+msgstr "Click the button while pressing %s to open the %s settings."
+
+# The same while the game is played with a gamepad; the first %s is the button to press on the highlighted Repair
+# button, the second the one to hold, the third the mod's name.
+msgid "SHIPREPAIRADVISOR_SETTINGS_TOOLTIP_PAD"
+msgstr "Highlight the button and press %s while holding %s to open the %s settings."
+
+# The buttons at the bottom of the Repairs screen.
+msgid "SHIPREPAIRADVISOR_REPAIR"
+msgstr "Repair"
+
+msgid "SHIPREPAIRADVISOR_PARK"
+msgstr "Park"
+
+# The table beside the button: the target condition it repairs to (named as the setting, SHIPREPAIRADVISOR_TARGET, its
+# value %s, in %), then what the repairs will cost, paid by the insurance first, then the cash, both together, and the
+# maintenance time they add; each amount of money (%s).
+msgid "SHIPREPAIRADVISOR_PERCENT"
+msgstr "%s%%"
+
+msgid "SHIPREPAIRADVISOR_INSURANCE_COST"
+msgstr "Insurance cost"
+
+msgid "SHIPREPAIRADVISOR_CASH_COST"
+msgstr "Cash cost"
+
+msgid "SHIPREPAIRADVISOR_TOTAL_COST"
+msgstr "Total cost"
+
+msgid "SHIPREPAIRADVISOR_TIME"
+msgstr "Maintenance time"
+
+msgid "SHIPREPAIRADVISOR_MONEY"
+msgstr "%s E$"
+
+# The Park button's confirmation: the question (%s the condition every system is brought to, as
+# SHIPREPAIRADVISOR_PERCENT writes it).
+msgid "SHIPREPAIRADVISOR_PARK_CONFIRM"
+msgstr ""
+"Park this ship? Every slot gets the cheapest piece the Equipment screen offers for it, empty where it can be, and "
+"every system is brought to %s."
+
+# Its lines: what the insurance pays, what the cash pays or gets, the two together; the maintenance time is
+# SHIPREPAIRADVISOR_TIME. Then each amount (%s): money coming in, money going out, and none.
+msgid "SHIPREPAIRADVISOR_INSURANCE"
+msgstr "Insurance"
+
+msgid "SHIPREPAIRADVISOR_CASH"
+msgstr "Cash"
+
+msgid "SHIPREPAIRADVISOR_TOTAL"
+msgstr "Total"
+
+msgid "SHIPREPAIRADVISOR_PLUS"
+msgstr "+%s E$"
+
+msgid "SHIPREPAIRADVISOR_MINUS"
+msgstr "-%s E$"
+
+msgid "SHIPREPAIRADVISOR_ZERO"
+msgstr "%s E$"
+
+# Its notes under the lines: the money missing to park the ship (%s, as SHIPREPAIRADVISOR_MONEY writes it); the systems
+# no button of the game brings to the condition (%s the condition, %s the list), and each one in that list (%s its
+# name, %s its condition).
+msgid "SHIPREPAIRADVISOR_PARK_NEEDED"
+msgstr "Not enough money: %s more needed."
+
+msgid "SHIPREPAIRADVISOR_PARK_UNREACHABLE"
+msgstr "No button brings these to %s: %s."
+
+msgid "SHIPREPAIRADVISOR_PARK_SYSTEM"
+msgstr "%s %s"
+
+# The settings screen. Each setting has its name and, under the same key followed by SettingsUI.gd's
+# DESCRIPTION_SUFFIX, the description the screen shows while it is selected, written as the game's Tuning descriptions
+# are.
+msgid "SHIPREPAIRADVISOR_TARGET"
+msgstr "Target condition"
+
+msgid "SHIPREPAIRADVISOR_TARGET_DESC"
+msgstr ""
+"The condition the Repair button brings every damaged system up to, the cheapest way: Fix, or Replace where Fix can't "
+"get there or Replace costs less. Systems already there are left as they are.\n"
+"\n"
+"Under the slider, for a system at this condition: the estimated failure rate, how often it fails outright while in "
+"use (an engine flames out, a laser or microwave emitter fires nothing), and the estimated performance degradation, "
+"how much output it loses while it works. The lowest you can set is what the pre-flight inspection asks for. The "
+"Mechanic tab of the OMS shows a system in yellow from 75 % down."
+
+# The rows under the slider, with what a system at its condition loses (in %, after them).
+msgid "SHIPREPAIRADVISOR_FAILURE_RATE"
+msgstr "Estimated failure rate"
+
+msgid "SHIPREPAIRADVISOR_PERFORMANCE_LOSS"
+msgstr "Estimated performance degradation"

@@ -28,6 +28,7 @@
 - [DealerNotifier](DealerNotifier)
 - [ShipCopyPaste](ShipCopyPaste)
 - [ShipHighlightTypeAndPrice](ShipHighlightTypeAndPrice)
+- [ShipRepairAdvisor](ShipRepairAdvisor)
 - [ShipSaleAdvisor](ShipSaleAdvisor)
 - [ShipSortByTypeAndPrice](ShipSortByTypeAndPrice)
 - [TransponderAltCodes](TransponderAltCodes)

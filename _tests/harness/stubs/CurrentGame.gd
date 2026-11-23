@@ -74,9 +74,9 @@ var playtime = {} # what addPlaytime() added, by name
 var usedShipsPool = [] # the models the dealer draws its used ships from, as the game's; the dealer suite fills it
 var forSale = [] # the ships getShipsAvailableForSale() returns; the dealer suite fills it
 var ownedShips = [] # the ships getOwnedShips() returns (Fleet's list); the dealer suite fills it
-# What ShipSaleAdvisor's Prepare reaches: the stored ships' instances by hash (the sale suite fills it) and the lock
-# around them, the crew's repair limit (in %) and mechanics, and what giveXp() was given: [talent, experience,
-# inactive, role].
+# What ShipSaleAdvisor's Prepare and the Repairs screen's rows (ShipRepairAdvisor's buttons) reach: the stored ships'
+# instances by hash (the sale suite fills it) and the lock around them, the crew's repair limit (in %) and mechanics,
+# and what giveXp() was given: [talent, experience, inactive, role].
 var ownedShipInstances = {}
 var shipMutex = Mutex.new()
 var repairLimit = 99.5
@@ -266,8 +266,9 @@ func hireCrewmember(member):
 		availableCrew.erase(member)
 		emit_signal("employmentChanged")
 
-func getMoney(_includeInsurance = false):
-	return money
+# As the game's: the cash, and the insurance too where asked (SystemShipRepairUI.gd isReplaceable).
+func getMoney(includeInsurance = false):
+	return money + (getInsurance() if includeInsurance else 0)
 
 # As the game's: the level's key among `translation`, in equal steps from 0 to 1.
 func translateLevel(lvl: float, translation):

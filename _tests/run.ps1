@@ -15,7 +15,8 @@
 	ClaimBeaconForeign.gd, NewGamePlus.gd, PauseLayer.gd, PDT.gd, Video.gd, GravimetricReadout.gd, massdriver.gd,
 	TheRing.gd, MarginViewportUpscale.gd, ViewportWithProxy.gd, NoBulletTime.gd, CanvasHidding.gd, MouseLayer.gd,
 	drone-plant.gd, MineralMarket.gd, MineralSellSlider.gd, MineralPriceChart.gd, MarketChartPrice.gd, InGameMoney.gd,
-	ServiceUI.gd, ServiceUIInsurance.gd, ServiceUIFactionChange.gd), the
+	ServiceUI.gd, ServiceUIInsurance.gd, ServiceUIFactionChange.gd, Repairs.gd, SystemShipRepairUI.gd,
+	SpecificDamageLabel.gd, ScrollWithAnalog.gd), the
 	game's ship models (harness\transponder_models.gd, read from ships\Shipyard.gd), the game's Shower.tscn, audio buses
 	(default_bus_layout.tres), the skill icons CrewBio.gd preloads and the Fleet entry's Use icon, a stub mineral scene
 	carrying the chunk radius read from the game's, stubs of the two scenes LIDAR.gd preloads, of the Tuning parts
@@ -30,7 +31,9 @@
 	event (story\PirateCombat.gd), the scene massdriver.gd preloads and stand-ins of the ring maps TheRing.gd preloads.
 	For MarketAdvisor: the Mineral Market (MineralMarket.tscn, with its slider rows, their price charts and the charts'
 	labels). For MarketAdvisor and ServiceNotifier: the rows of the Services screen (ServiceUI.tscn,
-	ServiceUIInsurance.tscn, ServiceUIFactionChange.tscn).
+	ServiceUIInsurance.tscn, ServiceUIFactionChange.tscn). For ShipRepairAdvisor: the game's Repairs screen
+	(Repairs.tscn, without its insurance row's sound), its rows (SystemShipRepairUI.tscn) and their damage labels
+	(SpecificDamageLabel.tscn), and bare stubs of the four helper scenes they instance.
 	Packages each mod into <WorkDir>\build\<Mod>.zip
 	(as a release zip), and runs every suite with its mods loaded from those zips, the way the game loads them:
 	by an autoload, before the engine loads the main scene. Logs: <WorkDir>\logs. Nothing in the repo, the game folder
@@ -64,6 +67,10 @@
 	- sale: ShipCopyPaste + ShipSaleAdvisor (both extend the Fleet entries' script). Builds the Fleet screen's entries as
 	  fleet does, among the station's screens (the game's HidingMarginContainer.gd), with stored ships whose systems
 	  can be damaged and fixed.
+	- repairs: ShipRepairAdvisor. Instances the game's Repairs screen (Repairs.tscn, whose root has the game's
+	  Repairs.gd, with its rows of SystemShipRepairUI.gd) among the station's screens (the game's
+	  HidingMarginContainer.gd), beside stubs of the Equipment screen (with the game's SystemShipUpgradeUI.gd items) and
+	  the Fleet screen, with ships whose systems can be damaged, fixed, replaced and bought.
 
 .EXAMPLE
 	pwsh _tests\run.ps1
@@ -79,8 +86,8 @@
 #>
 [CmdletBinding()]
 param(
-	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones', 'market', 'services', 'sale', 'hold')]
-	[string[]] $Suite = @('units', 'still', 'moving', 'hold', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones', 'market', 'services', 'sale'),
+	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones', 'market', 'services', 'sale', 'repairs', 'hold')]
+	[string[]] $Suite = @('units', 'still', 'moving', 'hold', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones', 'market', 'services', 'sale', 'repairs'),
 	# Mod folders to load for every selected suite, in load order (the game's order: by path); @() = none.
 	# Default: each suite's own mods (see the description).
 	[string[]] $Mods,
@@ -194,7 +201,7 @@ foreach ($dir in $project, $build, $logs)
 }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'project.godot'), (Join-Path $PSScriptRoot 'main.tscn') -Destination $project
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'harness'), (Join-Path $PSScriptRoot 'suites') -Destination $project -Recurse
-foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningBoolValue.gd', 'enceladus\Tuning\TuningItems.gd', 'hud\Hud.gd', 'hud\OMS.gd', 'menu\TabsWithGamepadControl.gd', 'hud\components\PriceLabel.gd', 'hud\components\RepeatingHSlider.gd', 'hud\components\MineralLabel.gd', 'hud\components\MineralSystemToggle.gd', 'hud\SystemMineralList.gd', 'enceladus\HireableCrew.gd', 'enceladus\CrewBio.gd', 'enceladus\CurrentCrewManagement.gd', 'menu\sfx\PlaySoundsOnTheseButtons.gd', 'enceladus\SystemBuyUI.gd', 'enceladus\SystemShipUpgradeUI.gd', 'enceladus\Dealer.gd', 'enceladus\Shower.tscn', 'Game.gd', 'enceladus\Enceladus.gd', 'TransponderOnIntro.gd', 'ships\ship-ctrl.gd', 'ships\Reactor.gd', 'ships\modules\FusionReactor.gd', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres', 'CurrentGame.gd', 'story\body.gd', 'ships\modules\ClaimOwner.gd', 'ships\WeaponSlot.gd', 'story\ClaimBeacon-1.gd', 'story\ClaimBeaconForeign.gd', 'menu\NewGamePlus.gd', 'PauseLayer.gd', 'ships\modules\PDT.gd', 'hud\Video.gd', 'hud\GravimetricReadout.gd', 'weapons\massdriver.gd', 'TheRing.gd', 'enceladus\MarginViewportUpscale.gd', 'enceladus\Simulator\ViewportWithProxy.gd', 'enceladus\NoBulletTime.gd', 'enceladus\CanvasHidding.gd', 'menu\MouseLayer.gd', 'weapons\drone-plant.gd', 'enceladus\MineralMarket.gd', 'enceladus\MineralSellSlider.gd', 'enceladus\MineralPriceChart.gd', 'enceladus\Minerals\MarketChartPrice.gd', 'enceladus\InGameMoney.gd', 'enceladus\ServiceUI.gd', 'enceladus\ServiceUIInsurance.gd', 'enceladus\ServiceUIFactionChange.gd')
+foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningBoolValue.gd', 'enceladus\Tuning\TuningItems.gd', 'hud\Hud.gd', 'hud\OMS.gd', 'menu\TabsWithGamepadControl.gd', 'hud\components\PriceLabel.gd', 'hud\components\RepeatingHSlider.gd', 'hud\components\MineralLabel.gd', 'hud\components\MineralSystemToggle.gd', 'hud\SystemMineralList.gd', 'enceladus\HireableCrew.gd', 'enceladus\CrewBio.gd', 'enceladus\CurrentCrewManagement.gd', 'menu\sfx\PlaySoundsOnTheseButtons.gd', 'enceladus\SystemBuyUI.gd', 'enceladus\SystemShipUpgradeUI.gd', 'enceladus\Dealer.gd', 'enceladus\Shower.tscn', 'Game.gd', 'enceladus\Enceladus.gd', 'TransponderOnIntro.gd', 'ships\ship-ctrl.gd', 'ships\Reactor.gd', 'ships\modules\FusionReactor.gd', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres', 'CurrentGame.gd', 'story\body.gd', 'ships\modules\ClaimOwner.gd', 'ships\WeaponSlot.gd', 'story\ClaimBeacon-1.gd', 'story\ClaimBeaconForeign.gd', 'menu\NewGamePlus.gd', 'PauseLayer.gd', 'ships\modules\PDT.gd', 'hud\Video.gd', 'hud\GravimetricReadout.gd', 'weapons\massdriver.gd', 'TheRing.gd', 'enceladus\MarginViewportUpscale.gd', 'enceladus\Simulator\ViewportWithProxy.gd', 'enceladus\NoBulletTime.gd', 'enceladus\CanvasHidding.gd', 'menu\MouseLayer.gd', 'weapons\drone-plant.gd', 'enceladus\MineralMarket.gd', 'enceladus\MineralSellSlider.gd', 'enceladus\MineralPriceChart.gd', 'enceladus\Minerals\MarketChartPrice.gd', 'enceladus\InGameMoney.gd', 'enceladus\ServiceUI.gd', 'enceladus\ServiceUIInsurance.gd', 'enceladus\ServiceUIFactionChange.gd', 'enceladus\Repairs.gd', 'enceladus\SystemShipRepairUI.gd', 'enceladus\SystemShipRepairUI.tscn', 'enceladus\SpecificDamageLabel.gd', 'enceladus\SpecificDamageLabel.tscn', 'enceladus\ScrollWithAnalog.gd')
 {
 	$target = Join-Path $project $file
 	New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
@@ -1559,6 +1566,43 @@ script = ExtResource( 2 )
 [node name="Service" parent="HBox" index="0"]
 text = ""
 '@
+# For ShipRepairAdvisor: the game's Repairs screen (enceladus\Repairs.tscn) without the sound of its insurance row's
+# Pinger, which would need an import step; its rows (SystemShipRepairUI.tscn and the SpecificDamageLabel.tscn they make,
+# copied above) instance three helper scenes, and the screen a fourth: bare nodes here, the smooth scrolling with the
+# focusAt the rows set on it (SmoothScrollTo.tscn), the maintenance line with the game's key (MaintainenceLabel.tscn).
+$repairsScene = (Get-Content -LiteralPath (Join-Path $GameSource 'enceladus\Repairs.tscn') -Raw) -replace "`r`n", "`n"
+$pingerSound = [regex]::Match($repairsScene, '(?m)^\[ext_resource path="res://menu/sfx/hover\.wav" type="AudioStream" id=(\d+)\]\n')
+if (-not $pingerSound.Success -or -not $repairsScene.Contains("stream = ExtResource( $($pingerSound.Groups[1].Value) )`n"))
+{
+	throw 'Cannot find the Pinger''s sound in enceladus\Repairs.tscn'
+}
+$repairsScene = $repairsScene.Replace($pingerSound.Value, '').Replace("stream = ExtResource( $($pingerSound.Groups[1].Value) )`n", '')
+Write-Utf8Lf (Join-Path $project 'enceladus\Repairs.tscn') $repairsScene
+Write-Utf8Lf (Join-Path $project 'SmoothScrollTo.tscn') @'
+[gd_scene load_steps=2 format=2]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Node
+export var focusAt = NodePath()
+"
+
+[node name="SmoothScrollTo" type="Node"]
+script = SubResource( 1 )
+'@
+foreach ($scene in 'enceladus\Flicker', 'menu\MoveScrollerToMatchThese')
+{
+	Write-Utf8Lf (Join-Path $project "$scene.tscn") @"
+[gd_scene format=2]
+
+[node name="$(Split-Path $scene -Leaf)" type="Node"]
+"@
+}
+Write-Utf8Lf (Join-Path $project 'enceladus\MaintainenceLabel.tscn') @'
+[gd_scene format=2]
+
+[node name="MaintainenceLabel" type="Label"]
+text = "INSPECTION_MAINT"
+'@
 
 # 2. The mods: each suite's own (or -Mods), packaged once each, or the release zip given for it.
 $suiteMods = @{
@@ -1581,6 +1625,7 @@ $suiteMods = @{
 	market = @('MarketAdvisor')
 	services = @('ServiceNotifier')
 	sale = @('ShipCopyPaste', 'ShipSaleAdvisor')
+	repairs = @('ShipRepairAdvisor')
 }
 $given = @{}
 foreach ($z in $ModZip)

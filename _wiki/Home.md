@@ -57,6 +57,8 @@ These pages explain what each mod does, for players. The code, and the notes for
 - [ShipCopyPaste](ShipCopyPaste): makes the ship you fly like another ship of the same model, in the parts you choose.
 - [ShipHighlightTypeAndPrice](ShipHighlightTypeAndPrice): makes each ship's type stand out in the Dealer and Fleet
   lists.
+- [ShipRepairAdvisor](ShipRepairAdvisor): repairs your ship the cheapest way with one button, and gets a ship ready
+  to hold your cash with another.
 - [ShipSaleAdvisor](ShipSaleAdvisor): when you sell a ship, tells you if getting it ready first would bring more cash,
   and gets it ready for you.
 - [ShipSortByTypeAndPrice](ShipSortByTypeAndPrice): sorts the Dealer's ships by type, then by price.
@@ -68,8 +70,8 @@ These pages explain what each mod does, for players. The code, and the notes for
 - [BootSkipLogos](BootSkipLogos): the game opens straight on the title screen, without the logos first.
 
 Some mods have settings, or a screen of their own, that you open by holding Shift and clicking a station menu entry or
-the simulator's button: a small **Shift** tab beside it reminds you. With a gamepad, the tab shows the two buttons to
-use instead: highlight the entry or the button, hold the first and press the second.
+a button: a small **Shift** tab beside the entry, or on the button, reminds you. With a gamepad, the tab shows the two
+buttons to use instead: highlight the entry or the button, hold the first and press the second.
 
 ## Mods that change how the game plays
 

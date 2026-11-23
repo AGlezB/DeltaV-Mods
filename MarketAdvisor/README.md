@@ -39,7 +39,7 @@ a trade is due.
   So cash you don't need now is better kept in ore bought below its average, and sold above it, than left idle; doing
   that by hand means reading every chart at every visit. The mark saves opening the market to check.
 - **Settings:**
-  - **Shift+Click** the Trade button to open them, as the Shift badge just left of it says: it reads Shift, and
+  - **Shift+Click** the Trade button to open them, as the Shift badge inside it, on its left, says: it reads Shift, and
     hovering it shows how. It works while the button is disabled too (nothing to trade), and never trades; a plain
     click still trades. With a gamepad (the game's *Controls* setting at *Gamepad*, or at *Auto* once the gamepad was
     used last), the badge reads the gamepad's twin of Shift+Click instead, `PAD_TEXT` in `Badge.gd`, and highlighting
@@ -60,7 +60,7 @@ a trade is due.
 
 ## For modders
 - Six scripts: `Code.gd` (the Mineral Market's script extension: the row, the header's row, trading, opening the
-  settings, the Shift badge beside the Trade button), `StationMenu.gd` (the station menu's script extension: the alert
+  settings, the Shift badge inside the Trade button), `StationMenu.gd` (the station menu's script extension: the alert
   mark),
   `Advisor.gd` (the advice), `Badge.gd` (the badge), `SettingsUI.gd` (the settings screen) and `Settings.gd` (the
   settings model the others share). The texts are in `i18n/en.po`.
@@ -96,11 +96,16 @@ a trade is due.
     the settings without `closed`, so the market stays hidden. Without the right-hand screens there is no badge, and
     Shift+Click is a plain click.
   - **The Shift badge** (`_maMakeShiftBadge()`, with `Badge.gd` `dress()`: the button's frame and font colour, the
-    small font, `PAD_TEXT` with a gamepad) is a child of the row right before the Trade button, centred on it from top
-    to bottom, stopping the mouse; `hangBeside()` isn't used, since the row's right margin reaches the panel's edge. It
-    keeps its look while the button is disabled, since Shift+Click still works then. `_maAttachTooltips()` adds the
-    game's tooltip node (`_MA_GAME_TOOLTIPS`, as each slider row has one) to the row, which shows the badge's tooltip
-    (`attachTooltip()` with the button as its `focusOwner`, `setShiftTooltips()` with `_MA_SETTINGS_TOOLTIP` and
+    small font, `PAD_TEXT` with a gamepad) hangs inside the Trade button, as CombatSimulator's on the simulator's
+    button: a child of the button, which doesn't lay out its children, anchored to the middle of its left side and
+    growing right, up and down, as far from its left edge as the button keeps its text from its edges (its normal
+    stylebox's left margin, `_maBadgeInset()`). The button aligns its text right and is as wide as its text, the badge
+    and that gap need (`_maFitBadge()`, again whenever the badge or the button changes its minimum size: the badge
+    follows the control scheme, the button the language), so the badge never covers the text. The badge lets the mouse
+    through, so a click on it is the button's, Shift+Click too; `hangBeside()` isn't used, since the row's right margin
+    reaches the panel's edge. It keeps its look while the button is disabled, since Shift+Click still works then.
+    `_maAttachTooltips()` adds the game's tooltip node (`_MA_GAME_TOOLTIPS`, as each slider row has one) to the row,
+    which shows the badge's tooltip (`attachTooltip()` with the button as its `focusOwner`, `setShiftTooltips()` with `_MA_SETTINGS_TOOLTIP` and
     `_MA_SETTINGS_TOOLTIP_PAD`): on hover, and with a gamepad while the button is highlighted. The node also takes the
     button in, which gets the sliders' hover and focus sounds; its `hint_tooltip` stays empty, so it shows none.
   - `_maInput()` feeds `Advisor.plan()` only what the player sees: the cash, the whole tonnes held, each slider's day
@@ -181,9 +186,10 @@ a trade is due.
   `_MA_HEADER_VALUE`, `_MA_HEADER_SOUND` and `_MA_HEADER_TITLE`, `_MA_MONEY_FORMAT_FALLBACK`, `_maSettings`,
   `_maParkedValue`, `_maMoneyFormat`, `_maAdvice`, `_maPrices`, `_maButton`, `_maShiftBadge`, `_maSettingsScreen`,
   `_maPlan`, `_maAverage`, `_maAverageDay`, `_maQueued`, `_maBuildParked()`, `_maBuildRow()`, `_maMakeShiftBadge()`,
-  `_maAttachTooltips()`, `_maOnTradeInput()`, `_maOpenSettings()`, `_maOnSettingsClosed()`, `_maQueue()`,
-  `_maRefresh()`, `_maTrade()`, `_maParkedWorth()`, `_maClampedParked()`, `_maSlider()`, `_maInput()`, `_maNames()`,
-  `_maDaysLeft()`, `_maForecast()`, `_maAverages()`, `_maHistoryAverage()`, `_maAdviceText()` and `_maPricesText()`.
+  `_maBadgeInset()`, `_maFitBadge()`, `_maAttachTooltips()`, `_maOnTradeInput()`, `_maOpenSettings()`,
+  `_maOnSettingsClosed()`, `_maQueue()`, `_maRefresh()`, `_maTrade()`, `_maParkedWorth()`, `_maClampedParked()`,
+  `_maSlider()`, `_maInput()`, `_maNames()`, `_maDaysLeft()`, `_maForecast()`, `_maAverages()`, `_maHistoryAverage()`,
+  `_maAdviceText()` and `_maPricesText()`.
 - Members of the menu's extension (`StationMenu.gd`): `MarketAdvisor` (preload), `_MA_ALERT` (translation key),
   `_MA_MARKET_SCREEN`, `_maMarketButton`, `_maMarketKey`, `_maSettings`, `_maTradeNow`, `_maOnAdvice()` and
   `_maUpdate()`. Both extensions declare `_maSettings`, which is fine: they extend different game scripts. `Badge.gd`'s

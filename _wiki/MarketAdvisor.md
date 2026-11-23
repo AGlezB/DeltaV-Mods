@@ -28,15 +28,15 @@ tells you when there is a trade to make.
 | Without the mod | With the mod |
 |---|---|
 | ![The station menu, as the game shows it](images/MarketAdvisor-menu-without.png) | ![The station menu, with Mineral Market (*)](images/MarketAdvisor-menu-with.png) |
-| ![The Mineral Market, as the game shows it](images/MarketAdvisor-market-without.png) | ![The Mineral Market, with Parked in ore under your cash and, at the bottom, the advice and the Trade button with the Shift badge beside it](images/MarketAdvisor-market-with.png) |
+| ![The Mineral Market, as the game shows it](images/MarketAdvisor-market-without.png) | ![The Mineral Market, with Parked in ore under your cash and, at the bottom, the advice and the Trade button with the Shift badge inside it](images/MarketAdvisor-market-with.png) |
 
 ## Settings
 
 Hold **Shift** and click the **Trade** button at the bottom of the Mineral Market to open the settings. This works
 even when the button is greyed out because there is nothing to trade, and it never trades (a plain click still
 trades). With a gamepad, highlight the Trade button (press down from the last mineral), hold **LT** and press **X**.
-The small badge just left of the button reminds you how: it reads *Shift*, or *LT+X* while you play with a gamepad
-(the game's *Controls* setting at *Gamepad*, or at *Auto* once you use the gamepad), and pointing at it, or
+The small badge inside the button, on its left, reminds you how: it reads *Shift*, or *LT+X* while you play with a
+gamepad (the game's *Controls* setting at *Gamepad*, or at *Auto* once you use the gamepad), and pointing at it, or
 highlighting the button with a gamepad, tells you what to do.
 
 The settings show in the market's place, laid out like the Tuning screen: at the top, what the setting you have

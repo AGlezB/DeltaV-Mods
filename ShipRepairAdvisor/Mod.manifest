@@ -1,0 +1,23 @@
+[mod_information]
+
+name="ShipRepairAdvisor"
+id="AGlezB.ShipRepairAdvisor"
+description="Adds two buttons to the Repairs screen: Repair brings every system of the ship up to the condition you set, the cheapest way, and Park readies the ship to hold cash, with every slot on its cheapest piece and every system at full condition."
+author="AGlezB"
+
+[version]
+
+version_major=1
+version_minor=0
+version_bugfix=0
+
+[tags]
+
+group={
+"type": "string",
+"value": "Repairs"
+}
+
+[manifest_definitions]
+
+manifest_version=2.2

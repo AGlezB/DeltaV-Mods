@@ -127,6 +127,11 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
      screen's frame and the Tuning screen's description window).
    - ShipCopyPaste: `Code.gd` → `enceladus/SystemBuyUI.gd` (the Fleet screen's entries; it prices through the
      Equipment screen's items).
+   - ShipRepairAdvisor: `Code.gd` → `enceladus/Repairs.gd` (the Repairs screen: the row at its bottom, with the Repair
+     button, which presses the screen's own Fix and Replace, its table, and the Park button, which also buys through the
+     Equipment screen's items, after its confirmation; Shift+Click on Repair, or its gamepad twin, opening its settings
+     screen in the Repairs screen's place, which copies the Repairs screen's frame and the Tuning screen's description
+     window).
    - ShipSaleAdvisor: `Code.gd` → `enceladus/SystemBuyUI.gd` (the Fleet screen's entries: Sell's offer to prepare the
      ship first and its dialog, priced through the Equipment screen's items and the Repairs screen's rules; Shift+Click
      on Sell, or its gamepad twin, opening its settings screen among the station's screens, which copies the Fleet
@@ -186,10 +191,10 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
   path the chain is game ← CombatSimulator ← DiveSkipTransit. Both override `_ready` without calling the parent's;
   CombatSimulator adds `_input` (the game's script has none), DiveSkipTransit overrides `_on_DiveTarget_launch`. Their
   member names must stay distinct.
-- CombatSimulator, CrewCheapHireNotifier, DealerNotifier, DiveSkipTransit, MarketAdvisor, ServiceNotifier and
-  ShipSaleAdvisor each ship the same `Badge.gd`, loaded from its own folder (`res://<ModName>/Badge.gd`), so the copies
-  never clash: keep them identical (see *Conventions*, the gamepad twin). ShipSaleAdvisor uses its gamepad twin and
-  small font, not its badge.
+- CombatSimulator, CrewCheapHireNotifier, DealerNotifier, DiveSkipTransit, MarketAdvisor, ServiceNotifier,
+  ShipRepairAdvisor and ShipSaleAdvisor each ship the same `Badge.gd`, loaded from its own folder
+  (`res://<ModName>/Badge.gd`), so the copies never clash: keep them identical (see *Conventions*, the gamepad twin).
+  ShipSaleAdvisor uses its gamepad twin and small font, not its badge.
 - CombatSimulator (`CurrentGame.gd`), CrewPerfectSort (`EvaCrewSorted.gd`) and TransponderAltCodes (`Code.gd`) all
   extend `CurrentGame.gd`, the autoload, from `_init`: by path the chain is game ← CombatSimulator ← CrewPerfectSort ←
   TransponderAltCodes. They override different functions (CombatSimulator `giveXp`, `setStory`, `recordEncounter`,
@@ -440,9 +445,10 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
   - A script of the mod's own that isn't an extension is named for what it is: CombatSimulator's `CombatLayer.gd` (its
     arena, a layer the station's extension adds), `CombatMap.gd` (the arena's map, built on `TheRing.gd` with
     `extends` but never installed: a subclass made with `new()`, not a replacement of the game's script) and
-    `ShipList.gd` (its dialog's ship list, a tab of `SettingsUI.gd`); MarketAdvisor's and ShipSaleAdvisor's
-    `Advisor.gd` (the advice: static functions of what the player can see, which touch neither the game nor the scene);
-    ShipSaleAdvisor's `FleetNote.gd` (its note at the bottom of the Fleet screen); `Badge.gd` (the badges, see *Shift
+    `ShipList.gd` (its dialog's ship list, a tab of `SettingsUI.gd`); MarketAdvisor's, ShipRepairAdvisor's and
+    ShipSaleAdvisor's `Advisor.gd` (the advice: static functions of what the player can see, which touch neither the
+    game nor the scene); ShipRepairAdvisor's `ParkDialog.gd` (its Park button's confirmation); ShipSaleAdvisor's
+    `FleetNote.gd` (its note at the bottom of the Fleet screen); `Badge.gd` (the badges, see *Shift
     badge* in the Glossary), the same file in every mod that has one.
   - `SettingsUI.gd` is the mod's settings UI, when it has one.
   - `Settings.gd`, only in a mod with a settings UI, is the settings model `Code.gd` and `SettingsUI.gd` share, built
@@ -488,9 +494,10 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
       change stores (`saveToState()`) and emits `settingsChanged`; `job` is only for a per-job setting.
       `toShown(key, value)` / `fromShown(key, shown)`.
     - `loadFromState()` / `saveToState()`: settings kept per save game (CrewCheapHireNotifier's, CombatSimulator's,
-      DealerNotifier's, MarketAdvisor's, ServiceNotifier's, ShipSaleAdvisor's) live in `CurrentGame.state.ui` (the game's per-save UI
-      store, `setUiValue` / `getUiValue`, written with the save as JSON, so numbers come back as floats) under the
-      mod's id from `Mod.manifest`, so other authors' mods can't collide; the entry holds `formatVersion`, `modVersion`
+      DealerNotifier's, MarketAdvisor's, ServiceNotifier's, ShipRepairAdvisor's, ShipSaleAdvisor's) live in
+      `CurrentGame.state.ui` (the game's per-save UI store, `setUiValue` / `getUiValue`, written with the save as JSON,
+      so numbers come back as floats) under the mod's id from `Mod.manifest`, so other authors' mods can't collide; the
+      entry holds `formatVersion`, `modVersion`
       and one value per setting (a copy of the dictionary for a per-job setting). MarketAdvisor's also holds the tonnes
       its Trade button bought (`parked`, through `getParked` / `setParked`), and DealerNotifier's the ships already
       seen (`known`), which aren't settings: stored without `settingsChanged`. Loading starts from the defaults and
@@ -511,10 +518,10 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
     `i18n/en.po`. It is set on every `tuningChanged`, which a row emits when it changes and when it gets the focus
     (`Tuning.gd` `tuningChanged` does the same with `<key>_DESC`). Every setting has one, written as the game's
     `TUNE_*_DESC` are: what it does, a blank line, then the details. CrewCheapHireNotifier, DiveSkipTransit,
-    MarketAdvisor and ShipSaleAdvisor have it, and so has CombatSimulator's dialog, on each of its tabs. The OMS tabs of DroneAltPriorities
-    and GeologyByMass have no room for the window: each row's description is its tooltip, which the game's tooltip
-    node shows on hover and on focus. DealerNotifier is the exception: its switches (New and Used, then one
-    per ship model) are explained by its README and its wiki page, not on the screen, at the author's choice. Its
+    MarketAdvisor, ShipRepairAdvisor and ShipSaleAdvisor have it, and so has CombatSimulator's dialog, on each of its
+    tabs. The OMS tabs of DroneAltPriorities and GeologyByMass have no room for the window: each row's description is
+    its tooltip, which the game's tooltip node shows on hover and on focus. DealerNotifier is the exception: its
+    switches (New and Used, then one per ship model) are explained by its README and its wiki page, not on the screen, at the author's choice. Its
     window, framed as the Dealer screen's, shows the game's own description of the selected ship, as the Dealer does
     (`<shipName>_DESC`), and nothing for New and Used. ServiceNotifier's switches, one per service, share one `label`,
     their tooltip; its window shows the description of the service's kind (`Settings.gd` `KINDS`), with the service's
@@ -774,7 +781,7 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   station screen where they are bought and fitted to its hardpoints (`ENCELADUS_SHIP_UPGRADES`,
   `enceladus/Upgrades.tscn`; also called the Upgrades screen, after its key and scene). The code calls one piece a
   system: each has a `SYSTEM_*` key, which its script holds in `systemName` (`SYSTEM_SALVAGE_ARM`); a few texts say
-  "system" too (the OMS's on/off switch, the trade-in tip).
+  "system" too (the OMS's on/off switch, the trade-in tip). Details: [GAME.md](GAME.md#equipment).
 - **EVA** (extravehicular activity): a crew member in a space suit outside the ship. It has no key of its own; the
   word is in conversation lines ("Getting into EVA.", `DIALOG_DERELICT_GO_SURE`). In flight it is only a suited
   sprite (`ships/modules/EVAflight.tscn`, `EVAflight.gd`) that some conversation lines fly between the two ships
@@ -930,8 +937,8 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
 - **Remass**: reaction mass, the ship's propellant (`HUD_FUEL`, shown as "propellant").
 - **Repairs** (`ENCELADUS_SHIP_REPAIRS`, `enceladus/Repairs.gd`): the station screen that fixes the current ship's
   damaged equipment for E$ and in-game hours (`enceladus/SystemShipRepairUI.gd`), with Replace or Fix. The hours are
-  the ship's maintenance (`CurrentGame.isShipMaintained`), during which it can't dive or be sold. Details:
-  [GAME.md](GAME.md#repairs).
+  the ship's maintenance (`CurrentGame.isShipMaintained`), during which it can't dive or be sold. ShipRepairAdvisor adds
+  a row at its bottom, with its Repair and Park buttons. Details: [GAME.md](GAME.md#repairs).
 - **Rescue**: how a dive ends when the player's ship is helpless, out of remass or power for a while (`ship-ctrl.gd`
   `isHelpless`, `Game.gd` `_process`): the `helpless` cutscene, in which the clock jumps ahead and a MAD-CERF comes,
   then the station.
@@ -963,11 +970,12 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   (`enceladus/ServiceUIFactionChange.gd`: Local Vilcy Branch, The Miner's Guild and Obonto Habitats), which pay off a
   faction's hostility and fear towards the player and cost nothing until it holds a grudge again. ServiceNotifier
   marks the station menu's Services entry while one of those can be bought. Details: [GAME.md](GAME.md#services).
-- **Shift badge** (not the game's: these mods' own term): the small framed "Shift" beside a station menu entry or
-  MarketAdvisor's Trade button, or on the simulator's button, whose Shift+Click opens a mod's settings or dialog
-  (`Badge.gd`); it reads `PAD_TEXT`, the gamepad twin, while the control scheme is the gamepad, and its tooltip says
-  how, in either form: on hover, and with a gamepad while the entry or button is highlighted. CombatSimulator,
-  CrewCheapHireNotifier, DealerNotifier, DiveSkipTransit, MarketAdvisor and ServiceNotifier have one.
+- **Shift badge** (not the game's: these mods' own term): the small framed "Shift" beside a station menu entry, or on
+  the simulator's button, MarketAdvisor's Trade button or ShipRepairAdvisor's Repair button, whose Shift+Click opens a
+  mod's settings or dialog (`Badge.gd`); it reads `PAD_TEXT`, the gamepad twin, while the control scheme is the gamepad,
+  and its tooltip says how, in either form: on hover, and with a gamepad while the entry or button is highlighted.
+  CombatSimulator, CrewCheapHireNotifier, DealerNotifier, DiveSkipTransit, MarketAdvisor, ServiceNotifier and
+  ShipRepairAdvisor have one.
 - **Ship models**: the kinds of ship, each with a key in `Shipyard.ships` (`TRTL`, `PROSPECTOR-VP`, …), a scene
   (`ships/RA-TRTL.tscn`) and the translation key of its name in the ship's `shipName` (`SHIP_TRTL`). The Dealer shows
   the names: K37 TNTRL, Eagle Prospector, Vulture Prospector, EIME (Eon Interstellar Model E), OCP-209, the Cothons,

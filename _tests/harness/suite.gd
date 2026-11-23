@@ -62,15 +62,12 @@ func addMenuTooltips(menu):
 	menu.add_child(tooltips)
 	return tooltips
 
-# The Shift badge on or beside a station menu entry or button (a mod's Badge.gd): a child of it, or the control right
-# before it in its row (MarketAdvisor's Trade button); or null.
+# The Shift badge of a station menu entry or button (a mod's Badge.gd), which hangs from it, beside it or inside it; or
+# null.
 func shiftBadge(entry):
 	for child in entry.get_children():
 		if _isBadge(child):
 			return child
-	var parent = entry.get_parent()
-	if parent != null and entry.get_index() > 0 and _isBadge(parent.get_child(entry.get_index() - 1)):
-		return parent.get_child(entry.get_index() - 1)
 	return null
 
 func _isBadge(node):

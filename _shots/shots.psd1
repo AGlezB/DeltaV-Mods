@@ -255,6 +255,25 @@
 	# the game's confirmation; with it, the mod's dialog, and the note at the bottom of the Fleet screen. Then the
 	# settings: Esc closes the dialog, and Shift+Click on that Sell button opens them. Its Sell button is the fifth: the
 	# ship flown and the fixture's three other ships come first.
+	# The Repairs screen of a used ship (ShotRenderer's used step, as ShipSaleAdvisor's) switched to with its Use button
+	# on the Fleet screen, which Esc closes: with the mod, its row at the bottom. Park's confirmation (a real click on
+	# Park), then, once Esc has closed it, the settings (Shift+Click on Repair).
+	ShipRepairAdvisor = @{
+		Steps = @(
+			'load', 'wait|10'
+			'used|TRTL|11', 'wait|3'
+			'press|{menu}/OwnedShips', 'wait|6'
+			'pressfind|{screens}/Owned|Use|4', 'wait|10'
+			'action|ui_cancel', 'wait|3'
+			'press|{menu}/ShipRepairs', 'wait|4'
+			'shot|repairs|545,15,1055,875'
+			'with:click|{screens}/Repairs/ShipRepairAdvisor/Row/Actions/Park', 'wait|6'
+			'with:shot|park|350,267,900,366'
+			'with:action|ui_cancel', 'wait|2'
+			'with:shiftclick|{screens}/Repairs/ShipRepairAdvisor/Row/Actions/Repair', 'wait|3'
+			'with:shot|settings|545,15,1055,385'
+		)
+	}
 	ShipSaleAdvisor = @{
 		Steps = @(
 			'load', 'wait|10'
