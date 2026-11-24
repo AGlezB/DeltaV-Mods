@@ -337,14 +337,22 @@ function Get-Constants([string] $File)
 	return $script:constants[$File]
 }
 
-# A value with the constants it names followed.
+# The engine's own constants a mod's constant may name (Godot's @GlobalScope: a key, a gamepad button, a mouse button),
+# which a values line writes as the code does and compares by name.
+$engineConstant = '^(KEY|JOY|BUTTON)_[A-Z0-9_]+$'
+
+# A value with the constants it names followed; one of the engine's stays as it is.
 function Resolve-Ref($Node, $Consts)
 {
 	$seen = 0
 	while ($Node.Kind -ceq 'ref')
 	{
 		if (++$seen -gt 32) { throw "constants that name each other in a loop: $($Node.Value)" }
-		if (-not $Consts.ContainsKey($Node.Value)) { throw "$($Node.Value) is not a constant of the file" }
+		if (-not $Consts.ContainsKey($Node.Value))
+		{
+			if ($Node.Value -cmatch $engineConstant) { return $Node }
+			throw "$($Node.Value) is not a constant of the file"
+		}
 		$Node = $Consts[$Node.Value]
 	}
 	return $Node
@@ -396,6 +404,7 @@ function Test-SameValue($Code, $Wiki, $Consts)
 			return [math]::Abs($Code.Value - $Wiki.Value) -le 1e-9 * $scale
 		}
 		'string' { return $Code.Value -ceq $Wiki.Value }
+		'ref' { return $Code.Value -ceq $Wiki.Value }
 		'bool' { return $Code.Value -eq $Wiki.Value }
 		'null' { return $true }
 		'dict'
@@ -430,6 +439,7 @@ function Format-Value($Node, $Consts)
 		'string' { return '"' + $Node.Value.Replace('\', '\\').Replace('"', '\"').Replace("`n", '\n') + '"' }
 		'bool' { return $Node.Value ? 'true' : 'false' }
 		'null' { return 'null' }
+		'ref' { return $Node.Value }
 		'array' { return '[' + (@($Node.Value | ForEach-Object { Format-Value $_ $Consts }) -join ', ') + ']' }
 		'call' { return $Node.Name + '(' + (@($Node.Value | ForEach-Object { Format-Value $_ $Consts }) -join ', ') + ')' }
 		'dict' { return '{' + (@($Node.Value.Keys | ForEach-Object { "`"$_`": " + (Format-Value $Node.Value[$_] $Consts) }) -join ', ') + '}' }
@@ -810,7 +820,11 @@ function Test-ModPage([string] $ModName)
 		{
 			$parser = [GdParser]::new($e.Value, 0)
 			$wikiValue = $parser.Element($false)
-			if ($wikiValue.Kind -in 'ref', 'expr') { throw 'write the value itself, as a literal' }
+			$engine = $wikiValue.Kind -eq 'ref' -and $wikiValue.Value -cmatch $engineConstant
+			if ($wikiValue.Kind -eq 'expr' -or ($wikiValue.Kind -eq 'ref' -and -not $engine))
+			{
+				throw 'write the value itself, as a literal (or one of the engine''s constants, KEY_L)'
+			}
 		}
 		catch
 		{

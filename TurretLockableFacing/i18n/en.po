@@ -1,0 +1,19 @@
+# TurretLockableFacing: the texts of its row in the OMS Mechanic tab, in English. Godot shows English for any language
+# without its own file (its fallback locale), so another language only needs a copy of this file with its Language and
+# msgstr lines translated, loaded in ModMain.gd.
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "TURRETLOCKABLEFACING_ROW"
+msgstr "Lock facing"
+
+msgid "TURRETLOCKABLEFACING_TOOLTIP"
+msgstr "Lock or unlock the turret facing"
+
+msgid "TURRETLOCKABLEFACING_ANGLE"
+msgstr "Angle %s°"
+
+msgid "TURRETLOCKABLEFACING_ANGLE_TOOLTIP"
+msgstr "The locked turret facing's angle"

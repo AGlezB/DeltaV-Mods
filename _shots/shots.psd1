@@ -299,6 +299,23 @@
 			'shot|pilot|320,2,965,535'
 		)
 	}
+	# The mod's row at the bottom of the OMS Mechanic tab (J opens the OMS), which shows only on a ship with a turret:
+	# an ONMWG-650 bought for the fixture's ship at the Equipment screen (sold without a story event; the NDPT-4205
+	# isn't), then a dive, the tab scrolled to its end, and the facing lock switched on with its key. The crop starts at
+	# the turret's own row.
+	TurretLockableFacing = @{
+		Steps = @(
+			'load', 'wait|10'
+			'press|{menu}/ShipUpgrades', 'wait|3'
+			'buy|{screens}/Upgrades|weaponSlot.main.type|SYSTEM_PDMWG', 'wait|3'
+			'dive', 'wait|5'
+			'action|jury_rig', 'wait|2'
+			'tab|{oms}|CREW_OCCUPATION_MECHANIC', 'wait|2'
+			'scroll|{oms}/CREW_OCCUPATION_MECHANIC|1000'
+			'with:action|turretlockablefacing_toggle', 'wait|3'
+			'with:shot|mechanic|320,372,965,165'
+		)
+	}
 	# The ship's cabin light and the mod's row, first in the OMS Mechanic tab (J opens the OMS), in a dive on the
 	# fixture's ship, whose EMD-14 mass driver is a weapon the switch changes. With the mod, the switch is turned on first
 	# (Code.gd _wmpsSetOn), so the light is red and the row shows it on. The light's crop takes in the start of the HUD's

@@ -750,6 +750,20 @@ from just above its lowest power (measured by the drone bench, `_bench\README.md
 hardpoints the ONMWG-650s are turned 60° outward (`weapons/WeaponSlot.tscn` `SYSTEM_PDMWG-L` / `-R`), and their rock
 areas leave a strip straight ahead that neither covers.
 
+The same script (`ships/modules/PDT.gd`) runs every gimballed mount. A turret turns all the way round (`gimbalLimit`
+-1, the script's default): the ONMWG-650 (`ships/modules/PDT-microwave.tscn`) and the NDPT-4205 (`PDT-minigun.tscn`,
+which the Equipment screen offers only from the story flag `hardware.nakamura` 5 on,
+`enceladus/Upgrades/WeaponSlotUpgrade.tscn`). The AEMD-14 and the CL-200AP (`act-massdriver.tscn`, `act-laser.tscn`)
+turn only `gimbalLimit` degrees either way of their rest, 2. A mount whose target is within `accurancy` of its aim
+fires at full power if `autoFire` is on (the ONMWG-650), else with `firepower`, what the ship's fire command sets
+(`fire`, the trigger). Otherwise, and with no target at all, it fires with `firepower` if `fireWithNoLock` is on (the
+AEMD-14 and the CL-200AP, not the turrets), and with no target it turns back to its rest at `rotationPerSecond`,
+drawing `powerDraw`, if `returnToDefault` is on (all but the ONMWG-650, which stays where it last aimed). A mount with
+nothing in range and neither of the two stops its physics frames (`_on_DefendArea_body_exited`). Its rest is the
+node's own rotation on its hardpoint: the side versions of the turrets (`-L`, `-R`, which the Equipment screen offers
+for the left and right hardpoints) are turned outward there, the ONMWG-650's by 60° and the NDPT-4205's by 30°
+(`weapons/WeaponSlot.tscn`). The actuation sound plays only in the frames the script turns the pivot itself.
+
 ## Random event
 
 The playlist is every child of `story/TheRing.tscn` that has both a `makeAt` and a `canBeAt`, shuffled at the start of

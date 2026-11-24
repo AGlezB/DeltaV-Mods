@@ -37,8 +37,8 @@
 	(SpecificDamageLabel.tscn), and bare stubs of the four helper scenes they instance. For LidarContactCallout: the
 	game's comms line (comms\MessageLine.tscn, with its theme, light, icon and sound, and bare stubs of the three scenes
 	it instances) and the Pilot tab's label and bearing and distance (ShipOnOMSLabel.tscn,
-	ShipOnOMSBearingOrDistance.tscn, ShipOnOMSBearingDistance.tscn). For WeaponMaxPowerSwitch: the Mechanic tab's
-	on/off switch and damage cell (hud\components\PowerToggleCheckBox.tscn, DamageLabel.tscn), copied.
+	ShipOnOMSBearingOrDistance.tscn, ShipOnOMSBearingDistance.tscn). For TurretLockableFacing and WeaponMaxPowerSwitch:
+	the Mechanic tab's on/off switch and damage cell (hud\components\PowerToggleCheckBox.tscn, DamageLabel.tscn), copied.
 	Packages each mod into <WorkDir>\build\<Mod>.zip
 	(as a release zip), and runs every suite with its mods loaded from those zips, the way the game loads them:
 	by an autoload, before the engine loads the main scene. Logs: <WorkDir>\logs. Nothing in the repo, the game folder
@@ -78,6 +78,8 @@
 	  the Fleet screen, with ships whose systems can be damaged, fixed, replaced and bought.
 	- callout: LidarContactCallout. Builds HUDs from harness\callout_hud.tscn, which holds the game's Hud.gd, with the
 	  geology suite's OMS and the game's comms line (MessageLine.tscn), on stub ships among stub objects of the field.
+	- turret: TurretLockableFacing. Builds turrets of the game's PDT.gd on stub ships, and the Mechanic tab's list of
+	  the game's SystemList.gd.
 	- power: WeaponMaxPowerSwitch. Ships of the game's ship-ctrl.gd with the game's weapon, hardpoint, turret and cabin
 	  light scripts, and the Mechanic tab's list of the game's SystemList.gd.
 
@@ -95,8 +97,8 @@
 #>
 [CmdletBinding()]
 param(
-	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones', 'market', 'services', 'sale', 'repairs', 'callout', 'hold', 'power')]
-	[string[]] $Suite = @('units', 'still', 'moving', 'hold', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones', 'market', 'services', 'sale', 'repairs', 'callout', 'power'),
+	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones', 'market', 'services', 'sale', 'repairs', 'callout', 'hold', 'turret', 'power')]
+	[string[]] $Suite = @('units', 'still', 'moving', 'hold', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones', 'market', 'services', 'sale', 'repairs', 'callout', 'turret', 'power'),
 	# Mod folders to load for every selected suite, in load order (the game's order: by path); @() = none.
 	# Default: each suite's own mods (see the description).
 	[string[]] $Mods,
@@ -1694,6 +1696,7 @@ $suiteMods = @{
 	sale = @('ShipCopyPaste', 'ShipSaleAdvisor')
 	repairs = @('ShipRepairAdvisor')
 	callout = @('LidarContactCallout')
+	turret = @('TurretLockableFacing')
 	power = @('WeaponMaxPowerSwitch')
 }
 $given = @{}

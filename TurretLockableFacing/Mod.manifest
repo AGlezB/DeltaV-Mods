@@ -1,0 +1,23 @@
+[mod_information]
+
+name="TurretLockableFacing"
+id="AGlezB.TurretLockableFacing"
+description="A switch in the OMS Mechanic tab, and a key, lock your ship's turrets facing where their hardpoints point, turned by an angle you set, firing only while you hold the trigger."
+author="AGlezB"
+
+[version]
+
+version_major=1
+version_minor=0
+version_bugfix=0
+
+[tags]
+
+group={
+"type": "string",
+"value": "PDT"
+}
+
+[manifest_definitions]
+
+manifest_version=2.2

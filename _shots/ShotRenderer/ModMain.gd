@@ -33,6 +33,8 @@ extends Node
 #                                 the station built again from the save game's state; prints its prices (_used)
 #   appraise                      with the Fleet screen open, prints for each stored ship what Sell pays and what the
 #                                 ship is worth, system by system (_appraise)
+#   buy|<path>|<slot>|<system>    buys a piece on the Equipment screen at <path> through its own Buy, only if the screen
+#                                 offers it, and prints what the slot holds then (_buy)
 #   call|<path>|<method>|<json>   calls a node's method with the values of a JSON array as its arguments (JSON numbers
 #                                 are floats); an absolute path reaches an autoload (/root/CurrentGame)
 #   tab|<path>|<n or name>        shows tab n, or the tab with that node name, of a TabContainer
@@ -77,6 +79,7 @@ const USED_STEADY = 2.0
 # work out later (thrusters and weapons in physics) has been worked out.
 const APPRAISE_SETTLE = 3.0
 const APPRAISE_TOLERANCE = 0.05 # status points under which a listed status counts as the actual one
+const BUY_FRAMES = 3 # frames the buy step waits after buying, for the ship built again
 
 # The transponders step: one object of each kind that carries a code, each made as the game makes it, around the
 # player's ship. Every random draw that makes a code or a name is seeded first, from SCENARIO_SEED, so both runs
@@ -308,6 +311,8 @@ func _ready():
 				yield(_used(parts[1], int(parts[2])), "completed")
 			"appraise":
 				yield(_appraise(), "completed")
+			"buy":
+				yield(_buy(_node(parts[1]), parts[2], parts[3]), "completed")
 			"pressfind":
 				var found = []
 				var under = _node(parts[1])
@@ -504,6 +509,34 @@ func _newGame():
 		CurrentGame.setShipNameByTransponder(other[1], other[2])
 	CurrentGame.markStateAsValid()
 	CurrentGame.saveToFile()
+
+# The buy step: the Equipment screen's item (enceladus/SystemShipUpgradeUI.gd) for `slot` and `system`, bought through
+# its own Buy (_on_Buy_pressed, which enceladus/Upgrades.gd buy answers: it fits the piece, takes its price and builds
+# the player's ship again), once the screen has priced the items for the ship (updatePricesAndAvailability), and only
+# while it offers that one: on sale (isAvailable: its story flag, what the ship takes), not fitted and affordable
+# (available).
+# Buying writes the piece into the save's config of the ship at once, which a dive builds the ship from; the step then
+# waits BUY_FRAMES frames and prints what the slot holds.
+func _buy(screen, slot, system):
+	yield(get_tree(), "idle_frame")
+	if screen == null or not screen.has_method("getItems") or not screen.has_method("updatePricesAndAvailability"):
+		printerr("SHOTRENDERER: buy: not the Equipment screen")
+		return
+	var priced = screen.updatePricesAndAvailability()
+	if priced is GDScriptFunctionState:
+		yield(priced, "completed")
+	var item = null
+	for candidate in screen.getItems():
+		if candidate.slot == slot and candidate.system == system:
+			item = candidate
+	if item == null or not item.isAvailable() or not item.available or item.installed:
+		printerr("SHOTRENDERER: buy: the Equipment screen doesn't offer ", system, " for ", slot)
+		return
+	item._on_Buy_pressed()
+	for _frame in BUY_FRAMES:
+		yield(get_tree(), "idle_frame")
+	var holds = CurrentGame.getPlayerShip().getConfig(slot)
+	print("SHOTRENDERER bought ", system, " for ", slot, ": the slot holds ", holds)
 
 # --- Used ships and what selling them pays ---
 

@@ -339,7 +339,12 @@ func run():
 	var later = Label.new()
 	list.add_child(later)
 	list.update()
-	check("the row: still first after a row the game adds at the end", rowFirst(list, row) and cells(list).back() == later)
+	# TurretLockableFacing, when loaded, keeps its own row last (its MechanicTab.gd): the game's row comes right before.
+	var tail = cells(list)
+	if "_tlfCells" in list:
+		for cell in list._tlfCells:
+			tail.erase(cell)
+	check("the row: still first after a row the game adds at the end", rowFirst(list, row) and tail.back() == later)
 	list.remove_child(later)
 	later.free()
 	var switch = row[0]

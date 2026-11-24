@@ -35,6 +35,8 @@ These pages explain what each mod does, for players. The code, and the notes for
 - [DroneAltPriorities](DroneAltPriorities): your tug and haul drones go for the most valuable chunks first.
 - [GeologyByMass](GeologyByMass): your geologist, your arm and your drones judge chunks by how much of a mineral they
   hold, not by what they are worth.
+- [TurretLockableFacing](TurretLockableFacing): your turrets face where their hardpoints point, at an angle you set,
+  and fire only when you pull the trigger.
 - [WeaponMaxPowerSwitch](WeaponMaxPowerSwitch): a switch, and a key, send your weapons to full power when a fight
   comes, and back to your own settings when it is over.
 
@@ -96,6 +98,8 @@ Most of these mods only change what you see on screen. These also change how som
   no transponder are, before your astrogator marks them.
 - [TransponderAltCodes](TransponderAltCodes#changes-how-the-game-plays): you can tell a ship's model from its code
   before you see it.
+- [TurretLockableFacing](TurretLockableFacing#changes-how-the-game-plays): while you lock them, your turrets don't
+  aim by themselves and fire only when you pull the trigger.
 - [WeaponMaxPowerSwitch](WeaponMaxPowerSwitch#changes-how-the-game-plays): while its switch is on, your weapons fire
   at full power during a dive, whatever you set at the station, and wear out faster.
 

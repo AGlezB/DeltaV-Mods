@@ -67,7 +67,8 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
   of them misses it. `ships/Shipyard.gd` preloads every ship scene: extending it would make every ship miss the later
   mods' extensions of ship scripts (CombatSimulator `WeaponSlot.gd` and `PDT.gd`, DiveSkipTransit `ship-ctrl.gd`,
   DiveDisableAdrenalineBooster `CabinLight.gd`, DroneAltPriorities `Hud.gd`, GeologyByMass `ship-ctrl.gd` and `Hud.gd`,
-  LidarContactCallout `Hud.gd`, LidarLouderPing `LIDAR.gd`, WeaponMaxPowerSwitch `ship-ctrl.gd` and `SystemList.gd`).
+  LidarContactCallout `Hud.gd`, LidarLouderPing `LIDAR.gd`, TurretLockableFacing `PDT.gd` and `SystemList.gd`,
+  WeaponMaxPowerSwitch `ship-ctrl.gd` and `SystemList.gd`).
   That is why CombatSimulator has no Shipyard extension; none of the game scripts the mods extend preloads a ship
   scene.
 - `Mod.manifest` is not read by the game's loader.
@@ -142,6 +143,10 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
    - TransponderAltCodes: `Code.gd` → `CurrentGame.gd` (the autoload, where the game makes transponder codes, with a
      `node_added` handler, as the observers below have, for the objects whose code is built from a ship's);
      `NewGamePlusScreen.gd` → `menu/NewGamePlus.gd` (the New Game Options screen).
+   - TurretLockableFacing: `Code.gd` → `ships/modules/PDT.gd` (the gimballed mounts, of which it changes only the
+     turrets of the player's ship, while its facing lock is on); `MechanicTab.gd` → `hud/SystemList.gd` (the OMS
+     Mechanic tab's list: the facing lock's row, last, and its key, an input action of the mod's own that `ModMain.gd`
+     adds).
    - WeaponMaxPowerSwitch: `Code.gd` → `ships/ship-ctrl.gd` (every ship's script, through which every system reads its
      Tuning, `getTunedValue`: the switch, and the cabin light's colour); `MechanicTab.gd` → `hud/SystemList.gd` (the
      OMS Mechanic tab's list: the switch's row, first, and its key, an input action of the mod's own that `ModMain.gd`
@@ -240,6 +245,18 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
   `checkCurrentAndOwned`, calling the parent's first, which ShipSaleAdvisor calls once Sell's offer is worked out;
   ShipSaleAdvisor overrides `_on_Sell_pressed`, falling through to the parent's, which ShipCopyPaste leaves alone. Their
   member names must stay distinct. Loaded together in `fleet` and `sale` (both orders).
+- CombatSimulator (`Turret.gd`) and TurretLockableFacing (`Code.gd`) both extend `ships/modules/PDT.gd`: by path the
+  chain is game ← CombatSimulator ← TurretLockableFacing. They override different functions (CombatSimulator `fire` and
+  `perhapsFire`; TurretLockableFacing `getTarget`, and `_ready` and `_physics_process`, without calling the parent's).
+  CombatSimulator disarms a turret by zeroing `firepower`, which a locked turret fires with, so a disarmed turret stays
+  disarmed. Their member names must stay distinct. Loaded together in `combat` and `turret` (both orders).
+- TurretLockableFacing (`MechanicTab.gd`) and WeaponMaxPowerSwitch (`MechanicTab.gd`) both extend `hud/SystemList.gd`,
+  the OMS Mechanic tab's list: by path the chain is game ← TurretLockableFacing ← WeaponMaxPowerSwitch. Both override
+  `update`, calling the parent's first, and add `_input` (the game's script has none), each for its own key action.
+  WeaponMaxPowerSwitch keeps its row first and TurretLockableFacing its row last, each moving only its own cells, so the
+  game's rows stay between them; WeaponMaxPowerSwitch's alarm player sits beside the ship's alarm, not in the list, so
+  the list's last child stays TurretLockableFacing's. Their member names must stay distinct, and their keys (`Shared.gd`
+  `KEY`) different. Loaded together in `turret` and `power` (both orders).
 
 ## Packaging and releasing
 
@@ -401,7 +418,8 @@ note: 400 t and 100 t, an example worked out from the share's default: change it
 
 - A value line: a file of a mod (a `.gd`, or a `.po` for the mod's on-screen texts), a constant (`NAME`, `NAME.key`,
   `NAME[0]`; a key may have dashes, as the game's model keys do: `MODEL_CODES.TRTL-LCB`) or a text's key, `=` its value written as in the code, then optionally `->` how the page writes it (10 %,
-  4.5 m, 24x, on) and `|` the pictures that show it. A constant that names another one is followed to its value.
+  4.5 m, 24x, on) and `|` the pictures that show it. A constant that names another one is followed to its value, and
+  one that names one of the engine's (`KEY_L`, `JOY_BUTTON_2`) is written and compared by that name.
 - `game:` a value of the base game, in words, with where it comes from; `game-checked:` the game version the page's
   game values and its "without" pictures were checked against.
 - `note:` a number in the text that isn't a value (a rule of thumb, an example).
@@ -551,6 +569,11 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
     one or two, their default, range and step are constants in `Code.gd`, read through a clamping helper. With more,
     or spread over several game systems, they split into `Settings.gd` (the descriptions and a clamped read from a
     ship; no shared instance) and `TuningUI.gd` (the registration, called from `Code.gd`'s `onSetup`).
+  - A setting that belongs to the ship's equipment, as a Tuning setting does, but is set elsewhere
+    (TurretLockableFacing's angle, on its row of the OMS Mechanic tab, for the turrets fitted) is kept in the ship's
+    tuning too, without a Tuning entry: one entry under the mod's id, with `formatVersion` and `modVersion`, through
+    `getConfig("tuning")`, so the game saves it and carries it with the ship. Its default, range and step are
+    constants, read through a clamping helper that never writes.
   - Settings that change what a game system's own settings already decide follow that system's pattern
     (GeologyByMass): they live in that system's config, next to the game's, under the mod's id from
     `Mod.manifest`, changed in place as the game changes its own, so the game saves, loads and carries them. Then
@@ -945,8 +968,10 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   turret that aims and fires a weapon by itself (`ships/modules/PDT.gd`). The player can buy two: the ONMWG-650
   (`SYSTEM_PDMWG`, `-L`, `-R`; a microwave emitter, `weapons/emp.gd`, firing on its own) and the NDPT-4205
   (`SYSTEM_PDT`, `-L`, `-R`; a minigun, `weapons/massdriver.gd`, which "Fires on human command only": while the fire
-  command is held, `autoFire` false). Each targets hostile ships and roids, never a chunk. Details:
-  [GAME.md](GAME.md#point-defence-turret).
+  command is held, `autoFire` false), which the Equipment screen offers only after a story event. Each targets hostile
+  ships and roids, never a chunk. The same script runs the AEMD-14 and the CL-200AP (`SYSTEM_ACTEMD14`,
+  `SYSTEM_ACL200P`), gimballed weapons that turn only a little (`gimbalLimit`). TurretLockableFacing locks the player's
+  turrets facing where their hardpoints point. Details: [GAME.md](GAME.md#point-defence-turret).
 - **Racing drone** (its scene's `SHIP_DRONE` is a key the game's texts lack; CombatSimulator names it,
   `COMBATSIMULATOR_MODEL_DRONE`): the small crewless drone the ring races are flown to chase (`story/RingRace.gd`,
   faction `racedrone`), scene `ships/drone/Drone.tscn` (Shipyard model `DRONE`), built new (`createShipByName`, age 0).

@@ -73,7 +73,9 @@ ShipSortByTypeAndPrice); the arm mods have their diagrams.
   adds to the fleet a used ship made and aged as the Dealer makes its used ships, from a seed, so both runs get the same
   damaged ship, stored as a salvaged ship joins the fleet, then builds the station again from that state without saving
   (ShipSaleAdvisor's pictures); with the Fleet screen open, `appraise` prints, for each stored ship, what Sell pays and
-  what the ship is worth, system by system (GAME.md *Fleet*). Make a state with the game's own ways, as `used` does,
+  what the ship is worth, system by system (GAME.md *Fleet*). `buy` buys a piece for a slot through the Equipment
+  screen's own Buy, only if the screen offers it (TurretLockableFacing's picture needs a ship with a turret, which the
+  fixture's ship hasn't). Make a state with the game's own ways, as `used` and `buy` do,
   rather than by writing values into it: a value written into a ship's config after the station has built that ship
   makes a state the game never has. For a dive: `dive` (from the station into the ring scene, without the Dive entry
   point screen, which saves, then until the arrival cutscene is over) and `transponders` (see *The transponder

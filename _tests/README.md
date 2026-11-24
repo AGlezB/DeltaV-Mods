@@ -83,7 +83,7 @@ speaker's face (`faces/FaceSprite.tscn`, with the `fullName` and `gender` `Messa
 scene edits) and the control hint (`hud/components/ContextSensitiveControlDisplay.tscn`, with the members and nodes the
 line's scene sets); the hang-up icon `ConversationPlayer.gd` preloads; and the Pilot tab's label and its bearing and
 distance (`hud/components/ShipOnOMSLabel.tscn`, `ShipOnOMSBearingOrDistance.tscn`, `ShipOnOMSBearingDistance.tscn`),
-copied. For WeaponMaxPowerSwitch: the OMS Mechanic tab's on/off switch and damage cell
+copied. For TurretLockableFacing and WeaponMaxPowerSwitch: the OMS Mechanic tab's on/off switch and damage cell
 (`hud/components/PowerToggleCheckBox.tscn`, `DamageLabel.tscn`), copied. The `CurrentGame` stub holds
 the game's market code: the prices drawn from a save's seed and moved by the trades in its log (`state.logs`, which
 `logEvent` keeps as the game keeps it where a suite gives the state one), the stored minerals, and the price chart's
@@ -132,13 +132,14 @@ not parsed as arrays. Exit code 0 = every run passed; a script error fails its r
 
 The suites are ported from the claude.ai harness (DVModTestHarness 1.0.0; the original was deleted once ported), except
 `hold`, `boot`, `lidar`, `hud`, `crew`, `geology`, `fleet`, `skip`, `dealer`, `transponder`, `combat`, `drones`,
-`market`, `services`, `sale`, `repairs`, `callout` and `power`. `units`, `still`, `moving` and `hold` load the two arm
-mods by default, `dive` loads DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos, `lidar` loads LidarLouderPing,
-`hud` loads HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology` loads GeologyByMass, `fleet` loads
-ShipCopyPaste, `skip` loads DiveSkipTransit, `dealer` loads DealerNotifier, `transponder` loads TransponderAltCodes,
-`combat` loads CombatSimulator, `drones` loads DroneAltPriorities and GeologyByMass, `market` loads MarketAdvisor,
-`services` loads ServiceNotifier, `sale` loads ShipCopyPaste and ShipSaleAdvisor, `repairs` loads ShipRepairAdvisor,
-`callout` loads LidarContactCallout, `power` loads WeaponMaxPowerSwitch.
+`market`, `services`, `sale`, `repairs`, `callout`, `turret` and `power`. `units`, `still`, `moving` and `hold` load
+the two arm mods by default, `dive` loads DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos, `lidar` loads
+LidarLouderPing, `hud` loads HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology` loads GeologyByMass, `fleet`
+loads ShipCopyPaste, `skip` loads DiveSkipTransit, `dealer` loads DealerNotifier, `transponder` loads
+TransponderAltCodes, `combat` loads CombatSimulator, `drones` loads DroneAltPriorities and GeologyByMass, `market`
+loads MarketAdvisor, `services` loads ServiceNotifier, `sale` loads ShipCopyPaste and ShipSaleAdvisor, `repairs` loads
+ShipRepairAdvisor, `callout` loads LidarContactCallout, `turret` loads TurretLockableFacing, `power` loads
+WeaponMaxPowerSwitch.
 
 - `units` (`suites/units.gd`): the claude.ai unit tests (its `arm/main.gd`) nearly verbatim, on synthetic arms around
   the game's `DockingArm.gd`. TargetSelection: area geometry on turned, scaled and offset arms, reach, the strip, the
@@ -999,6 +1000,46 @@ ShipCopyPaste, `skip` loads DiveSkipTransit, `dealer` loads DealerNotifier, `tra
   GeologyByMass too (both extend `Hud.gd`), in every load order, the same checks pass. The control checks (with `-Mods
   @()`): the HUD gets nothing of its own; the game says nothing of a new row or of an object the LIDAR has seen; the
   game's own comms line to the ship shows on the HUD and in the Comms log.
+- `turret` (`suites/turret.gd`): turrets of the game's `PDT.gd` (with the mod, its extension), each with a scene's
+  values (the ONMWG-650's, the NDPT-4205's, the AEMD-14's) on a stub hardpoint (`harness/turret_slot.gd`) of a stub ship
+  (`harness/turret_ship.gd`: it gives the energy asked for and adds it up, and keeps a config with its tuning), firing a
+  stub weapon that records the power it was last fired with (`harness/turret_weapon.gd`), with a static body in range as
+  its target; and the OMS Mechanic tab's list, of the game's `SystemList.gd` (with the mod, its extension), set as
+  `hud/OMS.tscn` sets it, in a HUD stub (`harness/turret_hud.gd`), building its rows from the game's switch and damage
+  cell (each with the game's tooltip node), with a click that counts its plays (`harness/turret_click.gd`). Keys and
+  gamepad buttons are real input events, with the game's digit actions added. Checks: the extensions; the texts of
+  `i18n/en.po` (each tooltip one line of at most `TOOLTIP_MAX` characters, the angle's text with a place for the value),
+  and the degree sign in the Mechanic tab's font. A centre ONMWG-650: unlocked, it aims at its target and fires by
+  itself; locked, with `fireWithNoLock` on, `returnToDefault` off and its physics frames on, it turns to its hardpoint's
+  forward and doesn't fire, its target still in range, and draws no power once there; it fires while the trigger is held
+  and stops when it is let go; unlocked, the scene's values back, it aims and fires again; idle with no target its
+  physics frames are off, locking wakes it and it turns, unlocking sends it back to sleep. A `-R` turret, 60° outward at
+  rest, turns back to its hardpoint's forward and stays there as the ship turns; a `-L` minigun on a bay turned 30°
+  points along the bay. On a hardpoint turned 90° (the OCP-209's side bay), the AEMD-14 aims within its gimbal and isn't
+  the mod's, the minigun is; locked, the minigun points along its hardpoint, the AEMD-14 is left alone (its aim, its
+  scene's values), and both fire on the trigger. An AI ship's turret ignores the lock. The key: the mod's action, bound
+  only to `KEY` by scancode, none of the game's digit actions. The mirror's side of eight hardpoints (forward, left,
+  right and on the line; the K225's bays turned outward; the OCP-209's side bay, front and back; facing aft). The angle,
+  on five turrets: positive, the left one turns right and the right one left, their lines meeting ahead on the nose
+  line, the centre one turning right, the side bay's pair meeting to that side, no power drawn once there; negative,
+  their lines meeting only behind; unlocked, forgotten. Fixed weapons only (the AEMD-14 and the CL-200AP): no turret for
+  the mod, and locked at the most angle the AEMD-14 still aims and the other rests as the game leaves it; with a turret
+  too, only the turret turns and is recorded, and another fixed weapon keeps the angle. Where the angle is kept: none at
+  first; an entry in the ship's tuning under the manifest's id, with the format and mod versions and the turrets'
+  `slotName`s; through a save's JSON; read back by the next dive's ship, whose turrets take it when locked; another
+  weapon on a hardpoint reads the default, and the old one brings it back (reading never wrote); a value that isn't a
+  number, too large or off the step read safely. The row: six cells, the list's last children, in order (the switch,
+  the name, the key, the angle, two blanks), the switch's tooltip held by the game's tooltip node; the angle the game's
+  damage cell, named with the angle, with its tooltip and its slider's range and step; nothing written by showing it;
+  grey while unlocked; the slider sets the angle and the name follows, signed, in whole degrees or with its decimals (a
+  half step), and the slider follows the angle; LOCK FACING; the switch locks the turrets, turns the row green and
+  clicks once; the key unlocks and locks, the switch following, without a click; nothing for another key, in a cutscene
+  or while the player doesn't fly the ship; last again after a new system's row; the D-pad from the last system's
+  switch and from the jury-rig slider above, A to the slider, right adding a step and the name following, A back;
+  hidden on a ship without a turret, also with only an AEMD-14, where the key does nothing. With CombatSimulator too
+  (both extend `PDT.gd`), and with WeaponMaxPowerSwitch too (both extend `SystemList.gd`), in both load orders, the
+  same checks pass. The control checks (with `-Mods @()`): a centre
+  ONMWG-650 aims at its target and fires by itself; the Mechanic tab lists only the ship's systems.
 - `power` (`suites/power.gd`): ships of the game's `ship-ctrl.gd` (with the mod, its extension), out of the tree, with
   the game's weapon scripts (`massdriver.gd`, `laser.gd`, `emp.gd`, each with its own values but its `systemName`, and a
   pulse laser's `pulse`) held by the game's hardpoint and turret (`WeaponSlot.gd`, `PDT.gd`), systems that aren't
@@ -1017,7 +1058,8 @@ ShipCopyPaste, `skip` loads DiveSkipTransit, `dealer` loads DealerNotifier, `tra
   switching on twice; a ship not the player's stays off; a new ship starts off; the weapons worked out again when the
   systems change. The row: one cell per column, first in the list, the game's switch, the name, the key and empty
   damage cells; hidden on a ship without a weapon the switch changes, shown once it has one; still first after a row
-  the game adds; coloured off and on as the game's rows. The switch: on and off with the list's click, never the
+  the game adds, which comes last (before TurretLockableFacing's row, which stays last, when it is loaded too);
+  coloured off and on as the game's rows. The switch: on and off with the list's click, never the
   alarm, the light following. The key: on, the alarm on a copy of the ship's alarm player beside it, with its sound,
   volume, bus and script, `_WMPS_ALARM_ON` plays one after the other and no more, no click; off, `_WMPS_ALARM_OFF`
   plays; pressed again while a cue sounds, the old cue's plays left dropped; nothing for another key, in a cutscene
@@ -1056,14 +1098,17 @@ ShipCopyPaste, `skip` loads DiveSkipTransit, `dealer` loads DealerNotifier, `tra
   with CrewCheapHireNotifier and DiveSkipTransit too, in every load order, 136 with MarketAdvisor and ServiceNotifier as
   well; 136 with ShipCopyPaste, ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too; 8 with the two ship-list mods
   alone; 2 control checks with `-Mods @()`), `transponder` 48 (3 control checks with `-Mods @()`; the same 48 with
-  CombatSimulator too), `combat` 153 (the same with TransponderAltCodes too; 8 control checks with `-Mods @()`),
+  CombatSimulator too), `combat` 153 (the same with TransponderAltCodes too, and with TurretLockableFacing too, in both
+  load orders; 8 control checks with `-Mods @()`),
   `drones` 69 (the same in both load orders, with DroneAltPriorities alone and with LidarContactCallout too; 3 control
   checks with `-Mods @()`), `market` 124 (4 control checks with `-Mods @()`), `services` 52 (3 control checks with
   `-Mods @()`), `sale` 75 with ShipCopyPaste (in both load orders; 2 control checks with `-Mods ShipCopyPaste` and with
   `-Mods @()`), `repairs` 156 (2 control checks with `-Mods @()`), `callout` 89 (the same with DroneAltPriorities and
-  GeologyByMass too, in every load order; 3 control checks with `-Mods @()`), `power` 67 (the same with DiveSkipTransit
-  and GeologyByMass too, in every load order, and with DiveDisableAdrenalineBooster too, in both; 2 control checks with
-  `-Mods @()`), all passing; `units` gives 11 control
+  GeologyByMass too, in every load order; 3 control checks with `-Mods @()`), `turret` 101 (the same with
+  CombatSimulator too, and with WeaponMaxPowerSwitch too, in both load orders; 2 control checks with `-Mods @()`),
+  `power` 67 (the same with DiveSkipTransit and GeologyByMass too, in every load order, and with
+  DiveDisableAdrenalineBooster too, and with TurretLockableFacing too, in both; 2 control checks with `-Mods @()`), all
+  passing; `units` gives 11 control
   checks with `-Mods @()`; `-Matrix` gives 16 of 16 in every combination.
   Feeding, a chunk beside the hull is in after 3.0–3.7 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.5.4 (the same pull as 1.5.0) takes 4.2–4.8 s

@@ -14,6 +14,7 @@
 - [DiveSkipTransit](DiveSkipTransit)
 - [DroneAltPriorities](DroneAltPriorities)
 - [GeologyByMass](GeologyByMass)
+- [TurretLockableFacing](TurretLockableFacing)
 - [WeaponMaxPowerSwitch](WeaponMaxPowerSwitch)
 
 **The HUD**
