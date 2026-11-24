@@ -14,7 +14,8 @@
 	- a tag <Mod>-<version> exists: skipped, already released;
 	- otherwise: released. package.ps1 builds the zip, with all its checks (CHANGES.md, the wiki page), and a GitHub
 	  Release named "<Mod> <version>" gets the zip and, as notes, links to the mod's page in the users' wiki and to
-	  Home's Installing mods, then the version's section of CHANGES.md ("First release." for 1.0.0, which has none).
+	  Home's Installing mods, then what changed since the mod's newest release: every section of CHANGES.md above that
+	  version, each under its version's heading when there are several ("First release." for a mod with no release yet).
 	  The release creates the tag at the commit being run (GITHUB_SHA), and is never marked Latest.
 	On GitHub a mod's zip is <Mod>.zip, without the version package.ps1 puts in its name: a player's newer zip then
 	overwrites the older one in the game's mods folder, where two zips of one mod would both load. The zips built here
@@ -90,19 +91,27 @@ function Get-NewestRelease([string] $Name)
 		Sort-Object | Select-Object -Last 1
 }
 
-# The notes of a mod's release: links for players, then what changed.
-function Get-Notes([string] $Name, [string] $Version)
+# The notes of a mod's release: links for players, then what changed since its newest release ($Newest): every section
+# of CHANGES.md above that version, up to this one, each under its version's heading when there are several (versions
+# committed but held back from a push are released together, and only the newest gets a release). A mod with no
+# release yet: "First release.".
+function Get-Notes([string] $Name, [string] $Version, $Newest)
 {
 	$links = "What the mod does, with pictures: [its page in the wiki]($repoUrl/wiki/$Name). " +
 		"How to install it: [Installing mods]($repoUrl/wiki/Home#installing-mods)."
+	if (-not $Newest) { return "$links`n`nFirst release.`n" }
 	$changes = Join-Path $repo $Name 'CHANGES.md'
-	$section = if (Test-Path -LiteralPath $changes)
+	$text = if (Test-Path -LiteralPath $changes) { Get-Content -LiteralPath $changes -Raw } else { '' }
+	$sections = @([regex]::Matches($text, '(?ms)^## (\d+\.\d+\.\d+)[ \t]*\r?\n(.*?)(?=^## |\z)') | Where-Object {
+		[version] $_.Groups[1].Value -gt $Newest -and [version] $_.Groups[1].Value -le [version] $Version
+	})
+	if (-not @($sections | Where-Object { $_.Groups[1].Value -eq $Version }).Count)
 	{
-		[regex]::Match((Get-Content -LiteralPath $changes -Raw), "(?ms)^## $([regex]::Escape($Version))[ \t]*\r?\n(.*?)(?=^## |\z)")
+		throw "No section for $Version in $changes"
 	}
-	if ($section -and $section.Success) { return "$links`n`n## What changed`n`n$($section.Groups[1].Value.Trim())`n" }
-	if ($Version -eq '1.0.0') { return "$links`n`nFirst release.`n" }
-	throw "No section for $Version in $changes"
+	if ($sections.Count -eq 1) { return "$links`n`n## What changed`n`n$($sections[0].Groups[2].Value.Trim())`n" }
+	$parts = $sections | ForEach-Object { "### $($_.Groups[1].Value)`n`n$($_.Groups[2].Value.Trim())" }
+	return "$links`n`n## What changed`n`n$($parts -join "`n`n")`n"
 }
 
 # The notes of the All mods release: what it is, then one line per mod, with the description of its Mod.manifest.
@@ -161,7 +170,7 @@ foreach ($name in $mods.Name)
 			$built = & $package -Mod $name -OutDir (Join-Path $OutDir $tag)
 			$zip = Join-Path (Split-Path -Parent $built) "$name.zip"
 			Move-Item -LiteralPath $built -Destination $zip
-			$notes = Get-Notes $name $version
+			$notes = Get-Notes $name $version $newest
 			$notesFile = Join-Path $OutDir "$tag.md"
 			Set-Content -LiteralPath $notesFile -Value $notes -NoNewline
 			if ($DryRun)

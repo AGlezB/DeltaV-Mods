@@ -298,8 +298,10 @@ the harness), and `package.ps1 <ModName> -CheckOnly` passes before it is committ
 (and by hand: Actions, Release, Run workflow). Each mod at 1.0.0 or later whose manifest version has no tag
 `<ModName>-<version>` on GitHub gets a GitHub Release of that name, never marked Latest, with the tag at the push's
 commit, the zip `package.ps1` builds (so its checks stop a release there too) and, as notes, links to the mod's wiki
-page and Home's *Installing mods*, then the version's section of `CHANGES.md` ("First release." for 1.0.0, which has
-none). On GitHub the zip is named `<ModName>.zip`, without the version, so that a player's newer zip overwrites the
+page and Home's *Installing mods*, then what changed since the mod's newest release: every section of `CHANGES.md`
+above that version, each under its version's heading when there are several, since versions committed but held back
+from a push are released together and only the newest gets a release ("First release." for a mod with no release
+yet). On GitHub the zip is named `<ModName>.zip`, without the version, so that a player's newer zip overwrites the
 older one in the game's `mods` folder instead of loading next to it; the zips built locally (test builds, the ones
 installed, the backups) keep the version in their names, to tell them apart. The older mod releases, published
 before this naming, hold `<ModName>-<version>.zip`, which `release.ps1` takes too. Then the *All mods* release, the
