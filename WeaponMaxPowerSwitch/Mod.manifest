@@ -1,0 +1,23 @@
+[mod_information]
+
+name="WeaponMaxPowerSwitch"
+id="AGlezB.WeaponMaxPowerSwitch"
+description="A switch in the OMS Mechanic tab, and a key, fire the ship's weapons at their highest power until switched off; every dive starts with it off."
+author="AGlezB"
+
+[version]
+
+version_major=1
+version_minor=0
+version_bugfix=0
+
+[tags]
+
+group={
+"type": "string",
+"value": "Weapons"
+}
+
+[manifest_definitions]
+
+manifest_version=2.2

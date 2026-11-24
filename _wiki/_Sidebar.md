@@ -14,6 +14,7 @@
 - [DiveSkipTransit](DiveSkipTransit)
 - [DroneAltPriorities](DroneAltPriorities)
 - [GeologyByMass](GeologyByMass)
+- [WeaponMaxPowerSwitch](WeaponMaxPowerSwitch)
 
 **The HUD**
 - [HudHideLabels](HudHideLabels)

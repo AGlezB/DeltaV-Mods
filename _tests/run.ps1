@@ -17,7 +17,7 @@
 	drone-plant.gd, MineralMarket.gd, MineralSellSlider.gd, MineralPriceChart.gd, MarketChartPrice.gd, InGameMoney.gd,
 	ServiceUI.gd, ServiceUIInsurance.gd, ServiceUIFactionChange.gd, Repairs.gd, SystemShipRepairUI.gd,
 	SpecificDamageLabel.gd, ScrollWithAnalog.gd, MessageLine.gd, Player.gd, ConversationPlayer.gd, Display-K37.gd,
-	ShipOnOMSLabel.gd, ShipOnOMSBearingDistance.gd), the
+	ShipOnOMSLabel.gd, ShipOnOMSBearingDistance.gd, SystemList.gd, DamageLabel.gd, laser.gd, emp.gd), the
 	game's ship models (harness\transponder_models.gd, read from ships\Shipyard.gd), the game's Shower.tscn, audio buses
 	(default_bus_layout.tres), the skill icons CrewBio.gd preloads and the Fleet entry's Use icon, a stub mineral scene
 	carrying the chunk radius read from the game's, stubs of the two scenes LIDAR.gd preloads, of the Tuning parts
@@ -37,7 +37,8 @@
 	(SpecificDamageLabel.tscn), and bare stubs of the four helper scenes they instance. For LidarContactCallout: the
 	game's comms line (comms\MessageLine.tscn, with its theme, light, icon and sound, and bare stubs of the three scenes
 	it instances) and the Pilot tab's label and bearing and distance (ShipOnOMSLabel.tscn,
-	ShipOnOMSBearingOrDistance.tscn, ShipOnOMSBearingDistance.tscn).
+	ShipOnOMSBearingOrDistance.tscn, ShipOnOMSBearingDistance.tscn). For WeaponMaxPowerSwitch: the Mechanic tab's
+	on/off switch and damage cell (hud\components\PowerToggleCheckBox.tscn, DamageLabel.tscn), copied.
 	Packages each mod into <WorkDir>\build\<Mod>.zip
 	(as a release zip), and runs every suite with its mods loaded from those zips, the way the game loads them:
 	by an autoload, before the engine loads the main scene. Logs: <WorkDir>\logs. Nothing in the repo, the game folder
@@ -77,6 +78,8 @@
 	  the Fleet screen, with ships whose systems can be damaged, fixed, replaced and bought.
 	- callout: LidarContactCallout. Builds HUDs from harness\callout_hud.tscn, which holds the game's Hud.gd, with the
 	  geology suite's OMS and the game's comms line (MessageLine.tscn), on stub ships among stub objects of the field.
+	- power: WeaponMaxPowerSwitch. Ships of the game's ship-ctrl.gd with the game's weapon, hardpoint, turret and cabin
+	  light scripts, and the Mechanic tab's list of the game's SystemList.gd.
 
 .EXAMPLE
 	pwsh _tests\run.ps1
@@ -92,8 +95,8 @@
 #>
 [CmdletBinding()]
 param(
-	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones', 'market', 'services', 'sale', 'repairs', 'callout', 'hold')]
-	[string[]] $Suite = @('units', 'still', 'moving', 'hold', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones', 'market', 'services', 'sale', 'repairs', 'callout'),
+	[ValidateSet('units', 'still', 'moving', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones', 'market', 'services', 'sale', 'repairs', 'callout', 'hold', 'power')]
+	[string[]] $Suite = @('units', 'still', 'moving', 'hold', 'dive', 'boot', 'lidar', 'hud', 'crew', 'geology', 'fleet', 'skip', 'dealer', 'transponder', 'combat', 'drones', 'market', 'services', 'sale', 'repairs', 'callout', 'power'),
 	# Mod folders to load for every selected suite, in load order (the game's order: by path); @() = none.
 	# Default: each suite's own mods (see the description).
 	[string[]] $Mods,
@@ -207,7 +210,7 @@ foreach ($dir in $project, $build, $logs)
 }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'project.godot'), (Join-Path $PSScriptRoot 'main.tscn') -Destination $project
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'harness'), (Join-Path $PSScriptRoot 'suites') -Destination $project -Recurse
-foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningBoolValue.gd', 'enceladus\Tuning\TuningItems.gd', 'hud\Hud.gd', 'hud\OMS.gd', 'menu\TabsWithGamepadControl.gd', 'hud\components\PriceLabel.gd', 'hud\components\RepeatingHSlider.gd', 'hud\components\MineralLabel.gd', 'hud\components\MineralSystemToggle.gd', 'hud\SystemMineralList.gd', 'enceladus\HireableCrew.gd', 'enceladus\CrewBio.gd', 'enceladus\CurrentCrewManagement.gd', 'menu\sfx\PlaySoundsOnTheseButtons.gd', 'enceladus\SystemBuyUI.gd', 'enceladus\SystemShipUpgradeUI.gd', 'enceladus\Dealer.gd', 'enceladus\Shower.tscn', 'Game.gd', 'enceladus\Enceladus.gd', 'TransponderOnIntro.gd', 'ships\ship-ctrl.gd', 'ships\Reactor.gd', 'ships\modules\FusionReactor.gd', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres', 'CurrentGame.gd', 'story\body.gd', 'ships\modules\ClaimOwner.gd', 'ships\WeaponSlot.gd', 'story\ClaimBeacon-1.gd', 'story\ClaimBeaconForeign.gd', 'menu\NewGamePlus.gd', 'PauseLayer.gd', 'ships\modules\PDT.gd', 'hud\Video.gd', 'hud\GravimetricReadout.gd', 'weapons\massdriver.gd', 'TheRing.gd', 'enceladus\MarginViewportUpscale.gd', 'enceladus\Simulator\ViewportWithProxy.gd', 'enceladus\NoBulletTime.gd', 'enceladus\CanvasHidding.gd', 'menu\MouseLayer.gd', 'weapons\drone-plant.gd', 'enceladus\MineralMarket.gd', 'enceladus\MineralSellSlider.gd', 'enceladus\MineralPriceChart.gd', 'enceladus\Minerals\MarketChartPrice.gd', 'enceladus\InGameMoney.gd', 'enceladus\ServiceUI.gd', 'enceladus\ServiceUIInsurance.gd', 'enceladus\ServiceUIFactionChange.gd', 'enceladus\Repairs.gd', 'enceladus\SystemShipRepairUI.gd', 'enceladus\SystemShipRepairUI.tscn', 'enceladus\SpecificDamageLabel.gd', 'enceladus\SpecificDamageLabel.tscn', 'enceladus\ScrollWithAnalog.gd', 'comms\MessageLine.gd', 'comms\MessageLine.tscn', 'comms\Player.gd', 'comms\ConversationPlayer.gd', 'hud\Display-K37.gd', 'hud\components\ShipOnOMSLabel.gd', 'hud\components\ShipOnOMSLabel.tscn', 'hud\components\ShipOnOMSBearingOrDistance.tscn', 'hud\components\ShipOnOMSBearingDistance.gd', 'hud\components\ShipOnOMSBearingDistance.tscn')
+foreach ($file in 'ships\modules\DockingArm.gd', 'ships\modules\Arm.gd', 'ships\CabinLight.gd', 'Boot.gd', 'hud\LIDAR.gd', 'sfx\PitchAdjustedAudio.gd', 'hud\HardwareLabel.gd', 'enceladus\EnceladusMenu.gd', 'enceladus\HidingMarginContainer.gd', 'enceladus\AnalogControlSlider.gd', 'enceladus\Tuning\TuningFloatValue.gd', 'enceladus\Tuning\TuningBoolValue.gd', 'enceladus\Tuning\TuningItems.gd', 'hud\Hud.gd', 'hud\OMS.gd', 'menu\TabsWithGamepadControl.gd', 'hud\components\PriceLabel.gd', 'hud\components\RepeatingHSlider.gd', 'hud\components\MineralLabel.gd', 'hud\components\MineralSystemToggle.gd', 'hud\SystemMineralList.gd', 'enceladus\HireableCrew.gd', 'enceladus\CrewBio.gd', 'enceladus\CurrentCrewManagement.gd', 'menu\sfx\PlaySoundsOnTheseButtons.gd', 'enceladus\SystemBuyUI.gd', 'enceladus\SystemShipUpgradeUI.gd', 'enceladus\Dealer.gd', 'enceladus\Shower.tscn', 'Game.gd', 'enceladus\Enceladus.gd', 'TransponderOnIntro.gd', 'ships\ship-ctrl.gd', 'ships\Reactor.gd', 'ships\modules\FusionReactor.gd', 'Tool.gd', 'vendor\gdunzip.gd', 'default_bus_layout.tres', 'CurrentGame.gd', 'story\body.gd', 'ships\modules\ClaimOwner.gd', 'ships\WeaponSlot.gd', 'story\ClaimBeacon-1.gd', 'story\ClaimBeaconForeign.gd', 'menu\NewGamePlus.gd', 'PauseLayer.gd', 'ships\modules\PDT.gd', 'hud\Video.gd', 'hud\GravimetricReadout.gd', 'weapons\massdriver.gd', 'TheRing.gd', 'enceladus\MarginViewportUpscale.gd', 'enceladus\Simulator\ViewportWithProxy.gd', 'enceladus\NoBulletTime.gd', 'enceladus\CanvasHidding.gd', 'menu\MouseLayer.gd', 'weapons\drone-plant.gd', 'enceladus\MineralMarket.gd', 'enceladus\MineralSellSlider.gd', 'enceladus\MineralPriceChart.gd', 'enceladus\Minerals\MarketChartPrice.gd', 'enceladus\InGameMoney.gd', 'enceladus\ServiceUI.gd', 'enceladus\ServiceUIInsurance.gd', 'enceladus\ServiceUIFactionChange.gd', 'enceladus\Repairs.gd', 'enceladus\SystemShipRepairUI.gd', 'enceladus\SystemShipRepairUI.tscn', 'enceladus\SpecificDamageLabel.gd', 'enceladus\SpecificDamageLabel.tscn', 'enceladus\ScrollWithAnalog.gd', 'comms\MessageLine.gd', 'comms\MessageLine.tscn', 'comms\Player.gd', 'comms\ConversationPlayer.gd', 'hud\Display-K37.gd', 'hud\components\ShipOnOMSLabel.gd', 'hud\components\ShipOnOMSLabel.tscn', 'hud\components\ShipOnOMSBearingOrDistance.tscn', 'hud\components\ShipOnOMSBearingDistance.gd', 'hud\components\ShipOnOMSBearingDistance.tscn', 'hud\SystemList.gd', 'hud\components\DamageLabel.gd', 'hud\components\DamageLabel.tscn', 'hud\components\PowerToggleCheckBox.tscn', 'weapons\laser.gd', 'weapons\emp.gd')
 {
 	$target = Join-Path $project $file
 	New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
@@ -1691,6 +1694,7 @@ $suiteMods = @{
 	sale = @('ShipCopyPaste', 'ShipSaleAdvisor')
 	repairs = @('ShipRepairAdvisor')
 	callout = @('LidarContactCallout')
+	power = @('WeaponMaxPowerSwitch')
 }
 $given = @{}
 foreach ($z in $ModZip)

@@ -36,6 +36,7 @@ in its folder, has the details for modders.
 | [ShipSaleAdvisor](../../wiki/ShipSaleAdvisor) | On the Fleet screen, a ship's sell button offers to prepare the ship first when that brings more cash: its equipment taken down to the cheapest the Equipment screen offers, and fixed click by click where a fix adds more than it costs. Shift+Click on the sell button opens its settings. |
 | [ShipSortByTypeAndPrice](../../wiki/ShipSortByTypeAndPrice) | Sorts the ship list on the Dealer screen by type, then by price (cheapest first). |
 | [TransponderAltCodes](../../wiki/TransponderAltCodes) | New transponder codes say what carries them: a ship's series and model, and whether it is a ship's lifepod, its drones, an AI core or frozen crew. |
+| [WeaponMaxPowerSwitch](../../wiki/WeaponMaxPowerSwitch) | A switch in the OMS Mechanic tab, and a key, fire your ship's weapons at their highest power until you switch them back; every dive starts with the switch off. |
 
 Where a mod opens its settings, or a screen of its own, with Shift+Click on a station menu entry or a button, a small
 Shift badge beside the entry, or on the button, is the reminder. With a gamepad, the badge shows the two buttons to use
@@ -69,6 +70,10 @@ These change how something works in a dive, compared to vanilla. Each one's wiki
   and, with an astrogator aboard, the oddities the astrogator can't mark.
 - [TransponderAltCodes](../../wiki/TransponderAltCodes#changes-how-the-game-plays): a ship's model shows in its
   transponder code, on the LIDAR and in the Pilot tab, before the ship is in sight.
+- [WeaponMaxPowerSwitch](../../wiki/WeaponMaxPowerSwitch#changes-how-the-game-plays): while its switch is on, the
+  ship's mass drivers, lasers and microwave emitters fire at their highest power whatever their Tuning, so they draw
+  more power and wear faster, and the CL-600P and CL-200AP at the ends of their Pulse frequency: part of the ship's
+  Tuning changes during a dive.
 
 Before reporting a bug in those parts of the game to the game's developers, check that it also happens without these
 mods.

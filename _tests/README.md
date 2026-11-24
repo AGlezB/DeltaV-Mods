@@ -18,6 +18,7 @@ a Godot project in `TempDir\tests\project` from `_tests\`; the game's own `Docki
 `InGameMoney.gd`, `ServiceUI.gd`, `ServiceUIInsurance.gd`, `ServiceUIFactionChange.gd`, `Repairs.gd`,
 `SystemShipRepairUI.gd`, `SpecificDamageLabel.gd`, `ScrollWithAnalog.gd`, `Tool.gd`, `gdunzip.gd`, `MessageLine.gd`,
 `Player.gd`, `ConversationPlayer.gd`, `Display-K37.gd`, `ShipOnOMSLabel.gd`, `ShipOnOMSBearingDistance.gd`,
+`SystemList.gd`, `DamageLabel.gd`, `laser.gd`, `emp.gd`,
 `Shower.tscn`, audio buses (`default_bus_layout.tres`), the skill
 icons `CrewBio.gd` preloads and a Fleet entry's Use icon (`enceladus/Upgrades/switch.png`; their `.png.import` and
 imported `.stex`, so they load without an import step), copied from the decompiled source on every run and never
@@ -82,7 +83,8 @@ speaker's face (`faces/FaceSprite.tscn`, with the `fullName` and `gender` `Messa
 scene edits) and the control hint (`hud/components/ContextSensitiveControlDisplay.tscn`, with the members and nodes the
 line's scene sets); the hang-up icon `ConversationPlayer.gd` preloads; and the Pilot tab's label and its bearing and
 distance (`hud/components/ShipOnOMSLabel.tscn`, `ShipOnOMSBearingOrDistance.tscn`, `ShipOnOMSBearingDistance.tscn`),
-copied. The `CurrentGame` stub holds
+copied. For WeaponMaxPowerSwitch: the OMS Mechanic tab's on/off switch and damage cell
+(`hud/components/PowerToggleCheckBox.tscn`, `DamageLabel.tscn`), copied. The `CurrentGame` stub holds
 the game's market code: the prices drawn from a save's seed and moved by the trades in its log (`state.logs`, which
 `logEvent` keeps as the game keeps it where a suite gives the state one), the stored minerals, and the price chart's
 prediction error; and the game's crew levels (`translateLevel`), who is in the dive crew (`isCrewMemberActive`) and
@@ -130,13 +132,13 @@ not parsed as arrays. Exit code 0 = every run passed; a script error fails its r
 
 The suites are ported from the claude.ai harness (DVModTestHarness 1.0.0; the original was deleted once ported), except
 `hold`, `boot`, `lidar`, `hud`, `crew`, `geology`, `fleet`, `skip`, `dealer`, `transponder`, `combat`, `drones`,
-`market`, `services`, `sale`, `repairs` and `callout`. `units`, `still`, `moving` and `hold` load the two arm mods by
-default, `dive` loads DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos, `lidar` loads LidarLouderPing, `hud`
-loads HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology` loads GeologyByMass, `fleet` loads ShipCopyPaste,
-`skip` loads DiveSkipTransit, `dealer` loads DealerNotifier, `transponder` loads TransponderAltCodes, `combat` loads
-CombatSimulator, `drones` loads DroneAltPriorities and GeologyByMass, `market` loads MarketAdvisor, `services` loads
-ServiceNotifier, `sale` loads ShipCopyPaste and ShipSaleAdvisor, `repairs` loads ShipRepairAdvisor, `callout` loads
-LidarContactCallout.
+`market`, `services`, `sale`, `repairs`, `callout` and `power`. `units`, `still`, `moving` and `hold` load the two arm
+mods by default, `dive` loads DiveDisableAdrenalineBooster, `boot` loads BootSkipLogos, `lidar` loads LidarLouderPing,
+`hud` loads HudHideLabels, `crew` loads CrewCheapHireNotifier, `geology` loads GeologyByMass, `fleet` loads
+ShipCopyPaste, `skip` loads DiveSkipTransit, `dealer` loads DealerNotifier, `transponder` loads TransponderAltCodes,
+`combat` loads CombatSimulator, `drones` loads DroneAltPriorities and GeologyByMass, `market` loads MarketAdvisor,
+`services` loads ServiceNotifier, `sale` loads ShipCopyPaste and ShipSaleAdvisor, `repairs` loads ShipRepairAdvisor,
+`callout` loads LidarContactCallout, `power` loads WeaponMaxPowerSwitch.
 
 - `units` (`suites/units.gd`): the claude.ai unit tests (its `arm/main.gd`) nearly verbatim, on synthetic arms around
   the game's `DockingArm.gd`. TargetSelection: area geometry on turned, scaled and offset arms, reach, the strip, the
@@ -997,6 +999,34 @@ LidarContactCallout.
   GeologyByMass too (both extend `Hud.gd`), in every load order, the same checks pass. The control checks (with `-Mods
   @()`): the HUD gets nothing of its own; the game says nothing of a new row or of an object the LIDAR has seen; the
   game's own comms line to the ship shows on the HUD and in the Comms log.
+- `power` (`suites/power.gd`): ships of the game's `ship-ctrl.gd` (with the mod, its extension), out of the tree, with
+  the game's weapon scripts (`massdriver.gd`, `laser.gd`, `emp.gd`, each with its own values but its `systemName`, and a
+  pulse laser's `pulse`) held by the game's hardpoint and turret (`WeaponSlot.gd`, `PDT.gd`), systems that aren't
+  weapons (`harness/power_system.gd`: Tuning entries and a slot name), and the game's cabin light (`CabinLight.gd`,
+  with and without its spotlight); and the OMS Mechanic tab's list, of the game's `SystemList.gd` (with the mod, its
+  extension), set as `hud/OMS.tscn` sets it, building its rows from the game's switch and damage cell, in the tree
+  under a stand-in of the HUD it reads its ship through (`harness/power_reader.gd`). The ship's alarm (in the tree
+  beside the ship) and the tab's click are the game's `PitchAdjustedAudio.gd` under `harness/power_sound.gd`, which
+  counts plays without sound, so the suite sends `finished` itself. Keys and gamepad buttons are real input events.
+  Checks: the key's action, bound once to `KEY`. Off, the weapons fire at their Tuning; on, the NDPT-4205's minigun,
+  a CL-600P, the CL-200AP's laser, a CL-150 and an MWG, found through their mounts, at the top of their power, read
+  through the ship; the CL-600P at its lowest Pulse frequency and the CL-200AP at its highest, the CL-150 with none;
+  the MWG's Water Resonance, a drone plant's range and a power entry outside the hardpoints as tuned; the cabin lights
+  red, the spotlight too, and still red after the game's own update lights them; a power the player stored read as
+  the top while on, read back when off, never written; the cabin lights back in their scene's colours, also after
+  switching on twice; a ship not the player's stays off; a new ship starts off; the weapons worked out again when the
+  systems change. The row: one cell per column, first in the list, the game's switch, the name, the key and empty
+  damage cells; hidden on a ship without a weapon the switch changes, shown once it has one; still first after a row
+  the game adds; coloured off and on as the game's rows. The switch: on and off with the list's click, never the
+  alarm, the light following. The key: on, the alarm on a copy of the ship's alarm player beside it, with its sound,
+  volume, bus and script, `_WMPS_ALARM_ON` plays one after the other and no more, no click; off, `_WMPS_ALARM_OFF`
+  plays; pressed again while a cue sounds, the old cue's plays left dropped; nothing for another key, in a cutscene
+  or on a ship not the player's; with the list hidden (the OMS closed), it switches all the same; in bullet time the
+  alarm slowed as the ship's own, the same both ways. With a gamepad, the switch takes the focus and shows its tooltip
+  through the game's tooltip node, and A switches on and off with the click. A ship without an alarm switches
+  silently. With DiveSkipTransit and GeologyByMass too (all three extend `ship-ctrl.gd`), in every load order, and with
+  DiveDisableAdrenalineBooster too (it extends `CabinLight.gd`), in both, the same checks pass. The control checks
+  (with `-Mods @()`): a mass driver fires at its Tuning; the Mechanic tab lists only the ship's systems.
 - `_tests\harness\rig.gd` builds the arm's node tree as the game nests it, with the values in
   `_tests\harness\vp_data.gd`; each cites its scene file and line, so re-check them after a game update. The ship
   is a stub moved by hand (it takes the arm's impulses and torque; inertia from the hull); the rotors don't collide.
@@ -1012,14 +1042,17 @@ LidarContactCallout.
   same file in every mod). `harness\dive_ship.gd` is the ship `dive` gives the game's `CabinLight.gd`: what it and
   DiveDisableAdrenalineBooster read.
 - **Baseline** (both arm load orders give the same results): `units` 114 checks with both arm mods (64 with PullBehavior
-  alone, 61 with TargetSelection alone), `still` 9, `moving` 16, `hold` 63, `dive` 8 (1 control check with `-Mods @()`),
+  alone, 61 with TargetSelection alone), `still` 9, `moving` 16, `hold` 63, `dive` 8 (the same with
+  WeaponMaxPowerSwitch too, in both load orders; 1 control check with `-Mods @()`),
   `boot` 5 (3 control checks with `-Mods @()`), `lidar` 40 (3 control checks with `-Mods @()`), `hud` 13 (the same with
   LidarContactCallout too; 3 control checks with `-Mods @()`), `crew` 167 (171 with CrewPerfectSort too, in both load
   orders; the same 167 with DealerNotifier too; 3 control checks with `-Mods @()`), `geology` 95 (the same with
-  DiveSkipTransit too, in both load orders, and with LidarContactCallout too; 5 control checks with `-Mods @()`),
+  DiveSkipTransit too, in both load orders, with LidarContactCallout too, and with WeaponMaxPowerSwitch too, in both;
+  5 control checks with `-Mods @()`),
   `fleet` 95 (the same with ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too, and with ShipSaleAdvisor too, in
   both load orders; 3 control checks with `-Mods @()`), `skip` 135 (138 with CrewCheapHireNotifier too, the same with
-  DealerNotifier as well; the same 135 with CombatSimulator too; 13 control checks with `-Mods @()`), `dealer` 130 (133
+  DealerNotifier as well; the same 135 with CombatSimulator too, and with GeologyByMass and WeaponMaxPowerSwitch too, in
+  every load order; 13 control checks with `-Mods @()`), `dealer` 130 (133
   with CrewCheapHireNotifier and DiveSkipTransit too, in every load order, 136 with MarketAdvisor and ServiceNotifier as
   well; 136 with ShipCopyPaste, ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too; 8 with the two ship-list mods
   alone; 2 control checks with `-Mods @()`), `transponder` 48 (3 control checks with `-Mods @()`; the same 48 with
@@ -1028,7 +1061,9 @@ LidarContactCallout.
   checks with `-Mods @()`), `market` 124 (4 control checks with `-Mods @()`), `services` 52 (3 control checks with
   `-Mods @()`), `sale` 75 with ShipCopyPaste (in both load orders; 2 control checks with `-Mods ShipCopyPaste` and with
   `-Mods @()`), `repairs` 156 (2 control checks with `-Mods @()`), `callout` 89 (the same with DroneAltPriorities and
-  GeologyByMass too, in every load order; 3 control checks with `-Mods @()`), all passing; `units` gives 11 control
+  GeologyByMass too, in every load order; 3 control checks with `-Mods @()`), `power` 67 (the same with DiveSkipTransit
+  and GeologyByMass too, in every load order, and with DiveDisableAdrenalineBooster too, in both; 2 control checks with
+  `-Mods @()`), all passing; `units` gives 11 control
   checks with `-Mods @()`; `-Matrix` gives 16 of 16 in every combination.
   Feeding, a chunk beside the hull is in after 3.0–3.7 s.
   For comparison with `-ModZip` and older release zips: PullBehavior 1.5.4 (the same pull as 1.5.0) takes 4.2–4.8 s

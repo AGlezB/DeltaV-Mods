@@ -67,8 +67,9 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
   of them misses it. `ships/Shipyard.gd` preloads every ship scene: extending it would make every ship miss the later
   mods' extensions of ship scripts (CombatSimulator `WeaponSlot.gd` and `PDT.gd`, DiveSkipTransit `ship-ctrl.gd`,
   DiveDisableAdrenalineBooster `CabinLight.gd`, DroneAltPriorities `Hud.gd`, GeologyByMass `ship-ctrl.gd` and `Hud.gd`,
-  LidarContactCallout `Hud.gd`, LidarLouderPing `LIDAR.gd`). That is why CombatSimulator has no Shipyard extension;
-  none of the game scripts the mods extend preloads a ship scene.
+  LidarContactCallout `Hud.gd`, LidarLouderPing `LIDAR.gd`, WeaponMaxPowerSwitch `ship-ctrl.gd` and `SystemList.gd`).
+  That is why CombatSimulator has no Shipyard extension; none of the game scripts the mods extend preloads a ship
+  scene.
 - `Mod.manifest` is not read by the game's loader.
 - The loader also has `addTranslationsFromCSV`, `appendNodeInScene` and `saveScene` (unused so far; the harness's
   loader offers `addTranslationsFromCSV` too). **`addTranslationsFromCSV` reads nothing from a mod's zip**: a file in
@@ -141,6 +142,10 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
    - TransponderAltCodes: `Code.gd` → `CurrentGame.gd` (the autoload, where the game makes transponder codes, with a
      `node_added` handler, as the observers below have, for the objects whose code is built from a ship's);
      `NewGamePlusScreen.gd` → `menu/NewGamePlus.gd` (the New Game Options screen).
+   - WeaponMaxPowerSwitch: `Code.gd` → `ships/ship-ctrl.gd` (every ship's script, through which every system reads its
+     Tuning, `getTunedValue`: the switch, and the cabin light's colour); `MechanicTab.gd` → `hud/SystemList.gd` (the
+     OMS Mechanic tab's list: the switch's row, first, and its key, an input action of the mod's own that `ModMain.gd`
+     adds).
 
    Rules that let mods stack on the same script (the arm mods' headers sum them up):
    - Never call the parent's `_ready`, `_process`, `_physics_process` or `_notification`. Godot 3 runs them at every
@@ -216,10 +221,15 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
   GeologyByMass ← LidarContactCallout. It overrides `instance()` as they do, calling the parent's first and deferring
   its set-up, and adds no tab, so its place in the chain changes nothing. Its member names must stay distinct from
   theirs. Loaded together in `callout` (every order).
-- DiveSkipTransit (`Ship.gd`) and GeologyByMass (`Code.gd`) both extend `ships/ship-ctrl.gd`, every ship's script,
-  from `_init`: by path the chain is game ← DiveSkipTransit ← GeologyByMass. They override different functions
-  (DiveSkipTransit `fastTravelTo`, GeologyByMass `isValidMineralTarget`). Their member names must stay distinct. Loaded
-  together in `geology` (both orders).
+- DiveSkipTransit (`Ship.gd`), GeologyByMass (`Code.gd`) and WeaponMaxPowerSwitch (`Code.gd`) all extend
+  `ships/ship-ctrl.gd`, every ship's script, from `_init`: by path the chain is game ← DiveSkipTransit ← GeologyByMass ←
+  WeaponMaxPowerSwitch. They override different functions (DiveSkipTransit `fastTravelTo`, GeologyByMass
+  `isValidMineralTarget`, WeaponMaxPowerSwitch `getTunedValue`). Their member names must stay distinct. Loaded together
+  in `geology` (the first two, both orders), and all three in `skip` and `power` (every order).
+- DiveDisableAdrenalineBooster extends `ships/CabinLight.gd`, whose nodes WeaponMaxPowerSwitch (`Code.gd`) tints red
+  while its switch is on (their `modulate` and their spotlight's `color`): DiveDisableAdrenalineBooster only switches the
+  booster off when a dive starts (`enabled`), and the game's script never sets a colour, so both apply. Loaded together
+  in `dive` and `power` (both orders).
 - ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice find the ship entries by `node.get_script().resource_path`;
   ShipCopyPaste and ShipSaleAdvisor extend that script, and `take_over_path` keeps the path, so they still find them
   (loaded together in `fleet`). DealerNotifier reads the stock from the Dealer screen's entries in any order and hangs
@@ -676,7 +686,13 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   the `bullet_time` action (`CONTROLS_GAMEPAD_ADRENALINE`) for a burst of adrenaline, followed by a cooldown
   (`adrenalineBoost`, `adrenalineCooldown`); fired again during the cooldown, it cuts the burst short. Switched off
   in the OMS's Mechanic tab, it pushes adrenaline down every frame instead, which also damps bullet time from the
-  other sources. DiveDisableAdrenalineBooster starts the player's booster switched off at every dive.
+  other sources. DiveDisableAdrenalineBooster starts the player's booster switched off at every dive. Its node, in
+  every ship the player can fly, is also the ship's cabin light (no text of its own in `en.po`): a glow over the cabin
+  and a spotlight (`lightNode`, a `Light2D` the game's Lights setting can hide, `SETTINGS_LIGHTS`), lit while it has
+  power. WeaponMaxPowerSwitch tints it red while its switch is on.
+- **Alarm** (no text of its own in `en.po`): the ship's warning sound, each ship model's own (`ship-ctrl.gd`
+  `playerAlert`, its `Noises/Alert`), which `soundAlert` plays for a few seconds: for a full mineral storage, a gauge or
+  a system in the red, a collision warning. WeaponMaxPowerSwitch's key plays it to tell which way it switched.
 - **Alert mark** (not the game's: these mods' own term): the " (*)" a mod puts after the text of a station menu entry
   while something behind it is worth a look, each mod with its own text for it (`<MOD>_ALERT`, "%s (*)", whose `%s`
   is the entry's text). CrewCheapHireNotifier puts it on Crew, DealerNotifier on Dealer, MarketAdvisor on Mineral
@@ -876,7 +892,8 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   The game flies it as the rescue ship of the `helper` faction (see *Rescue* and *Salvage claim*), and as the pirates'
   abductor. Details: [GAME.md](GAME.md#mad-cerf).
 - **Mechanic**: the crew occupation for repairs, and the OMS tab listing the ship's equipment, to switch each piece
-  on and off and fix it.
+  on and off and fix it: one row per system (`hud/SystemList.gd`, the list in `hud/OMS.tscn`). WeaponMaxPowerSwitch
+  adds its row first.
 - **Mineral**: what a chunk is made of, named in code by its element symbol (`mineral = "PT"`). Processed ore
   (`HUD_CARGO_LIST_PROCESSED`) is what the MPU has extracted; it is sold or stored at the Mineral Market.
 - **Mineral Market** (`ENCELADUS_MINERAL_MARKET`, `enceladus/MineralMarket.tscn`): the station screen where processed
@@ -1050,7 +1067,8 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   (`weapons/emp.gd`), the SPC Gungnir (`SYSTEM_SYNCHRO`, `weapons/synchrotron.gd`) and exhaust weapons, thrusters
   pointed forward (`sfx/thruster.gd`). A hit does kinetic damage, heat or EMP. A hardpoint fires its weapon with the
   power it is given (`ships/WeaponSlot.gd` `fire`), 0 while it is switched off; CombatSimulator's Disabled weapons
-  passes 0 the same way. Details: [GAME.md](GAME.md#weapons).
+  passes 0 the same way. A weapon's power, and a pulse laser's Pulse frequency, are Tuning settings, which
+  WeaponMaxPowerSwitch's switch sets to their ends during a dive. Details: [GAME.md](GAME.md#weapons).
 - **Xenon drive**: the low-thrust, economical drive every ship has for transit, which burns no remass (the game keeps
   no stock of xenon). Its Tuning setting, Interplanetary Xenon transit drive usage (`TUNE_XENON_BURN`, a HUD built-in:
   `hud/Hud.gd` `getTuneables`), sets its share of the trip out. Details: [GAME.md](GAME.md#xenon-drive).

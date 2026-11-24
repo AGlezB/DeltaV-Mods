@@ -1,0 +1,13 @@
+# WeaponMaxPowerSwitch: the texts of its row in the OMS Mechanic tab, in English. Godot shows English for any language
+# without its own file (its fallback locale), so another language only needs a copy of this file with its Language and
+# msgstr lines translated, loaded in ModMain.gd.
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "WEAPONMAXPOWERSWITCH_ROW"
+msgstr "Max power to the weapons"
+
+msgid "WEAPONMAXPOWERSWITCH_TOOLTIP"
+msgstr "Raise weapon power to the maximum"

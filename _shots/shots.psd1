@@ -299,4 +299,19 @@
 			'shot|pilot|320,2,965,535'
 		)
 	}
+	# The ship's cabin light and the mod's row, first in the OMS Mechanic tab (J opens the OMS), in a dive on the
+	# fixture's ship, whose EMD-14 mass driver is a weapon the switch changes. With the mod, the switch is turned on first
+	# (Code.gd _wmpsSetOn), so the light is red and the row shows it on. The light's crop takes in the start of the HUD's
+	# line on leaving the rings.
+	WeaponMaxPowerSwitch = @{
+		Steps = @(
+			'load', 'wait|10'
+			'dive', 'wait|5'
+			'with:call|ship:.|_wmpsSetOn|[true]', 'wait|1'
+			'shot|light|430,365,340,160'
+			'action|jury_rig', 'wait|2'
+			'tab|{oms}|CREW_OCCUPATION_MECHANIC', 'wait|2'
+			'shot|mechanic|320,2,965,168'
+		)
+	}
 }

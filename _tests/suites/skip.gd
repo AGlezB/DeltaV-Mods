@@ -691,8 +691,16 @@ func astrogation(mod):
 	var start = CurrentGame.globalCoords(ship.global_position)
 	var dvec = CurrentGame.getInRingVectorTowards(target.vector, start)
 	var velocity = dvec.normalized() * ship.astrogationVelocity
-	# The extension's constants, from the installed script (it took over ship-ctrl.gd's path).
-	var consts = shipScript.get_script_constant_map()
+	# The extension's constants, from the installed script (it took over ship-ctrl.gd's path) and the ones under it: a
+	# script's constant map holds only its own, and another mod's extension of ship-ctrl.gd can sit on top.
+	var consts = {}
+	var holder = shipScript
+	while holder != null:
+		var own = holder.get_script_constant_map()
+		for key in own:
+			if not consts.has(key):
+				consts[key] = own[key]
+		holder = holder.get_base_script()
 	var waits = consts._DST_ASTROGATION_BEFORE_JUMP + consts._DST_ASTROGATION_AFTER_JUMP
 	var arrival = target.vector - velocity.normalized() * min(ship.astrogationMinDistance, velocity.length() * 10) + velocity * consts._DST_ASTROGATION_AFTER_JUMP
 	var remass = ship.reactiveMass

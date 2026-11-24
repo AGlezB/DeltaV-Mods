@@ -1156,6 +1156,22 @@ A hit does kinetic damage (`applyKineticDamage`: it leaks reactors, see *Reactor
 thrusters), heat (`applyEnergyDamage`: it heats reactors towards a meltdown, see *Reactor*) or EMP (`applyEmpDamage`,
 see *EMP*); roids take kinetic damage and heat (see *Roid*).
 
+Tuning (each weapon's `getTuneables`, read through the ship's `getTunedValue` every frame the weapon fires, so a new
+value applies at once; the game changes it only at the station's Tuning screen): a mass driver's, a laser's and a
+microwave emitter's power (`TUNE_MASSDRIVER_POWER`, "Mass driver power"; `TUNE_LASER_POWER`, "Laser Power Supply
+(average)", the average for a pulse laser; `TUNE_EMP_POWER`, "Microwave Power") goes from half to one and a half times
+its default (`powerDraw`). The power drawn from the ship follows it; the wear while firing grows with its square over
+the default (`powerFactor`, `changeSystemDamage`), so at the top a weapon wears 2.25 times as fast as at its default;
+and a mass driver's push, on the slug and back on the ship, grows with its square root (`thrust`). A pulse laser's
+Pulse frequency (`TUNE_LASER_FREQUENCY`) goes from a quarter to twice its default (`pulsesPerSecond`): at the same
+average power, a lower frequency fires fewer, stronger pulses (`frat`, the default over the frequency, scales each
+pulse's energy), and a pulse's kinetic share is `kineticPart` × `frat`, at most all of it. The CL-600P's `kineticPart`
+is 0.5 (`weapons/laster-pulse.tscn`), so from half its default frequency down its pulses are all kinetic; the
+CL-200AP's laser (`SYSTEM_CL200P`, `ships/modules/act-laser.tscn`) has none, so its pulses are only ever heat. A
+microwave emitter's Water Resonance is the split of its output (see *EMP*); an exhaust weapon's Thrust is a
+thruster's (see *Thrusters*); the SPC Gungnir has no Tuning. WeaponMaxPowerSwitch's switch reads the powers at their
+top, the CL-600P's frequency at its lowest and the CL-200AP's at its highest.
+
 ## Xenon drive
 
 Its Tuning setting, Interplanetary Xenon transit drive usage (0–100 %, default 100 %, kept per ship with the rest of
