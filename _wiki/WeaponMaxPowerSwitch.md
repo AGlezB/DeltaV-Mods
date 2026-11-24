@@ -48,6 +48,11 @@ pulse mining lasers fire at the ends of their *Pulse frequency*. With the switch
 If a weapon, its power or its wear does something wrong, try again without the mod before you report a bug to the
 game's developers.
 
+## Works with other mods
+
+[TurretLockableFacing](TurretLockableFacing) also adds a row to the *Mechanic* tab, at its end: both rows show, each
+with its own key.
+
 ## Install
 
 See [Installing mods](Home#installing-mods).

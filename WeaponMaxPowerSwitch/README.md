@@ -118,14 +118,17 @@ without the mod.
   `_WMPS_TOOLTIP`, `_WMPS_ALARM_ON`, `_WMPS_ALARM_OFF`, `_wmpsCells`, `_wmpsSwitch`, `_wmpsLabel`, `_wmpsKeys`,
   `_wmpsAlarmPlayer`, `_wmpsAlarmLeft`, `_wmpsAlarm(times)`, `_wmpsAlarmFinished()`, `_wmpsReady()`, `_wmpsRow()`,
   `_wmpsBuild()`, `_wmpsKeyHint()` and `_wmpsSwitched()`. `Shared.gd`: `KEY_ACTION`, `KEY` and `addKey()`.
-- Stacks with DiveSkipTransit and GeologyByMass, which extend `ship-ctrl.gd` too (other functions), and with
-  DiveDisableAdrenalineBooster (above).
+- Stacks with DiveSkipTransit and GeologyByMass, which extend `ship-ctrl.gd` too (other functions), with
+  DiveDisableAdrenalineBooster (above), and with TurretLockableFacing, which extends `SystemList.gd` too: by path the
+  chain is game ← TurretLockableFacing ← WeaponMaxPowerSwitch. This mod keeps its row first and that one its row last,
+  each moving only its own cells, and their keys differ.
 - Tested only outside the game, in a headless Godot 3.6 (the `power` suite of the repository's test harness): the
   switch on ships of the game's `ship-ctrl.gd`, out of the tree, with the game's `massdriver.gd`, `laser.gd` and
   `emp.gd` held by its `WeaponSlot.gd` and `PDT.gd`, and its `CabinLight.gd`; the row, the key, the alarm's cues and the
   gamepad on the game's `SystemList.gd` with its row parts, the alarm on its `PitchAdjustedAudio.gd`. Also with
-  DiveSkipTransit and GeologyByMass loaded, in every order (`power`, `skip`), and with DiveDisableAdrenalineBooster
-  (`power`, `dive`). The real check is playing the game.
+  DiveSkipTransit and GeologyByMass loaded, in every order (`power`, `skip`), with DiveDisableAdrenalineBooster
+  (`power`, `dive`), and with TurretLockableFacing, in both orders (`power`, `turret`). The real check is playing the
+  game.
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.

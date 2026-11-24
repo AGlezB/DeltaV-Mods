@@ -916,7 +916,7 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   abductor. Details: [GAME.md](GAME.md#mad-cerf).
 - **Mechanic**: the crew occupation for repairs, and the OMS tab listing the ship's equipment, to switch each piece
   on and off and fix it: one row per system (`hud/SystemList.gd`, the list in `hud/OMS.tscn`). WeaponMaxPowerSwitch
-  adds its row first.
+  adds its row first, and TurretLockableFacing its row last, on a ship with a turret.
 - **Mineral**: what a chunk is made of, named in code by its element symbol (`mineral = "PT"`). Processed ore
   (`HUD_CARGO_LIST_PROCESSED`) is what the MPU has extracted; it is sold or stored at the Mineral Market.
 - **Mineral Market** (`ENCELADUS_MINERAL_MARKET`, `enceladus/MineralMarket.tscn`): the station screen where processed
