@@ -1,5 +1,9 @@
 # CrewPerfectSort - Changes
 
+## 1.3.1
+- Licensed under the MIT License instead of the GNU GPLv3: the LICENSE in the zip and the README's *About* and
+  *Disclaimer* say so.
+
 ## 1.3.0
 - A derelict's conversation, offering to send a crew member over on EVA, lists the crew aboard as Your Crew does (by
   job, then salary lowest first, then name) instead of in the order they were hired: a new script extension of

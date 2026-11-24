@@ -140,5 +140,5 @@ check or approve these mods, and doesn't support them.
 
 Everything in the [repository](https://github.com/AGlezB/DeltaV-Mods) (the mods, their code and these pages) is
 given as is, for free, and without warranty of any kind: nobody promises that it works or that it suits any use, and
-you use it at your own risk. The [GNU GPLv3](https://github.com/AGlezB/DeltaV-Mods/blob/main/LICENSE), the license
+you use it at your own risk. The [MIT License](https://github.com/AGlezB/DeltaV-Mods/blob/main/LICENSE), the license
 the mods come under, says this in full.

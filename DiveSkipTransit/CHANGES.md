@@ -1,5 +1,9 @@
 # DiveSkipTransit - Changes
 
+## 1.1.2
+- Licensed under the MIT License instead of the GNU GPLv3: the LICENSE in the zip and the README's *About* and
+  *Disclaimer* say so.
+
 ## 1.1.1
 - Fix: the game's notices that leaving the ring brings (*Acquired* with the name of the ship the arm held, a drone's
   cargo in transit) were cut short when the station loaded at once, and with the transit played fast, *Acquired* stood

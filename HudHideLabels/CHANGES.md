@@ -1,5 +1,9 @@
 # HudHideLabels - Changes
 
+## 1.0.5
+- Licensed under the MIT License instead of the GNU GPLv3: the LICENSE in the zip and the README's *About* and
+  *Disclaimer* say so.
+
 ## 1.0.4
 - The README names the K225's HUD by its file (`Display-K225.tscn`), and the Equipment screen and the Onboard
   Maintenance System as the game does.

@@ -1,5 +1,9 @@
 # DealerNotifier - Changes
 
+## 1.2.2
+- Licensed under the MIT License instead of the GNU GPLv3: the LICENSE in the zip and the README's *About* and
+  *Disclaimer* say so.
+
 ## 1.2.1
 - With a gamepad, the Shift badge's tooltip shows while the Dealer entry is highlighted: a gamepad shows no hover
   (`attachTooltip()` with the entry as its `focusOwner`).

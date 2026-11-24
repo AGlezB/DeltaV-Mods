@@ -1,5 +1,9 @@
 # TransponderAltCodes - Changes
 
+## 1.0.4
+- Licensed under the MIT License instead of the GNU GPLv3: the LICENSE in the zip and the README's *About* and
+  *Disclaimer* say so.
+
 ## 1.0.3
 - The game's script paths, formats and names the mod matches are prefixed constants: `_TAC_SHIP_SCRIPT`,
   `_TAC_BODY_SCRIPT`, `_TAC_DOCK_SCRIPT`, `_TAC_DOCK_FORMAT`, `_TAC_STORY_BEACON_SCRIPTS`, `_TAC_STORY_BEACON_FORMAT`,

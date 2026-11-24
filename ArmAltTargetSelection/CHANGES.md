@@ -1,5 +1,9 @@
 # ArmAltTargetSelection - Changes
 
+## 1.2.7
+- Licensed under the MIT License instead of the GNU GPLv3: the LICENSE in the zip and the README's *About* and
+  *Disclaimer* say so.
+
 ## 1.2.6
 - An excavator's claws are found once per excavator instead of on every choice of target, which the game asks for on
   every physics frame while the arm has none (`_targetingClawsOf`, `_targetingClaws`).

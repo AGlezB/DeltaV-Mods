@@ -1,5 +1,9 @@
 # CombatSimulator - Changes
 
+## 1.2.1
+- Licensed under the MIT License instead of the GNU GPLv3: the LICENSE in the zip and the README's *About* and
+  *Disclaimer* say so.
+
 ## 1.2.0
 - The dialog's first row under *Enemies*, how many enemies come, shows the name of the ship picked on the *Ship* tab
   instead of "Number", as the ship list names it, and follows another ship picked at once. `Settings.gd`: new field

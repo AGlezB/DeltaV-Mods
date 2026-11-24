@@ -1,5 +1,9 @@
 # BootSkipLogos - Changes
 
+## 1.0.5
+- Licensed under the MIT License instead of the GNU GPLv3: the LICENSE in the zip and the README's *About* and
+  *Disclaimer* say so.
+
 ## 1.0.4
 - The README says Godot, not the mod loader, runs `_ready` at every level of the script chain.
 

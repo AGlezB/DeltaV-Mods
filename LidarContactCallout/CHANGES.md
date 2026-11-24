@@ -1,5 +1,9 @@
 # LidarContactCallout - Changes
 
+## 1.0.2
+- Licensed under the MIT License instead of the GNU GPLv3: the LICENSE in the zip and the README's *About* and
+  *Disclaimer* say so.
+
 ## 1.0.1
 - A contact first found nearer than `CALLOUT_MIN_RANGE` to the ship, by its exact distance, is no longer called out:
   a ship the arm lets go of (its Pilot tab row went while it was held, and the LIDAR finds it again when let go) or

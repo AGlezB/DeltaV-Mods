@@ -1,5 +1,9 @@
 # ShipHighlightTypeAndPrice - Changes
 
+## 1.0.7
+- Licensed under the MIT License instead of the GNU GPLv3: the LICENSE in the zip and the README's *About* and
+  *Disclaimer* say so.
+
 ## 1.0.6
 - How long a new entry is left before it is painted is the constant `SETTLE_TIME`, and the bold outline's size and
   opacity are `BOLD_OUTLINE_SIZE` and `BOLD_OUTLINE_ALPHA`.

@@ -1,5 +1,9 @@
 # GeologyByMass - Changes
 
+## 2.0.2
+- Licensed under the MIT License instead of the GNU GPLv3: the LICENSE in the zip and the README's *About* and
+  *Disclaimer* say so.
+
 ## 2.0.1
 - The line on the geologist aboard reads "You have a Geologist with Basic education. …" instead of "You have a Basic
   Geologist. …", so that the level reads as their Education's (text `GEOLOGYBYMASS_GEOLOGIST`).

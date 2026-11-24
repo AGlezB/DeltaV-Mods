@@ -1,5 +1,9 @@
 # DroneAltPriorities - Changes
 
+## 1.1.1
+- Licensed under the MIT License instead of the GNU GPLv3: the LICENSE in the zip and the README's *About* and
+  *Disclaimer* say so.
+
 ## 1.1.0
 - With a gamepad, the D-pad goes down from the switch at the top of the mod's OMS tab through each slider to *Reset to
   defaults*, and back up, and no longer leaves the tab (`SettingsUI.gd` `_linkFocus()`).

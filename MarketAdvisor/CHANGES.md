@@ -1,5 +1,9 @@
 # MarketAdvisor - Changes
 
+## 1.3.2
+- Licensed under the MIT License instead of the GNU GPLv3: the LICENSE in the zip and the README's *About* and
+  *Disclaimer* say so.
+
 ## 1.3.1
 - The Shift badge sits inside the Trade button, on its left, as CombatSimulator's sits on the simulator's button,
   instead of just left of it: the button widens to fit it and keeps its text on the right, clear of it, and a click on

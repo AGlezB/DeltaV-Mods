@@ -261,7 +261,7 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
 ## Packaging and releasing
 
 A mod ships as a zip that holds the whole mod folder (README, `CHANGES.md` and images included) at its root, with a
-copy of the repository's `LICENSE` in it: the GPL asks for one with every copy given out. `package.ps1` (PowerShell 7)
+copy of the repository's `LICENSE` in it: the MIT License asks for its notice in every copy. `package.ps1` (PowerShell 7)
 builds it as `<ModName>-<version>.zip`, in `TempDir` or in `-OutDir`; on GitHub it is `<ModName>.zip` (see
 *Publishing*):
 
@@ -676,11 +676,11 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
   modders* for script extensions (what is extended, overrides, new members, constants, how it was tested); *Install*
   (three steps; the second, the same in every README, is "Put the mod's zip in it, and remove any other version of
   the mod from there: they would all load. Do not unzip it."; the third, `--enable-mods`); the "Mods are unofficial …
-  Keep a backup of your save." line; *About* (made with the help of Claude; GPLv3); *Disclaimer* (the game belongs to
-  Kodera Software, the author has no tie to it or to the company, the mod is provided as is, for free, without
-  warranty; the same text in every README, ending with the GPLv3's sections 15 and 16). When the behaviour changes,
-  the release that ships it updates the README's text, *Warning* and figures too, and the mod's page in the users'
-  wiki.
+  Keep a backup of your save." line; *About* (made with the help of Claude; MIT License); *Disclaimer* (the game
+  belongs to Kodera Software, the author has no tie to it or to the company, the mod is provided as is, for free,
+  without warranty; the same text in every README, ending with a pointer to the MIT License, which says so in full).
+  When the behaviour changes, the release that ships it updates the README's text, *Warning* and figures too, and the
+  mod's page in the users' wiki.
 - The root `README.md`, this file, `GAME.md`, `_tests/README.md` and `_wiki\` are the repository's own (they ship in
   no zip, and `CHANGES.md` doesn't list their changes). Update the README's *Mods* table when a mod reaches 1.0.0 or is
   removed or a mod's summary changes, and its *Mods that change how the game plays* when a mod gains or loses its

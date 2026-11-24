@@ -1,5 +1,9 @@
 # ShipSortByTypeAndPrice - Changes
 
+## 1.0.7
+- Licensed under the MIT License instead of the GNU GPLv3: the LICENSE in the zip and the README's *About* and
+  *Disclaimer* say so.
+
 ## 1.0.6
 - The highlight the Dealer puts on the entry it lists first, for the keyboard and the gamepad, moves to the new first
   entry after the sort, if the old first one still has it.

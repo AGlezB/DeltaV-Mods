@@ -1,5 +1,9 @@
 # DiveDisableAdrenalineBooster - Changes
 
+## 1.0.6
+- Licensed under the MIT License instead of the GNU GPLv3: the LICENSE in the zip and the README's *About* and
+  *Disclaimer* say so.
+
 ## 1.0.5
 - The README and the description in `Mod.manifest` write Adrenaline booster and the Onboard Maintenance System as the
   game does; the README says Godot, not the mod loader, runs `_ready` at every level of the script chain, and that the

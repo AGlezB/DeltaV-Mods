@@ -1,5 +1,9 @@
 # ArmAltPullBehavior - Changes
 
+## 1.6.2
+- Licensed under the MIT License instead of the GNU GPLv3: the LICENSE in the zip and the README's *About* and
+  *Disclaimer* say so.
+
 ## 1.6.1
 - The arm's entry in the OMS's Mechanic tab shows the power the mod's pull draws, as the game's formula would, instead
   of nothing while the mod pulls (`_showPower`, `_drawn`).

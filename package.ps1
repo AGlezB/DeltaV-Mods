@@ -5,8 +5,8 @@
 
 .DESCRIPTION
 	Packages the mod folder <Mod> into <OutDir>\<Mod>-<version>.zip, the version read from [version] of its
-	Mod.manifest: the mod folder at the zip's root, with a copy of the repository's LICENSE in it (the GPL asks for one
-	with every copy given out). Refuses to overwrite a zip, refuses a mod whose CHANGES.md doesn't start with that
+	Mod.manifest: the mod folder at the zip's root, with a copy of the repository's LICENSE in it (the MIT License asks
+	for its notice in every copy). Refuses to overwrite a zip, refuses a mod whose CHANGES.md doesn't start with that
 	version, and refuses a mod whose page in the users' wiki is missing or out of date (wiki.ps1 -Mod <Mod>), or, below
 	1.0.0, a mod that has a page already (it gets one at 1.0.0). Checks that
 	every entry is <Mod>/... with forward slashes, as the game needs for the res:// paths (Windows PowerShell 5.1's

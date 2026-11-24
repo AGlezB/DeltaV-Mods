@@ -1,6 +1,6 @@
 # ΔV: Rings of Saturn mods
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **WARNING**: Mods might break or work in unexpected ways if another mod or a DLC touches the same parts or changes the
 behavior of the base game functions the mod uses.
@@ -101,7 +101,7 @@ harness, in [`_tests/README.md`](_tests/README.md).
 
 ## About
 Made with the help of AI (Claude, by Anthropic).
-Licensed under the [GNU General Public License v3.0](LICENSE) (GNU GPLv3).
+Licensed under the [MIT License](LICENSE).
 
 ## Disclaimer
 ΔV: Rings of Saturn is made and owned by Kodera Software. The game's name, and everything from the game this
@@ -111,4 +111,4 @@ The author of these mods has no tie of any kind to the game or to Kodera Softwar
 make, check or approve these mods, and doesn't support them.
 
 Everything in this repository is provided as is, for free, and without warranty of any kind, express or implied: use
-it at your own risk. The [GNU GPLv3](LICENSE) says so in full, in its sections 15 and 16.
+it at your own risk. The [MIT License](LICENSE) says so in full.

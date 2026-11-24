@@ -1,5 +1,9 @@
 # ShipCopyPaste - Changes
 
+## 1.1.1
+- Licensed under the MIT License instead of the GNU GPLv3: the LICENSE in the zip and the README's *About* and
+  *Disclaimer* say so.
+
 ## 1.1.0
 - No more Paste button or copied template: *Copy*, on another ship of the model you fly, opens the confirmation at
   once, and its *OK* makes the ship you fly like that ship. The entry of the ship you fly has an empty spacer of Copy's

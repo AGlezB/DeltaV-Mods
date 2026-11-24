@@ -1,5 +1,9 @@
 # CrewHighlightJobAndSalary - Changes
 
+## 1.0.6
+- Licensed under the MIT License instead of the GNU GPLv3: the LICENSE in the zip and the README's *About* and
+  *Disclaimer* say so.
+
 ## 1.0.5
 - How long a new entry is left before it is painted is the constant `SETTLE_TIME`.
 - The README is laid out as the others: *What it does and why*, *For modders*.

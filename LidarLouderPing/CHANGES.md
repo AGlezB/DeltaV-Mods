@@ -1,5 +1,9 @@
 # LidarLouderPing - Changes
 
+## 1.2.5
+- Licensed under the MIT License instead of the GNU GPLv3: the LICENSE in the zip and the README's *About* and
+  *Disclaimer* say so.
+
 ## 1.2.4
 - The README and the description in `Mod.manifest` write LIDAR and the Equipment screen as the game does.
 - A comment in `Code.gd` names `i18n/en.po`, where the slider's texts are.
