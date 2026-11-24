@@ -18,6 +18,8 @@ extends "res://hud/Hud.gd"
 # - An oddity the astrogator can't mark is Anomalous: called out once, with approximate figures. Only an astrogator
 #   can tell one apart from the chunks around it: with no astrogator aboard, one with no row isn't called out, and one
 #   in the Pilot tab (the AI core, with its transponder) is called out as New.
+# - A contact first found within CALLOUT_MIN_RANGE of the ship, by its exact distance, isn't called out (a ship the arm
+#   lets go of, something out of the hold): not while its row stands, or, with no row, for the rest of the dive.
 # - The callouts wait until no new one has come for CALLOUT_SETTLE seconds, then go in one comms line: one alone, or
 #   several as a numbered list. The line is the game's (comms/MessageLine.tscn), added as hud/Hud.gd gotMessage adds
 #   one, with the speaker's face and "[Name, Occupation]" from a crew-spoken Conversation (comms/MessageLine.gd
@@ -46,10 +48,14 @@ const CALLOUT_MARKABLE_GROUPS = ["ships", "tactical", "stations"]
 const CALLOUT_ERROR_RADIUS = 0.2
 # An approximate distance is rounded to this many metres.
 const CALLOUT_DISTANCE_STEP = 100
+# Contacts first found nearer than this, in metres from the ship's centre (a ship the arm lets go of, something out of
+# the hold), aren't called out: the crew can see them.
+const CALLOUT_MIN_RANGE = 200
 # What the Pilot tab shows for a contact with no transponder, if its label can't be read.
 const CALLOUT_UIO_FALLBACK = "UIO"
 
 const _CALLOUT_TICK = 0.25 # seconds between two checks of the waiting callouts
+const _CALLOUT_UNITS_PER_METRE = 10.0 # the game shows 10 world units as 1 m
 # The ship zones the callouts work in: a dive (Game.gd _respawn_ship) and a simulator (the station's,
 # enceladus/Simulator/SimulationLayer.gd startSimulation, and CombatSimulator's arena, which builds its ship the same
 # way).
@@ -150,7 +156,7 @@ func _calloutContactsChanged():
 			elif _calloutApprox.has(key):
 				# Said before it had a row: updated once marked (below).
 				pass
-			else:
+			elif not _calloutTooClose(object):
 				_calloutAdd(key, object, _CALLOUT_ANOMALOUS if _calloutIsAnomalous(object) else _CALLOUT_NEW, true)
 		if _calloutApprox.has(key) and row[3] and not _calloutWaitingKeys.has(key):
 			_calloutApprox.erase(key)
@@ -189,6 +195,10 @@ func _calloutIsAnomalous(object) -> bool:
 			return false
 	return true
 
+# By the exact distance, whatever the astrogator's experience: the error only ever applies to what is said.
+func _calloutTooClose(object) -> bool:
+	return object.global_position.distance_to(ship.global_position) / _CALLOUT_UNITS_PER_METRE < CALLOUT_MIN_RANGE
+
 func _calloutHasNoTransponder(object) -> bool:
 	return not object.has_method("getTransponder") or object.getTransponder() == ""
 
@@ -218,6 +228,8 @@ func _calloutScan():
 		if anomalous and not astrogatorAboard:
 			continue
 		_calloutSighted[key] = true
+		if _calloutTooClose(object):
+			continue
 		_calloutAdd(key, object, _CALLOUT_ANOMALOUS if anomalous else _CALLOUT_NEW, false)
 
 func _calloutTick():
@@ -301,7 +313,7 @@ func _calloutValues(entry, status, row, experience) -> Dictionary:
 	if not marked:
 		var radius = toward.length() * CALLOUT_ERROR_RADIUS * (1.0 - experience)
 		toward += Vector2(radius * sqrt(randf()), 0).rotated(randf() * TAU)
-	var distance = toward.length() / 10.0
+	var distance = toward.length() / _CALLOUT_UNITS_PER_METRE
 	var bearing = rad2deg(Vector2(0, -1).angle_to(toward))
 	if marked:
 		distance = ceil(distance)

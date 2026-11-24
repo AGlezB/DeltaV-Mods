@@ -968,7 +968,12 @@ LidarContactCallout.
   sighted, given a row and the row gone before it is said, dropped. Never said: the ship's own drones (its transponder
   and a dash) and what the arm holds, while a transponder that only starts like the ship's is; a row gone before it is
   said dropped, the others said; found again later, New; said, gone and found again, New again; nothing while the ship
-  is out of the zones or isn't the player's, said at the next tick once it is again. Who speaks (the line's "[Name,
+  is out of the zones or isn't the player's, said at the next tick once it is again. Near the ship (at the origin, so
+  the edge is exact): a new row a metre inside `CALLOUT_MIN_RANGE` not said, one at it said, New; the first not said
+  once beyond it while its row stays, and New once its row is gone and found again beyond it; a ship the arm lets go of
+  inside it, its row gone while it was held, not said; a contact said from beyond it, marked inside it, Updated, exact;
+  an object with no row the LIDAR sees inside it not said, nor later beyond it; one seen at it, New. Who speaks (the
+  line's "[Name,
   Occupation]"), over several reports: an astrogator aboard, with others aboard; one of two astrogators at random, each
   speaking, nobody else; with no astrogator, a pilot or a mechanic at random, each speaking, never the passenger; an
   astrogator not in the dive crew or on leave, never; with nobody to speak (a passenger, someone not in the dive crew
@@ -1022,7 +1027,7 @@ LidarContactCallout.
   `drones` 69 (the same in both load orders, with DroneAltPriorities alone and with LidarContactCallout too; 3 control
   checks with `-Mods @()`), `market` 124 (4 control checks with `-Mods @()`), `services` 52 (3 control checks with
   `-Mods @()`), `sale` 75 with ShipCopyPaste (in both load orders; 2 control checks with `-Mods ShipCopyPaste` and with
-  `-Mods @()`), `repairs` 156 (2 control checks with `-Mods @()`), `callout` 81 (the same with DroneAltPriorities and
+  `-Mods @()`), `repairs` 156 (2 control checks with `-Mods @()`), `callout` 89 (the same with DroneAltPriorities and
   GeologyByMass too, in every load order; 3 control checks with `-Mods @()`), all passing; `units` gives 11 control
   checks with `-Mods @()`; `-Matrix` gives 16 of 16 in every combination.
   Feeding, a chunk beside the hull is in after 3.0–3.7 s.

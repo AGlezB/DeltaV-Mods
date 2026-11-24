@@ -347,6 +347,7 @@ func run():
 	yield(kinds(), "completed")
 	yield(sighted(), "completed")
 	yield(skipped(), "completed")
+	yield(nearby(), "completed")
 	yield(speakers(), "completed")
 	yield(figures(), "completed")
 	yield(holds(), "completed")
@@ -681,6 +682,58 @@ func skipped():
 	ship.playerControlled = true
 	var player = said(hud, 1)
 	check("nothing while the ship is out of the zones, or isn't the player's; said at the next tick once it is again", away.empty() and back.size() == 1 and notPlayer.empty() and player.size() == 1, [away.size(), back.size(), notPlayer.size(), player.size()])
+	yield(endDive(), "completed")
+
+# Contacts first found nearer than CALLOUT_MIN_RANGE to the ship, by their exact distance: a ship the arm lets go of,
+# something out of the hold. The ship sits at the origin, so the edge is exact.
+func nearby():
+	var ann = member("Ann Bell", ASTROGATOR, 0.5)
+	hire([ann])
+	var d = yield(dive(), "completed")
+	var ship = d[0]
+	var hud = d[1]
+	var maxWait = ticksFor(hud, C.CALLOUT_MAX_WAIT)
+	var edge = C.CALLOUT_MIN_RANGE * 10.0 # world units
+	var near = row(ship, object(ship, Vector2(0, -(edge - 10)), "NEA-1"), "NEA-1")
+	var atEdge = row(ship, object(ship, Vector2(edge, 0), "EDG-1"), "EDG-1")
+	var line = one(saidAfter(hud, C.CALLOUT_SETTLE))
+	check("a new row a metre inside CALLOUT_MIN_RANGE of the ship isn't said; one at it is, New", line != null and line.dialog == C._CALLOUT_CONTACT and isCallout(text(line), ship, atEdge, C._CALLOUT_NEW, identified("EDG-1"), false, ann.experience), text(line) if line != null else "")
+	near.position = ship.position + Vector2(0, -8000)
+	ship.emit_signal("identifiedShipsChanged")
+	check("nor later beyond it, while its row stays", said(hud, maxWait).empty())
+	ship.removeIdentifiedShip(near)
+	row(ship, near, "NEA-1")
+	line = one(saidAfter(hud, C.CALLOUT_SETTLE))
+	check("its row gone and found again beyond it: New", line != null and isCallout(text(line), ship, near, C._CALLOUT_NEW, identified("NEA-1"), false, ann.experience), text(line) if line != null else "")
+
+	# The arm: a ship said from afar, brought in and held while its row goes (ship-ctrl.gd taking it into the hold,
+	# LIDAR.gd removeOldTransponders), then let go beside the ship, where the LIDAR finds it again.
+	var towed = row(ship, object(ship, Vector2(-6000, 0), "TOW-1"), "TOW-1")
+	said(hud, maxWait)
+	towed.position = ship.position + Vector2(-900, -300)
+	ship.temporaryCargo.append(towed)
+	ship.removeIdentifiedShip(towed)
+	ship.temporaryCargo.erase(towed)
+	row(ship, towed, "TOW-1")
+	check("a ship the arm lets go of inside CALLOUT_MIN_RANGE, its row gone while it was held: not said", said(hud, maxWait).empty())
+	var closing = row(ship, object(ship, Vector2(7000, 7000), "CLS-1"), "CLS-1")
+	said(hud, maxWait)
+	closing.position = ship.position + Vector2(300, 300)
+	row(ship, closing, "CLS-1", true)
+	line = one(saidAfter(hud, C.CALLOUT_SETTLE))
+	check("a contact said from beyond it with approximate figures, marked once inside it: Updated, exact", line != null and text(line) == exactText(ship, closing, C._CALLOUT_UPDATED, identified("CLS-1")), text(line) if line != null else "")
+
+	# Objects with no row: a pirate's lifepod out of the hold (a ship broadcasting no transponder, worth a reward).
+	var pod = object(ship, Vector2(500, 600), "", 3000, ["ships"])
+	ship.lidar.see(pod)
+	check("an object with no transponder and no row the LIDAR sees inside CALLOUT_MIN_RANGE: not said", said(hud, maxWait).empty())
+	pod.position = ship.position + Vector2(7000, 0)
+	check("nor later beyond it, for the rest of the dive", said(hud, maxWait).empty())
+	var pirate = object(ship, Vector2(0, edge), "", 0, ["ships"])
+	ship.lidar.see(pirate)
+	tick(hud)
+	line = one(saidAfter(hud, C.CALLOUT_SETTLE))
+	check("one seen at it: New, the game's UIO", line != null and isCallout(text(line), ship, pirate, C._CALLOUT_NEW, uio(), false, ann.experience), text(line) if line != null else "")
 	yield(endDive(), "completed")
 
 # Who calls out: an astrogator aboard, at random among several; with none, anyone aboard with a job, at random; never a

@@ -720,7 +720,9 @@ marked, flags]`, kept by `ships/ship-ctrl.gd` `addIdentifiedShip` and `removeIde
 `identifiedShipsChanged` when a row comes, goes or changes. Each source of a row sets its own flag, and the row goes
 once no flag is left, or when its object enters the cargo hold:
 - the LIDAR (flag 1, `hud/LIDAR.gd` `_physics_process`): every object with a transponder a ray hits, unmarked; its flag
-  goes `transponderRemovalTime` (60 s of in-game time) after the last hit (`removeOldTransponders`);
+  goes `transponderRemovalTime` (60 s of in-game time) after the last hit (`removeOldTransponders`). The rays skip the
+  ship's cargo and temporary cargo (`ship-ctrl.gd` `recomputeLidarExclusion`, `lidarPhysicsExclude`), so what the arm
+  holds loses this flag after that time, and gets a new row at the first hit once let go;
 - the astrogator's marks (flag 2, `hud/ShipMark.gd` `scanTarget`), marked, also for an object with no transponder,
   which the tab shows as UIO. `hud/AutopilotOverlay.gd` `astrogatorTacticalMarkers` marks objects of the `ships`,
   `tactical` and `stations` groups that the LIDAR has seen, within the Tactical awareness range (see *Crew stats*), the

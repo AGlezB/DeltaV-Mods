@@ -26,6 +26,11 @@ happens without the mod.
   lifepods and drones, and the oddities (objects worth a reward of their own) the astrogator can't mark. A row is
   called out once while it stays (one the Pilot tab drops and finds again later is called out again), an object with
   no row once per dive. Bullets are oddities too, and are left out (`CALLOUT_IGNORED_ODDITIES`).
+- **Not what is right beside the ship:** a contact first found nearer than `CALLOUT_MIN_RANGE` to the ship, by its
+  exact distance (never the approximate one), isn't called out: a ship the arm lets go of, whose row went while the arm
+  held it, or something out of the hold. A row found that close isn't called out while it stays, even once it is
+  farther; an object with no row, for the rest of the dive. A contact found beyond that range and then coming closer
+  is called out as usual, Updated included.
 - **New, Updated or Anomalous:** New the first time. Updated when a contact first called out with approximate figures
   is marked by the astrogator, so its exact figures are known. Anomalous for an oddity the astrogator can't mark (in
   none of `CALLOUT_MARKABLE_GROUPS`): called out once, with approximate figures, never updated. Those are the Tesla,
@@ -53,11 +58,12 @@ happens without the mod.
 - **Why:** in a dive a new contact shows up in the Pilot tab with no notice at all, and objects with no transponder
   never do, so they are easy to miss. Figures for what the astrogator hasn't marked are approximate because exact
   ones would be a cheat: the game shows them only for marked rows. An approximate spot still tells you where to look,
-  and a more experienced astrogator gives a closer one.
+  and a more experienced astrogator gives a closer one. What is right beside the ship is left out because the crew
+  can see it, and the player usually knows already: the arm just let it go, or it just got out of the hold.
 - The constants at the top of `LidarContactCallout/Code.gd` (`CALLOUT_SETTLE`, `CALLOUT_MAX_WAIT`,
   `CALLOUT_AFTER_COMMS`, `CALLOUT_IGNORED_ODDITIES`, `CALLOUT_MARKABLE_GROUPS`, `CALLOUT_ERROR_RADIUS`,
-  `CALLOUT_DISTANCE_STEP` and `CALLOUT_UIO_FALLBACK`) may be edited inside the zip. The callouts' texts are in
-  `LidarContactCallout/i18n/en.po`.
+  `CALLOUT_DISTANCE_STEP`, `CALLOUT_MIN_RANGE` and `CALLOUT_UIO_FALLBACK`) may be edited inside the zip. The
+  callouts' texts are in `LidarContactCallout/i18n/en.po`.
 
 ## For modders
 - Script extension of `res://hud/Hud.gd` (`installScriptExtension` in `ModMain.gd`), the HUD of every ship and of the
@@ -79,14 +85,21 @@ happens without the mod.
   distance only for a marked row. `_calloutContactsChanged` compares the rows with those it saw before: a new one is
   added as New (Anomalous for an oddity in none of `CALLOUT_MARKABLE_GROUPS`), a row first called out with
   approximate figures and now marked as Updated, and a row gone takes its waiting callout with it. Left out: objects
-  freed or in `temporaryCargo`, and the ship's own drones, whose code is the ship's and a dash
-  (`ships/modules/ClaimOwner.gd`; TransponderAltCodes keeps that form).
+  freed or in `temporaryCargo`, the ship's own drones, whose code is the ship's and a dash
+  (`ships/modules/ClaimOwner.gd`; TransponderAltCodes keeps that form), and a new row whose object is nearer than
+  `CALLOUT_MIN_RANGE` (`_calloutTooClose`: the exact distance from the ship's origin, in metres of
+  `_CALLOUT_UNITS_PER_METRE` world units). Such a row is still recorded as seen, so it stays unsaid while it lasts.
+  Why a ship the arm lets go of gets a new row: the game drops the row of an object taken into the hold
+  (`ship-ctrl.gd` `removeIdentifiedShip` as it adds the cargo), and the LIDAR's rays skip the ship's cargo and
+  `temporaryCargo` (`recomputeLidarExclusion`), so a held object's LIDAR flag runs out (`LIDAR.gd`
+  `removeOldTransponders`) and the next hit after it is let go adds the row anew.
 - **Objects with no row.** Every tick, `_calloutScan` walks the field's children (the ship's parent): an oddity
   (`CurrentGame.isOddity`, its `specialName` not in `CALLOUT_IGNORED_ODDITIES`) or a member of the `ships` group, with
   no transponder (no `getTransponder`, or an empty one) and no row, not gone (freed, queued for deletion, in
   `temporaryCargo`, `inCargoHold` or `dead`), which the LIDAR has seen (`LIDAR.gd` `hasSeen`, as
   `astrogatorTacticalMarkers` asks), is added once per object for the HUD's life. An anomalous one only while an
-  astrogator is aboard (`CurrentGame.getCrewNumberWithRole`).
+  astrogator is aboard (`CurrentGame.getCrewNumberWithRole`). One nearer than `CALLOUT_MIN_RANGE` when first seen is
+  recorded in `_calloutSighted` all the same, and never added.
 - **The report.** `_calloutTick` waits as *When* says above (`ship.cutscene`, `ship.talkingWith`, and the time of the
   last `broadcast` to the ship with a message), then `_calloutSpeak` drops the callouts whose object is gone or whose
   row went, picks the speaker (`_calloutSpeaker`: the crew of `CurrentGame.getCrew()` that `isCrewMemberActive`, that
@@ -118,16 +131,16 @@ happens without the mod.
   calling the parent's first: by path the chain is game ← DroneAltPriorities ← GeologyByMass ← LidarContactCallout.
 - Overrides `instance()` (calls the parent's). Members: the constants `CALLOUT_SETTLE`, `CALLOUT_MAX_WAIT`,
   `CALLOUT_AFTER_COMMS`, `CALLOUT_IGNORED_ODDITIES`, `CALLOUT_MARKABLE_GROUPS`, `CALLOUT_ERROR_RADIUS`,
-  `CALLOUT_DISTANCE_STEP` and `CALLOUT_UIO_FALLBACK` (which a user may edit), `_CALLOUT_TICK`, `_CALLOUT_ZONES`,
-  `_CALLOUT_ASTROGATOR`, `_CALLOUT_PASSENGER`, `_CALLOUT_UIO_SCENE`, `_CALLOUT_UIO_PROPERTY` and the text keys
-  `_CALLOUT_CONTACT`, `_CALLOUT_IDENTIFIED`, `_CALLOUT_APPROXIMATE`, `_CALLOUT_LIST`, `_CALLOUT_LIST_ITEM`,
-  `_CALLOUT_NEW`, `_CALLOUT_UPDATED` and `_CALLOUT_ANOMALOUS`; the variables `_calloutOn`, `_calloutTimer`,
-  `_calloutConversation`, `_calloutUio`, `_calloutClock`, `_calloutLastComms`, `_calloutWaiting`,
-  `_calloutWaitingKeys`, `_calloutRows`, `_calloutApprox` and `_calloutSighted`; the functions `_calloutSetup()`,
-  `_calloutInZone()`, `_calloutReadUio()`, `_calloutHeard()`, `_calloutContactsChanged()`, `_calloutAdd()`,
-  `_calloutRemove()`, `_calloutIsOwn()`, `_calloutIsOddity()`, `_calloutIsAnomalous()`, `_calloutHasNoTransponder()`,
-  `_calloutIsGone()`, `_calloutScan()`, `_calloutTick()`, `_calloutSpeaker()`, `_calloutSpeak()`, `_calloutValues()`,
-  `_calloutSay()` and `_calloutAddLine()`.
+  `CALLOUT_DISTANCE_STEP`, `CALLOUT_MIN_RANGE` and `CALLOUT_UIO_FALLBACK` (which a user may edit), `_CALLOUT_TICK`,
+  `_CALLOUT_UNITS_PER_METRE`, `_CALLOUT_ZONES`, `_CALLOUT_ASTROGATOR`, `_CALLOUT_PASSENGER`, `_CALLOUT_UIO_SCENE`,
+  `_CALLOUT_UIO_PROPERTY` and the text keys `_CALLOUT_CONTACT`, `_CALLOUT_IDENTIFIED`, `_CALLOUT_APPROXIMATE`,
+  `_CALLOUT_LIST`, `_CALLOUT_LIST_ITEM`, `_CALLOUT_NEW`, `_CALLOUT_UPDATED` and `_CALLOUT_ANOMALOUS`; the variables
+  `_calloutOn`, `_calloutTimer`, `_calloutConversation`, `_calloutUio`, `_calloutClock`, `_calloutLastComms`,
+  `_calloutWaiting`, `_calloutWaitingKeys`, `_calloutRows`, `_calloutApprox` and `_calloutSighted`; the functions
+  `_calloutSetup()`, `_calloutInZone()`, `_calloutReadUio()`, `_calloutHeard()`, `_calloutContactsChanged()`,
+  `_calloutAdd()`, `_calloutRemove()`, `_calloutIsOwn()`, `_calloutIsOddity()`, `_calloutIsAnomalous()`,
+  `_calloutTooClose()`, `_calloutHasNoTransponder()`, `_calloutIsGone()`, `_calloutScan()`, `_calloutTick()`,
+  `_calloutSpeaker()`, `_calloutSpeak()`, `_calloutValues()`, `_calloutSay()` and `_calloutAddLine()`.
 - Tested in the game's dives, and outside the game in a headless Godot 3.6 with the game's `Hud.gd`, comms line
   (`MessageLine.tscn`, `MessageLine.gd`), `ConversationPlayer.gd` and the Pilot tab's label and figures
   (`ShipOnOMSLabel.tscn`, `ShipOnOMSBearingDistance.gd`), and stubs of the ship, its LIDAR and the objects around

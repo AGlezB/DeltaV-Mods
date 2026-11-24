@@ -35,7 +35,8 @@ calls them all at once. They don't talk over a conversation or a cutscene, and w
 line, so you have time to read it.
 
 **Where.** In a dive, in the station's simulator, and in [CombatSimulator](CombatSimulator)'s fights. Your own drones
-are never called out.
+are never called out, and neither is anything first found within 200 m of your ship, such as a ship your arm lets go
+of or something that gets out of your hold: it's right there for you to see.
 
 ## Changes how the game plays
 
@@ -67,6 +68,7 @@ LidarContactCallout/Code.gd CALLOUT_DISTANCE_STEP = 100 -> 100 m
 LidarContactCallout/Code.gd CALLOUT_SETTLE = 3.0 -> 3 seconds
 LidarContactCallout/Code.gd CALLOUT_MAX_WAIT = 10.0 -> 10 seconds
 LidarContactCallout/Code.gd CALLOUT_AFTER_COMMS = 8.0 -> 8 seconds
+LidarContactCallout/Code.gd CALLOUT_MIN_RANGE = 200 -> 200 m
 LidarContactCallout/i18n/en.po LIDARCONTACTCALLOUT_CONTACT = "{status} contact, {identity}, {precision}bearing {bearing}, distance {distance}" -> New contact, identified SE1-1234, approximate bearing 251, distance 4,000
 LidarContactCallout/i18n/en.po LIDARCONTACTCALLOUT_NEW = "New"
 LidarContactCallout/i18n/en.po LIDARCONTACTCALLOUT_UPDATED = "Updated"
