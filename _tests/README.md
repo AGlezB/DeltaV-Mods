@@ -635,14 +635,16 @@ LidarContactCallout.
     the Ship setting's label, opening on the first (a plain `TabContainer`: the harness has neither the Crew screen's
     tab hints nor its theme); the first holding the window, the groups and the buttons, the second the window, the ship
     list and the buttons; Tuning's theme on both and its window frame copied; a group per `GROUPS` entry with a game's
-    row per setting but the ship, named by its label; each slider's range, step, unit and value in the units shown, each
-    switch's state; the first row focused and its description shown, then each row's on focus; the window keeping its
-    height with a long text, which scrolls, and with none; a slider and a switch stored when changed, the switch not
-    switched back on focus. The ship list (its pictures drawn from the combat ship stub): a row per model offered, only
-    the current one on; the models alone in their series under Others, last; the tab focusing the current ship and
-    showing its description; another ship switched on picked, the previous one switched off, the tab's title kept, the
-    value stored; the current one switched off back on; focusing another row changing nothing; Esc cancelling from the
-    ship tab; reopened on the first tab with the last choices, the ship's row switched on.
+    row per setting but the ship, named by its label; a row with `namedBy` (Number) showing the name of the ship picked,
+    as the ship list names it, and another ship's at once when that is picked, its key still its label; each slider's
+    range, step, unit and value in the units shown, each switch's state; the first row focused and its description
+    shown, then each row's on focus; the window keeping its height with a long text, which scrolls, and with none; a
+    slider and a switch stored when changed, the switch not switched back on focus. The ship list (its pictures drawn
+    from the combat ship stub): a row per model offered, only the current one on; the models alone in their series
+    under Others, last; the tab focusing the current ship and showing its description; another ship switched on picked,
+    the previous one switched off, the tab's title kept, the value stored; the current one switched off back on;
+    focusing another row changing nothing; Esc cancelling from the ship tab; reopened on the first tab with the last
+    choices, the ship's row switched on.
   - A run from Start (TRTL, `number` at its most, grouped): the layer running, known to `CurrentGame`, processing while
     paused, its viewport's container stopping and not forwarding, the simulator's scale, the viewport's own world and
     mouse proxy; the field, BulletTimer (without its notifications layer, deaf to `gameOver`), the music and WESpace in
@@ -1016,7 +1018,7 @@ LidarContactCallout.
   with CrewCheapHireNotifier and DiveSkipTransit too, in every load order, 136 with MarketAdvisor and ServiceNotifier as
   well; 136 with ShipCopyPaste, ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too; 8 with the two ship-list mods
   alone; 2 control checks with `-Mods @()`), `transponder` 48 (3 control checks with `-Mods @()`; the same 48 with
-  CombatSimulator too), `combat` 151 (the same with TransponderAltCodes too; 8 control checks with `-Mods @()`),
+  CombatSimulator too), `combat` 153 (the same with TransponderAltCodes too; 8 control checks with `-Mods @()`),
   `drones` 69 (the same in both load orders, with DroneAltPriorities alone and with LidarContactCallout too; 3 control
   checks with `-Mods @()`), `market` 124 (4 control checks with `-Mods @()`), `services` 52 (3 control checks with
   `-Mods @()`), `sale` 75 with ShipCopyPaste (in both load orders; 2 control checks with `-Mods ShipCopyPaste` and with

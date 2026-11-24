@@ -12,7 +12,9 @@ signal settingsChanged()
 # DESCRIPTION_SUFFIX: the description the dialog shows while the setting is selected. `type` "bool" is
 # a switch: no range, unit or conversion; "float" a slider, with its `min`, `max` and `step` (as stored), `unit`,
 # `shown` (the factor from the stored value to the one shown: a fraction shown as %) and `format` (for the value
-# shown); "choice" one of the ship models (models()), stored as its key in Shipyard.ships.
+# shown); "choice" one of the ship models (models()), stored as its key in Shipyard.ships. `namedBy` names a "choice"
+# setting: the dialog names the row by the model that setting holds instead of by `label`, which still keys the row and
+# its description.
 const SETTINGS = {
 	# The enemies' model (CombatLayer.gd builds them as the game builds that model when it attacks).
 	"ship": {
@@ -21,8 +23,10 @@ const SETTINGS = {
 		"type": "choice",
 		"group": "enemies",
 	},
+	# How many of them come; the row shows the ship picked.
 	"number": {
 		"label": "COMBATSIMULATOR_NUMBER",
+		"namedBy": "ship",
 		"default": 1,
 		"type": "float",
 		"min": 1,

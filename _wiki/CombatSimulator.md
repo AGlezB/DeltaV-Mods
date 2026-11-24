@@ -38,7 +38,8 @@ the tabs, and the right stick scrolls a description too long for its window.
 | ![The Combat simulation tab: a window describing the selected setting, then the settings under Enemies, Area and Your ship, then Start and Cancel](images/CombatSimulator-dialog.png) | ![The Ship tab: the description of the selected ship, then a list of ships, each with its picture, its name and a switch](images/CombatSimulator-ships.png) |
 
 - *Combat simulation*: at the top, a window describes the setting you have selected. Below it, the settings, in three
-  groups: *Enemies*, *Area* and *Your ship* (see [Settings](#settings)).
+  groups: *Enemies*, *Area* and *Your ship* (see [Settings](#settings)). The first row of *Enemies*, how many enemy
+  ships come, shows the name of the ship you picked on the *Ship* tab, so you can see what you will fight.
 - *Ship*: every ship model in the game, even those the station doesn't sell, each with its picture and a switch. The
   ship switched on is the model of the enemies: switch another one on to pick it. At the top, the game's own
   description of the ship you have selected, as the Dealer shows it. The ships are grouped by series (a ship and the
@@ -99,7 +100,7 @@ saves; a new game starts with the defaults.
 | Setting | What it does | Default | Range |
 |---|---|---|---|
 | **Ship** (the *Ship* tab) | The model of the enemy ships. | K37 TNTRL | every ship model in the game |
-| **Number** (*Enemies*) | How many enemy ships come. | 1 | 1 to 3 |
+| **Number** (*Enemies*, the row named after the enemy ship, such as *K37 TNTRL*) | How many enemy ships come. | 1 | 1 to 3 |
 | **Grouped** (*Enemies*) | On: the enemy ships come together, side by side from one direction. Off: each one comes from a direction of its own. | on | on or off |
 | **Distance** (*Enemies*) | How close the enemy ships appear, at least. Each one appears up to 1,000 m farther. | 1,000 m | 100 to 4,000 m, in steps of 100 m |
 | **Disabled weapons** (*Enemies*) | On: the enemies' weapons fire nothing. | off | on or off |
@@ -856,7 +857,7 @@ CombatSimulator/i18n/en.po COMBATSIMULATOR_END_QUESTION = "End the combat simula
 CombatSimulator/i18n/en.po COMBATSIMULATOR_END_YES = "Yes"
 CombatSimulator/i18n/en.po COMBATSIMULATOR_END_NO = "No"
 CombatSimulator/i18n/en.po COMBATSIMULATOR_SHIP = "Ship" | images/CombatSimulator-ships.png
-CombatSimulator/i18n/en.po COMBATSIMULATOR_NUMBER = "Number" | images/CombatSimulator-dialog.png
+CombatSimulator/i18n/en.po COMBATSIMULATOR_NUMBER = "Number"
 CombatSimulator/i18n/en.po COMBATSIMULATOR_GROUPED = "Grouped" | images/CombatSimulator-dialog.png
 CombatSimulator/i18n/en.po COMBATSIMULATOR_DISTANCE = "Distance" | images/CombatSimulator-dialog.png
 CombatSimulator/i18n/en.po COMBATSIMULATOR_DISABLED_WEAPONS = "Disabled weapons" | images/CombatSimulator-dialog.png
@@ -868,7 +869,7 @@ CombatSimulator/i18n/en.po COMBATSIMULATOR_MODEL_TSUKUYOMI = "Tsukuyomi"
 CombatSimulator/i18n/en.po COMBATSIMULATOR_MODEL_HYBRID = "Hybrid"
 CombatSimulator/i18n/en.po COMBATSIMULATOR_MODEL_DRONE = "Racing drone"
 CombatSimulator/i18n/en.po COMBATSIMULATOR_MODEL_ATLAS = "ATLAS"
-CombatSimulator/Settings.gd SETTINGS.ship.default = "TRTL" -> K37 TNTRL
+CombatSimulator/Settings.gd SETTINGS.ship.default = "TRTL" -> K37 TNTRL | images/CombatSimulator-dialog.png
 CombatSimulator/Settings.gd SETTINGS.number.default = 1 -> 1 | images/CombatSimulator-dialog.png
 CombatSimulator/Settings.gd SETTINGS.number.min = 1 -> 1
 CombatSimulator/Settings.gd SETTINGS.number.max = 3 -> 3

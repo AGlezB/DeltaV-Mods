@@ -929,6 +929,34 @@ func screenChecks(s):
 	if names != labels:
 		ui.close()
 		return
+	# A row with `namedBy` shows the name of the model that setting holds, as the ship list names it; its key stays its
+	# label. Another model with another name, picked while the dialog is open (as the ship tab's switches pick one),
+	# shows at once; then the ship and the save are put back.
+	var namedKeys = []
+	for k in keys:
+		if S[k].has("namedBy"):
+			namedKeys.append(k)
+	var named = not namedKeys.empty()
+	for k in namedKeys:
+		var row = all[keys.find(k)]
+		named = named and row.get_node(c.GAME_ROW_NAME).text == tr(settings.modelName(settings.getValue(S[k].namedBy))) and row.tuningItem == tr(S[k].label)
+	check("dialog: a row with namedBy is named by the model that setting holds, as the ship list names it, its key still its label", named, namedKeys)
+	var shipBefore = settings.getValue("ship")
+	var renamedTo = null
+	for m in settings.models():
+		if tr(settings.modelName(m)) != tr(settings.modelName(shipBefore)):
+			renamedTo = m
+			break
+	var follows = renamedTo != null and namedKeys.size() > 0
+	if follows:
+		settings.setValue("ship", renamedTo)
+		for k in namedKeys:
+			if S[k].namedBy == "ship":
+				var row = all[keys.find(k)]
+				follows = follows and row.get_node(c.GAME_ROW_NAME).text == tr(settings.modelName(renamedTo)) and row.tuningItem == tr(S[k].label)
+		settings.setValue("ship", shipBefore)
+		CurrentGame.state.ui.erase(id)
+	check("dialog: and follows another ship picked at once", follows, renamedTo)
 	var models = settings.models()
 	var list = shipRows(ui)
 	var listed = []

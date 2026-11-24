@@ -24,8 +24,9 @@ also explains every ship and weapon of the game in a fight.
   gamepad `COMBATSIMULATOR_TOOLTIP_PAD`).
 - **The dialog** is laid out as the Crew screen, with two tabs. *Combat simulation*: a window describing the selected
   setting, then the settings in three groups (*Enemies*: Number, Grouped, Distance, Disabled weapons; *Area*: Chaos,
-  Density; *Your ship*: Initial remass). *Ship*: the enemies' model, picked from a list laid out as the Dealer's, with
-  a picture of every ship model the game has, one switched on, under the game's description of the selected ship.
+  Density; *Your ship*: Initial remass). The Number row shows the name of the enemy ship instead, so the tab says what
+  the fight is against. *Ship*: the enemies' model, picked from a list laid out as the Dealer's, with a picture of every
+  ship model the game has, one switched on, under the game's description of the selected ship.
   Start and Cancel are on both tabs; Esc, or B on a gamepad, cancels. With a gamepad, LB and RB switch the tabs, and
   the right stick scrolls a description too long for its window.
 - **The fight** runs as an overlay at the station, the way the simulator runs, but without its hexagons: the game's own
@@ -154,10 +155,14 @@ also explains every ship and weapon of the game in a fight.
     scrolls the game's lists. The D-pad can't scroll it, since nothing in the window takes the focus.
   - The first tab holds one `enceladus/Tuning/TuningItems.tscn` group (`GAME_TUNING_ITEMS`) per `GROUPS` entry, titled
     by it, with a row per setting of that `group`: a switch (`"type": "bool"`) or a slider (`"float"`, with its range,
-    step, unit and format in the units shown, `toShown`), named by its `label`. On `tuningChanged` (a change, or a row
-    taking the focus) it sets the row's `tune.current` (a switch doesn't update it itself), calls `setValue` and shows
-    the row's `label` followed by `DESCRIPTION_SUFFIX`. It is filled each time the dialog opens, so names and
-    descriptions follow a language change.
+    step, unit and format in the units shown, `toShown`), named by its `label`. A setting with `namedBy` (Number) is
+    named instead by the model the `"choice"` setting it names holds, as the ship list names it (`_nameRows()`,
+    `modelName`): only the text of the row's name button (`GAME_ROW_NAME`) changes, set once the group is in the tree
+    and again on `settingsChanged`, so a ship picked on the second tab shows at once. The row's key, its `tuningItem`,
+    stays its `label`: the game's row shows it in its `_ready`, and its group binds it to `tuningChanged`. On
+    `tuningChanged` (a change, or a row taking the focus) it sets the row's `tune.current` (a switch doesn't update it
+    itself), calls `setValue` and shows the row's `label` followed by `DESCRIPTION_SUFFIX`. It is filled each time the
+    dialog opens, so names and descriptions follow a language change.
   - The second tab is `ShipList.gd`. Showing it focuses the current ship (`focusCurrent()`); the first tab focuses its
     first row.
 - **The ship list** (`ShipList.gd`) is DealerNotifier's settings list (its `SettingsUI.gd`), copied since the two mods
@@ -260,8 +265,9 @@ also explains every ship and weapon of the game in a fight.
   `SPOT_EDGE_MARGIN` from the ring's edges, so the HUD reads that spot and every run differs.
 - **The settings model** (`Settings.gd`, a `Reference`) follows CrewCheapHireNotifier's (`shared()`, `SETTINGS`, `cfg`,
   `getValue` / `setValue`, `toShown` / `fromShown`, `loadFromState` / `saveToState`, `FORMAT_VERSION`, `modId()`,
-  `modName()`, `modVersion()`), with a third type, `"choice"` (the ship: a model key of `Shipyard.ships`). `setValue`
-  takes a bool for a switch, a number for a slider (snapped to its step, kept in its range) and an offered model for
+  `modName()`, `modVersion()`), with a third type, `"choice"` (the ship: a model key of `Shipyard.ships`), and
+  `namedBy`, which names the `"choice"` setting whose model names a setting's row in the dialog. `setValue` takes a
+  bool for a switch, a number for a slider (snapped to its step, kept in its range) and an offered model for
   the ship, anything else giving the default, and only on a change saves and emits `settingsChanged`. The save keeps it
   in `CurrentGame.state.ui` under the mod's id: `formatVersion`, `modVersion` and each setting. Below the settings, what
   the scripts share: `SHIP_META` and `DISARMED_META`, the metadata the arena sets on its ships; `UNITS_PER_METRE`;

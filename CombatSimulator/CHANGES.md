@@ -1,5 +1,13 @@
 # CombatSimulator - Changes
 
+## 1.2.0
+- The dialog's first row under *Enemies*, how many enemies come, shows the name of the ship picked on the *Ship* tab
+  instead of "Number", as the ship list names it, and follows another ship picked at once. `Settings.gd`: new field
+  `namedBy` in `SETTINGS`, the `"choice"` setting whose model names a row (`number`'s is `"ship"`); `SettingsUI.gd`: new
+  `GAME_ROW_NAME`, `_namedRows` and `_nameRows()`, run when the dialog is filled and on `settingsChanged`. The row's key
+  is still its label, `COMBATSIMULATOR_NUMBER`, which also keys its description.
+- README: the dialog's first row, and `namedBy`.
+
 ## 1.1.1
 - Fix: Start no longer stalls the game for a moment. The field fills over several frames, from the one after Start,
   with the arena hidden until it is full; Esc meanwhile asks to end the run once the arena shows. `CombatLayer.gd`: new

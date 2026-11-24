@@ -33,6 +33,8 @@ const GAME_TABS_SCRIPT = "res://menu/TabsWithGamepadControl.gd"
 const GAME_WINDOW_MARGIN = "VB/WindowMargin"
 const GAME_WINDOW = "VB/WindowMargin/Window"
 const GAME_WINDOW_INSIDE = "VB/WindowMargin/Window/VBoxContainer/MarginContainer"
+# A Tuning row's name, the button that shows its key (enceladus/Tuning/TuningFloatValue.tscn, TuningBoolValue.tscn).
+const GAME_ROW_NAME = "HBoxContainer/Name"
 # The groups of the first tab, in display order: the `group` of the settings in it, and its title, a translation key of
 # i18n/en.po. The ship (a "choice") has the second tab.
 const GROUPS = [
@@ -75,6 +77,7 @@ var _shipList = null
 var _lastFocus = null
 var _rows = {} # each row's dictionary by the row's name: the same one the row holds as its `tune`
 var _keys = {} # the setting key of each row, by the row's name
+var _namedRows = {} # the rows named by a choice setting (`namedBy`), by their setting key
 var _startCancel = [] # Start and Cancel, on both tabs
 var _descriptionScroll = 0.0 # the right stick's scroll of the description shown, in fractions of a pixel
 
@@ -132,6 +135,7 @@ func setup(tuning):
 	shipPage.add_child(_buttons())
 	_shipList.connect("describe", self, "_showDescription", [_shipDescription])
 	_tabs.connect("tab_changed", self, "_onTabChanged")
+	_settings.connect("settingsChanged", self, "_nameRows")
 
 # A tab: a box named by its title's translation key (a TabContainer shows its children's names, translated), with the
 # Tuning screen's theme for what it holds.
@@ -288,7 +292,8 @@ func _scrollToTop():
 # Tuning groups as Tuning.gd fillTuneableSystems builds them, in an Items box as Tuning.tscn has: one per GROUPS entry,
 # titled by it, with a row per setting of that group, in SETTINGS order: a switch (TuningBoolValue) or a slider
 # (TuningFloatValue, with the setting's range, step, unit and format, in the units shown), named by its label in the
-# game's language. Filled each time the dialog opens, so the names and the description follow a language change.
+# game's language, or by the model its `namedBy` setting holds (_nameRows). Filled each time the dialog opens, so the
+# names and the description follow a language change.
 func _fill():
 	_showDescription("", _description)
 	_keepDescriptionHeight(_description)
@@ -302,6 +307,7 @@ func _fill():
 	_scroll.add_child(_items)
 	_rows = {}
 	_keys = {}
+	_namedRows = {}
 	_firstGroup = null
 	for entry in GROUPS:
 		var tuning = {}
@@ -335,6 +341,20 @@ func _fill():
 		group.connect("tuningChanged", self, "_onTuningChanged")
 		if _firstGroup == null:
 			_firstGroup = group
+		for row in group.get_children():
+			if "tuningItem" in row and _keys.has(row.tuningItem) and CombatSimulator.SETTINGS[_keys[row.tuningItem]].has("namedBy"):
+				_namedRows[_keys[row.tuningItem]] = row
+	_nameRows()
+
+# Each row of a setting with `namedBy` shows the name of the model that setting holds, in the game's language, as the
+# ship list names it. The row's key, its `tuningItem`, stays its label: the game's row shows it in its _ready, and its
+# group sends it with tuningChanged. Run when the dialog is filled and on settingsChanged, so another ship picked on the
+# ship tab shows at once.
+func _nameRows():
+	for key in _namedRows:
+		var row = _namedRows[key]
+		if is_instance_valid(row):
+			row.get_node(GAME_ROW_NAME).text = tr(_settings.modelName(_settings.getValue(CombatSimulator.SETTINGS[key].namedBy)))
 
 # Room for DESCRIPTION_LINES lines in a description window, as Godot sizes an autowrapping Label: its font's height per
 # line and its line spacing between lines. The ScrollContainer holding the text gets that height, and the text scrolls
