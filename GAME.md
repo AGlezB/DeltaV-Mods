@@ -934,6 +934,140 @@ none. Buying one (`buy`) takes both back to 0 (`Factions.adjustFactionDispositio
 nothing, and can't be bought, until the faction is hostile or afraid again. Local Vilcy Branch can be bought only
 until the Big Bad Wolf is destroyed (`storyLine` `vilcy.bbw.destroyed`, `storyMax` 0); then it is greyed out.
 
+## Thrusters
+
+The pieces of both slots, the Reaction Control System and Main Propulsion, run on one script, `sfx/thruster.gd`, and
+differ only in their values: those of the piece's scene (`sfx/thruster*.tscn`, `sfx/torch-*.tscn`), then the slot
+scene's overrides (`ships/modules/ThrusterSlot.tscn`, `ships/modules/TorchSlot.tscn`), then the script's defaults. No
+ship scene changes them (the Eagle Prospectors only place their Z-Axial Pinch torches). The Equipment screen sells the
+pieces `enceladus/Upgrades.tscn` lists, priced per thruster times the ship's slots of that kind
+(`SystemShipUpgradeUI.gd` `getNetPrice`), and marks a piece when the reactors' heat is under its `warnIfThermalBelow`,
+or the electric power (the turbines' and any auxiliary supply's) under its `warnIfElectricBelow`, times those slots
+(`setColors`).
+
+- **Thrust**: the Tuning screen's Thrust (`TUNE_THRUSER_THRUST`) shows `thrust / 10` in kN, from `tuneThrustMin` to
+  `tuneThrustMax` times that (0.5 to 1.5 unless the piece sets others); its Relative Wear (`TUNE_PARAMETER_WEAR_RATIO`)
+  is the tuning squared.
+- **Propellant**: a firing thruster draws remass on every physics frame (`_physics_process`, `requiredMass`): its thrust
+  in kN divided by its exhaust velocity in km/s (`specificImpulse`) is the kg/s at full throttle, the specs' Propellant
+  consumption. So thrust per kg/s is the exhaust velocity, at any tuning: tuning changes how fast remass burns, not how
+  far it goes. Choke multiplies the thrust, the remass and the heat alike (`getChoke`: 0.25 + 0.75 × max(0.1,
+  1 − (choke ÷ capacity)²)). With too little remass, the thrust follows the share it got. A frame's remass comes back
+  only when the thruster isn't asked to fire at all, so a misfire burns it.
+- **Wear** (`DAMAGE_WEAR`): firing adds `throttle × tuning² × choke` wear per second on average (on a share
+  `wearChance` of the frames, scaled to match). The condition is 100 less the worst of wear, misalignment and choke,
+  each as a share of its capacity (`damageWearCapacity` for wear) times the jury-rig factor
+  (`getCrewAdjustedJuryRigFactorForSystem`, see *Crew stats*). At full throttle a piece loses
+  `6000 × tuning² ÷ damageWearCapacity` % per minute to wear, whatever its thrust, and a stronger piece fires for less
+  time to give the ship the same ΔV. The game shows no reliability figure: the descriptions' "reliable" follow
+  `damageWearCapacity`. An impact that bends a thruster also adds `bending × bendWearRatio` wear, at most a tenth of the
+  capacity; a used ship's age gives each thruster the same share of its capacity, whatever the capacity
+  (`ageIfNeeded`).
+- **Misfires**: on each frame, a firing thruster misfires (no thrust, and it loses its ignition) with chance
+  (wear ÷ capacity)², at most `wearPowerMaxChance` (0.95): 1 % at 10 % wear, 9 % at 30 %, 25 % at 50 %. It also
+  misfires with chance `(shock − accelerationFailLimit) ÷ accelerationFailScale`, from 0 to 1, `shock` being the ship's
+  smoothed acceleration in world units, turning included: by default 400 and 200, from 40 m/s² on and always at
+  60 m/s²; the NDSTR, NDVTT and NDNTTR 4,000 and 2,000; the RA-K69V 800 and 400; the ERS-DFMHD-2205 and the Z-Axial
+  Pinch 600 (and 200); the BWM-T535 200 (and 200). Only the Z-Axial Pinch needs energy to reignite (`startJolt`).
+- **The AGILE's specs** (`SYSTEM_THRUSTER_AGILE_SPECS`) say 40 km/s and 3.0 kg/s, but its scene is the Ion thruster's
+  (`thruster-eit.tscn`) with no exhaust velocity of its own: 50 km/s.
+
+The pieces the Equipment screen sells, in game 1.93.1: per thruster, with no choke and no jury-rig, each at its lowest,
+default and highest tuning, sorted by thrust (so that pieces of about the same thrust sit together). The RA-K69V is
+sold only once the story value `ringrace` is 1 or more (`storyFlag`, `storyFlagMin`), and the screen shows only what
+the ship can mount.
+
+| Column | Unit | Meaning | Which is better |
+|---|---|---|---|
+| Tuning | × | The Tuning screen's Thrust, as a multiple of the default: the lowest, the default and the highest it allows | Neither: higher gives more thrust, lower wears less |
+| Thrust | kN | Thrust at that tuning | Higher is better |
+| Propellant | kg/s | Propellant consumption at full thrust: thrust ÷ exhaust velocity | Lower is better |
+| Exhaust | km/s | Exhaust velocity. It is also the fuel efficiency: thrust per kg/s of propellant (kN per kg/s) is the same number, at every tuning | Higher is better |
+| Wear capacity | s | `damageWearCapacity`: the seconds of firing at full thrust and default tuning that wear the piece from 100 % to 0 %. At full thrust a piece loses `6000 × tuning² ÷ wear capacity` % per minute; tuning² is the Tuning screen's Relative Wear; jury-rigging multiplies the capacity | Higher is better |
+
+**Reaction Control System**
+
+| System | Tuning | Thrust | Propellant | Exhaust | Wear capacity |
+|---|---|--:|--:|--:|--:|
+| MAD Luciole 1.2 thruster | max 1.2x | 1,440 | 96 | 15 | 3,600 |
+| MAD Luciole 1.2 thruster | default 1x | 1,200 | 80 | 15 | 3,600 |
+| MAD Luciole 1.2 thruster | min 0.8x | 960 | 64 | 15 | 3,600 |
+| NDSTR thruster | max 1.5x | 900 | 129 | 7 | 72,000 |
+| RA-K69V thruster | max 2x | 800 | 66.7 | 12 | 3,600 |
+| NDVTT thruster | max 1.5x | 750 | 107 | 7 | 72,000 |
+| NDSTR thruster | default 1x | 600 | 85.7 | 7 | 72,000 |
+| RA-K44 thruster | max 1.5x | 600 | 40 | 15 | 1,800 |
+| MA350HO thruster | max 1.5x | 525 | 21 | 25 | 3,600 |
+| NDVTT thruster | default 1x | 500 | 71.4 | 7 | 72,000 |
+| RA-K69V thruster | default 1x | 400 | 33.3 | 12 | 3,600 |
+| RA-K44 thruster | default 1x | 400 | 26.7 | 15 | 1,800 |
+| MA350HO thruster | default 1x | 350 | 14 | 25 | 3,600 |
+| ERS-NAGHET 5020 thruster | max 1.5x | 315 | 11.7 | 27 | 4,500 |
+| NDSTR thruster | min 0.5x | 300 | 42.9 | 7 | 72,000 |
+| RA-K69V thruster | min 0.75x | 300 | 25 | 12 | 3,600 |
+| RA-K37 thruster | max 1.5x | 300 | 20 | 15 | 3,600 |
+| NDVTT thruster | min 0.5x | 250 | 35.7 | 7 | 72,000 |
+| MA150HO thruster | max 1.5x | 225 | 7.5 | 30 | 7,200 |
+| ERS-NAGHET 5020 thruster | default 1x | 210 | 7.78 | 27 | 4,500 |
+| RA-K44 thruster | min 0.5x | 200 | 13.3 | 15 | 1,800 |
+| RA-K37 thruster | default 1x | 200 | 13.3 | 15 | 3,600 |
+| Eon Interstellar Ion Thruster | max 1.5x | 180 | 3.6 | 50 | 14,400 |
+| Eon Interstellar AGILE Thruster | max 1.5x | 180 | 3.6 | 50 | 14,400 |
+| MA350HO thruster | min 0.5x | 175 | 7 | 25 | 3,600 |
+| MA150HO thruster | default 1x | 150 | 5 | 30 | 7,200 |
+| Eon Interstellar Ion Thruster | default 1x | 120 | 2.4 | 50 | 14,400 |
+| Eon Interstellar AGILE Thruster | default 1x | 120 | 2.4 | 50 | 14,400 |
+| ERS-NAGHET 5020 thruster | min 0.5x | 105 | 3.89 | 27 | 4,500 |
+| RA-K37 thruster | min 0.5x | 100 | 6.67 | 15 | 3,600 |
+| MA150HO thruster | min 0.5x | 75 | 2.5 | 30 | 7,200 |
+| Eon Interstellar AGILE Thruster | min 0.5x | 60 | 1.2 | 50 | 14,400 |
+| Eon Interstellar Ion Thruster | min 0.5x | 60 | 1.2 | 50 | 14,400 |
+
+**Main Propulsion**
+
+| System | Tuning | Thrust | Propellant | Exhaust | Wear capacity |
+|---|---|--:|--:|--:|--:|
+| MAD Cheval 5.0 engine | max 1.2x | 6,000 | 400 | 15 | 3,600 |
+| NDNTTR thruster | max 1.5x | 5,250 | 750 | 7 | 7,200 |
+| MAD Cheval 5.0 engine | default 1x | 5,000 | 333 | 15 | 3,600 |
+| MAD Cheval 5.0 engine | min 0.8x | 4,000 | 267 | 15 | 3,600 |
+| NDNTTR thruster | default 1x | 3,500 | 500 | 7 | 7,200 |
+| ERS-DFMHD-2205 engine | max 1.5x | 3,300 | 236 | 14 | 3,600 |
+| NDPNTR engine | max 1.5x | 2,250 | 281 | 8 | 3,600 |
+| RA-MHFTR-K44 engine | max 1.5x | 2,250 | 125 | 18 | 3,600 |
+| ERS-DFMHD-2205 engine | default 1x | 2,200 | 157 | 14 | 3,600 |
+| NDNTTR thruster | min 0.5x | 1,750 | 250 | 7 | 7,200 |
+| Experimental NPMP engine | max 1.5x | 1,650 | 36.7 | 45 | 900 |
+| RA-MHFTR-K44 engine | default 1x | 1,500 | 83.3 | 18 | 3,600 |
+| NDPNTR engine | default 1x | 1,500 | 188 | 8 | 3,600 |
+| RA-TNTRL-K37 engine | max 1.5x | 1,125 | 75 | 15 | 3,600 |
+| ERS-DFMHD-2205 engine | min 0.5x | 1,100 | 78.6 | 14 | 3,600 |
+| Experimental NPMP engine | default 1x | 1,100 | 24.4 | 45 | 900 |
+| BWM-T535 engine | max 1.5x | 802.5 | 27.7 | 29 | 36,000 |
+| Z-Axial Pinch fusion torch | default = max 1x | 800 | 0.64 | 1,250 | 7,200 |
+| RA-MHFTR-K44 engine | min 0.5x | 750 | 41.7 | 18 | 3,600 |
+| RA-TNTRL-K37 engine | default 1x | 750 | 50 | 15 | 3,600 |
+| Experimental NPMP engine | min 0.5x | 550 | 12.2 | 45 | 900 |
+| BWM-T535 engine | default 1x | 535 | 18.4 | 29 | 36,000 |
+| MA-NMPD42 engine | max 1.5x | 480 | 4.17 | 115 | 360,000 |
+| Z-Axial Pinch fusion torch | min 0.5x | 400 | 0.32 | 1,250 | 7,200 |
+| NDPNTR engine | min 0.25x | 375 | 46.9 | 8 | 3,600 |
+| RA-TNTRL-K37 engine | min 0.5x | 375 | 25 | 15 | 3,600 |
+| MA-NMPD42 engine | default 1x | 320 | 2.78 | 115 | 360,000 |
+| BWM-T535 engine | min 0.5x | 267.5 | 9.22 | 29 | 36,000 |
+| MA-NMPD42 engine | min 0.5x | 160 | 1.39 | 115 | 360,000 |
+
+What stands out:
+
+- Halving the tuning halves the thrust and quarters the wear per minute at full thrust.
+- RCS: the NDSTR and NDVTT have the highest wear capacity (72,000 s) and the lowest exhaust velocity (7 km/s); the Eon
+  Ion and AGILE the highest exhaust velocity (50 km/s), with 14,400 s, but little thrust (60 to 180 kN); the RA-K44 the
+  lowest wear capacity (1,800 s).
+- Main Propulsion: the MA-NMPD42 has the highest wear capacity by far (360,000 s) and an exhaust velocity of 115 km/s,
+  but little thrust (160 to 480 kN); the BWM-T535 is next (36,000 s); the Z-Axial Pinch has 1,250 km/s at 7,200 s; the
+  Experimental NPMP the lowest wear capacity (900 s); the NDNTTR and MAD Cheval 5.0, the strongest, have 7,200 and
+  3,600 s and low exhaust velocities (7 and 15 km/s).
+
 ## Transit
 
 Each way covers the ΔV for trajectory (`MAP_DV`) of the Dive entry point picked (`DiveTarget.gd` `getPrices`, kept in

@@ -1010,6 +1010,13 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   `SETTINGS_FIXED_CAMERA`; `menu/SmartCamera.gd`, `Settings.cfg.display`): the camera follows the action and zooms by
   itself, and, as Smoothed camera does too, raises adrenaline when something closes in fast (`ships/camera.gd`).
   Details: [GAME.md](GAME.md#adrenaline).
+- **Thrusters** (no key of their own; the word is in the pieces' names, `SYSTEM_THRUSTER_*`): the equipment that moves
+  the ship by burning remass, in two slots of the Equipment screen: the Reaction Control System (`SLOT_RCS`, slot
+  `propulsion.rcs`, `ships/modules/ThrusterSlot.tscn`), the RCS, small thrusters that turn and nudge the ship, and Main
+  Propulsion (`SLOT_TORCH`, slot `propulsion.main`, `ships/modules/TorchSlot.tscn`), the torches
+  (`SYSTEM_MAIN_ENGINE_*`) that push it forward. Every piece runs on `sfx/thruster.gd`, and the Tuning screen sets each
+  one's thrust. Firing wears them (`DAMAGE_WEAR`), and a worn thruster misfires. Details:
+  [GAME.md](GAME.md#thrusters).
 - **Title card** (no key of its own; the arrival's shows `CUTSCENE_RINGS_OF_SATURN`, "The Rings of Saturn"): the
   titles a cutscene of the ring scene shows over the view, on `Game.tscn`'s `TitleAnimPlayer` (`intro`, `exit`,
   `fasttravel`, `gameover`, `helpless`). Details: [GAME.md](GAME.md#cutscene).
