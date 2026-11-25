@@ -38,6 +38,9 @@ const PIECES = {
 		"HUD_A": [["hud", "SYSTEM_HUD", 5000, 500, 2, 1, false]],
 		"HUD_B": [["hud", "SYSTEM_HUD", 9000, 900, 2, 1, false]],
 	},
+	"lidar.type": {
+		"LIDAR_A": [["lidar", "SYSTEM_LIDAR", 6000, 600, 2, 1, true]],
+	},
 }
 # Systems on no slot.
 const FIXED = [["cabin", "SYSTEM_CABIN", 10000, 1000, 2, 3, false]]

@@ -567,8 +567,10 @@ func conditionShown(status):
 	return percent(("%." + str(places) + "f") % (floor(status * scale + repairs._SRA_CONDITION_GUARD) / scale))
 
 # The Park ship: a laser at 60 % on the main hardpoint, RCS_A thrusters with one at 99.7 % (the cheapest, so bought out
-# and back), the dearer reactor at 70 %, a HUD at 99.7 % (on a slot without members, so no button reaches it), the cabin
-# at 80 % on no slot, the ammo capacity bought; the left hardpoint empty and not shown.
+# and back), the dearer reactor at 70 %, a HUD at 99.7 % (on a slot without members), the cabin at 80 % on no slot, a
+# LIDAR at 99.7 % (a member, the only piece its slot offers, so no button reaches it), the ammo capacity bought; the left
+# hardpoint empty and not shown. Park repairs only the slots' members, so the reactor, the HUD and the cabin stay as
+# they are, and only the LIDAR is named.
 func parkShip():
 	CurrentGame.money = 50000
 	CurrentGame.state.insurance = 10000
@@ -582,13 +584,14 @@ func parkShip():
 	Shipyard.ships[MODEL] = scene
 	CurrentGame.state.ship = {"model": MODEL, "transponder": "PRK-1", "madeIn": 0, "config": {
 		"weaponSlot": {"main": {"type": "SYSTEM_LASER"}}, "propulsion": {"rcs": "RCS_A"}, "reactor": {"power": 2.0},
-		"hud": {"type": "HUD_A"}, "ammo": {"capacity": 1000.0},
+		"hud": {"type": "HUD_A"}, "lidar": {"type": "LIDAR_A"}, "ammo": {"capacity": 1000.0},
 		"damage": {
 			"weaponSlot.main": {"wear": 400.0},
 			"rcs1": {"wear": 3.0},
 			"reactor": {"leak": 300.0},
 			"hud": {"wear": 3.0},
 			"cabin": {"wear": 200.0},
+			"lidar": {"wear": 3.0},
 		},
 	}}
 	ship = load(PARK_SHIP).new()
@@ -617,6 +620,8 @@ func parkButton():
 	var hud = group(equipment, "hud.type")
 	item(hud, "HUD_A", 5000)
 	item(hud, "HUD_B", 9000)
+	var lidar = group(equipment, "lidar.type")
+	item(lidar, "LIDAR_A", 6000)
 	var ammo = group(equipment, "ammo.capacity")
 	item(ammo, "AMMO", 0, 0.0, true)
 	item(ammo, "AMMO", 4000, 1000.0)
@@ -671,16 +676,16 @@ func parkButton():
 	if shown.size() < 4:
 		return
 	check("park: the insurance going out, with - in the Fleet screen's colour for it", shown[0][1] == signed(repairs._SRA_MINUS, 10000) and shown[0][2] == minus, shown[0])
-	check("park: the cash coming in, with + in the Fleet screen's colour for it", shown[1][1] == signed(repairs._SRA_PLUS, 125407) and shown[1][2] == plus, shown[1])
-	check("park: the total", shown[2][1] == signed(repairs._SRA_PLUS, 115407) and shown[2][2] == plus, shown[2])
-	check("park: the maintenance time, in the normal colour", shown[3][1] == time(39 * H) and shown[3][2] == WHITE, shown[3])
+	check("park: the cash coming in, with + in the Fleet screen's colour for it", shown[1][1] == signed(repairs._SRA_PLUS, 155702) and shown[1][2] == plus, shown[1])
+	check("park: the total", shown[2][1] == signed(repairs._SRA_PLUS, 145702) and shown[2][2] == plus, shown[2])
+	check("park: the maintenance time, in the normal colour", shown[3][1] == time(6 * H) and shown[3][2] == WHITE, shown[3])
 	# The repairs it shows are read on a trial ship of the parked config.
 	var trialConfig = Shipyard.configs.back().config
 	check("park: the trial ship has the pieces bought (the other thrusters, for the out-and-back)", trialConfig.propulsion.rcs == "RCS_B" and trialConfig.reactor.power == 1.0 and trialConfig.weaponSlot.main.type == "SYSTEM_NONE" and trialConfig.ammo.capacity == 0.0, trialConfig)
 	check("park: and the slots' members without damage, the rest kept", trialConfig.damage["weaponSlot.main"].wear == 0.0 and trialConfig.damage.rcs1.wear == 0.0 and trialConfig.damage.reactor.leak == 300.0 and trialConfig.damage.cabin.wear == 200.0, trialConfig.damage)
 	check("park: the trial ship gone, the ship and its state untouched", repairs.get_node(repairs._SRA_TRIAL_NODE).get_child_count() == 0 and ship.getConfigWithDefaults("reactor.power") == 2.0 and CurrentGame.state.ship.config.damage.rcs1.wear == 3.0)
-	var hudName = tr(repairs._SRA_PARK_SYSTEM) % [tr("SYSTEM_HUD"), conditionShown(ship.status("hud"))]
-	check("park: the HUD named, which no button brings to the target, at its condition rounded down", notes(dialog) == [tr(repairs._SRA_PARK_UNREACHABLE) % [target, hudName]] and conditionShown(ship.status("hud")) != target, notes(dialog))
+	var lidarName = tr(repairs._SRA_PARK_SYSTEM) % [tr("SYSTEM_LIDAR"), conditionShown(ship.status("lidar"))]
+	check("park: the LIDAR named, which no button brings to the target, at its condition rounded down; not the HUD, on a slot without members", notes(dialog) == [tr(repairs._SRA_PARK_UNREACHABLE) % [target, lidarName]] and conditionShown(ship.status("lidar")) != target, notes(dialog))
 	check("park: OK enabled", not dialog.get_ok().disabled)
 	check("park: the confirmation on the screen", get_viewport().get_visible_rect().encloses(dialog.get_global_rect()), dialog.get_global_rect())
 	yield(tap(escKey()), "completed")
@@ -705,20 +710,18 @@ func parkButton():
 	check("park: the refunds first", bought.size() == 5 and bought[0][1] == "SYSTEM_NONE" and bought[1][1] == 1.0 and bought[2][1] == 0.0, bought)
 	check("park: the laser fixed once before its trade-in", bought.size() > 0 and near(bought[0][2], -102400, 1.0), bought)
 	check("park: the empty slot not shown left alone", ship.getConfigWithDefaults("weaponSlot.left.type") == null and leftGun.price == 1)
-	var full = true
-	for key in ["rcs1", "rcs2", "reactor", "cabin"]:
-		full = full and ship.status(key) == repairs._SRA_PARK_TARGET
-	check("park: every other system at the park target", full, [ship.status("rcs1"), ship.status("rcs2"), ship.status("reactor"), ship.status("cabin")])
-	check("park: the HUD as it was", near(ship.status("hud"), 99.7, 0.001), ship.status("hud"))
-	check("park: the cash as the confirmation said (the cheaper reactor's repair, the other thrusters' worth)", near(CurrentGame.money, moneyBefore + 125406.62, 1.0), CurrentGame.money)
+	check("park: the thrusters at the park target", ship.status("rcs1") == repairs._SRA_PARK_TARGET and ship.status("rcs2") == repairs._SRA_PARK_TARGET, [ship.status("rcs1"), ship.status("rcs2")])
+	check("park: the reactor, the HUD and the cabin as they were, and the LIDAR, which nothing reaches", near(ship.status("reactor"), 70.0, 0.001) and near(ship.status("hud"), 99.7, 0.001) and near(ship.status("cabin"), 80.0, 0.001) and near(ship.status("lidar"), 99.7, 0.001), [ship.status("reactor"), ship.status("hud"), ship.status("cabin"), ship.status("lidar")])
+	check("park: the cash as the confirmation said (the other thrusters' worth)", near(CurrentGame.money, moneyBefore + 155701.62, 1.0), CurrentGame.money)
 	check("park: the insurance spent", near(CurrentGame.getInsurance(), 0), CurrentGame.getInsurance())
-	check("park: the maintenance as it said", near(CurrentGame.state.ship.maintaineceUntil - maintenanceBefore, 39 * H), CurrentGame.state.ship.maintaineceUntil - maintenanceBefore)
+	check("park: the maintenance as it said", near(CurrentGame.state.ship.maintaineceUntil - maintenanceBefore, 6 * H), CurrentGame.state.ship.maintaineceUntil - maintenanceBefore)
 	check("park: the rows made for the new ship", repairs._sraRows().size() == ship.refs.size() and repairs._sraRows()[0].ship == ship, repairs._sraRows().size())
 	check("park: Park disabled, with nothing left to do, and highlighted", park.disabled and park.has_focus())
 
-	# A gun at 50 % on the hardpoint, the cabin at 75 %, the cash below zero.
+	# A gun at 50 % on the hardpoint, a thruster at 75 % (its Replace paid), the cabin at 75 %, the cash below zero.
 	ship.setConfig("weaponSlot.main.type", "SYSTEM_GUN")
 	CurrentGame.state.ship.config.damage["weaponSlot.main"] = {"wear": 500.0}
+	CurrentGame.state.ship.config.damage["rcs2"] = {"wear": 250.0}
 	CurrentGame.state.ship.config.damage["cabin"] = {"wear": 250.0}
 	rebuild()
 	yield(frames(10), "completed")
@@ -728,7 +731,7 @@ func parkButton():
 	yield(frames(2), "completed")
 	check("park: enabled again with something to do", not park.disabled)
 	yield(openDialog(), "completed")
-	check("park: too little money, the note says how much more", notes(dialog).size() == 2 and notes(dialog)[0] == tr(repairs._SRA_PARK_NEEDED) % money(16625), notes(dialog))
+	check("park: too little money, the note says how much more", notes(dialog).size() == 2 and notes(dialog)[0] == tr(repairs._SRA_PARK_NEEDED) % money(13400), notes(dialog))
 	check("park: and OK disabled", dialog.get_ok().disabled)
 	dialog.get_cancel().emit_signal("pressed")
 	yield(frames(2), "completed")
@@ -737,13 +740,13 @@ func parkButton():
 	yield(openDialog(), "completed")
 	shown = lines(dialog)
 	check("park: no insurance spent, without a sign or colour", shown[0][1] == signed(repairs._SRA_ZERO, 0) and shown[0][2] == WHITE, shown[0])
-	check("park: the cash and the time", shown[1][1] == signed(repairs._SRA_PLUS, 3375) and shown[3][1] == time(10 * H), shown)
+	check("park: the cash and the time", shown[1][1] == signed(repairs._SRA_PLUS, 6600) and shown[3][1] == time(6 * H), shown)
 	maintenanceBefore = CurrentGame.state.ship.maintaineceUntil
 	dialog.get_ok().emit_signal("pressed")
 	yield(waitDone(), "completed")
-	check("park: the cash and the maintenance as it said", near(CurrentGame.money, 103375, 1.0) and near(CurrentGame.state.ship.maintaineceUntil - maintenanceBefore, 10 * H), [CurrentGame.money, CurrentGame.state.ship.maintaineceUntil - maintenanceBefore])
+	check("park: the cash and the maintenance as it said", near(CurrentGame.money, 106600, 1.0) and near(CurrentGame.state.ship.maintaineceUntil - maintenanceBefore, 6 * H), [CurrentGame.money, CurrentGame.state.ship.maintaineceUntil - maintenanceBefore])
 	check("park: the gun traded in after two Fixes", near(bought.back()[2], -12250, 1.0) and ship.getConfigWithDefaults("weaponSlot.main.type") == "SYSTEM_NONE", bought.back())
-	check("park: the cabin at the park target", ship.status("cabin") == repairs._SRA_PARK_TARGET, ship.status("cabin"))
+	check("park: the thruster replaced to the park target, the cabin as it was", ship.status("rcs2") == repairs._SRA_PARK_TARGET and near(ship.status("cabin"), 75.0, 0.001), [ship.status("rcs2"), ship.status("cabin")])
 
 	# The screen hiding closes the confirmation; without the Equipment screen, no Park.
 	ship.setConfig("weaponSlot.main.type", "SYSTEM_GUN")

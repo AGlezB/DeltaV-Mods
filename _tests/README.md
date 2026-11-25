@@ -907,7 +907,7 @@ WeaponMaxPowerSwitch.
   end below zero, and back; a second run reaching the higher target. With a gamepad: the twin (`PAD_BUTTON` while
   `PAD_MODIFIER` is held, from `Badge.gd`) on the highlighted Repair opens the settings, and B closes them with Repair
   highlighted again. Park, on `harness/repairs_park_ship.gd` (a ship built from its config, as the game's, its
-  hardpoint's and thrusters' members with a `type` (`harness/repairs_slot_part.gd`, as the game's), and systems on
+  hardpoint's, thrusters' and LIDAR's members with a `type` (`harness/repairs_slot_part.gd`, as the game's), and systems on
   slots without members; its damage kept in the config by system key; also the trial ship's scene in the `Shipyard`
   stub; RCS_B's systems worth less than its price), beside a stub of the Equipment screen (`harness/repairs_equipment.gd`:
   the game's `updatePricesAndAvailability` and `buy`, building the ship again as the station does and recording each
@@ -916,21 +916,24 @@ WeaponMaxPowerSwitch.
   named by the mod's text, enabled, right of Repair at its height, the badge in Repair, Park as far from the panel's
   frame at the bottom as at the right; the D-pad up from Park to the last row's Replace, right from Repair to Park and
   left back. The confirmation (a laser at 60 % on the hardpoint, RCS_A thrusters with one at 99.7 %, the dearer
-  reactor at 70 %, a HUD at 99.7 % on a slot without members, the cabin at 80 % on no slot, an ammo capacity bought):
+  reactor at 70 %, a HUD at 99.7 % on a slot without members, the cabin at 80 % on no slot, a LIDAR at 99.7 %, the only
+  piece its slot offers, an ammo capacity bought):
   no title, the game's OK and CANCEL, Cancel highlighted; the question with Park's target; the lines' names without
   "cost"; the insurance going out with - and the cash and the total coming in with +, in the Fleet screen's colours;
   the maintenance time in the normal colour; the trial ship given the pieces bought (the other thrusters for the
-  out-and-back) and the members without damage, the rest kept, then gone, the ship and the state untouched; the HUD
-  named, at its condition rounded down to the mod's decimals; OK enabled; the dialog on the screen. Esc (a real key
+  out-and-back) and the members without damage, the rest kept, then gone, the ship and the state untouched; the LIDAR
+  named, at its condition rounded down to the mod's decimals, and not the HUD, which isn't a member; OK enabled; the dialog on the screen. Esc (a real key
   press, with the game's bindings) closes the confirmation only, Park highlighted again, nothing changed; B closes it
   too. OK: both buttons disabled while it works; the hardpoint emptied, the cheapest reactor and ammo capacity, the
   thrusters out and back (the second purchase refunding what the other thrusters' systems are worth), the refunds
-  first, the laser fixed once before its trade-in, the slot not shown left alone; every other system at Park's
-  target, the HUD as it was; the cash, the insurance and the maintenance as the confirmation said; the rows made for the
-  new ship; Park disabled with nothing left to do, and highlighted. Again with a gun at 50 % and the cash below zero: the
-  note of the money missing and OK disabled; Cancel changing nothing; with the money, no insurance spent shown without
-  a sign or colour, the cash and time, then the cash and maintenance as it said, the gun traded in after two Fixes, the
-  cabin at Park's target. The screen hiding closes the confirmation; without the Equipment screen, Park disabled. The
+  first, the laser fixed once before its trade-in, the slot not shown left alone; the thrusters at Park's target, the
+  reactor, the HUD, the cabin and the LIDAR as they were (Park repairs only the slots' members); the cash, the
+  insurance and the maintenance as the confirmation said; the rows made for the new ship; Park disabled with nothing
+  left to do, and highlighted. Again with a gun at 50 %, a thruster and the cabin at 75 % and the cash below zero: the
+  note of the money missing (for the thruster's Replace) and OK disabled; Cancel changing nothing; with the money, no
+  insurance spent shown without a sign or colour, the cash and time, then the cash and maintenance as it said, the gun
+  traded in after two Fixes, the thruster replaced to Park's target, the cabin as it was. The screen hiding closes the
+  confirmation; without the Equipment screen, Park disabled. The
   control checks (the game's rows, nothing of the mod at the bottom of the screen, the list's margin as the scene sets
   it) run on the game's own script.
 - `callout` (`suites/callout.gd`): HUDs from `harness/callout_hud.tscn` (the game's `Hud.gd`, its `dialogLineNode` the

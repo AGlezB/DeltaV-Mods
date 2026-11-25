@@ -4,8 +4,8 @@ extends "res://enceladus/Repairs.gd"
 # every damaged system of the ship up to the target condition (Settings.gd) the cheapest way, beside it a table of that
 # target, what the button will cost, from the insurance and the cash, and how long it will take, and the Park button,
 # which readies the ship to hold cash: every slot of the Equipment screen on its cheapest piece, empty where it can be,
-# and every system at _SRA_PARK_TARGET, after a confirmation of what that costs or brings and how long it takes
-# (ParkDialog.gd).
+# and every system whose condition a swap pays for (the slots' members) at _SRA_PARK_TARGET, after a confirmation of
+# what that costs or brings and how long it takes (ParkDialog.gd).
 # Both work only through the game's own buttons, and only those the game has enabled, so each step is the game's: its
 # price, its maintenance time, the crew's experience, the log and the achievements, as a click would make them. Repairs
 # are pressed on the screen's own rows (enceladus/SystemShipRepairUI.gd), Fix and Replace, paid by the insurance first;
@@ -74,7 +74,7 @@ const _SRA_LIST_SEPARATOR = ", "
 # 99.7.
 const _SRA_CONDITION_DECIMALS = 1
 const _SRA_CONDITION_GUARD = 0.000001
-# The condition Park leaves every system at, in %.
+# The condition Park leaves every member of a slot at, in %.
 const _SRA_PARK_TARGET = 100.0
 # The cash's part shows in this colour while it would leave the cash below zero: the rows' colorBad
 # (enceladus/SystemShipRepairUI.gd, the failed inspection's), read from a row; this is the game's, for a screen without
@@ -681,16 +681,14 @@ func _sraParkPurchases():
 		if not item.installed:
 			_sraLeftOutSlots[slot] = true
 
-# Park's confirmation reads the repairs on the ship as the purchases will leave it, not as it is now. A slot's members
-# come new, but the systems of a slot without members (the reactor, the turbine, …) keep their damage through a
-# purchase, and the new piece prices their repair and takes that damage by its own capacity (Reactor.gd
-# getDamageCapacity); and a piece bought out and back comes back worth what its systems say, not its price. So the
-# data's repairs, the systems nothing brings to the target, and each out-and-back's second purchase are worked out again
-# on a trial ship (_sraTrial), built from a copy of the ship's config with every slot bought for on the piece it gets
-# (the other piece, for one bought out and back) and that slot's members without damage (Upgrades.gd buy:
-# clearDamageInSlot), the rest as it is. The rows' rules ask their row's ship, so they are read through a copy of a
-# row's script, out of the tree, told the trial ship. Without purchases, the ship as it is is the one to read. A
-# coroutine; the data stays as it was where the trial ship can't be set up.
+# Park's confirmation reads the repairs on the ship as the purchases will leave it, not as it is now: the members of a
+# slot bought for come new, and a piece bought out and back comes back worth what its systems say, not its price. So the
+# data's repairs (the slots' members only, as _sraParkInfo takes them), the members nothing brings to the target, and
+# each out-and-back's second purchase are worked out again on a trial ship (_sraTrial), built from a copy of the ship's
+# config with every slot bought for on the piece it gets (the other piece, for one bought out and back) and that slot's
+# members without damage (Upgrades.gd buy: clearDamageInSlot), the rest as it is. The rows' rules ask their row's ship,
+# so they are read through a copy of a row's script, out of the tree, told the trial ship. Without purchases, the ship
+# as it is is the one to read. A coroutine; the data stays as it was where the trial ship can't be set up.
 func _sraParkExact(info: Dictionary):
 	var rows = _sraRows()
 	if rows.empty() or info.data.slots.empty():
@@ -720,8 +718,9 @@ func _sraParkExact(info: Dictionary):
 	rule.repairStepAmount = rows[0].repairStepAmount
 	var repair = {}
 	var unreachable = []
+	var swapped = _sraSlotMembers(systems, info.pieceSlots)
 	for key in systems:
-		if not _sraWorn(systems[key]):
+		if not swapped.has(key) or not _sraWorn(systems[key]):
 			continue
 		if float(systems[key].status) >= _SRA_REPLACE_BELOW:
 			unreachable.append(key)
@@ -864,12 +863,14 @@ func _sraData(target: float) -> Dictionary:
 #   fixed first. Where it is fitted but one of its members is worn where the Repairs screen can't take it
 #   (_SRA_REPLACE_BELOW or more), the cheapest other piece is bought, then the cheapest again: the second purchase's net
 #   is taken here as if the other piece's systems were worth its price (_sraParkExact reads what they are worth).
-# - Every other damaged system is repaired, or, at _SRA_REPLACE_BELOW or more, is one nothing brings to the target: the
-#   systems of a slot without members (the reactor, the turbine, …) keep their damage through a purchase
-#   (clearDamageInSlot clears a slot's members only), and the Repairs screen offers neither Fix nor Replace up there.
-#   They are read here as the ship has them now, which is what Park's steps need, one at a time; its confirmation reads
-#   them as the purchases will leave them (_sraParkExact).
-# `finals` holds the piece each slot ends with.
+# - Every other damaged member of a slot is repaired, or, at _SRA_REPLACE_BELOW or more, where the Repairs screen offers
+#   neither Fix nor Replace, is one nothing brings to the target. They are read here as the ship has them now, which is
+#   what Park's steps need, one at a time; its confirmation reads them as the purchases will leave them (_sraParkExact).
+# - The other systems are left as they are: their condition changes nothing a swap gives back, so a repair would only
+#   spend the cash the ship is readied to hold. The systems of a slot without members (the reactor, the turbine, …)
+#   trade in at the fitted piece's full price whatever their condition, and keep their damage through a purchase
+#   (clearDamageInSlot clears a slot's members only); the systems on no slot of the screen are never swapped.
+# `finals` holds the piece each slot ends with; `pieceSlots` every slot of the screen, whose members Park repairs.
 func _sraParkInfo():
 	var equipment = _sraEquipment()
 	var ship = _sraShip()
@@ -901,6 +902,8 @@ func _sraParkInfo():
 			offers[item.slot] = []
 			order.append(item.slot)
 		offers[item.slot].append(item)
+	info.pieceSlots = order
+	var swapped = _sraSlotMembers(systems, order)
 	var renewed = {}
 	for slot in order:
 		var fitted = null
@@ -939,7 +942,8 @@ func _sraParkInfo():
 				if trade != null:
 					data.trades[key] = trade
 	for key in systems:
-		if renewed.has(key) or _sraLeftOut.has(key) or not rows.has(key) or not _sraWorn(systems[key]):
+		if not swapped.has(key) or renewed.has(key) or _sraLeftOut.has(key) or not rows.has(key) \
+				or not _sraWorn(systems[key]):
 			continue
 		if float(systems[key].status) >= _SRA_REPLACE_BELOW:
 			data.unreachable.append(key)
@@ -958,6 +962,15 @@ func _sraMembers(systems: Dictionary, slot: String) -> Array:
 		if is_instance_valid(ref) and "type" in ref and ref.get("type") is String and ref.get("type") == slot:
 			members.append(key)
 	return members
+
+# The keys of the members of every slot in `slots` among `systems`, as a set: the systems whose condition a swap pays
+# for (getSlotValue).
+func _sraSlotMembers(systems: Dictionary, slots: Array) -> Dictionary:
+	var out = {}
+	for slot in slots:
+		for key in _sraMembers(systems, slot):
+			out[key] = true
+	return out
 
 # Whether the Equipment screen shows `item` for the player's ship: the piece available to it (SystemShipUpgradeUI.gd
 # isAvailable: its story condition, the ship able to mount it, its number within the ship's limits) in groups the

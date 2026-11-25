@@ -2,9 +2,9 @@
 
 Adds two buttons to the bottom of the Repairs screen. **Repair** brings every damaged system of the ship up to the
 condition you set, the cheapest way, with a table beside it of what that costs and how long it takes. **Park** readies
-the ship to hold cash: every slot of the Equipment screen gets its cheapest piece, empty where it can be, and every
-system is brought to full condition, after a confirmation of what that costs or brings. Shift+Click on Repair opens its
-settings.
+the ship to hold cash: every slot of the Equipment screen gets its cheapest piece, empty where it can be, and the pieces
+on the hardpoints, the thrusters and the LIDAR are brought to full condition, after a confirmation of what that costs
+or brings. Shift+Click on Repair opens its settings.
 
 ## What it does and why
 - **What:** a row at the bottom of the Repairs screen, under the list of systems: on the right the Repair and Park
@@ -17,7 +17,10 @@ settings.
   be Fixes alone, or some Fixes and then Replace, and the Fixes may stop working before the target (the crew's Repair
   limit, damage beyond repair). And getting a ship ready to hold cash (buying expensive equipment for a ship that stays
   at the station, to sell it back later at its full price) means taking every slot down to its cheapest piece at the
-  Equipment screen and then bringing every system to full condition, since a damaged piece trades in for less.
+  Equipment screen and then bringing the pieces on the hardpoints, the thrusters and the LIDAR to full condition, since
+  a damaged one trades in for less. The other systems are left as they are: the other slots trade in at full price
+  whatever their condition, and the systems on no slot are never traded in, so repairing them would only spend the cash
+  the ship is readied to hold.
 - **Only the game's own buttons.** Both buttons do only what a player can do by hand, faster: they press the Repairs
   screen's own Fix and Replace, and Park also the Equipment screen's own Buy, each only while the game has it enabled.
   So every price, maintenance hour, payment (Fix and Replace from the insurance first, purchases from the cash), Logs
@@ -45,15 +48,18 @@ settings.
      A slot with no piece fitted is left alone. Where the cheapest piece is already fitted but worn at 99.5 % or more,
      short of full condition, which neither Fix nor Replace touches (GAME.md *Repairs*), the slot is bought out and
      back: another piece, then the cheapest again, new.
-  3. **Repairs** to `_SRA_PARK_TARGET` (in `Code.gd`) of every system still below it, as Repair's plan with that
-     target, keeping only ways that get there. The systems of the other slots (the reactor, the turbine, the MPU, …)
-     keep their damage through a purchase, so they are repaired afterwards, at the new piece's prices.
+  3. **Repairs** to `_SRA_PARK_TARGET` (in `Code.gd`) of every piece on a hardpoint, a thruster or the LIDAR still
+     below it, as Repair's plan with that target, keeping only ways that get there. The other systems keep their
+     damage: the other slots (the reactor, the turbine, the MPU, …) trade in at the fitted piece's full price whatever
+     its condition, and keep their damage through a purchase, and the systems on no slot (the HUD, the cabin light, …)
+     are never traded in.
 
   Parking is all or nothing: if the money would fall short at a step the game only allows with the money for it (a
   purchase that costs, a Replace that needs money), the confirmation says how much more is needed, and its OK is
-  disabled. A system that no button can bring to that condition (one on another slot, worn at 99.5 % or more) is named
-  in the confirmation; OK stays enabled, since nothing better can be done by hand. Park is disabled while there is
-  nothing to do, while either button works, and without the Equipment screen.
+  disabled. A piece on a hardpoint, a thruster or the LIDAR that no button can bring to that condition (worn at 99.5 %
+  or more where no other piece can be bought out and back) is named in the confirmation; OK stays enabled, since
+  nothing better can be done by hand. Park is disabled while there is nothing to do, while either button works, and
+  without the Equipment screen.
 - **The confirmation**, in the style of the game's dialogs: the question, then *Insurance*, *Cash* and *Total*, signed
   and coloured as the Fleet screen writes a trade-in (money coming in with a + in its green, going out with a - in its
   red), and the *Maintenance time*; under them, the notes. The figures are worked out on a copy of the ship as the
@@ -111,9 +117,10 @@ settings.
   `reexamine` shows) and the piece fitted. A slot's members are the systems whose script names the slot as its `type`
   (`_sraMembers`: `WeaponSlot.gd`, `ThrusterSlot.gd`, `LIDAR.gd`): the Equipment screen prices them by condition
   (`ship-ctrl.gd` `getSlotValue`) and the purchase clears their damage (`clearDamageInSlot`); the other slots trade in
-  at the fitted item's price and keep their system's damage (GAME.md *Equipment*). Replace and Fix stop at
+  at the fitted item's price and keep their system's damage (GAME.md *Equipment*). So Park repairs only the members of
+  the screen's slots (`_sraSlotMembers`), and leaves every other system as it is. Replace and Fix stop at
   `_SRA_REPLACE_BELOW` (the game's 99.5 %: `isReplaceable`, and `CurrentGame.getRepairLimit`'s cap), so a member worn
-  above it makes its slot an out-and-back (`_sraWornPast`), and another system there is unreachable.
+  above it makes its slot an out-and-back (`_sraWornPast`), or, with no other piece offered, is unreachable.
 - **The purchases** (`_sraParkPurchases`): the item's own `_on_Buy_pressed`, only while its `buttonBuy` is enabled.
   `Upgrades.gd` `buy` fits the piece and builds the player's ship again; Park waits for `CurrentGame`'s
   `playerShipChanged` (counted in `_sraShipChanges`, up to `_SRA_SHIP_WAIT_FRAMES` physics frames), and the rows are
@@ -123,9 +130,9 @@ settings.
   `Shipyard.createShipByConfig` from a copy of the player's config with every slot bought for on the piece it gets and
   its members' damage cleared, in a viewport of its own world on the screen (`_SRA_TRIAL_NODE`, `_SRA_TRIAL_SIZE`,
   never drawn), set up as ShipSaleAdvisor's trial ships are (a dummy, reactor off, in a cutscene; up to
-  `_SRA_TRIAL_FRAMES` frames), then freed (`_sraTrialDone`). From it: the repairs of the systems that keep their damage
-  (priced and judged by a copy of a row's script, out of the tree, told the trial ship), the systems no button
-  reaches, and each out-and-back's second purchase (the cheapest piece's price less what the other piece's systems are
+  `_SRA_TRIAL_FRAMES` frames), then freed (`_sraTrialDone`). From it: the repairs of the members whose slot isn't
+  bought for (priced and judged by a copy of a row's script, out of the tree, told the trial ship), the members no
+  button reaches, and each out-and-back's second purchase (the cheapest piece's price less what the other piece's systems are
   worth new). Park ignores further presses meanwhile (`_sraParkChecking`).
 - **The dialog** (`ParkDialog.gd`), made on first use as a child of the screen, so it takes the station's menu theme: a
   `ConfirmationDialog` as the game's (no title, `popup_centered`, the game's `OK` and `CANCEL`, Cancel focused). The

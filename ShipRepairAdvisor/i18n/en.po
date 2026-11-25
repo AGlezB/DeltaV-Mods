@@ -44,12 +44,12 @@ msgstr "Maintenance time"
 msgid "SHIPREPAIRADVISOR_MONEY"
 msgstr "%s E$"
 
-# The Park button's confirmation: the question (%s the condition every system is brought to, as
-# SHIPREPAIRADVISOR_PERCENT writes it).
+# The Park button's confirmation: the question (%s the condition the pieces whose condition a swap pays for are brought
+# to, as SHIPREPAIRADVISOR_PERCENT writes it).
 msgid "SHIPREPAIRADVISOR_PARK_CONFIRM"
 msgstr ""
 "Park this ship? Every slot gets the cheapest piece the Equipment screen offers for it, empty where it can be, and "
-"every system is brought to %s."
+"the pieces on the hardpoints, the thrusters and the LIDAR are brought to %s."
 
 # Its lines: what the insurance pays, what the cash pays or gets, the two together; the maintenance time is
 # SHIPREPAIRADVISOR_TIME. Then each amount (%s): money coming in, money going out, and none.

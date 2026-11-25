@@ -30,8 +30,9 @@ extends Reference
 #   there. A system no way reaches is left alone, in `unreachable`, instead of fixed as far as Fix raises it, and paid
 #   Replaces are kept whatever the money: Park asks for all of it (park's `needed`).
 #
-# Park (park) puts every slot of the Equipment screen (enceladus/Upgrades.gd) on its cheapest piece and brings every
-# system to the repair data's target, in three steps, each through the game's own buttons:
+# Park (park) puts every slot of the Equipment screen (enceladus/Upgrades.gd) on its cheapest piece and brings the
+# systems of the repair data (Code.gd gives the slots' members only, whose condition a swap pays for) to its target, in
+# three steps, each through the game's own buttons:
 # 1. Fix clicks on the damaged pieces about to be traded in, where they raise what the piece trades in for by more than
 #    they cost (the insurance counting as money, as above).
 # 2. Purchases at the Equipment screen, from the cash alone (Upgrades.gd buy): the refunds first, in the screen's order,

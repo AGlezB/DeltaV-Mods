@@ -33,17 +33,22 @@ Fix clicks can. Repair is greyed out when there is nothing to repair.
 ### Park
 
 **Park** gets a ship ready to hold your cash. Buying expensive equipment for a ship that stays at the station keeps your
-money safe, and the Equipment screen gives it all back when you swap a part for another, but only for a part in full
-condition. So before you use a ship that way, Park:
+money safe, and the Equipment screen gives it back when you swap a part for another. For a part on a hardpoint (the
+mounts for weapons, the arm and other equipment), a thruster or the LIDAR, it gives back what the part is worth, so all
+of it only for a part in full condition. So before you use a ship that way, Park:
 
 1. Fixes the damaged parts it is about to swap, where a Fix click adds more to what they are worth than it costs.
 2. Swaps every part for the cheapest one the Equipment screen offers for it, or takes it off where the screen lets you
    leave the slot empty. The swaps that give money back come first.
-3. Brings every part to 100 %. A swap gives a weapon, a thruster or the LIDAR a new part, but the other parts (the
-   reactor, the turbine, the cargo processing unit, …) keep their damage, so they are repaired afterwards.
+3. Brings the parts on the hardpoints, the thrusters and the LIDAR to 100 %. A swap gives them a new part, and the ones
+   it keeps are repaired.
 
-The Repairs screen never fixes or replaces a part at 99.5 % or more. Park still brings a weapon, a thruster or the LIDAR
-from there to 100 %, by swapping it for another part and back.
+Park leaves every other part as it is (the reactor, the turbine, the cargo processing unit, the HUD, …): the Equipment
+screen gives them back at their full price whatever their condition, or never swaps them, so repairing them would only
+spend the cash you want to keep.
+
+The Repairs screen never fixes or replaces a part at 99.5 % or more. Park still brings a part on a hardpoint, a thruster
+or the LIDAR from there to 100 %, by swapping it for another part and back.
 
 Park first asks you to confirm:
 
@@ -54,8 +59,8 @@ Park first asks you to confirm:
 - **Maintenance time**: how long the swaps and repairs keep the ship at the station.
 - If you don't have enough money for every step, a line says how much more you need, and OK is greyed out: Park does
   everything or nothing.
-- If a part can't be brought to 100 % by any button of the game (one other than a weapon, a thruster or the LIDAR, at
-  99.5 % or more), a line names it. OK still works, and Park does all the rest.
+- If a part on a hardpoint, a thruster or the LIDAR can't be brought to 100 % by any button of the game (at 99.5 % or
+  more, with no other part to swap it for and back), a line names it. OK still works, and Park does all the rest.
 
 CANCEL, or Esc, closes the question and leaves the Repairs screen open.
 
@@ -98,7 +103,7 @@ ShipRepairAdvisor/i18n/en.po SHIPREPAIRADVISOR_CASH_COST = "Cash cost" | images/
 ShipRepairAdvisor/i18n/en.po SHIPREPAIRADVISOR_TOTAL_COST = "Total cost" | images/ShipRepairAdvisor-repairs-with.png
 ShipRepairAdvisor/i18n/en.po SHIPREPAIRADVISOR_TIME = "Maintenance time" | images/ShipRepairAdvisor-repairs-with.png, images/ShipRepairAdvisor-park.png
 ShipRepairAdvisor/i18n/en.po SHIPREPAIRADVISOR_MONEY = "%s E$" | images/ShipRepairAdvisor-repairs-with.png
-ShipRepairAdvisor/i18n/en.po SHIPREPAIRADVISOR_PARK_CONFIRM = "Park this ship? Every slot gets the cheapest piece the Equipment screen offers for it, empty where it can be, and every system is brought to %s." | images/ShipRepairAdvisor-park.png
+ShipRepairAdvisor/i18n/en.po SHIPREPAIRADVISOR_PARK_CONFIRM = "Park this ship? Every slot gets the cheapest piece the Equipment screen offers for it, empty where it can be, and the pieces on the hardpoints, the thrusters and the LIDAR are brought to %s." | images/ShipRepairAdvisor-park.png
 ShipRepairAdvisor/i18n/en.po SHIPREPAIRADVISOR_INSURANCE = "Insurance" | images/ShipRepairAdvisor-park.png
 ShipRepairAdvisor/i18n/en.po SHIPREPAIRADVISOR_CASH = "Cash" | images/ShipRepairAdvisor-park.png
 ShipRepairAdvisor/i18n/en.po SHIPREPAIRADVISOR_TOTAL = "Total" | images/ShipRepairAdvisor-park.png
