@@ -30,6 +30,9 @@ const ROLE_TABS = ["CREW_OCCUPATION_MECHANIC", "CREW_OCCUPATION_ASTROGATOR", "CR
 # A Minimum value control's value, the button that opens its bar, and the bar (hud/components/PriceLabel.tscn).
 const PRICE_VALUE = "Box/MarginContainer/Label"
 const PRICE_BAR = "Box/HSlider"
+# The game's English for the geologist's Price prediction accuracy (i18n/en.po CREW_STATS_GEOLOGIST_PREDICTION), as a
+# test translation of the key.
+const PREDICTION_TEXT = "Price prediction accuracy"
 
 var _bodies = []
 var _ships = []
@@ -233,20 +236,15 @@ func inside(desc) -> float:
 func worthText(tab, mineral, kg) -> String:
 	return tab.VALUE_FORMAT % CurrentGame.formatThousands(kg * CurrentGame.getMineralMarketPricePerKg(mineral))
 
-# The line the tab should show for a best geologist of `talent`: the Education level the game shows for it, and the most
-# error the game's estimates have at that level, rounded to a whole %, found by trying talents across the level (the
-# error of the boxes' masses is within ±(1 - CREW_STATS_GEOLOGIST_PREDICTION), hud/MineralMark.gd).
-func geologistText(tab, talent) -> String:
-	var levels = CurrentGame.talentLevels
-	var level = CurrentGame.translateLevel(talent, levels)
-	var most = 0.0
-	for i in 101:
-		var t = i / 100.0
-		if CurrentGame.translateLevel(t, levels) == level:
-			var stats = CurrentGame.makeEmptyStats()
-			stats[GEOLOGIST].talent = t
-			most = max(most, 1.0 - CurrentGame.deriveStats(stats).CREW_STATS_GEOLOGIST_PREDICTION)
-	return tr(tab.GEOLOGIST) % [tr(level), tab.PERCENT_FORMAT % int(round(most * 100))]
+# The line the tab should show for a best geologist of `talent` and `morale`: the game's text for the stat's name, then
+# the crew's Price prediction accuracy as Your Crew shows it (enceladus/CurrentCrewManagement.gd fillStats: 100 times
+# the stat, in the format of enceladus/Crew.tscn GeologistPredictionValue), from the talent raised or lowered by morale
+# (CurrentGame.gd getCrewStats) through the game's deriveStats.
+func geologistText(tab, talent, morale = 0.0) -> String:
+	var stats = CurrentGame.makeEmptyStats()
+	stats[GEOLOGIST].talent = pow(talent, 1 - morale)
+	var accuracy = CurrentGame.deriveStats(stats)[tab.GAME_PREDICTION]
+	return tab.STAT_FORMAT % [tr(tab.GAME_PREDICTION), tab.PREDICTION_FORMAT % (100 * accuracy)]
 
 # A crew member for CurrentGame.state.crew: `aboard`, in the dive crew (CurrentGame.isCrewMemberActive), unless on leave.
 func member(occupation, talent, aboard = true, onLeave = false) -> Dictionary:
@@ -414,7 +412,13 @@ func run():
 	yield(idle(), "completed")
 	check("choosing the tab focuses its switch", tabs.get_focus_owner() == toggle, tabs.get_focus_owner())
 
-	# The line at the bottom, on the geologist aboard: who counts is the dive crew (CurrentGame.isCrewMemberActive)
+	# The line at the bottom, on the geologist aboard: who counts is the dive crew (CurrentGame.getCrewNumberWithRole);
+	# the figure is the crew's Price prediction accuracy as Your Crew shows it, named by the game's text for it (a test
+	# translation of its key: the harness doesn't load the game's .po files).
+	var prediction = Translation.new()
+	prediction.locale = TranslationServer.get_locale()
+	prediction.add_message(tab.GAME_PREDICTION, PREDICTION_TEXT)
+	TranslationServer.add_translation(prediction)
 	var warning = tr(tab.NO_GEOLOGIST)
 	CurrentGame.state.crew = {}
 	yield(reopen(tabs, index), "completed")
@@ -430,12 +434,14 @@ func run():
 		CurrentGame.state.crew = {"G": member(GEOLOGIST, talent)}
 		lines.append(tab._geologistLine())
 		expectLines.append(geologistText(tab, talent))
-	var levelsSeen = []
-	for talent in [0.0, 0.25, 0.5, 0.75]:
-		var line = geologistText(tab, talent)
-		if not levelsSeen.has(line):
-			levelsSeen.append(line)
-	check("a Geologist aboard: their Education, as the game shows it, and the most error the game's estimates have at that level", lines == expectLines and levelsSeen.size() == CurrentGame.talentLevels.size(), lines)
+	check("a Geologist aboard: the crew's Price prediction accuracy, named by the game's text, as Your Crew shows it", lines == expectLines and lines[0].begins_with(PREDICTION_TEXT), lines)
+	var moods = []
+	for morale in [-0.5, 0.0, 0.5]:
+		var moody = member(GEOLOGIST, 0.5)
+		moody.morale = morale
+		CurrentGame.state.crew = {"G": moody}
+		moods.append(tab._geologistLine())
+	check("morale counts, as on Your Crew: bad lowers the figure, good raises it", moods == [geologistText(tab, 0.5, -0.5), geologistText(tab, 0.5), geologistText(tab, 0.5, 0.5)] and moods[0] != moods[1] and moods[1] != moods[2], moods)
 	CurrentGame.state.crew = {"A": member(GEOLOGIST, 0.3), "B": member(GEOLOGIST, 0.99, false), "C": member("CREW_OCCUPATION_PILOT", 0.99), "D": member(GEOLOGIST, 0.6), "E": member(GEOLOGIST, 0.95, true, true)}
 	var best = tab._geologistLine()
 	check("several: the best Geologist in the dive crew", best == geologistText(tab, 0.6) and best != geologistText(tab, 0.3) and best != geologistText(tab, 0.99), best)
@@ -443,6 +449,7 @@ func run():
 	check("the line follows the crew each time the tab shows", tab._geologist.text == best, tab._geologist.text)
 	CurrentGame.state.crew = {}
 	yield(reopen(tabs, index), "completed")
+	TranslationServer.remove_translation(prediction)
 
 	# With a gamepad: down from the switch at the top to the first row's switch, up and down a column (the switches, or
 	# the sliders' values), left and right between a row's switch and its slider's value, and nowhere out of the tab;
@@ -746,7 +753,7 @@ func run():
 
 	# The texts (i18n/en.po), also in a language without them (Godot's fallback, en)
 	var ui = load(UI)
-	var keys = [tabName, enabledDesc.label, ui.HINT, model.MINERAL_SWITCH.label, mass.label, ui.GEOLOGIST, ui.NO_GEOLOGIST]
+	var keys = [tabName, enabledDesc.label, ui.HINT, model.MINERAL_SWITCH.label, mass.label, ui.NO_GEOLOGIST]
 	var translated = true
 	for key in keys:
 		translated = translated and tr(key) != key

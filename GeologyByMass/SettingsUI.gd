@@ -26,10 +26,12 @@ const GAME_TOOLTIP = "res://menu/sfx/PlaySoundsOnTheseButtons.tscn"
 const GAME_SLIDER_VALUE = "Box/MarginContainer/Label"
 # The slider's bar, which A turns the value into (hud/components/PriceLabel.tscn).
 const GAME_SLIDER_BAR = "Box/HSlider"
-# The occupation whose crew estimate the masses (CurrentGame.occupations, the key of its stats in getCrewStats).
+# The occupation whose crew estimate the masses (CurrentGame.occupations, as getCrewNumberWithRole counts it).
 const GAME_GEOLOGIST = "CREW_OCCUPATION_GEOLOGIST"
+# The geologist's Price prediction accuracy: its key in getCrewStats, and the game's text for its name, as Your Crew
+# shows it (enceladus/Crew.tscn GeologistPredictionLabel).
+const GAME_PREDICTION = "CREW_STATS_GEOLOGIST_PREDICTION"
 const HINT = "GEOLOGYBYMASS_HINT"
-const GEOLOGIST = "GEOLOGYBYMASS_GEOLOGIST"
 const NO_GEOLOGIST = "GEOLOGYBYMASS_NO_GEOLOGIST"
 
 # The sliders while the switch is off: dimmed, still adjustable. As the Geologist tab dims a switch the HUD can't use
@@ -42,11 +44,13 @@ const SLIDER_WIDTH = 500
 # The gap between the switch and its label, in px.
 const TOGGLE_SPACING = 12
 # What each mineral's slider shows (its least mass, with the unit after it), what that mass is worth (as the info box
-# shows a value, hud/MineralMark.gd priceFormat) and the most error of the geologist's estimates (as the Geologist
-# tab's Minimum Albedo shows a percentage, hud/components/PercentLabel.tscn).
+# shows a value, hud/MineralMark.gd priceFormat), the geologist's Price prediction accuracy (as Your Crew shows it,
+# enceladus/Crew.tscn GeologistPredictionValue), and the line with its name, then its value (the game has no text for
+# it: Your Crew puts them in two Labels).
 const MASS_FORMAT = "%s "
 const VALUE_FORMAT = "%s E$"
-const PERCENT_FORMAT = "%s%%"
+const PREDICTION_FORMAT = "%.0f%%"
+const STAT_FORMAT = "%s: %s"
 
 var _settings
 var _toggle
@@ -190,26 +194,15 @@ func _showValue(mineral):
 	var worth = _settings.getMinMass(mineral) * CurrentGame.getMineralMarketPricePerKg(mineral)
 	_values[mineral].text = VALUE_FORMAT % CurrentGame.formatThousands(worth)
 
-# The line on the geologist aboard: a warning with none in the dive crew (CurrentGame.isCrewMemberActive, as
-# getCrewStats counts it), whose chunks then get no info box and so no masses; else the Education of the best one, as
-# their entry shows it (translateLevel of their talent), and the most error the game's formula gives that level, at its
-# lowest talent (deriveStats: the info box's error is within ±(1 - CREW_STATS_GEOLOGIST_PREDICTION),
-# hud/MineralMark.gd _ready). A hint, so the level's figure, as the player knows the level: morale, which also moves
-# the error (getCrewStats), is left out.
+# The line on the geologist aboard: a warning with none in the dive crew (CurrentGame.getCrewNumberWithRole), whose
+# chunks then get no info box and so no masses; else the crew's Price prediction accuracy, as Your Crew shows it
+# (enceladus/CurrentCrewManagement.gd fillStats), from which the info box's mass error comes (hud/MineralMark.gd _ready,
+# CurrentGame.getGeologistAccurancy).
 func _geologistLine() -> String:
-	var best = null
-	for member in CurrentGame.state.crew.values():
-		if member.get("occupation") == GAME_GEOLOGIST and CurrentGame.isCrewMemberActive(member):
-			if best == null or member.talent > best:
-				best = member.talent
-	if best == null:
+	if CurrentGame.getCrewNumberWithRole(GAME_GEOLOGIST) == 0:
 		return tr(NO_GEOLOGIST)
-	var levels = CurrentGame.talentLevels
-	var level = CurrentGame.translateLevel(best, levels)
-	var stats = CurrentGame.makeEmptyStats()
-	stats[GAME_GEOLOGIST].talent = float(levels.find(level)) / levels.size()
-	var error = 1.0 - CurrentGame.deriveStats(stats).CREW_STATS_GEOLOGIST_PREDICTION
-	return tr(GEOLOGIST) % [tr(level), PERCENT_FORMAT % int(round(error * 100))]
+	var accuracy = CurrentGame.getCrewStats()[GAME_PREDICTION]
+	return STAT_FORMAT % [tr(GAME_PREDICTION), PREDICTION_FORMAT % (100 * accuracy)]
 
 func _dim():
 	_grid.modulate = Color.white if _settings.isEnabled() else DIMMED

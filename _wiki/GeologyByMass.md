@@ -49,8 +49,9 @@ In the **GBM** tab:
   - its mass, the least kg of it a chunk needs, from 0 kg to 5,000 kg, starting at 0;
   - what that mass is worth at today's price, so you can compare it with a *Minimum value*.
 - At the bottom, a line on your geologist. With none in your dive crew, it gives a warning: no chunk gets an info box
-  then, so the masses have no effect. Otherwise it names the Education of your best one, and how far off their
-  estimates can be: up to 90 % with Self-taught education, 70 % with Basic, 50 % with High and 30 % with Master. Set
+  then, so the masses have no effect. Otherwise it shows your crew's *Price prediction accuracy*, the same figure as on
+  the *Your Crew* tab of the station's *Crew* screen: from 10 % to 90 %, higher with a better educated geologist, and
+  with a happier one. The kg on the info boxes can be off by up to 100 % less that figure: at 60 %, by up to 40 %. Set
   the masses a bit lower or higher to allow for it.
 
 The sliders work like the ones in the *Geologist* tab. While the switch is off the rows are dimmed, but you can still
@@ -99,9 +100,12 @@ GeologyByMass/Settings.gd MIN_MASS.max = 5000 -> 5,000 kg
 GeologyByMass/i18n/en.po GEOLOGYBYMASS_MIN_MASS = "Least mass of this mineral, as your geologist estimates it, for a chunk to pass while its switch is on." -> as your geologist estimates
 GeologyByMass/SettingsUI.gd MASS_FORMAT = "%s " | images/GeologyByMass-settings.png
 GeologyByMass/SettingsUI.gd VALUE_FORMAT = "%s E$" | images/GeologyByMass-settings.png
-GeologyByMass/SettingsUI.gd PERCENT_FORMAT = "%s%%" | images/GeologyByMass-settings.png
-GeologyByMass/i18n/en.po GEOLOGYBYMASS_GEOLOGIST = "You have a Geologist with %s education. Expect up to %s variation in the mass estimation." | images/GeologyByMass-settings.png
+GeologyByMass/SettingsUI.gd STAT_FORMAT = "%s: %s" | images/GeologyByMass-settings.png
+GeologyByMass/SettingsUI.gd PREDICTION_FORMAT = "%.0f%%" | images/GeologyByMass-settings.png
 GeologyByMass/i18n/en.po GEOLOGYBYMASS_NO_GEOLOGIST = "WARNING: No Geologist on board. The values above will have no effect." -> a warning
-game: 90 %, 70 %, 50 % and 30 %, the most error of a geologist's estimates with Self-taught, Basic, High and Master education, morale left out (CurrentGame.gd deriveStats CREW_STATS_GEOLOGIST_PREDICTION at each level's lowest talent, translateLevel; hud/MineralMark.gd _ready)
+game: Price prediction accuracy, the crew stat's name, as the Your Crew tab shows it (i18n/en.po CREW_STATS_GEOLOGIST_PREDICTION; enceladus/Crew.tscn GeologistPredictionLabel), in the settings picture
+game: 10 % to 90 %, the crew's Price prediction accuracy from the least talented geologist to the most, the talent raised by good morale and lowered by bad (CurrentGame.gd deriveStats CREW_STATS_GEOLOGIST_PREDICTION, getCrewStats)
+game: 100 %, the info boxes' kg off by up to 100 % less the Price prediction accuracy (hud/MineralMark.gd _ready, CurrentGame.gd getGeologistAccurancy)
+note: 60 % and 40 %, an example of that rule: change it with it
 note: 200 kg, the least mass of Be and the step of the example in the settings picture (its steps in _shots/shots.psd1, by the game's base prices, CurrentGame.mineralPrices): change it with that
 -->

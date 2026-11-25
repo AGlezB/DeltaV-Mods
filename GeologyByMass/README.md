@@ -31,10 +31,12 @@ game's developers, check that it also happens without the mod.
   The switches start as the game's own do for a new row: every mineral on but H2O.
 - **What a mass is worth:** after each mineral's least mass, the tab shows what that mass of it is worth at the day's
   price, to compare a mass with the *Minimum value* it replaces.
-- **The geologist aboard:** the masses are the geologist's estimates, so the line at the bottom of the tab says who
-  makes them. With no geologist in the dive crew it warns that the masses will have no effect: without one, no chunk
-  gets an info box, so none is ever identified. Otherwise it names the best one's Education, as their crew entry shows
-  it, and how far off their estimates can be at that level, as a rough guide to set the masses lower or higher.
+- **The geologist aboard:** the masses are the geologist's estimates, so the line at the bottom of the tab says how
+  good they are. With no geologist in the dive crew it warns that the masses will have no effect: without one, no chunk
+  gets an info box, so none is ever identified. Otherwise it shows the crew's *Price prediction accuracy*, the figure
+  the Your Crew screen shows, with the game's own words for it. The info boxes' masses come from the same figure, off
+  by up to 100 % less it, so it is a guide to set the masses lower or higher. The game already shows that figure, so
+  the mod shows it as it is rather than working out one of its own.
 - **The overridden controls disabled:** while the switch is on, the Geologist tab disables and dims the mineral
   switches and the *Minimum value* of the rows the mod judges, since they no longer count, as the game dims a switch a
   row can't use. They stay in place, with their values; switched off, they work again, as they were.
@@ -110,21 +112,21 @@ game's developers, check that it also happens without the mod.
   shows them on hover and on focus, and each mineral switch gets one of its own. A grid of four columns, one row per
   mineral: the switch, the name, the least mass slider and what that mass is worth at the day's price
   (`CurrentGame.getMineralMarketPricePerKg`, as the info box prices a chunk, shown as `VALUE_FORMAT`), which follows
-  its slider. Under it, the line on the geologist aboard (`_geologistLine()`): among the dive crew
-  (`CurrentGame.isCrewMemberActive`, as `getCrewStats` counts it), the geologist (`GAME_GEOLOGIST`) with the highest
-  talent; with none, `NO_GEOLOGIST`; else `GEOLOGIST` with their Education level (`CurrentGame.translateLevel` of their
-  talent among `talentLevels`, as their crew entry shows it) and the most error the boxes' masses have at that level,
-  as `PERCENT_FORMAT`: the info box's error is within ±(1 - `CREW_STATS_GEOLOGIST_PREDICTION`) (`MineralMark.gd`
-  `_ready`), and the game's own `deriveStats`, run on `makeEmptyStats()` with the level's lowest talent, gives it, so
-  no formula is copied. Morale, which also moves the error (`getCrewStats`), is left out: the line is a hint, at the
-  level the player sees. `menu/TabsWithGamepadControl.gd` focuses the switch at the top when the tab is chosen. The
-  D-pad's way from there (`_linkFocus()`, set as `hud/SystemMineralList.gd` `adjustFocus` sets the Geologist tab's):
-  down to the first mineral's switch; up and down a column, the switches or the sliders' values, in the rows' order,
-  the first row's leading back up to the switch at the top; left and right between a row's switch and its slider's
-  value (`focus_neighbour_*`). At the ends and the outer sides a control is its own neighbour, so the focus never
-  leaves the tab, and once A turns a value into its bar, left and right are the bar's. The values are filled in when
-  the tab enters the tree and whenever it shows, only where they differ, so opening it stores nothing; the worths and
-  the geologist's line follow the day's prices and the crew each time.
+  its slider. Under it, the line on the geologist aboard (`_geologistLine()`): with no geologist (`GAME_GEOLOGIST`) in
+  the dive crew (`CurrentGame.getCrewNumberWithRole`), `NO_GEOLOGIST`; else the crew's Price prediction accuracy as the
+  Your Crew screen shows it (`enceladus/CurrentCrewManagement.gd` `fillStats`): the stat `GAME_PREDICTION` of
+  `CurrentGame.getCrewStats()` (the dive crew's best talent, morale included), times 100, as `PREDICTION_FORMAT`, the
+  format of that screen's `GeologistPredictionValue` (`enceladus/Crew.tscn`), after the game's own text for its name,
+  the same key, joined by `STAT_FORMAT`. So the line comes translated in every language the game has. The info box's
+  mass error comes from the same stat: within ±(1 - the stat) (`hud/MineralMark.gd` `_ready`,
+  `CurrentGame.getGeologistAccurancy`). `menu/TabsWithGamepadControl.gd` focuses the switch at the top when the tab is
+  chosen. The D-pad's way from there (`_linkFocus()`, set as `hud/SystemMineralList.gd` `adjustFocus` sets the
+  Geologist tab's): down to the first mineral's switch; up and down a column, the switches or the sliders' values, in
+  the rows' order, the first row's leading back up to the switch at the top; left and right between a row's switch and
+  its slider's value (`focus_neighbour_*`). At the ends and the outer sides a control is its own neighbour, so the
+  focus never leaves the tab, and once A turns a value into its bar, left and right are the bar's. The values are
+  filled in when the tab enters the tree and whenever it shows, only where they differ, so opening it stores nothing;
+  the worths and the geologist's line follow the day's prices and the crew each time.
 - **The overridden controls disabled** (`GeologistTab.gd`): the list builds a row per system in `updateSystems`: a
   mineral switch per mineral (`hud/components/MineralSystemToggle.tscn`, whose `toggled` reaches the list's `toggle`
   with the row's system bound) and a Minimum value control at the end (`hud/components/PriceLabel.tscn`), which it
@@ -186,9 +188,9 @@ game's developers, check that it also happens without the mod.
   compared with the game's own script where the game decides; the tab with the game's `Hud.gd`, `OMS.gd`,
   `TabsWithGamepadControl.gd`, `PriceLabel.gd`, `RepeatingHSlider.gd`, `MineralLabel.gd`, `MineralSystemToggle.gd` and
   `PlaySoundsOnTheseButtons.gd`, an OMS built as its scene nests the tabs, and stubs of the ship and of `CurrentGame`,
-  with the D-pad's way through the tab and the line on the geologist for every Education level; the Geologist tab with
-  the game's `SystemMineralList.gd` in that OMS, with rows for the HUD, an arm and a cargo container's dock. The real
-  check is playing the game.
+  with the D-pad's way through the tab and the line on the geologist for every Education level and with morale; the
+  Geologist tab with the game's `SystemMineralList.gd` in that OMS, with rows for the HUD, an arm and a cargo
+  container's dock. The real check is playing the game.
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.

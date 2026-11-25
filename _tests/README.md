@@ -88,7 +88,9 @@ copied. For TurretLockableFacing and WeaponMaxPowerSwitch: the OMS Mechanic tab'
 the game's market code: the prices drawn from a save's seed and moved by the trades in its log (`state.logs`, which
 `logEvent` keeps as the game keeps it where a suite gives the state one), the stored minerals, and the price chart's
 prediction error; and the game's crew levels (`translateLevel`), who is in the dive crew (`isCrewMemberActive`) and
-the one derived stat a mod reads, the geologist's Price prediction accuracy (`deriveStats`); and the
+on leave (`isCrewOnLeave`), the crew stats (`getCrewStats`, without the game's cache: the best talent and experience
+per occupation, with morale) and the one derived stat a mod reads, the geologist's Price prediction accuracy
+(`deriveStats`); and the
 game's `getMoney`, with the insurance where asked (the Repairs screen's Replace); and, for ShipSaleAdvisor and
 ShipRepairAdvisor, the game's `changeMoney` with the insurance paying first where asked, the stored ships' instances
 (`ownedShipInstances`, `removeOwnedShipByHash`) and their lock (`shipMutex`), a repair limit a suite sets
@@ -289,8 +291,9 @@ WeaponMaxPowerSwitch.
   game's `SystemMineralList.gd` (with the mod, its extension) added to that OMS's Geologist tab, where the game nests
   it, building its rows on the stub ship's `systemsChanged` (`getSystems`): the HUD itself, and stubs
   (`harness/geology_system.gd`) of an arm and of a cargo container's dock (`onlyMinerals`). The line on the geologist
-  reads the crew from the `CurrentGame` stub's `state.crew`, with the game's `isCrewMemberActive`, `translateLevel` and
-  the geologist's line of `deriveStats`. The mod's settings descriptions come from its `Settings.gd`. Checks that the
+  reads the crew from the `CurrentGame` stub's `state.crew`, with the game's `getCrewNumberWithRole`, `getCrewStats`
+  and the geologist's line of `deriveStats`, and names the stat with a test translation of the game's key for it. The
+  mod's settings descriptions come from its `Settings.gd`. Checks that the
   tab comes right after the Geologist tab, titled by its key, once however often the OMS is built, and that opening it
   stores nothing; its switch, with its label at the mod's spacing (once laid out); a grid of four columns, one row per
   mineral of the market, H2O too, in the Geologist tab's order: the mineral's switch (the Geologist tab's, showing the
@@ -299,8 +302,9 @@ WeaponMaxPowerSwitch.
   and what that mass is worth at the day's price; the switches and the sliders store what they show, the worth follows
   its slider, and the day's price each time the tab shows; the switch dims the rows; choosing the tab focuses the
   switch. The line under the grid: the warning with nobody aboard, and with only a Pilot, a Geologist not in the dive
-  crew or one on leave; a Geologist's Education level and the most error the game's estimates have at that level, for
-  every level (found by trying talents across it); the best Geologist in the dive crew among several; brought up to
+  crew or one on leave; a Geologist aboard, the crew's Price prediction accuracy as Your Crew shows it, named by the
+  game's text, for talents across every Education level; bad morale lowering it and good morale raising it, as on Your
+  Crew; the best Geologist in the dive crew among several; brought up to
   date each time the tab shows. A HUD without mineral targeting gets no tab. The HUD hands every chunk to its ship with
   its own row, the switch on. The rule, with the HUD's row: off, the game decides; on, below, at and above a mineral's
   least mass; H2O, switched off on the tab at first, refused however much, even in a row with it; switched on, passing
@@ -1091,7 +1095,7 @@ WeaponMaxPowerSwitch.
   WeaponMaxPowerSwitch too, in both load orders; 1 control check with `-Mods @()`),
   `boot` 5 (3 control checks with `-Mods @()`), `lidar` 40 (3 control checks with `-Mods @()`), `hud` 13 (the same with
   LidarContactCallout too; 3 control checks with `-Mods @()`), `crew` 167 (171 with CrewPerfectSort too, in both load
-  orders; the same 167 with DealerNotifier too; 3 control checks with `-Mods @()`), `geology` 95 (the same with
+  orders; the same 167 with DealerNotifier too; 3 control checks with `-Mods @()`), `geology` 96 (the same with
   DiveSkipTransit too, in both load orders, with LidarContactCallout too, and with WeaponMaxPowerSwitch too, in both;
   5 control checks with `-Mods @()`),
   `fleet` 95 (the same with ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too, and with ShipSaleAdvisor too, in

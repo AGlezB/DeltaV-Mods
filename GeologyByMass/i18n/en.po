@@ -27,6 +27,3 @@ msgstr "Least mass of this mineral, as your geologist estimates it, for a chunk 
 
 msgid "GEOLOGYBYMASS_NO_GEOLOGIST"
 msgstr "WARNING: No Geologist on board. The values above will have no effect."
-
-msgid "GEOLOGYBYMASS_GEOLOGIST"
-msgstr "You have a Geologist with %s education. Expect up to %s variation in the mass estimation."

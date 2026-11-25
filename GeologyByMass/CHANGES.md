@@ -1,5 +1,15 @@
 # GeologyByMass - Changes
 
+## 2.0.3
+- The line at the bottom of the mod's OMS tab shows the crew's Price prediction accuracy, the figure the Your Crew
+  screen shows (morale included), with the game's own text for its name, so it comes in the game's language. It used to
+  show the best geologist's Education and the most error the game's estimates have at that level, without morale. The
+  info boxes' mass error comes from that same figure.
+- `SettingsUI.gd`: `GEOLOGIST` and `PERCENT_FORMAT` removed; new `GAME_PREDICTION`, `PREDICTION_FORMAT` and
+  `STAT_FORMAT`; `_geologistLine()` asks the game's `getCrewNumberWithRole` and `getCrewStats`.
+- Text `GEOLOGYBYMASS_GEOLOGIST` removed.
+- README: the line on the geologist.
+
 ## 2.0.2
 - Licensed under the MIT License instead of the GNU GPLv3: the LICENSE in the zip and the README's *About* and
   *Disclaimer* say so.

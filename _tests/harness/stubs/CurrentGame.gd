@@ -281,7 +281,7 @@ func translateLevel(lvl: float, translation):
 		lvl -= step
 	return translation[min(nr, translation.size()) - 1]
 
-# The crew stats CrewBio.gd compares an entry's with (its showStats): nobody's.
+# As the game's: nobody's crew stats, which getCrewStats fills in and CrewBio.gd fills with an entry's (its showStats).
 func makeEmptyStats():
 	var stats = {"active": 0, "salary": 0}
 	for o in occupations:
@@ -289,7 +289,7 @@ func makeEmptyStats():
 	return stats
 
 # As the game's for the one stat a mod reads, the geologist's Price prediction accuracy (GeologyByMass's line on the
-# geologist aboard); the others aren't derived.
+# geologist aboard, through getCrewStats); the others aren't derived.
 func deriveStats(stats):
 	stats.CREW_STATS_GEOLOGIST_PREDICTION = clamp(0.1 * (1 - stats.CREW_OCCUPATION_GEOLOGIST.talent) + 0.9 * (stats.CREW_OCCUPATION_GEOLOGIST.talent), 0, 1)
 	return stats
@@ -301,8 +301,34 @@ func isCrewMemberActive(member: Dictionary) -> bool:
 	var leave = member.get("leave", 0) - getInGameTimestamp()
 	return not (leave > 0)
 
-func getCrewStats(_includeInactive = false, _butNotOnLeave = false, _includeMorale = true):
-	return makeEmptyStats()
+# As the game's.
+func isCrewOnLeave(member: Dictionary) -> bool:
+	return member.get("leave", 0) - getInGameTimestamp() > 0
+
+# As the game's, without its cache: the best talent and experience per occupation among the dive crew (with
+# `includeInactive` everyone, or with `butNotOnLeave` too all but those on leave), each raised or lowered by the
+# member's morale, then the derived stats (deriveStats, only the one a mod reads). A member without a talent, an
+# experience or a salary, as a suite may hire one, counts as 0.
+func getCrewStats(includeInactive = false, butNotOnLeave = false, includeMorale = true):
+	var stats = makeEmptyStats()
+	for c in state.crew.values():
+		var include = isCrewMemberActive(c)
+		if includeInactive:
+			include = not isCrewOnLeave(c) if butNotOnLeave else true
+		if include:
+			stats.active += 1
+			var talent = c.get("talent", 0.0)
+			var experience = c.get("experience", 0.0)
+			if includeMorale:
+				var morale = clamp(c.get("morale", 0.0), -0.5, 0.5)
+				talent = pow(talent, 1 - morale)
+				experience = pow(experience, 1 - morale)
+			var occupation = c.get("occupation")
+			if occupation in stats:
+				stats[occupation].talent = clamp(max(stats[occupation].talent, talent), 0, 1)
+				stats[occupation].experience = clamp(max(stats[occupation].experience, experience), 0, 1)
+		stats.salary += c.get("salary", 0)
+	return deriveStats(stats)
 
 func getSkillFor(occupation, type):
 	return "%s_%s" % [occupation, type.to_upper()]
