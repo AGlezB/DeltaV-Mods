@@ -746,8 +746,8 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
 - **Chaos**: no text of its own in `en.po`. A value from 0 to 1 for each spot of the rings: the red channel of the
   ring map (`ring/ring-map.png`, one pixel per km, depth across and the way around the ring down, wrapping), read by
   `TheRing.gd` `getChaosAt`; its blue channel is the density (`getRawDensityAt`). Random events of the rings need a
-  minimum chaos where they spawn, and the dive entry point's Environmental damages fee (`MAP_FEE_ENVIRONMENT`) grows
-  with it. Details: [GAME.md](GAME.md#chaos).
+  minimum chaos where they spawn, the chunks are purer the more chaos, and the dive entry point's Environmental damages
+  fee (`MAP_FEE_ENVIRONMENT`) grows with it. Details: [GAME.md](GAME.md#chaos).
 - **Chunk** (mineral chunk, ore chunk): a loose piece of ore floating in the rings; what the arm grabs, the MPU
   processes and the HUD's mineral targeting marks. A `RigidBody2D` with `asteroids/mineral.gd`, one scene per
   mineral and size (`asteroids/mineral-<mineral>-<n>.tscn`); `mineral` names its mineral, `composition` its
@@ -794,7 +794,8 @@ spawn rules, what decides what) is in [GAME.md](GAME.md), in a section of the sa
   map's blue and green channels (see *Chaos*; `TheRing.gd` `getTargetDensityAt`), filled in ahead of the ship by
   `AsteroidSpawner.gd` `spawnProperThings`. Chunks come only from roids breaking. Details:
   [GAME.md](GAME.md#density).
-- **Depth** (`HUD_DEPTH`): how far into the rings the ship is.
+- **Depth** (`HUD_DEPTH`, "depth"): how far into the rings the ship is, in km, from its x coordinate, shown on the HUD
+  (`ship-ctrl.gd` sensor `diveDepth`). Details: [GAME.md](GAME.md#depth).
 - **Derelict**: an abandoned ship with its reactor off, in the `helpless` faction (`story/RescueOperation.gd`,
   `story/FlightForRescue.gd`, `story/AgendaSpecificDerelict.gd`). It talks once when the player's ship comes close,
   and a crew member can go over to restart it (see *EVA*); or the arm can hold it until the dive ends (see

@@ -90,9 +90,19 @@ of it is `DockingArm.gd` `_physics_process`.
 Random events of the rings need a minimum chaos where they spawn (each event's `chaosLimit` in `story/TheRing.tscn`;
 see *Salvage*). The dive entry point's Environmental damages fee (`MAP_FEE_ENVIRONMENT`) grows with chaos × density
 (`DiveTarget.gd` `getPrices`, `chaosPricePerChaos`), less the geologist's cut (see *Crew stats*), so of two spots of
-the same density the dearer is the more chaotic. By depth, on the 1.93.1 map: under 0.35 in the first 10 km; from 10
-to 600 km about 0.35–0.4 on average, 0.4 or more in 20–60 % of spots and 0.5 or more in under 10 %; deeper, 0.45–0.5
-on average, 0.5 or more in 20–50 % of spots.
+the same density the dearer is the more chaotic. Chaos is low near the edge, higher from 600 km and highest at 2800 to
+2990 km (see *Depth*, which has the figures).
+
+Chaos also decides how pure the chunks are. A roid of the smallest class breaks into chunks of its vein's mineral (see
+*Depth*), each one of seven scenes of rising purity (`asteroids/mineral-<mineral>-1.tscn` to `-7`: Fe 0.5 to 0.68, Pd
+0.07 to 0.9, Pt and Be 0.55 to 0.97, V 0.7 to 0.94, W 0.05 to 0.95), picked at random, then moved by
+int((chaos − 0.5) × 7) at the spot (`AsteroidSpawner.gd` `spawnAsteroidByClass`, `adjustedClass`, plus
+`CurrentGame.richnessAdjust`, which only the tutorial sets). Under 0.357 the pick moves down, and one moved below the
+first scene gives no chunk at all: 1 in 7 at 0.35, 3 in 7 at 0. Over 0.643 it moves up, towards the purest; in
+between, it stays. A chunk's share of ore is about its purity cubed (`mineral.gd` `_ready`: (purity ± 0.1)³, at least
+0.1³), the rest water: a Pt chunk holds about 17 % to 91 % ore. Chaos also makes the roids spawned at a spot spin and
+drift a little faster (chaos²; the chunks a roid breaks into get none of it), and over 0.65 (`westernThreshold`) the
+music drifts to its western mood (`handleMood`).
 
 ## Combat capacity
 
@@ -243,7 +253,62 @@ or small roids; `TheRing.gd` `getTargetDensityAt` turns them into a target per s
 1.5 to 3 km ahead of the ship. A typical spot holds about 10 roids per km², the densest 28 (game 1.93.1), nearly all
 small. Chunks come only from roids breaking (`asteroid.gd`): a roid of the smallest class gives one chunk, the bigger
 classes 2, 6, 24 and 96 (`splitsTo` over the classes below it), fewer when a hit makes one skip a class
-(`obliterating`), and none beyond 1.2 km of the player's ship (`CurrentGame.isInSimulatiorRange`).
+(`obliterating`), and none beyond 1.2 km of the player's ship (`CurrentGame.isInSimulatiorRange`). How density
+changes with depth: see *Depth*.
+
+## Depth
+
+The HUD's depth is the ship's x coordinate (10 world units are 1 m) ÷ 10,000 − 1, in km (`ship-ctrl.gd` sensor
+`diveDepth`, dashes at 0 or less). The ring map, the events and the achievements read x ÷ 10,000 without the − 1 (map
+km below), so a spot's map km is its HUD depth plus 1; conversation lines read the HUD's figure. The HUDs of the K37,
+the K225 and the OCP-209, among others, colour the readout as a warning past 1000 km and as an error past 2000 km, with
+no other effect. What depth decides:
+
+- **The forced return.** Past 3006 map km (`isInEscapeCondition`), as beyond the ring's near edge (x below 0) and at
+  any speed over 200 m/s, the player's ship sounds its alarm, and after 4 s still there (`escapeTime`) the exit starts
+  (`escapeTheRing`), as a course plotted to Enceladus does. Astrogation keeps destinations between 2 and 3000 map km
+  (`CurrentGame.gd`).
+- **The launch fee.** The dive entry point's Xaser pathway burn fee (`MAP_FEE_DEPTH`, `DiveTarget.gd` `getPrices`) is
+  50,000 E$ × (log₁₀(d + 10) − 1) × the precision multiplier, less the astrogator's cut (see *Crew stats*), d being
+  the entry point's depth in km on the dive map (`currentTarget.x`): free at 0, 50,000 E$ at 90 km, 100,000 E$ at
+  990 km. The ΔV for trajectory, and with it the transit (see *Transit*),
+  doesn't depend on depth: 4000 + 4000 × the entry point's offset along the ring ÷ 2000 km (`dvValue`).
+- **Random events** (see *Random event*). Short of the edge limit (4 map km at the start of a game, shrinking to 0
+  over 300 in-game days), only diggers come. Pirate fights, pirate traps and Vilcy spawn only from 30 to 2970 map km
+  (`depthMinKm`, `depthMaxKm` of `story/PirateCombat.gd`, `PirateTrap.gd` and `Vilcy.gd`), the ring races from 10 map
+  km, two of them only in the gap, at 248 to 300 and 268 to 280 map km (`RingRaceInGap`, `RingRaceInGapCenter` in
+  `story/TheRing.tscn`), and a racer met shallower than 21 km turns the race down ("Too much activity going on in the
+  rings now. Maybe another time.", `DIALOG_RACE_TOO_MUCH_ACTIVITY` in `comms/conversation/RacerConversation.tscn`).
+  ATLAS, a ring race too, comes at any depth. The other events test no depth, only chaos and their other conditions.
+- **AI greed.** An AI ship's greed for roids and chunks is cut to 20 % up to 5 km, rising to full at 9 km
+  (`ship-ctrl.gd` `aiControl`, `aiGreedDepthLimit`, `aiGreedMin`), so the miners near the edge leave more of them
+  alone. The NT Mining Companion and the B8 Claim Beacon have no such cut (`aiGreedDepthLimit` 0).
+- **Lines and achievements.** Some conversation lines depend on depth (`comms/ConversationPlayer.gd` `minDepth`,
+  `maxDepth`): besides the racer's, a miner's at 2 and 10 km and the claim beacon's at 10 and 2990 km. Achievements
+  (`ship-ctrl.gd` `handleAchivements`): Diver at 10 km, Deep Diver at 50 km, Lost in Space from 254 to 299 km (the
+  gap), Big Emptiness at 2999 km, Here, there be dragons at 3005 km, where the forced return starts.
+
+Through the ring map (`ring/ring-map.png`, one pixel per km), depth also sets what chaos and density a spot is likely
+to have (see *Chaos*, *Density*). Over every spot of each band, on the 1.93.1 map:
+
+| Map km | Average chaos | Chaos 0.5 or more | 0.643 or more (purer chunks) | 0.357 or less (poorer chunks) | Average density |
+|---|---|---|---|---|---|
+| 0–10 | 0.15 | 0 % | 0 % | 100 % | 0.15 |
+| 10–100 | 0.36 | 3 % | 0.3 % | 53 % | 0.52 |
+| 100–200 | 0.38 | 4 % | 0.5 % | 38 % | 0.43 |
+| 200–300 (the gap) | 0.39 | 3 % | 0.2 % | 29 % | 0.26 |
+| 300–600 | 0.39–0.42 | 6–10 % | 0.3–0.4 % | 15–34 % | 0.43–0.47 |
+| 600–1000 | 0.44–0.48 | 20–37 % | 1–1.5 % | 1–12 % | 0.36–0.39 |
+| 1000–2800 | 0.45–0.49 | 25–40 % | 1–6 % | 2–9 % | 0.26–0.33 |
+| 2800–2900 | 0.50 | 51 % | 7 % | 3 % | 0.29 |
+| 2900–2990 | 0.51–0.54 | 43–56 % | 16–20 % | 4–5 % | 0.20–0.30 |
+| 2990–3000 | 0.48 | 36 % | 7 % | 6 % | 0.05 |
+
+So chaos steps up at 600 km and stays about level to 2800 km, then is highest at 2800 to 2990 km; density is highest in
+the first 100 km, lower from 600 km, lower still from 1000 km, and nearly nothing past 2990 km. Within a band, chaos
+and density vary from spot to spot around the ring, so the spot picked matters as well as its depth. Which mineral a
+chunk holds doesn't follow depth: it comes from `ring/ring-veins.png`, read at two scales (one pixel per 186 m and per
+253 m) that repeat across the ring, the dearer minerals the rarer (`TheRing.gd` `getVeinAt`).
 
 ## Derelict
 
@@ -782,7 +847,10 @@ returns, in this order:
 
 `oddityCounter` counts in-game seconds while the tutorial's basics are done and the ship isn't in a cutscene or
 astrogating away, and starts again at a time jump and whenever an event or a digger enters the scene: it runs for the
-whole ring, not per spot. The edge limit is 4 km deep at the start of a game and shrinks to nothing over 300 days.
+whole ring, not per spot. The edge limit is 4 km of the ring map (3 km on the HUD's depth, see *Depth*) at the start of
+a game and shrinks to nothing over 300 days. Step 5 also asks for a spot under 3000 km along the ring
+(`pos.y < edgeLimit.y`), where every dive starts (`DiveTarget.gd` `vectorToMap`); the limit was probably meant for
+depth, where the forced return already stops the ship (read in the code, not tried in the game).
 Most events need chaos above their `chaosLimit` at the spot (see *Chaos*), and some also a story, a point of interest
 not yet known, no other of the same nearby, money, combat capacity or a difficulty (see *Difficulty*). The frozen
 bodies and two Halloween events (`story/TimedEvent.gd`) are always eligible on a few dates of the real-world calendar
@@ -866,9 +934,9 @@ Derelicts come from:
 - **Random events of the rings** (`story/TheRing.tscn`, `TheRing.gd` `getOddityAt`, asked by the asteroid field for
   a spot near the ship). The ring scene spawns one only after 600 in-game seconds of flight since the last
   (`odditiesEvery`; astrogation restarts the count, cutscenes don't count), once the basic tutorial is done, while
-  no other ship is around (`suppressEventIfShips`), and deeper than the edge limit (4 km at the start of a game,
-  shrinking to 0 over 300 in-game days; shallower, only miners come). The events, about a hundred, are walked in a
-  shuffled order, each tested once per pass, and the first that passes spawns. A derelict's event passes with a
+  no other ship is around (`suppressEventIfShips`), and deeper than the edge limit (3 km on the HUD's depth at the
+  start of a game, shrinking to 0 over 300 in-game days; shallower, only miners come). The events, about a hundred,
+  are walked in a shuffled order, each tested once per pass, and the first that passes spawns. A derelict's event passes with a
   chance of base × (1 − cash / ceiling), at least 10 %, where cash is the E$ in hand (`CurrentGame.getMoney()`,
   without insurance), and only where the chaos (see *Chaos*) is at least its limit (`story/RescueOperation.gd`
   `canBeAt`). Base, ceiling and chaos limit, by series, with the names the game shows:
