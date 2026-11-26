@@ -586,8 +586,13 @@ WeaponMaxPowerSwitch.
   short key padded with `MODEL_CODE_PAD`); with no model given, a ship of the game's `usedShipsPool`, the same for a
   seed, several for several seeds; across those seeds, every character of `SERIAL_CHARS` in the serials.
   `getTransponder`: a config's own code kept; a new build coded by its model, stored in
-  `state.transponders`; met again (not new, a frame later), its stored code back; a code stored before the mod reused
-  as it is; no model left set. The player's ship: `createPlayerShip` and `validateState` code a ship without one by
+  `state.transponders`; met again (not new, a frame later), its stored code back; a code the game made before the mod
+  (one of its `transponderFormats` with four digits) met again: a code of the ship's model instead, with the build's
+  entry, the name, the disposition and the encounter moved to it, in the old one's place among the codes just requested,
+  and back at the next meeting; the same old code giving the same new one, and another code of the model where that one
+  is taken; with no name stored, the one the game makes from the old code; a sold ship's code, a stored code not in the
+  game's format and a config's own code kept; every format of the game's told apart from other codes; no model left
+  set. The player's ship: `createPlayerShip` and `validateState` code a ship without one by
   its model, a save's code is kept. The game's New Game Options screen, built on the node paths its script reads: the
   extension, a code of the new game's ship model and the name the game makes from it. `_tacNodeAdded` on ships of the
   game's `ship-ctrl.gd` out of the tree: a ship's lifepod (the suffix, the name of the ship's code kept, the forgotten
@@ -1104,7 +1109,7 @@ WeaponMaxPowerSwitch.
   every load order; 13 control checks with `-Mods @()`), `dealer` 130 (133
   with CrewCheapHireNotifier and DiveSkipTransit too, in every load order, 136 with MarketAdvisor and ServiceNotifier as
   well; 136 with ShipCopyPaste, ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too; 8 with the two ship-list mods
-  alone; 2 control checks with `-Mods @()`), `transponder` 48 (3 control checks with `-Mods @()`; the same 48 with
+  alone; 2 control checks with `-Mods @()`), `transponder` 62 (3 control checks with `-Mods @()`; the same 62 with
   CombatSimulator too), `combat` 153 (the same with TransponderAltCodes too, and with TurretLockableFacing too, in both
   load orders; 8 control checks with `-Mods @()`),
   `drones` 69 (the same in both load orders, with DroneAltPriorities alone and with LidarContactCallout too; 3 control

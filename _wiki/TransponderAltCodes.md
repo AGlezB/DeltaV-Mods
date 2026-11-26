@@ -78,14 +78,19 @@ frozen bodies, in the same place without and with the mod.
 
 What stays as it is:
 
-- Ships that already have a code keep it: your ships, and the ships the game remembers meeting. The game makes a
-  ship's name and its captain's name from its code, so a new code would rename them.
+- Ships that already have a code keep it: your ships, the ships you sold, and the ships the game remembers meeting.
+  The game makes a ship's name and its captain's name from its code, so a new code would rename them.
+- But some ships you meet again and again, and in a save from before you installed the mod they still have the game's
+  code: the miners in the rings, and some of the derelicts you come across. The next time you meet one of those, it
+  gets a code of its model instead, once. It keeps its name and what it thinks of you, but its captain gets a new name.
 
 <details>
 <summary><b>SPOILER ALERT</b>: things you can't buy at the station (click to show)</summary>
 
+- The rescue ship, the racer and its drone in the ring races, the ATLAS drone and Vilcy's ships come back again and
+  again too, and get a code of their model the same way.
 - Stations, habitats and beacons keep their codes, since the crew and the people you talk to mention some of them by
-  name.
+  name. So does the Big Bad Wolf.
 - Pirates still turn their transponders off.
 
 </details>
@@ -93,7 +98,7 @@ What stays as it is:
 If you remove the mod, your save loads as before. Ships that already have a code keep it, with their names: your
 ships, the ships you sold and the ships the game remembers meeting. New codes are the game's again, so for a while
 your lists mix both kinds. Your drones go back to the game's ending after your ship's code, like C212-7KX2M-CC42.
-Putting the mod back doesn't change any code a ship already has.
+Putting the mod back doesn't change the codes it gave before.
 
 ## Changes how the game plays
 

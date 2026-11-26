@@ -1181,6 +1181,13 @@ drive covers it in `xenonBurnToEnceladus` (96 h) and burns none.
   as "Saturn, Ring A, station 01" (`AGENDA_LOOKING_FOR_SIBLING_TAXI_JOB_HABITATS`). A ship the Shipyard builds gets
   its code through `getTransponder`, which keeps it in the save against the ship's build (`state.transponders`), so
   a ship met again has its old code; the player's first ship gets one on a new game.
+- A ship is met again (`getTransponder`'s `new` false: one of the codes stored for its build that isn't active, in
+  the scene, just requested or owned, at random) only in some events: the miners of the rings (`TheRing.gd`
+  `oddityDigger`, three times in four), a rescue's MAD-CERF and derelict (`story/RescueOperation.gd`,
+  `reEncouterChance` 0.8, the game's spelling), a crew agenda's derelict (`story/AgendaSpecificDerelict.gd`: always),
+  the ring races and the random ATLAS (`story/RingRace.gd`, `reEncounterChance` 1.0: always) and Vilcy's events
+  (`story/Vilcy.gd`, `reEncounterChance` 0.5, the pirates and abductors on that script too). Every other ship the
+  Shipyard builds is new, with a new code; the player's ships hold theirs in their configs.
 - A ship keeps its code for good (its config's `transponder`). The game makes the ship's name from it
   (`generateShipNameFromTransponder`, kept in `state.shipNames`) and its captain's and crew's names in comms
   (`getCrewMember`), picks some lines by it, and keeps what it remembers about the ship by it (dispositions,

@@ -28,10 +28,18 @@ also happens without the mod.
     bodies around the destroyed habitat get the suffix after the habitat's code.
   - the drones a ship launches (THI Cargo and Monocargo Containers, the NT Mining Companion, the B8 Claim Beacon,
     also the story's claim beacons): the ship's code, a type from `DRONE_CODES`, a dash and the game's number.
-- **What not:** codes already in a save stay as they are: the ships you own, the ships the game remembers. The game
-  makes a ship's name, its captain's name and what it remembers about the ship from its code, so changing a stored
-  code would rename the ship and lose its history. Fixed codes (stations, habitats, beacons, named ships) stay too,
-  since the story quotes some of them. Pirates still broadcast no code.
+- **What not:** codes already in a save stay as they are: the ships you own and those you sold, the ships the game
+  remembers. The game makes a ship's name, its captain's name and what it remembers about the ship from its code, so
+  changing a stored code would rename the ship and lose its history. Fixed codes (stations, habitats, beacons, named
+  ships such as the Big Bad Wolf) stay too, since the story quotes some of them. Pirates still broadcast no code.
+- **What:** the one exception, a ship the game meets again with a code it made before the mod was installed. Some
+  events often or always bring back a ship met before, with its stored code (the miners in the rings, a rescue's
+  MAD-CERF and derelict, a crew agenda's derelict, the ring races' racer and drone, the ATLAS drone, Vilcy's ships), so
+  in an older save those would never show a mod code. The next time the game asks for such a ship, it gets a code of
+  its model instead, once, always the same one for the same old code, and what the game keeps under the old code moves
+  to it: its entry among the builds the game remembers, its name, its disposition and its encounter. Its captain's
+  name, which the game makes from the code, changes. A sold ship's code is kept, since the Dealer may offer the ship
+  again under it.
 - **Why:** a code in the Pilot tab, on a LIDAR label or in comms says nothing about the ship in the game; with the
   mod it tells the model at a glance, and which pod, drone or body belongs to which ship.
 - **Removing it:** the save loads as before. A code is plain text in the save, the mod stores nothing else there, and
@@ -41,7 +49,8 @@ also happens without the mod.
   and the NPC ships the game remembers by build (`state.transponders`). New codes are the game's again (the Dealer's
   stock, made fresh each time, new NPC ships, lone lifepods, bodies), and a ship's drones get the game's type after
   the ship's code. Lifepods and bodies picked up are kept in the cargo by scene, not by code (`ship-ctrl.gd`
-  `appendToCargo`). Installing the mod again changes no stored code, of either kind.
+  `appendToCargo`). Installing the mod again changes none of the codes it made; a game code made meanwhile, on a ship
+  met again, is replaced as above.
 
 ## For modders
 - Script extension of `res://CurrentGame.gd`, the `CurrentGame` autoload, and of `res://menu/NewGamePlus.gd`, the
@@ -58,8 +67,16 @@ also happens without the mod.
     previous one's output, so neighbouring seeds give unrelated serials, and a seed always gives the same code (the
     Dealer's ships keep theirs from day to day). With no model given and an empty `usedShipsPool`, the game's code.
   - `getTransponder(new, config, sd)`, through which `Shipyard.gd` `createShipByConfig` codes every ship without one:
-    sets `_tacModel` to `config.model` around the parent's call. A config's code, and a code the save keeps for the
-    ship's build, come back unchanged.
+    sets `_tacModel` to `config.model` around the parent's call. A config's code comes back unchanged, and so does a
+    code the save keeps for the ship's build (handed back only for a ship not new: `TheRing.gd` `oddityDigger`,
+    `story/RescueOperation.gd`, `AgendaSpecificDerelict.gd`, `RingRace.gd`, `Vilcy.gd`), unless the game made it
+    (`_tacIsGameCode`: one of the game's own `transponderFormats`, with `_TAC_GAME_DIGITS` digits in place of `%s`) and
+    it isn't a sold ship's (the game's `getSoldTransponders`). Then `_tacRecode` codes the ship by `_tacModel` with the
+    first of `_TAC_RECODE_TRIES` seeds from the old code (`hash(old) + i`) whose code isn't in
+    `state.transponders.lookup` (with none free, the old code stays), and moves to the new code the old one's `lookup`
+    entry and its place in `hashes` (so the next meeting gets it back), its name (`_tacKeepName`), its `dispositions`
+    and `encounteredShips` entries, and its place in `justRequestedTransponders`. The player's ships never get there:
+    their configs hold their codes.
   - `validateState()` (a save loaded) and `createPlayerShip()` (a new game): `_tacModel` set to `state.ship.model`
     around the parent's call, which gives the player's ship a code when it has none.
   - `_ready` (the game's runs first) connects the tree's `node_added` to `_tacNodeAdded`, which matches the new node's
@@ -77,18 +94,21 @@ also happens without the mod.
   CombatSimulator ← TransponderAltCodes. They override different functions (CombatSimulator `giveXp`, `setStory`,
   `recordEncounter`, `setDestinationHighlight` and `addShip`), and their members differ (the `transponder` and
   `combat` suites of the repository's test harness load them together).
-- New members, all prefixed `_tac`: `_tacModel`, `_tacModelCode`, `_tacNodeAdded`, `_tacShipAdded`, `_tacAddSuffix`,
-  `_tacDockAdded`, and the constants of what it matches in the game (script paths, transponder formats, scene and
-  `specialName`), `_TAC_SHIP_SCRIPT`, `_TAC_BODY_SCRIPT`, `_TAC_DOCK_SCRIPT`, `_TAC_DOCK_FORMAT`,
-  `_TAC_STORY_BEACON_SCRIPTS`, `_TAC_STORY_BEACON_FORMAT`, `_TAC_BODY_BEACON_SCENE`, `_TAC_LIFEPOD_NAME` and
-  `_TAC_AI_CORE_NAME`.
+- New members, all prefixed `_tac`: `_tacModel`, `_tacModelCode`, `_tacIsGameCode`, `_tacRecode`, `_tacNodeAdded`,
+  `_tacShipAdded`, `_tacAddSuffix`, `_tacKeepName` (the name a suffixed or re-coded object keeps: the old code's
+  stored name, or the one the game makes from it), `_tacDockAdded`, and the constants of what it matches in the game
+  (script paths, transponder formats, scene and `specialName`, the digits of the game's codes, the game's bail count
+  for a free code), `_TAC_SHIP_SCRIPT`, `_TAC_BODY_SCRIPT`, `_TAC_DOCK_SCRIPT`, `_TAC_DOCK_FORMAT`,
+  `_TAC_STORY_BEACON_SCRIPTS`, `_TAC_STORY_BEACON_FORMAT`, `_TAC_BODY_BEACON_SCENE`, `_TAC_LIFEPOD_NAME`,
+  `_TAC_AI_CORE_NAME`, `_TAC_GAME_DIGITS` and `_TAC_RECODE_TRIES`.
 - Constants (`Code.gd`) a player may edit inside the zip: `MODEL_CODES` (one code per model key of the game's
   `ships/Shipyard.gd`, all the same length), `MODEL_CODE_PAD` (fills the code of a model missing from the table, made
   from its key), `SERIAL_LENGTH` and `SERIAL_CHARS` (the serial), `LIFEPOD_SUFFIX`, `AI_CORE_SUFFIX`, `CREW_SUFFIX`
   and `DRONE_CODES` (the drone types, by the game's). The rest are the game's paths and formats.
 - Tested in a headless Godot 3.6 (the harness's `transponder` suite) against the game's own `CurrentGame.gd`,
   `ship-ctrl.gd`, `body.gd`, `ClaimOwner.gd`, claim beacon scripts and `NewGamePlus.gd`; the suite also checks that
-  every model of the game's Shipyard has its own code, and that the serials use every character of `SERIAL_CHARS`.
+  every model of the game's Shipyard has its own code, that the serials use every character of `SERIAL_CHARS`, and
+  what re-coding a ship met again moves, and which codes it keeps.
   Not checked in a real game yet.
 
 ## Install

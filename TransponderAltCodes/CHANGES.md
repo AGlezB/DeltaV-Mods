@@ -1,5 +1,15 @@
 # TransponderAltCodes - Changes
 
+## 1.1.0
+- A ship the game meets again with a code it made before the mod was installed (the miners in the rings, a rescue's
+  MAD-CERF and derelict, a crew agenda's derelict, the ring races' racer and drone, the ATLAS drone, Vilcy's ships)
+  gets a code of its model the next time the game asks for it, once, so an older save no longer keeps the game's codes
+  on them for good. Its name, its disposition, its encounter and its build's entry in the save move to the new code;
+  its captain's name, which the game makes from the code, changes. A sold ship's code is kept.
+- New members `_tacIsGameCode`, `_tacRecode` and `_tacKeepName` (the name keeping `_tacAddSuffix` did, which both now
+  share), and the constants `_TAC_GAME_DIGITS` and `_TAC_RECODE_TRIES`.
+- The README says so: *What it does and why*, *Removing it* and *For modders*.
+
 ## 1.0.4
 - Licensed under the MIT License instead of the GNU GPLv3: the LICENSE in the zip and the README's *About* and
   *Disclaimer* say so.

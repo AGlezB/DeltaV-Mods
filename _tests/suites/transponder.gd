@@ -149,15 +149,84 @@ func checkGetTransponder():
 	check("the code is stored in the save as the game stores it", builtCode in cg.state.transponders.lookup, cg.state.transponders.lookup.keys())
 	check("after it, no model is left set", cg._tacModel == null, cg._tacModel)
 
+# A code in the game's own format: its transponderFormats[i] with `digits` in place of %s.
+func gameCode(i, digits) -> String:
+	return cg.transponderFormats[i % cg.transponderFormats.size()] % digits
+
+# A build of `model` stored in the save under `code`, as the game stores one it coded (getTransponder). Its hash.
+func stored(model, capacity, code) -> String:
+	var config = {"model": model, "faction": "civilian", "config": {"ammo": {"capacity": capacity}}}
+	var h = String(Shipyard.stripEmpheralsFromConfig(config).hash())
+	cg.state.transponders.lookup[code] = h
+	cg.state.transponders.hashes[h] = [code]
+	return h
+
+func meet(model, capacity, sd) -> String:
+	cg.justRequestedTransponders = []
+	return cg.getTransponder(false, {"model": model, "faction": "civilian", "config": {"ammo": {"capacity": capacity}}}, sd)
+
 func checkReuse():
 	var again = cg.getTransponder(false, built.duplicate(true), 888)
 	check("a ship met again (same build, not new) gets its stored code back", again == builtCode, again)
-	var old = {"model": "COTHON", "faction": "civilian", "config": {"ammo": {"capacity": 2.0}}}
-	var h = String(Shipyard.stripEmpheralsFromConfig(old).hash())
-	cg.state.transponders.lookup["MRS-1234"] = h
-	cg.state.transponders.hashes[h] = ["MRS-1234"]
-	var reused = cg.getTransponder(false, old.duplicate(true), 5)
-	check("a code stored before the mod is reused as it is", reused == "MRS-1234", reused)
+	var lookup = cg.state.transponders.lookup
+	var hashes = cg.state.transponders.hashes
+	if not "shipNames" in cg.state:
+		cg.state.shipNames = {}
+	# A code the game made before the mod, with a name, a disposition and an encounter stored under it.
+	var old = gameCode(3, "1234")
+	var h = stored("COTHON", 2.0, old)
+	cg.state.shipNames[old] = "Prideful Bee"
+	var disposition = {"x": 1}
+	var encounter = {"first": 5}
+	cg.state.dispositions[old] = disposition
+	cg.state.encounteredShips[old] = encounter
+	var re = meet("COTHON", 2.0, 5)
+	check("a ship met again with a code the game made before the mod: a code of its model", re.begins_with(codeOf("COTHON") + "-") and isSerial(re.substr(re.find("-") + 1)), re)
+	check("its build's entry moved to the new code", not old in lookup and lookup.get(re) == h and hashes[h] == [re], [lookup.get(re), hashes[h]])
+	check("its name kept under the new code, the old one's erased", cg.state.shipNames.get(re) == "Prideful Bee" and not old in cg.state.shipNames, cg.state.shipNames)
+	check("its disposition and encounter moved to the new code", cg.state.dispositions.get(re) == disposition and not old in cg.state.dispositions and cg.state.encounteredShips.get(re) == encounter and not old in cg.state.encounteredShips, [cg.state.dispositions.keys(), cg.state.encounteredShips.keys()])
+	check("the new code in place of the old among those just requested", re in cg.justRequestedTransponders and not old in cg.justRequestedTransponders, cg.justRequestedTransponders)
+	check("after it, no model is left set", cg._tacModel == null, cg._tacModel)
+	var back = meet("COTHON", 2.0, 6)
+	check("met again later: the new code back", back == re, back)
+	lookup.erase(re)
+	stored("COTHON", 2.0, old)
+	var same = meet("COTHON", 2.0, 77)
+	check("the same old code gives the same new code (another save)", same == re, [same, re])
+	lookup.erase(re)
+	stored("COTHON", 2.0, old)
+	lookup[re] = "another build"
+	var next = meet("COTHON", 2.0, 78)
+	check("the new code taken by another build: another code of the model", next != re and next.begins_with(codeOf("COTHON") + "-") and lookup.get(next) == h, [next, re])
+	var unnamed = gameCode(1, "0042")
+	stored("EIME", 3.0, unnamed)
+	var re3 = meet("EIME", 3.0, 9)
+	check("with no name stored: the one the game makes from the old code", re3.begins_with(codeOf("EIME") + "-") and cg.state.shipNames.get(re3) == cg.generateShipNameFromTransponder(unnamed), [re3, cg.state.shipNames.get(re3)])
+	var soldShips = cg.state.soldShips
+	var soldCode = gameCode(2, "3062")
+	stored("EIME", 4.0, soldCode)
+	cg.state.soldShips = [{"at": 0, "config": {"transponder": soldCode}}]
+	var sold = meet("EIME", 4.0, 10)
+	check("a sold ship's code is kept", sold == soldCode and soldCode in lookup, sold)
+	cg.state.soldShips = soldShips
+	var long = gameCode(3, "12345")
+	stored("EIME", 5.0, long)
+	var odd = meet("EIME", 5.0, 11)
+	check("a stored code not in the game's format is kept", odd == long, odd)
+	var own = gameCode(4, "1646")
+	var kept = cg.getTransponder(false, {"model": "EIME", "faction": "civilian", "config": {}, "transponder": own}, 12)
+	check("a config's own code in the game's format is kept", kept == own, kept)
+	var formats = []
+	for i in range(cg.transponderFormats.size()):
+		formats.append(cg._tacIsGameCode(gameCode(i, "0123")))
+	check("every format of the game's is told apart", not false in formats, formats)
+	var others = [gameCode(3, "12a4"), gameCode(3, "123"), "XYZ-1234", re]
+	var taken = []
+	for c in others:
+		if cg._tacIsGameCode(c):
+			taken.append(c)
+	check("other codes aren't taken for the game's", taken.empty(), taken)
+	cg.justRequestedTransponders = []
 
 func checkPlayerShip():
 	var saved = cg.state.ship
