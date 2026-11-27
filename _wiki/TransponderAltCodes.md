@@ -118,8 +118,6 @@ bug to the game's developers.
 
 ## Works with other mods
 
-Don't use it together with *AltTransponderCodes*, its old name: both would load.
-
 It works with [CombatSimulator](CombatSimulator): both can be installed together.
 
 ## Install

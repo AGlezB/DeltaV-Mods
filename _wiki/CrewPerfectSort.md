@@ -19,8 +19,6 @@ controller starts on the first person of the sorted list.
 It works with [CrewCheapHireNotifier](CrewCheapHireNotifier) and
 [CrewHighlightJobAndSalary](CrewHighlightJobAndSalary).
 
-Don't use it together with *CrewSortByJobAndSalary*, the older mod it replaces: both sort the same lists.
-
 ## Install
 
 See [Installing mods](Home#installing-mods).

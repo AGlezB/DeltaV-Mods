@@ -222,7 +222,8 @@ the in-game time around them, to the game's developers, check that it also happe
   It never touches the ship's `cutscene` flag, whose setter would signal it on and off in the same frame. Otherwise it
   calls the parent's. `Code.gd` overrides `_onFastTravel`, calls the parent's, and while `skipAstrogation` is on plays
   the title card through.
-- **The settings** follow CrewCheapHireNotifier's pattern, with the game-wide storage of the game's own settings:
+- **The settings** follow the pattern MODDING.md *Conventions* describes, with the game-wide storage of the game's own
+  settings:
   - **Shift+Click:** `StationMenu.gd` extends `res://enceladus/EnceladusMenu.gd`, the station menu. Its `_ready` finds
     the dive entry (`RingDive`, a plain Button with the key `ENCELADUS_RETURN_TO_RING`) and the right-hand screens
     container (`../../CanvasLayer/MarginContainer`, `enceladus/HidingMarginContainer.gd`) with its Tuning screen
@@ -235,40 +236,34 @@ the in-game time around them, to the game's developers, check that it also happe
     anything else (the game's `Settings.gd` `eventToString` and `stringToEvent` handle keys and mouse buttons only).
     Without the container or its Tuning screen there are no settings and no badge, and Shift+Click is a plain click.
   - **The Shift badge** (`_dstMakeShiftBadge()`, with `Badge.gd`, a `PanelContainer`) tells about Shift+Click, and does
-    nothing else: it takes no focus, and stops the mouse, so a click on it does nothing. `dress(button, text,
-    padText)` gives it the entry's own frame (its `normal` stylebox, shared as is) and font colour, lettered in the
-    small font of `SMALL_FONT_THEME`. `hangBeside(button, gap)` hangs it from the entry, the menu's `separation` to its
-    right, centred on it from top to bottom: a Button doesn't lay out its children, so the badge is anchored to the
-    middle of the entry's right side and grows to its minimum size, unclipped. It reads
-    `OS.get_scancode_string(KEY_SHIFT)`, or `PAD_TEXT` while the game is played with a gamepad: the game's
-    `Settings.controlScheme`, which the game's own control hints follow (the Controls setting, or with Auto the device
-    last used, `menu/Mouse.gd`), followed through its `controlSchemeChaged` signal (the game's spelling). Its tooltip
-    (`setShiftTooltips(keyKey, padKey, modName)`) is `tr(_DST_SETTINGS_TOOLTIP)` with the key and the mod's name from
-    `Mod.manifest`, or with a gamepad `tr(_DST_SETTINGS_TOOLTIP_PAD)` with `PAD_BUTTON_NAME`, `PAD_MODIFIER_NAME` and
-    the name; it is written again on a change of scheme and on `NOTIFICATION_TRANSLATION_CHANGED`. The released game
-    draws no Godot tooltips, so `attachTooltip(tooltips, focusOwner)` registers the badge with the menu's tooltip node
-    (`PlaySoundsOnTheseButtons`, `menu/sfx/PlaySoundsOnTheseButtons.gd` `connectSounds`), which reads its `hint_tooltip`
-    again on every hover. A gamepad shows no hover, so with the entry as `focusOwner` the tooltip also shows while the
-    entry has the focus, which the D-pad moves from entry to entry, and the game is played with a gamepad. The badge
-    takes the hover itself (`_notification`), so no hover sound plays, and while it is hovered the node waits
-    `TOOLTIP_DELAY` and fades in for `TOOLTIP_FADE` instead of its own times. `Badge.gd` is kept identical in every mod
-    with a Shift badge (CombatSimulator, CrewCheapHireNotifier, DealerNotifier, MarketAdvisor, ServiceNotifier), each
-    preloading its own copy (`_DST_BADGE_SCRIPT`): what a mod needs of it goes through its parameters.
-  - **With the other mods on the station menu**, which extend the same menu script for their own entries
-    (CrewCheapHireNotifier's Crew, DealerNotifier's Dealer, MarketAdvisor's Mineral Market, ServiceNotifier's
-    Services): mods load by path, so the chain is game ← CrewCheapHireNotifier ← DealerNotifier ← DiveSkipTransit ←
-    MarketAdvisor ← ServiceNotifier. Each overrides `_ready`, which the game's script doesn't have, and doesn't call
-    the parent's: Godot runs every level by itself. Each hooks its own entry, and their member names differ.
-  - **The screen** (`SettingsUI.gd`) is CrewCheapHireNotifier's: one more of the right-hand screens, copying the live
-    Tuning screen's theme, frame, size and place, built from the game's parts as `enceladus/Tuning.tscn` nests them
-    (`Shower.tscn`; `HeaderWithMoney.tscn` titled with the entry's key; the description's window; and an `Items` box
-    with one `Tuning/TuningItems.tscn` group per `GROUPS` entry, titled by it), and closed by `ui_cancel`, `pause` or
-    the container's `hidefoka`. A group holds a row per setting of its `group`: a switch (`"type": "bool"`,
+    nothing else: it takes no focus, and stops the mouse, so a click on it does nothing. `dress(button, text, padText)`
+    gives it the entry's own frame (its `normal` stylebox, shared as is) and font colour, lettered in the small font of
+    `SMALL_FONT_THEME`. `hangBeside(button, gap)` hangs it from the entry, the menu's `separation` to its right, centred
+    on it from top to bottom: a Button doesn't lay out its children, so the badge is anchored to the middle of the
+    entry's right side and grows to its minimum size, unclipped. It reads `OS.get_scancode_string(KEY_SHIFT)`, or
+    `PAD_TEXT` while the game is played with a gamepad: the game's `Settings.controlScheme`, which the game's own
+    control hints follow (the Controls setting, or with Auto the device last used, `menu/Mouse.gd`), followed through
+    its `controlSchemeChaged` signal (the game's spelling). Its tooltip (`setShiftTooltips(keyKey, padKey, modName)`) is
+    `tr(_DST_SETTINGS_TOOLTIP)` with the key and the mod's name from `Mod.manifest`, or with a gamepad
+    `tr(_DST_SETTINGS_TOOLTIP_PAD)` with `PAD_BUTTON_NAME`, `PAD_MODIFIER_NAME` and the name; it is written again on a
+    change of scheme and on `NOTIFICATION_TRANSLATION_CHANGED`. The released game draws no Godot tooltips, so
+    `attachTooltip(tooltips, focusOwner)` registers the badge with the menu's tooltip node (`PlaySoundsOnTheseButtons`,
+    `menu/sfx/PlaySoundsOnTheseButtons.gd` `connectSounds`), which reads its `hint_tooltip` again on every hover. A
+    gamepad shows no hover, so with the entry as `focusOwner` the tooltip also shows while the entry has the focus,
+    which the D-pad moves from entry to entry, and the game is played with a gamepad. The badge takes the hover itself
+    (`_notification`), so no hover sound plays, and while it is hovered the node waits `TOOLTIP_DELAY` and fades in for
+    `TOOLTIP_FADE` instead of its own times. `Badge.gd` is kept identical in every mod of the repository with a Shift
+    badge, each preloading its own copy (`_DST_BADGE_SCRIPT`): what a mod needs of it goes through its parameters.
+  - **The screen** (`SettingsUI.gd`) is one more of the right-hand screens, copying the live Tuning screen's theme,
+    frame, size and place, built from the game's parts as `enceladus/Tuning.tscn` nests them (`Shower.tscn`;
+    `HeaderWithMoney.tscn` titled with the entry's key; the description's window; and an `Items` box with one
+    `Tuning/TuningItems.tscn` group per `GROUPS` entry, titled by it), and closed by `ui_cancel`, `pause` or the
+    container's `hidefoka`. A group holds a row per setting of its `group`: a switch (`"type": "bool"`,
     `Tuning/TuningBoolValue.tscn`) or a slider (`"float"`, `Tuning/TuningFloatValue.tscn`, with the setting's `min`,
     `max` and `step`, and its `unit` and `format`), its values as the screen shows them (`toShown`), named by its
-    `label` in the game's language, with ` ` and `REMASS_MARK` after it for a `remass` setting; a row whose
-    `dimmedWhen` switch is on is dimmed (`DIMMED`). A row emits `tuningChanged` when it changes and again when it gets
-    the focus (`TuningBoolValue.gd` / `TuningFloatValue.gd` `_focus`); the screen stores its value through `fromShown`.
+    `label` in the game's language, with ` ` and `REMASS_MARK` after it for a `remass` setting; a row whose `dimmedWhen`
+    switch is on is dimmed (`DIMMED`). A row emits `tuningChanged` when it changes and again when it gets the focus
+    (`TuningBoolValue.gd` / `TuningFloatValue.gd` `_focus`); the screen stores its value through `fromShown`.
   - **The description's window** (`VB/WindowMargin/Window/MarginContainer/Description`, an autowrapping Label) is
     nested as `Tuning.tscn` nests the game's (`VB/WindowMargin/Window/…/Description`, without the simulator's parts),
     with the live Tuning screen's theme and margins around it, its panel and the margins inside it, copied when they
@@ -301,12 +296,11 @@ the in-game time around them, to the game's developers, check that it also happe
   - **The texts:** `i18n/en.po`, loaded in `ModMain.gd` with `load()` and `TranslationServer.add_translation`, as the
     game loads its own `.po` files. English is Godot's fallback language, so every language shows it until it gets its
     own file.
-- **With CombatSimulator**, which extends `enceladus/Enceladus.gd` too: by path the chain is game ← CombatSimulator ←
-  DiveSkipTransit (`Station.gd`). Both override `_ready` without calling the parent's, they share no other function,
-  and their member names differ.
-- **With GeologyByMass**, which extends `ships/ship-ctrl.gd` too: by path the chain is game ← DiveSkipTransit
-  (`Ship.gd`) ← GeologyByMass. They override different functions (`fastTravelTo` here, `isValidMineralTarget`
-  there), and their member names differ.
+- **Stacking.** Other mods may extend the same game scripts (`Game.gd`, `enceladus/Enceladus.gd`,
+  `enceladus/EnceladusMenu.gd`, `ships/ship-ctrl.gd`): the engine's callbacks (`_ready` and the like) never call the
+  parent's, since Godot runs every level by itself, every other function the mod overrides calls the parent's or falls
+  through to it, its members start with `_dst` or `_DST_` (besides the preload, named for the mod), and of the station
+  menu it hooks only the dive entry.
 - Members of `Code.gd`: `DiveSkipTransit` (preload), `_DST_RING_HEADING`, `_DST_FORWARD`, `_DST_SPACE_SPEED`,
   `_DST_MASTER_BUS`, `_DST_NOTICES`, `_dstBurn`, `_dstPace`, `_dstBaseRate`, `_dstModel` and `_dstTitles` (the
   settings and `TitleAnimPlayer`, kept in `_ready` for the physics frames), `_dstNotices`, `_dstHidden`,
@@ -330,14 +324,14 @@ the in-game time around them, to the game's developers, check that it also happe
   `PAD_BUTTON_NAME`, `PAD_TEXT`, the static `isPadShortcut(event)`, `dress()`, `hangBeside()`, `setShiftTooltips()`
   and `attachTooltip(tooltips, focusOwner)` (with `focusOwner`, the badge's tooltip also shows while that control has
   the focus and the game is played with a gamepad: the dive entry's badge has the entry). No tunables.
-- Tested only outside the game, in a headless Godot 3.6 (the harness's `skip` suite): the game's `Game.gd` on a stub
-  of the ring scene with the game's own title cards and values, the game's `Enceladus.gd` with the game's `FadeInCRT`,
-  the game's `ship-ctrl.gd` (with the extension) for astrogation, and the game's `EnceladusMenu.gd`,
+- Tested only outside the game, in a headless Godot 3.6 (the harness's `skip` suite): the game's `Game.gd` on a stub of
+  the ring scene with the game's own title cards and values, the game's `Enceladus.gd` with the game's `FadeInCRT`, the
+  game's `ship-ctrl.gd` (with the extension) for astrogation, and the game's `EnceladusMenu.gd`,
   `HidingMarginContainer.gd`, `Shower.tscn`, `TuningItems.gd`, `TuningBoolValue.gd`, `TuningFloatValue.gd` and
   `AnalogControlSlider.gd` in a station built as its scene nests them, with stub ships holding the game's reactor
   scripts and stub thrusters, stand-ins for the notification panel in the ring scene and at the station, and the badge
-  and the gamepad's twin with either control scheme; alone and with CrewCheapHireNotifier. The real check is playing
-  the game.
+  and the gamepad's twin with either control scheme; alone and with another mod on the station menu. The real check is
+  playing the game.
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.

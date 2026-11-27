@@ -14,8 +14,8 @@ extends "res://ships/modules/PDT.gd"
 # hardpoint), turned further by the locked turrets' angle (Shared.gd), mirrored on the other side of the ship.
 #
 # Stacking: getTarget falls through to the parent with `.getTarget()`; _ready and _physics_process never call the
-# parent's (Godot runs them at every level); new members start with `_tlf`. CombatSimulator's Turret.gd extends the
-# same script with fire and perhapsFire, and still disarms a locked turret: it zeroes firepower.
+# parent's (Godot runs them at every level); new members start with `_tlf`. A locked turret fires with its
+# `firepower`, so whatever zeroes that still keeps it from firing.
 
 const TurretLockableFacing = preload("res://TurretLockableFacing/Shared.gd")
 

@@ -2,8 +2,8 @@ extends "res://enceladus/EnceladusMenu.gd"
 
 # The station menu (enceladus/EnceladusMenu.gd). Its Services entry shows an alert mark (the " (*)" after its text)
 # while a service whose switch is on can be bought, as the game's own row for that service decides, and opens the mod's
-# settings with Shift+Click, the way DealerNotifier's Dealer entry opens its own: a Shift badge beside the entry says
-# so in its tooltip, and a plain click on the entry still opens the Services screen. The services watched are those
+# settings with Shift+Click: a Shift badge beside the entry says so in its tooltip, and a plain click on the entry
+# still opens the Services screen. The services watched are those
 # that can't be bought again right after being bought (Settings.gd kindOf): those with a cooldown, and those that pay a
 # faction compensation.
 

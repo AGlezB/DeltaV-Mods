@@ -87,33 +87,32 @@ game's developers, check that it also happens without the mod.
   each kept in that system's own config, `mineralConfig` (`minerals`, `minValue`, `albedo`): the HUD's is the ship's
   `hud.config`, a hardpoint system's `weaponSlot.<slot>.config`.
 - **The rule:** every system asks the ship whether a chunk passes its row: `ships/ship-ctrl.gd`
-  `isValidMineralTarget(object, config)`, with the system's own `mineralConfig`. The callers: the HUD
-  (`hud/Hud.gd` `isValidMineralTarget(body)`, which each info box, `hud/MineralMark.gd`, asks now and then,
-  `mineralConfigReexamine`, through `hud/AutopilotOverlay.gd`; a "no" plays the box's `diminish` animation); the
-  AR-1500 arm (`ships/modules/DockingArm.gd` `isValidTarget`, with `pickupOnlyMineralTargets`); the tug and haul drone
-  plants (`weapons/drone-plant.gd` `scanForTarget`, after the USV-GOT recon drone's queue, which they take without
-  asking); the NT Mining Companion's AI, for its cradle's row, and a ship's AI catching a chunk with its haul drones
-  (both in `ship-ctrl.gd`). Mods that keep those calls follow the rule too (the arm mods' `isValidTarget`,
-  DroneAltPriorities). The mod's override, for the player's ship (`playerControlled`) with the switch on and a row
-  that has `minerals` and `minValue`: an identified chunk passes when it holds, of some mineral switched on in the
-  mod's tab, at least that mineral's least mass. `Settings.gd` `massRule()` reads the saved entry once per call, and
-  gives null with the switch off, else the least mass of each mineral switched on, by mineral: the drone plants ask
-  about every chunk in reach at each scan, and every read of the ship's config takes its lock. The row's own
-  `minerals` and `minValue` aren't read. The masses come from the ship's `identifiedObjects[hash(object)][0]`, the kg
-  per mineral the box stores (`MineralMark.gd` `scanParent`, then `identifyMinerals` / `identifyValue` ->
-  `ship-ctrl.gd` `addIdentifiedObject`). Anything else (the switch off, another ship, a row without mineral targeting,
-  a chunk not in `identifiedObjects`) falls through to the game's: by the value against `minValue` and the LIDAR
-  return against `albedo`.
+  `isValidMineralTarget(object, config)`, with the system's own `mineralConfig`. The callers: the HUD (`hud/Hud.gd`
+  `isValidMineralTarget(body)`, which each info box, `hud/MineralMark.gd`, asks now and then, `mineralConfigReexamine`,
+  through `hud/AutopilotOverlay.gd`; a "no" plays the box's `diminish` animation); the AR-1500 arm
+  (`ships/modules/DockingArm.gd` `isValidTarget`, with `pickupOnlyMineralTargets`); the tug and haul drone plants
+  (`weapons/drone-plant.gd` `scanForTarget`, after the USV-GOT recon drone's queue, which they take without asking); the
+  NT Mining Companion's AI, for its cradle's row, and a ship's AI catching a chunk with its haul drones (both in
+  `ship-ctrl.gd`). Mods that keep those calls follow the rule too. The mod's override, for the player's ship
+  (`playerControlled`) with the switch on and a row that has `minerals` and `minValue`: an identified chunk passes when
+  it holds, of some mineral switched on in the mod's tab, at least that mineral's least mass. `Settings.gd` `massRule()`
+  reads the saved entry once per call, and gives null with the switch off, else the least mass of each mineral switched
+  on, by mineral: the drone plants ask about every chunk in reach at each scan, and every read of the ship's config
+  takes its lock. The row's own `minerals` and `minValue` aren't read. The masses come from the ship's
+  `identifiedObjects[hash(object)][0]`, the kg per mineral the box stores (`MineralMark.gd` `scanParent`, then
+  `identifyMinerals` / `identifyValue` -> `ship-ctrl.gd` `addIdentifiedObject`). Anything else (the switch off, another
+  ship, a row without mineral targeting, a chunk not in `identifiedObjects`) falls through to the game's: by the value
+  against `minValue` and the LIDAR return against `albedo`.
 - **The start of a dive** (`Code.gd` `_ready`): a dive starts in the ring scene, whose `Game.gd` `_ready` builds the
   player's ship anew (`_respawn_ship` -> `CurrentGame.recreatePlayerShip`, which hands it the saved config itself,
   `state.ship.config`) with `zone` "rings" and `initialize` true, then adds it to the tree. The HUD is a child of the
   ship, so by the ship's `_ready` it has made its `mineralConfig`, where the settings live. For such a ship
-  (`playerControlled`), `Settings.gd` `diveStarted()` switches every mineral on when `ALL_AT_DIVE` is. The game's
-  other builds of the player's ship don't match: the station's (`enceladus/Enceladus.gd`, `Upgrades.gd`, no zone), the
-  simulator's (`zone` "sim", as CombatSimulator's arena sets it too) and the copy that replaces it after a teleport
-  mid-dive (`_respawn_ship` with `previous` sets `initialize` false). A save always loads at the station
-  (`menu/TitleMenu.gd`), so only a new dive reaches the ring scene. The mod's tab is built later, on the ship's
-  `instance` (deferred), so it shows the switches as the dive's start left them.
+  (`playerControlled`), `Settings.gd` `diveStarted()` switches every mineral on when `ALL_AT_DIVE` is. The game's other
+  builds of the player's ship don't match: the station's (`enceladus/Enceladus.gd`, `Upgrades.gd`, no zone), the
+  simulator's (`zone` "sim") and the copy that replaces it after a teleport mid-dive (`_respawn_ship` with `previous`
+  sets `initialize` false). A save always loads at the station (`menu/TitleMenu.gd`), so only a new dive reaches the
+  ring scene. The mod's tab is built later, on the ship's `instance` (deferred), so it shows the switches as the dive's
+  start left them.
 - **The tab:** the HUD builds the OMS (`hud/OMS.tscn`) in `instance()`, replacing its `Inventory` placeholder. The
   mod's `instance()` (`OmsScreen.gd`) calls the parent's, then adds its tab with `call_deferred`: a preheated ship's
   HUD calls `instance()` from its `_ready` before it loads `mineralConfig` from the ship, and the tab shows the values
@@ -207,9 +206,10 @@ game's developers, check that it also happens without the mod.
   `GeologistTab.gd`: `GeologyByMass` (preload), `_GEOLOGY_BY_MASS_VALUE`, `_GEOLOGY_BY_MASS_BAR`,
   `_GEOLOGY_BY_MASS_GAME`, `_geologyByMassSettings`, `_geologyByMassOverridden`, `_geologyByMass()`,
   `_geologyByMassOverride()` and `_geologyByMassControls()`.
-- Stacks with DiveSkipTransit and WeaponMaxPowerSwitch, which extend `ship-ctrl.gd` too (other functions, and no
-  `_ready`), and with DroneAltPriorities, which extends `Hud.gd` too (another tab) and whose drone plants ask the
-  ship's rule.
+- **Stacking.** Other mods may extend the same game scripts: the engine's callbacks (`_ready`, `_process`) never call
+  the parent's, since Godot runs every level by itself; `isValidMineralTarget` falls through to the parent's wherever
+  the mod's rule doesn't apply, and `instance()` and `updateSystems` call the parent's first; the members listed above
+  all carry the mod's name. Whatever asks the ship's rule follows it.
 - Tested only outside the game, in a headless Godot 3.6 (the `geology` suite of the repository's test harness): the
   rule on ships of the game's `ship-ctrl.gd`, out of the tree, with the HUD's row and an arm's or drone plant's row,
   compared with the game's own script where the game decides; the start of a dive on such ships, built as `Game.gd`

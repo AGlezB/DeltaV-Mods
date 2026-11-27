@@ -2,8 +2,8 @@ extends "res://enceladus/EnceladusMenu.gd"
 
 # The station menu (enceladus/EnceladusMenu.gd). Its Dealer entry shows the mod's mark while the dealer has a ship the
 # settings model's rule counts (newShips: a ship of a model switched on, come since the Dealer screen was last open),
-# and opens the mod's settings with Shift+Click, the way CrewCheapHireNotifier's Crew entry does: a Shift badge beside
-# the entry says so in its tooltip, and a plain click on the entry still opens the Dealer screen.
+# and opens the mod's settings with Shift+Click: a Shift badge beside the entry says so in its tooltip, and a plain
+# click on the entry still opens the Dealer screen.
 
 # The settings (which ship models are watched) and the dealer's stock: their model, shared with the settings screen and
 # the Dealer screen.

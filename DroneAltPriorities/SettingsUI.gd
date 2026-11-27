@@ -2,7 +2,7 @@ extends Tabs
 
 # DroneAltPriorities's OMS tab: the switch at the top, a line on what it does, one slider per weight (Settings.gd
 # WEIGHTS) with its name before it, and a button that puts every setting back to its default. Built from the
-# Geologist tab's own parts (hud/SystemMineralList.gd), as GeologyByMass's tab is: its on/off switch, its names and its
+# Geologist tab's own parts (hud/SystemMineralList.gd): its on/off switch, its names and its
 # Minimum value slider, which keeps the game's focus and controller handling (press the value to edit it, left and
 # right to change it, accept or cancel to leave). A `Tabs` node, as every page of the OMS is (hud/OMS.tscn).
 #

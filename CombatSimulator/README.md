@@ -81,7 +81,8 @@ also explains every ship and weapon of the game in a fight.
   extension. None of the game scripts extended here preloads a scene, so installing them loads no script a later mod
   extends. There is no extension of `ships/Shipyard.gd`, which preloads every ship scene: MODDING.md *How the game
   loads a mod* says why. Autoloads are read with `get()` and `set()` (`Shipyard.get("ships")`,
-  `CurrentGame.get("_csArena")`), as DealerNotifier's README explains.
+  `CurrentGame.get("_csArena")`): the mod's scripts are compiled while the autoloads after `ModLoader` are still null,
+  and Godot would work out `"key" in CurrentGame` then, failing.
 - **The station** (`Code.gd` extends `res://enceladus/Enceladus.gd`). Its `_ready` (Godot runs the game's first; the
   extension doesn't call it) loads the save's settings (`loadFromState()`), makes the dialog, then the arena, which
   takes the simulator's layer (`_CS_SIMULATION_LAYER`) and the dialog's theme (`pageTheme`), adds the arena right after
@@ -118,22 +119,21 @@ also explains every ship and weapon of the game in a fight.
     each screen's `_on_LaunchVR_pressed` sends the simulator (Tuning and Equipment their `previewedConfig`, the Dealer
     and the Fleet their `currentConfig`). Without a config, nothing opens, as nothing would start. The dialog's
     `startRequested` hands it to the arena (`_csStart()`).
-- **The badge** (`Badge.gd`, a `PanelContainer`) is shared: CrewCheapHireNotifier, DealerNotifier, DiveSkipTransit,
-  MarketAdvisor and ServiceNotifier carry the same file, kept identical, since the mods ship separately; each loads its
-  own copy from its own folder. A badge takes no focus, and this one lets clicks through: its tooltip is its only
-  interaction. `attachTooltip()` registers it with the game's tooltip node (`connectSounds`) and takes the hover over,
-  so the badge plays no sound; while the mouse is on it, the node waits `TOOLTIP_DELAY` and fades in over
-  `TOOLTIP_FADE` instead of its own times, and `BUTTON_HOVER_MUTE` keeps the button under it from playing its hover
-  sound again when the mouse crosses the badge's edge. It is lettered in the small font of `SMALL_FONT_THEME`. Its text
-  and tooltip follow the game's control scheme (`Settings.controlScheme`, which with Auto follows the device used last,
-  `menu/Mouse.gd`; the signal `controlSchemeChaged`, spelled as the game spells it) and a change of language (its own
-  `_notification`), so the station's extension needs no `_notification` of its own. The gamepad twin of Shift+Click,
-  `PAD_MODIFIER` held and `PAD_BUTTON` pressed, is named as the game's gamepad glyphs show them (`PAD_MODIFIER_NAME`,
-  `PAD_BUTTON_NAME`, `PAD_TEXT`): at the station the game gives neither button a use, and players can't rebind them
-  (the game's `Settings.gd` binds keys and mouse buttons only). It reads the `Settings` autoload through a variable
-  (`_gameSettings()`), since the mods' scripts are compiled before the engine creates it. Used here: `dress()`,
-  `attachTooltip()` (with the button as its `focusOwner`), `setShiftTooltips()`, `isPadShortcut()` and the `PAD_*`
-  constants; `hangBeside()` is for the other mods' badges beside a button.
+- **The badge** (`Badge.gd`, a `PanelContainer`) is the same file in every mod of the repository that has a Shift badge,
+  kept identical, since the mods ship separately; each loads its own copy from its own folder. A badge takes no focus,
+  and this one lets clicks through: its tooltip is its only interaction. `attachTooltip()` registers it with the game's
+  tooltip node (`connectSounds`) and takes the hover over, so the badge plays no sound; while the mouse is on it, the
+  node waits `TOOLTIP_DELAY` and fades in over `TOOLTIP_FADE` instead of its own times, and `BUTTON_HOVER_MUTE` keeps
+  the button under it from playing its hover sound again when the mouse crosses the badge's edge. It is lettered in the
+  small font of `SMALL_FONT_THEME`. Its text and tooltip follow the game's control scheme (`Settings.controlScheme`,
+  which with Auto follows the device used last, `menu/Mouse.gd`; the signal `controlSchemeChaged`, spelled as the game
+  spells it) and a change of language (its own `_notification`), so the station's extension needs no `_notification` of
+  its own. The gamepad twin of Shift+Click, `PAD_MODIFIER` held and `PAD_BUTTON` pressed, is named as the game's gamepad
+  glyphs show them (`PAD_MODIFIER_NAME`, `PAD_BUTTON_NAME`, `PAD_TEXT`): at the station the game gives neither button a
+  use, and players can't rebind them (the game's `Settings.gd` binds keys and mouse buttons only). It reads the
+  `Settings` autoload through a variable (`_gameSettings()`), since the mods' scripts are compiled before the engine
+  creates it. Used here: `dress()`, `attachTooltip()` (with the button as its `focusOwner`), `setShiftTooltips()`,
+  `isPadShortcut()` and the `PAD_*` constants; `hangBeside()` is for the other mods' badges beside a button.
 - **The dialog** (`SettingsUI.gd`, a CanvasLayer on the layer of the station's screens, read from the CanvasLayer
   holding the Tuning screen, else `LAYER_FALLBACK`; the station root's last child, so its `_input` comes first and Esc
   or `pause` cancel there) is an exclusive `Popup` covering the screen it was opened from (the screen's rectangle, or
@@ -165,17 +165,16 @@ also explains every ship and weapon of the game in a fight.
     dialog opens, so names and descriptions follow a language change.
   - The second tab is `ShipList.gd`. Showing it focuses the current ship (`focusCurrent()`); the first tab focuses its
     first row.
-- **The ship list** (`ShipList.gd`) is DealerNotifier's settings list (its `SettingsUI.gd`), copied since the two mods
-  ship separately, and adapted to one choice: a note with the setting's description, then one `TuningItems.tscn` group
-  per series (`_groups()`: series with two or more models, titled by the base model's name, then the rest under
-  `OTHERS_LABEL`; alphabetical in the game's language), each row a `TuningBoolValue.tscn` switch dressed as a Dealer
-  entry (`_dressRow()`, from `GAME_ENTRY`). The switches act as radio buttons: switching another model on picks it and
-  switches the current one off (`_setRow()`, with `_syncing` so its signal changes nothing), and switching the current
-  one off puts it back on. The focused row's description is what `Dealer.gd` `displayShip` shows: the series' where it
-  differs from the ship's, then the ship's (`_description()`). The pictures (`_drawPictures()`, `_drawPicture()`) are
-  made as DealerNotifier makes them: every model at once, each ship in a Dealer entry's viewport (`GAME_ENTRY_VIEWPORT`)
-  for `PICTURE_DELAY`, kept out of the save (`_previewShip()`: a `transponder`, a `shipName`, a `madeIn` and the
-  dealer's faction, `GAME_DEALER_FACTION`), every hardpoint emptied (`_emptyHardpoints()`, `_hardpoints()`,
+- **The ship list** (`ShipList.gd`) is built for one choice: a note with the setting's description, then one
+  `TuningItems.tscn` group per series (`_groups()`: series with two or more models, titled by the base model's name,
+  then the rest under `OTHERS_LABEL`; alphabetical in the game's language), each row a `TuningBoolValue.tscn` switch
+  dressed as a Dealer entry (`_dressRow()`, from `GAME_ENTRY`). The switches act as radio buttons: switching another
+  model on picks it and switches the current one off (`_setRow()`, with `_syncing` so its signal changes nothing), and
+  switching the current one off puts it back on. The focused row's description is what `Dealer.gd` `displayShip` shows:
+  the series' where it differs from the ship's, then the ship's (`_description()`). The pictures (`_drawPictures()`,
+  `_drawPicture()`) are made for every model at once, each ship in a Dealer entry's viewport (`GAME_ENTRY_VIEWPORT`) for
+  `PICTURE_DELAY`, kept out of the save (`_previewShip()`: a `transponder`, a `shipName`, a `madeIn` and the dealer's
+  faction, `GAME_DEALER_FACTION`), every hardpoint emptied (`_emptyHardpoints()`, `_hardpoints()`,
   `_hardpointSceneSlot()`), kept for the session in the script's metadata (`_pictureCache()`). Once its picture is
   taken, each viewport is freed with its ship still in it, so the ship's physics areas go before the viewport's physics
   space. A ship taken out of its viewport first leaves its monitoring areas pointing into that space, and Godot 3 frees
@@ -263,28 +262,28 @@ also explains every ship and weapon of the game in a fight.
   nothing, `canEventBeAt` allows nothing, `howManyShips` counts the arena's ships. `pickSpot(samples, margin)` returns
   the ring's pixel closest to the dialog's chaos and density out of `SPOT_SAMPLES` random ones at least
   `SPOT_EDGE_MARGIN` from the ring's edges, so the HUD reads that spot and every run differs.
-- **The settings model** (`Settings.gd`, a `Reference`) follows CrewCheapHireNotifier's (`shared()`, `SETTINGS`, `cfg`,
-  `getValue` / `setValue`, `toShown` / `fromShown`, `loadFromState` / `saveToState`, `FORMAT_VERSION`, `modId()`,
-  `modName()`, `modVersion()`), with a third type, `"choice"` (the ship: a model key of `Shipyard.ships`), and
-  `namedBy`, which names the `"choice"` setting whose model names a setting's row in the dialog. `setValue` takes a
-  bool for a switch, a number for a slider (snapped to its step, kept in its range) and an offered model for
-  the ship, anything else giving the default, and only on a change saves and emits `settingsChanged`. The save keeps it
-  in `CurrentGame.state.ui` under the mod's id: `formatVersion`, `modVersion` and each setting. Below the settings, what
-  the scripts share: `SHIP_META` and `DISARMED_META`, the metadata the arena sets on its ships; `UNITS_PER_METRE`;
-  `DESCRIPTION_SUFFIX` and `GAME_TUNING_ITEMS`, for the dialog and its ship list; and the ship models, `models()`
-  (every model of `Shipyard.ships` whose scene is under `SHIP_SCENES`, so not the habitat, each series together),
-  `series(model)` (`Shipyard.getShipAlias`), `modelName(model)` (the mod's own key, `MODEL_NAME_PREFIX` and the model's
-  key, where `i18n/en.po` has one, for the models the game leaves unnamed; else the scene's `shipName`, read as
-  DealerNotifier reads it) and `modelDescription(model)` (`DESCRIPTION_SUFFIX` after it).
+- **The settings model** (`Settings.gd`, a `Reference`) has the API MODDING.md *Conventions* describes (`shared()`,
+  `SETTINGS`, `cfg`, `getValue` / `setValue`, `toShown` / `fromShown`, `loadFromState` / `saveToState`,
+  `FORMAT_VERSION`, `modId()`, `modName()`, `modVersion()`), with a third type, `"choice"` (the ship: a model key of
+  `Shipyard.ships`), and `namedBy`, which names the `"choice"` setting whose model names a setting's row in the dialog.
+  `setValue` takes a bool for a switch, a number for a slider (snapped to its step, kept in its range) and an offered
+  model for the ship, anything else giving the default, and only on a change saves and emits `settingsChanged`. The save
+  keeps it in `CurrentGame.state.ui` under the mod's id: `formatVersion`, `modVersion` and each setting. Below the
+  settings, what the scripts share: `SHIP_META` and `DISARMED_META`, the metadata the arena sets on its ships;
+  `UNITS_PER_METRE`; `DESCRIPTION_SUFFIX` and `GAME_TUNING_ITEMS`, for the dialog and its ship list; and the ship
+  models, `models()` (every model of `Shipyard.ships` whose scene is under `SHIP_SCENES`, so not the habitat, each
+  series together), `series(model)` (`Shipyard.getShipAlias`), `modelName(model)` (the mod's own key,
+  `MODEL_NAME_PREFIX` and the model's key, where `i18n/en.po` has one, for the models the game leaves unnamed; else the
+  scene's `shipName`, from the scene's state, or from a ship instanced and freed where the scene leaves it to the ship's
+  script) and `modelDescription(model)` (`DESCRIPTION_SUFFIX` after it).
 - **The texts.** `i18n/en.po` holds every text the mod shows, under keys that start with `COMBATSIMULATOR_`, loaded in
   `ModMain.gd` with `load()` and `TranslationServer.add_translation`, as the game loads its own (the mod loader's
   `addTranslationsFromCSV` reads nothing from a mod's zip).
-- **With DiveSkipTransit**, which extends `enceladus/Enceladus.gd` too: mods load by path, so the chain is game ←
-  CombatSimulator ← DiveSkipTransit. Both add `_ready` without calling the parent's; this mod adds `_input`,
-  DiveSkipTransit overrides `_on_DiveTarget_launch`. Their member names differ.
-- **With TransponderAltCodes**, which extends `CurrentGame.gd` from `_init` too: the chain is game ← CombatSimulator ←
-  TransponderAltCodes. They override different functions, and their member names differ. The transponders the fight's
-  new ships register leave the save again with the save guard's other tables.
+- **Stacking.** The extensions keep the rules MODDING.md *The two ways these mods hook in* sets, so other mods can
+  extend the same game scripts: `_ready`, `_input` and `_notification` never call the parent's, every function they
+  override calls the parent's, and their members start with `_cs` or `_CS_` (besides the preloads, named for the mod).
+  The transponders the fight's new ships register, by whatever code makes them, leave the save again with the save
+  guard's other tables.
 - Members of the station's extension (`Code.gd`): `CombatSimulator`, `_CS_SETTINGS_UI`, `_CS_COMBAT_LAYER` and
   `_CS_BADGE_SCRIPT` (preloads), `_CS_LAUNCH_VR_BUTTON`, `_CS_SIMULATION_LAYER`, `_CS_TUNING`, `_CS_CONFIGS`,
   `_CS_ACTION`, `_CS_TOOLTIP`, `_CS_TOOLTIP_PAD`, `_CS_GAME_TOOLTIPS`, `_CS_KEY_HINT`, `_CS_SHIFT_BADGE`, `_csButtons`,
@@ -307,8 +306,8 @@ also explains every ship and weapon of the game in a fight.
   and a stub BulletTimer: the settings model, the texts, the HUD readouts, Disabled weapons, the map, the dialog and
   its ship list, the Shift badge and the gamepad (its twins of Shift+Click and Shift plus the key, the shoulder
   buttons, the right stick's scroll, the focus after a Start that can't run), two runs from Start to their end (input,
-  the end confirmation, the pause menu, losing the ship, the save's tables), alone and with TransponderAltCodes; the
-  `skip` suite passes with it too. The harness can't run the game's asteroid field, AI, HUD, OMS, bullet time, the
+  the end confirmation, the pause menu, losing the ship, the save's tables), alone and with other mods that extend
+  the same game scripts. The harness can't run the game's asteroid field, AI, HUD, OMS, bullet time, the
   other builders, the reload sound or the station's own clock.
   In the game, the dialog was opened from the Tuning screen and every ship and weapon was drawn with the mod loaded,
   in the copy of the game `_shots\shots.ps1` runs for the users' wiki's pictures. The author played fights in the

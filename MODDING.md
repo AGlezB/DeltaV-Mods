@@ -181,10 +181,6 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
   ArmAltTargetSelection. Their member names must stay distinct, and both find the intake the same way (grinder
   rotors / excavator claws via `ship.hasSystem`, the claws kept per excavator: `_clawsOf`, `_targetingClawsOf`): change
   `_entry` and `_intakePosition` together.
-- CrewPerfectSort replaces `CrewSortByJobAndSalary` (the first mod, not in this folder) and must not be installed
-  with it: both sort the same lists.
-- TransponderAltCodes replaces `AltTransponderCodes`, the same mod under its old name (see *Conventions*, renamed
-  mods), and must not be installed with it: both extend `CurrentGame.gd`, and both would load.
 - CrewCheapHireNotifier (`HireScreen.gd`) and CrewPerfectSort (`HireableCrewSorted.gd`) both extend `HireableCrew.gd`
   and both override `fillCrew`, each calling the parent's first: by path the chain is game ← CrewCheapHireNotifier ←
   CrewPerfectSort, and CrewPerfectSort only reorders the entries, so the marks stay (both orders tested in `crew`).
@@ -635,14 +631,19 @@ A mod reaching 1.0.0 adds its page, and its lines in Home and the sidebar; remov
   A new mod always starts at **0.0.0**, except a renamed one (below). Going to 1.0.0 comes with a clean-up: all
   logging removed, the code simplified, and the what and why of each feature documented in the README for other
   modders.
-- **A renamed mod** (AltTransponderCodes became TransponderAltCodes, so that its name says where, then what) is not a
-  new version of the old one: it is a new mod that replaces it, with the same behaviour and only another name. It
-  keeps the old one's version, and its `CHANGES.md` if it has one, retitled, with no section for the rename; its first
-  release is that version under the new name. Everything that names the mod follows the new name: the folder,
-  `Mod.manifest`'s `name` and `id`, the `res://` paths, the members' prefix, the wiki page, the tests. Its README
-  (after *Install*), its wiki page (*Works with other mods*), the root README and *Cross-mod dependencies* say not to
-  install it together with the old one, since both would load; and its first release takes the old name's zips out
-  of `mods` (see *Packaging and releasing*).
+- **A renamed mod** is not a new version of the old one: it is a new mod that replaces it, with the same behaviour and
+  only another name. It keeps the old one's version, and its `CHANGES.md` if it has one, retitled, with no section for
+  the rename; its first release is that version under the new name. Everything that names the mod follows the new
+  name: the folder, `Mod.manifest`'s `name` and `id`, the `res://` paths, the members' prefix, the wiki page, the
+  tests. Nothing names the old one any more, as nothing names a mod that was removed; its first release takes the old
+  name's zips out of `mods` (see *Packaging and releasing*).
+- **A mod's files never name another mod**: not its code and comments, its texts, its manifest, its README or the new
+  sections of its `CHANGES.md` (the released ones stay as they were). Each mod is independent and ships alone, so such
+  a mention would describe another mod's code, go stale when that mod changes, and need a release of a mod that didn't
+  change. Where mods meet (the same game script extended, the order they load in, a pair the harness loads together)
+  is written in *Cross-mod dependencies*; a mod's README and comments say only what the mod itself does there, in
+  general terms ("other mods may extend `EnceladusMenu.gd` for their own entries: this one writes only the Crew
+  entry's text"). The repository's own docs, the harness and the users' wiki (*Works with other mods*) may name mods.
 - **The version lives only in `[version]` of `Mod.manifest` and in `CHANGES.md`**. It never appears anywhere else in
   the mod: not in the README (whose *Install* step says "the mod's zip" and names neither the mod nor the zip), the
   code, comments or images. Godot's and the game's own versions may be mentioned. The harness (`_tests\`, its suites

@@ -91,43 +91,42 @@ the mod.
   which the game's TabContainer draws translated, as it draws the role tabs' keys. Nothing in the game refers to the
   OMS's tabs by index.
 - **The tab** (`SettingsUI.gd`) is a `Tabs` node, as every OMS page is, built from the Geologist tab's own parts
-  (`hud/SystemMineralList.gd`), as GeologyByMass's tab is: `hud/components/MineralSystemToggle.tscn` for the switch,
-  with its label beside it (`TOGGLE_SPACING`), the `HINT` line under it, then a grid of two columns: each weight's
-  name (`hud/components/MineralLabel.tscn`, without focus) and its slider (`hud/components/PriceLabel.tscn`, the
-  Minimum value control), with the weight's range, step and unit in the units shown, the bar (`GAME_SLIDER_BAR`)
-  `SLIDER_WIDTH` wide, and the weight's `label` + `DESCRIPTION_SUFFIX` as the tooltip of both the bar and the value
-  (`GAME_SLIDER_VALUE`, the button the D-pad lands on); last the `RESET` button, with `RESET` + `DESCRIPTION_SUFFIX`
-  as its tooltip and the game's tooltip node (`GAME_TOOLTIPS`) beside it. The released game draws no Godot tooltips:
-  that node (`menu/sfx/PlaySoundsOnTheseButtons.gd`, which `PriceLabel.tscn` holds too) takes in the buttons and
-  sliders under its parent and shows their tooltips on hover and on focus. The grid is dimmed (`DIMMED`) while the
-  switch is off. `menu/TabsWithGamepadControl.gd` focuses the switch when the tab is chosen. The D-pad's way from
-  there (`_linkFocus()`, set as `hud/SystemMineralList.gd` `adjustFocus` sets the Geologist tab's): down from the
-  switch through each slider's value, in `WEIGHTS` order, to Reset, and back up (`focus_neighbour_top` and
-  `focus_neighbour_bottom`); at either end, and to the sides, a control is its own neighbour, so the focus never
-  leaves the tab, and once A turns a value into its bar, left and right are the bar's. The values are filled in when
-  the tab enters the tree and whenever it shows, only where they differ, so opening it stores nothing.
-- **The settings model** (`Settings.gd`, a `Reference`) follows GeologyByMass's: one instance per ship, made from the
-  ship by each script that reads it (each plant, the HUD), with no shared instance and no signal, since they all read
-  the same entry: a change applies at each plant's next pick. `ENABLED` describes the switch (label, default) and
-  `WEIGHTS` the sliders, in the tab's order (key, label, default, min, max, step, unit and `shown`, the factor from the
-  stored weight to the one shown). `available()`: the ship's `hud.config` exists. `isEnabled()` / `setEnabled(how)`,
-  `weight(key)` (a slider's description), `keys()`, `getWeight(key)` / `setWeight(key, value)`, `toShown(key, value)`
-  / `fromShown(key, shown)`, and `reset()`, which erases the entry, so the ship reads as one that never had it. Reading
-  never writes, and gives the defaults where nothing is stored; a weight is clamped and snapped to its step, anything
-  that isn't a number gives the default, so a save edited by hand can't break anything; a setter writes only a change.
-  `modId()`, `modName()` and `modVersion()` read `Mod.manifest`. Scripts reach it through the preload constant
-  `DroneAltPriorities`, never `Settings`, which would hide the game's autoload.
+  (`hud/SystemMineralList.gd`): `hud/components/MineralSystemToggle.tscn` for the switch, with its label beside it
+  (`TOGGLE_SPACING`), the `HINT` line under it, then a grid of two columns: each weight's name
+  (`hud/components/MineralLabel.tscn`, without focus) and its slider (`hud/components/PriceLabel.tscn`, the Minimum
+  value control), with the weight's range, step and unit in the units shown, the bar (`GAME_SLIDER_BAR`) `SLIDER_WIDTH`
+  wide, and the weight's `label` + `DESCRIPTION_SUFFIX` as the tooltip of both the bar and the value
+  (`GAME_SLIDER_VALUE`, the button the D-pad lands on); last the `RESET` button, with `RESET` + `DESCRIPTION_SUFFIX` as
+  its tooltip and the game's tooltip node (`GAME_TOOLTIPS`) beside it. The released game draws no Godot tooltips: that
+  node (`menu/sfx/PlaySoundsOnTheseButtons.gd`, which `PriceLabel.tscn` holds too) takes in the buttons and sliders
+  under its parent and shows their tooltips on hover and on focus. The grid is dimmed (`DIMMED`) while the switch is
+  off. `menu/TabsWithGamepadControl.gd` focuses the switch when the tab is chosen. The D-pad's way from there
+  (`_linkFocus()`, set as `hud/SystemMineralList.gd` `adjustFocus` sets the Geologist tab's): down from the switch
+  through each slider's value, in `WEIGHTS` order, to Reset, and back up (`focus_neighbour_top` and
+  `focus_neighbour_bottom`); at either end, and to the sides, a control is its own neighbour, so the focus never leaves
+  the tab, and once A turns a value into its bar, left and right are the bar's. The values are filled in when the tab
+  enters the tree and whenever it shows, only where they differ, so opening it stores nothing.
+- **The settings model** (`Settings.gd`, a `Reference`) keeps its values in a game system's config, as MODDING.md
+  *Conventions* describes: one instance per ship, made from the ship by each script that reads it (each plant, the HUD),
+  with no shared instance and no signal, since they all read the same entry: a change applies at each plant's next pick.
+  `ENABLED` describes the switch (label, default) and `WEIGHTS` the sliders, in the tab's order (key, label, default,
+  min, max, step, unit and `shown`, the factor from the stored weight to the one shown). `available()`: the ship's
+  `hud.config` exists. `isEnabled()` / `setEnabled(how)`, `weight(key)` (a slider's description), `keys()`,
+  `getWeight(key)` / `setWeight(key, value)`, `toShown(key, value)` / `fromShown(key, shown)`, and `reset()`, which
+  erases the entry, so the ship reads as one that never had it. Reading never writes, and gives the defaults where
+  nothing is stored; a weight is clamped and snapped to its step, anything that isn't a number gives the default, so a
+  save edited by hand can't break anything; a setter writes only a change. `modId()`, `modName()` and `modVersion()`
+  read `Mod.manifest`. Scripts reach it through the preload constant `DroneAltPriorities`, never `Settings`, which would
+  hide the game's autoload.
 - **Where they are kept:** in the HUD's `mineralConfig`, the dict the ship's config holds as `hud.config`
   (`HUD_CONFIG`; `Hud.gd` `_ready`), under the mod's id from `Mod.manifest`, changed in place as `Hud.gd`
   `setMinValue` changes the Minimum value. So the game saves, loads and carries them with the ship (written as JSON,
   so numbers come back as floats). The entry holds `formatVersion` (`FORMAT_VERSION`), `modVersion`, `enabled` and
   `weights` (by key). The game reads only its own keys there (`minerals`, `minValue`, `albedo`). A saved key renamed
   without a migration, or a new id, would lose the saved values.
-- **With GeologyByMass**, which also extends `hud/Hud.gd` and adds an OMS tab right after the Geologist tab, each from
-  its own override of `instance()` with a deferred call: mods load by path, so the chain is game ← DroneAltPriorities
-  ← GeologyByMass, DroneAltPriorities's deferred call runs first, and GeologyByMass's tab ends up between the
-  Geologist tab and this one. Both keep their entries in `mineralConfig`, each under its own id. Their members are
-  distinct.
+- **Stacking.** Other mods may extend `hud/Hud.gd` too, and add OMS tabs of their own right after the Geologist
+  tab: this one adds its tab from its own override of `instance()`, calling the parent's first and deferring the tab,
+  and keeps its entry in `mineralConfig` under its own id.
 - Members of the drone plants' extension (`Code.gd`): `DroneAltPriorities` (preload), `SCORE_FLOOR`,
   `KEEP_TARGET_MARGIN`, `WORLD_UNITS_PER_METRE`, `_droneAltPrioritiesSettings`, `_droneAltPriorities()`,
   `_dapFromQueue()`, `_dapCheck()`, `_dapCriteria()` and `_dapChoose()`.
@@ -135,11 +134,11 @@ the mod.
   `_DRONE_ALT_PRIORITIES_TAB`, `_DRONE_ALT_PRIORITIES_AFTER`, `_droneAltPrioritiesSettings`, `_droneAltPriorities()`
   and `_addDroneAltPrioritiesTab()`. It has no `_ready` of its own.
 - Tested outside the game in a headless Godot 3.6 with the game's `drone-plant.gd`, `Hud.gd`, `OMS.gd`,
-  `TabsWithGamepadControl.gd`, `PriceLabel.gd`, `RepeatingHSlider.gd`, `MineralLabel.gd` and
-  `MineralSystemToggle.gd`, drone plants in a stub ship and an OMS built as its scene nests the tabs, with the D-pad's
-  way through the tab and the descriptions on focus (the `drones` suite of the repository's test harness), alone and
-  with GeologyByMass in both load orders; on the drone bench,
-  which runs the game's own drone plants, PDWs, excavator, chunks and roids; and in the game.
+  `TabsWithGamepadControl.gd`, `PriceLabel.gd`, `RepeatingHSlider.gd`, `MineralLabel.gd` and `MineralSystemToggle.gd`,
+  drone plants in a stub ship and an OMS built as its scene nests the tabs, with the D-pad's way through the tab and the
+  descriptions on focus (the `drones` suite of the repository's test harness), alone and with another mod that adds an
+  OMS tab, in both load orders; on the drone bench, which runs the game's own drone plants, PDWs, excavator, chunks and
+  roids; and in the game.
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.

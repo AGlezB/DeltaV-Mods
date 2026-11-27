@@ -2,8 +2,8 @@ extends Reference
 
 # ShipSaleAdvisor's settings model, shared by Code.gd and SettingsUI.gd: one instance (shared()) holds the current
 # values. They are kept per save game, in the game's UI store (CurrentGame.state.ui, which CurrentGame.saveToFile writes
-# with the rest of the state), under the mod's id from Mod.manifest, as MarketAdvisor's are: each save has its own
-# money, and so its own idea of a gain worth the wait.
+# with the rest of the state), under the mod's id from Mod.manifest: each save has its own money, and so its own idea of
+# a gain worth the wait.
 
 signal settingsChanged()
 

@@ -19,9 +19,9 @@ screen's prices.
   button close it, and only it: the Fleet screen stays open. If anything changed while it was open, *OK* shows the new
   figures first and copies on the next press.
 - **Ship settings**, as one switch: the tuning, the Geologist tab's mineral targeting (other mods' settings kept there
-  too, such as GeologyByMass's) and the mineral filters of the arm and the drone plants, whatever they hold. They read
-  the same when the Tuning screen would show the same values on both ships and the rest holds the same, in any order.
-  Pieces the equipment switch leaves as they are keep their own tuning and filters.
+  too) and the mineral filters of the arm and the drone plants, whatever they hold. They read the same when the Tuning
+  screen would show the same values on both ships and the rest holds the same, in any order. Pieces the equipment switch
+  leaves as they are keep their own tuning and filters.
 - **Crew aboard:** the other ship's crew list, put aboard at once: the portraits at the station change with it. The crew
   belongs to you, not to a ship: a ship only remembers who goes aboard once you have hired, fired or changed who dives
   while flying it. A ship without such a list has no crew, so copying its crew leaves nobody aboard (the game, when you
@@ -135,9 +135,8 @@ screen's prices.
   `_shipCopyPasteStates`, `_shipCopyPasteList`, `_shipCopyPasteProseFont`, `_shipCopyPasteChoices`,
   `_shipCopyPastePlanShown`, `_shipCopyPasteShown`, `_shipCopyPasteFilling` and `_shipCopyPasteClosedFrame`, and the
   functions `_shipCopyPaste*` (the button, spacing, icon, plan, comparisons, dialog and applying).
-- ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice find the entries by their script's path, which the extension
-  keeps (`take_over_path`); tested together. ShipSaleAdvisor extends the same script and changes what `Sell` does; this
-  mod only narrows `Sell`'s margins; tested together.
+- Other mods may find the entries by their script's path, which the extension keeps (`take_over_path`), or extend
+  the same script: of `Use` and `Sell` this mod changes only their margins (tested with both kinds).
 - Tested outside the game, in a headless Godot 3.6 with the game's `SystemBuyUI.gd` and `SystemShipUpgradeUI.gd` in
   stubs of their scenes (with the game's confirmation animations and `Use` icon), the game's Tuning switch, stubs of the
   Fleet and Equipment screens, of the ships and of `CurrentGame` (the `fleet` suite of the repository's test harness),

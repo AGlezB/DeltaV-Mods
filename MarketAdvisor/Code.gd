@@ -184,10 +184,10 @@ func _maBuildRow():
 		_maButton.connect("gui_input", self, "_maOnTradeInput")
 
 # The Shift badge (Badge.gd), in the Trade button's own frame and font colour (read once the button is in the tree,
-# where the market's theme gives them), inside the button on the left, centred on it from top to bottom, as
-# CombatSimulator's on the simulator's button: as far from the button's left edge as the button keeps its text from its
-# edges (_maBadgeInset). A Button doesn't lay out its children, so the badge hangs from it directly, anchored to the
-# middle of its left side, and grows right, up and down to its minimum size; the button makes room for it
+# where the market's theme gives them), inside the button on the left, centred on it from top to bottom: as far from
+# the button's left edge as the button keeps its text from its edges (_maBadgeInset). A Button doesn't lay out its
+# children, so the badge hangs from it directly, anchored to the middle of its left side, and grows right, up and down
+# to its minimum size; the button makes room for it
 # (_maFitBadge). On the button, it lets the mouse through: a click on it is the button's, Shift+Click too. It keeps its
 # look while the button is disabled: Shift+Click still opens the settings then.
 func _maMakeShiftBadge():

@@ -1,5 +1,9 @@
 # GeologyByMass - Changes
 
+## 2.1.1
+- The README no longer names other mods: where the mod meets another one, it says what it does there in general
+  terms.
+
 ## 2.1.0
 - New switch on the mod's OMS tab, *Enable all minerals at the start of a dive*, between the line on what the tab does
   and the mineral rows, off at first. On, every mineral's switch on the tab turns on when a dive starts, H2O too, so the

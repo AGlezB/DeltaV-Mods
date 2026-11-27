@@ -57,8 +57,7 @@ const CALLOUT_UIO_FALLBACK = "UIO"
 const _CALLOUT_TICK = 0.25 # seconds between two checks of the waiting callouts
 const _CALLOUT_UNITS_PER_METRE = 10.0 # the game shows 10 world units as 1 m
 # The ship zones the callouts work in: a dive (Game.gd _respawn_ship) and a simulator (the station's,
-# enceladus/Simulator/SimulationLayer.gd startSimulation, and CombatSimulator's arena, which builds its ship the same
-# way).
+# enceladus/Simulator/SimulationLayer.gd startSimulation).
 const _CALLOUT_ZONES = ["rings", "sim"]
 const _CALLOUT_ASTROGATOR = "CREW_OCCUPATION_ASTROGATOR"
 const _CALLOUT_PASSENGER = "CREW_OCCUPATION_PASSENGER" # listed with the crew, but never on the bridge
@@ -88,8 +87,7 @@ var _calloutApprox = {} # keys said with approximate figures, waiting for their 
 var _calloutSighted = {} # keys of the objects with no transponder and no row already added this dive
 
 # The game builds the OMS here (the HUD's `Inventory` placeholder of hud/OMS.tscn), for the player's ship and for the
-# Tuning and Upgrades previews. Set up once the frame is idle, as the OMS tabs of DroneAltPriorities and GeologyByMass
-# are added: the HUD's _ready can call this.
+# Tuning and Upgrades previews. Set up once the frame is idle: the HUD's _ready can call this.
 func instance():
 	.instance()
 	call_deferred("_calloutSetup")
@@ -178,8 +176,7 @@ func _calloutRemove(key):
 	_calloutWaiting.erase(_calloutWaitingKeys[key])
 	_calloutWaitingKeys.erase(key)
 
-# The ship's own drones carry the ship's transponder and a dash (ships/modules/ClaimOwner.gd; TransponderAltCodes keeps
-# that form).
+# The ship's own drones carry the ship's transponder and a dash (ships/modules/ClaimOwner.gd).
 func _calloutIsOwn(transponder) -> bool:
 	var own = ship.transponder
 	return own != "" and transponder != "" and transponder.begins_with(own + "-")

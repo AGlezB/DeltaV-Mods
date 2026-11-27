@@ -1,5 +1,10 @@
 # ShipRepairAdvisor - Changes
 
+## 1.0.3
+- The README and the code's comments no longer name other mods: where the mod meets another one, they say what it
+  does there in general terms.
+- The README lists `Badge.gd`'s members itself, instead of pointing to another mod's README.
+
 ## 1.0.2
 - Park repairs only the pieces on the hardpoints, the thrusters and the LIDAR, whose condition sets what they trade in
   for at the Equipment screen. It leaves every other system as it is: the other slots (the reactor, the turbine, the

@@ -72,30 +72,35 @@ Services.
   - Overrides `_ready` and `_notification` (the game's script has neither). The station is built anew after every load
     and new game, so `_ready` loads the save's settings (`loadFromState()`); on `NOTIFICATION_TRANSLATION_CHANGED` it
     writes the entry's text again, since a marked entry holds translated text.
-  - Shift+Click and its gamepad twin (`Badge.gd` `isPadShortcut`), the Shift badge and its tooltip, and the settings
-    screen's place are CrewCheapHireNotifier's (see its README): the press is accepted in the button's `gui_input`, so
-    the Services screen stays closed. The badge (`_snMakeShiftBadge()`, kept in `_snShiftBadge`) hangs beside the
-    entry; its tooltips are `_SN_SETTINGS_TOOLTIP` and, with a gamepad, `_SN_SETTINGS_TOOLTIP_PAD`, shown on hover and,
-    with a gamepad, while the entry has the focus (its `focusOwner`); the entry itself has none. Without the right-hand
-    screens' container or its Services screen (`_SN_SERVICES_SCREEN`) there is no settings screen, no Shift badge and no
-    mark, Shift+Click is a plain click and its gamepad twin does nothing. A menu without a Services entry is left alone.
-  - **`Badge.gd`** is the same file in every mod that has a Shift badge, CrewCheapHireNotifier's among them, whose
-    README lists its members: keep the copies identical.
+  - Shift+Click and its gamepad twin (`Badge.gd` `isPadShortcut`) are accepted in the button's `gui_input`, which Godot
+    3 emits before the button's own `_gui_input`, so the Services screen stays closed. The badge (`_snMakeShiftBadge()`,
+    kept in `_snShiftBadge`) hangs beside the entry; its tooltips are `_SN_SETTINGS_TOOLTIP` and, with a gamepad,
+    `_SN_SETTINGS_TOOLTIP_PAD`, shown on hover and, with a gamepad, while the entry has the focus (its `focusOwner`);
+    the entry itself has none. Without the right-hand screens' container or its Services screen (`_SN_SERVICES_SCREEN`)
+    there is no settings screen, no Shift badge and no mark, Shift+Click is a plain click and its gamepad twin does
+    nothing. A menu without a Services entry is left alone.
+  - **`Badge.gd`** is the same file in every mod of the repository that has a Shift badge: keep the copies identical.
+    Constants: `SMALL_FONT_THEME`, `TOOLTIP_DELAY`, `TOOLTIP_FADE`, `BUTTON_HOVER_MUTE` (how long the game's tooltip
+    node keeps its hover sound off as the mouse crosses the edge of a badge that lets it through to a button),
+    `PAD_MODIFIER`, `PAD_BUTTON`, `PAD_MODIFIER_NAME` and `PAD_BUTTON_NAME` (as the game's gamepad glyphs name them,
+    `hud/components/controls-xbox-key-sheet.png`) and `PAD_TEXT`. Functions: the static `isPadShortcut(event)`,
+    `dress(button, text, padText)`, `hangBeside(button, gap)`, `setShiftTooltips(keyKey, padKey, modName)` and
+    `attachTooltip(tooltips, focusOwner)`.
 - **The rule** (`Settings.gd`): `kindOf(row)` is a key of `KINDS`, `"cooldown"` for a row with `cooldownHours` above 0,
   `"compensation"` for one with a `factionBased`, or `""` for a row the mod doesn't watch; a row with both counts as a
   cooldown's. `KINDS`, in the order the screen groups them, gives each kind its group's title and its description's
   translation key, and whether the description has a `%s` for the cooldown (`withCooldown`).
-- **The settings model** follows CrewCheapHireNotifier's (`shared()`, `SETTINGS`, `cfg`, `getValue` / `setValue`,
-  `loadFromState` / `saveToState`, `modId()`, `modName()`, `modVersion()`), with one switch, `alert`, that has
-  `perService` (`isPerService()`): a value for each service, a dictionary by `serviceName` in `cfg`, all sharing its
+- **The settings model** has the API MODDING.md *Conventions* describes (`shared()`, `SETTINGS`, `cfg`, `getValue` /
+  `setValue`, `loadFromState` / `saveToState`, `modId()`, `modName()`, `modVersion()`), with one switch, `alert`, that
+  has `perService` (`isPerService()`): a value for each service, a dictionary by `serviceName` in `cfg`, all sharing its
   default. The services aren't listed in the model: one with no value stored gives the default, and loading keeps every
   saved service with a bool value, so a service missing for a while keeps its own. Anything that isn't a bool gives the
   default, so a save edited by hand can't break anything.
 - **The save:** in `CurrentGame.state.ui` under the mod's id from `Mod.manifest`: `formatVersion` (`FORMAT_VERSION`),
   `modVersion` and `alert` (a copy of the dictionary by service).
-- **The settings screen** (`SettingsUI.gd`) is built as MarketAdvisor's, but copies the live **Services** screen's
-  theme, panel, minimum size and size flags, so it opens in the Services screen's place with its frame. Under the
-  header (the Services entry's key):
+- **The settings screen** (`SettingsUI.gd`) is one more of the station's right-hand screens, built from the game's
+  Tuning parts; it copies the live **Services** screen's theme, panel, minimum size and size flags, so it opens in the
+  Services screen's place with its frame. Under the header (the Services entry's key):
   - The description window, nested as `enceladus/Tuning.tscn` nests its own (`GAME_WINDOW_MARGIN`, `GAME_WINDOW`,
     `GAME_WINDOW_INSIDE`) with the live Tuning screen's (`Code.gd` `_SN_TUNING_SCREEN`) theme, margins and panel,
     keeping room for `DESCRIPTION_LINES` lines. For the focused row it shows its kind's description, with the
@@ -105,17 +110,15 @@ Services.
   - An `Items` box in the scroll of `enceladus/Tuning/TuningItems.tscn` groups, one per kind with watched rows, titled
     by it, with a `TuningBoolValue.tscn` switch per service in the Services screen's order, named by its `serviceName`
     key, which the game's Buttons translate; each switch's tooltip is the setting's `label` (`GAME_ROW_SWITCH`). Filled
-    each time it opens, so the description follows a language change; the first row takes the focus. On
-    `tuningChanged` (a change, or a row taking the focus) it sets the row's `tune.current` (DiveSkipTransit's fix: a
-    switch doesn't update it itself), calls `setValue` and shows the row's description.
+    each time it opens, so the description follows a language change; the first row takes the focus. On `tuningChanged`
+    (a change, or a row taking the focus) it sets the row's `tune.current` (a switch doesn't update it itself), calls
+    `setValue` and shows the row's description.
 - **The texts.** `i18n/en.po` holds every text the mod shows, under keys that start with `SERVICENOTIFIER_`.
-  `ModMain.gd` loads it with `load()` and `TranslationServer.add_translation`, as CrewCheapHireNotifier does (its
-  README says why).
-- **With CrewCheapHireNotifier, DealerNotifier, DiveSkipTransit and MarketAdvisor**, which extend `EnceladusMenu.gd`
-  too: mods load by path, so the chain is game ← CrewCheapHireNotifier ← DealerNotifier ← DiveSkipTransit ←
-  MarketAdvisor ← ServiceNotifier. Each overrides `_ready`, and all but DiveSkipTransit `_notification` (the game's
-  script has neither), without calling the parent's; their members are distinct, and opening one's screen hides the
-  others' (`hidefoka`). Each writes only its own entry's text: the Services entry is this mod's alone.
+  `ModMain.gd` loads it with `load()` and `TranslationServer.add_translation`, as the game loads its own `.po` files
+  (the mod loader's `addTranslationsFromCSV` reads nothing from a mod's zip).
+- **Stacking.** Other mods may extend `EnceladusMenu.gd` for their own entries: this one overrides `_ready` and
+  `_notification` without calling the parent's and writes only the Services entry's text, and opening another screen
+  hides its settings screen (`hidefoka`), as opening its own hides the others.
 - Members of the menu's extension (`Code.gd`): `ServiceNotifier`, `_SN_SETTINGS_UI` and `_SN_BADGE_SCRIPT`
   (preloads), `_SN_ALERT`, `_SN_SETTINGS_TOOLTIP` and `_SN_SETTINGS_TOOLTIP_PAD` (translation keys),
   `_SN_SERVICES_SCREEN`, `_SN_SERVICES_ENTRY`, `_SN_TUNING_SCREEN`, `_SN_SERVICE_ROWS`, `_snButton`, `_snKey`,
@@ -125,10 +128,9 @@ Services.
 - Tested outside the game in a headless Godot 3.6 with the game's `EnceladusMenu.gd`, `HidingMarginContainer.gd`,
   `ServiceUI.gd`, `ServiceUIInsurance.gd`, `ServiceUIFactionChange.gd`, the Tuning screen's groups and rows,
   `HeaderWithMoney.tscn` and `Shower.tscn`: the station built in code as its scene nests it, with stubs of the Services
-  rows' scenes at the game's values and of `Factions` (the `services` suite of the repository's test harness), the
-  Shift badge's text and tooltip with each control scheme and Shift+Click's gamepad twin with gamepad button events
-  among its checks; with CrewCheapHireNotifier, DealerNotifier, DiveSkipTransit and MarketAdvisor in every load order
-  (the `dealer` suite); and in the game.
+  rows' scenes at the game's values and of `Factions` (the `services` suite of the repository's test harness), the Shift
+  badge's text and tooltip with each control scheme and Shift+Click's gamepad twin with gamepad button events among its
+  checks; with the other mods that extend `EnceladusMenu.gd` in every load order (the `dealer` suite); and in the game.
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.

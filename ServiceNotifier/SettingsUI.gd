@@ -1,7 +1,7 @@
 extends PanelContainer
 
 # ServiceNotifier's settings screen: one more of the station's right-hand screens, opened from the menu's Services entry
-# (Code.gd), built as MarketAdvisor's is. It copies the Services screen's frame and place, and is built from the game's
+# (Code.gd). It copies the Services screen's frame and place, and is built from the game's
 # own Tuning parts, the way enceladus/Tuning.tscn nests them: the header, a window with the description of the selected
 # service (framed as the Tuning screen's), then a group of switches per kind of service (Settings.gd KINDS), a switch
 # per service, named as the game names it. It behaves like the game's screens (enceladus/Services.gd,

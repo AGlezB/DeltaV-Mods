@@ -100,10 +100,10 @@ func _dnMarkFresh():
 # up and down to its minimum size. A name
 # long enough to reach the column's end would run under it (the button clips its text at its own edge), but a ship's
 # name is two words in a column many times wider.
-# Drawn as CrewCheapHireNotifier's badge, with only the capitals of the mod's name, in a copy of the entry's Buy
-# button frame (menu/ButtonRoundCorners.tres in the game). Its colour is that of the entry's Owned label, as
-# ShipCopyPaste marks its template: the frame's border in it, and the letters in the button's font colour times it, as
-# the label draws. The letters are in the font a Label gets in the entry's picture (HBox/Margin, whose theme,
+# Drawn with only the capitals of the mod's name, in a copy of the entry's Buy button frame
+# (menu/ButtonRoundCorners.tres in the game). Its colour is that of the entry's Owned label: the frame's border in it,
+# and the letters in the button's font colour times it, as the label draws. The letters are in the font a Label gets
+# in the entry's picture (HBox/Margin, whose theme,
 # enceladus/Subwindow.theme, has a small one), as its own RepairTimeLeft label is: the name sets no theme, so a Label
 # there would get the entry's, the menu's big font. It lets the mouse through, so the wheel still scrolls the list and a
 # click is the name's (focusing it shows the ship, Dealer.gd), and still gets the mouse's enter and exit.

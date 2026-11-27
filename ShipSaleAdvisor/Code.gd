@@ -19,7 +19,7 @@ extends "res://enceladus/SystemBuyUI.gd"
 #   is measured on a trial ship, built from a copy of the prepared config and freed once it has a value, as the Fleet
 #   screen builds its own copies for the preview (Dealer.gd showcaseDuplicate). The dialog shows only when the cash it
 #   brings reaches the minimum gain set (Settings.gd minGain).
-# - The dialog: a ConfirmationDialog as ShipCopyPaste's (the entry's menu theme, centered, Cancel focused as the game's
+# - The dialog: a ConfirmationDialog (the entry's menu theme, centered, Cancel focused as the game's
 #   SellShow focuses SellCancel), with the line at its top, the rows (money coloured and signed as the Fleet screen's
 #   trade-in: Dealer.gd displayShip, colorPlus and colorMinus), and a warning in the maintenance label's colour
 #   (enceladus/MaintainenceLabel.tscn) when preparing takes time. Prepare plans again and applies only a plan that still
@@ -37,8 +37,6 @@ extends "res://enceladus/SystemBuyUI.gd"
 #
 # Stacking: the parent's _ready and _input are never called (Godot runs every level by itself); _on_Sell_pressed falls
 # through to the parent with `._on_Sell_pressed()` where the mod has nothing to offer; new members start with `_ssa`.
-# ShipCopyPaste extends the same script and touches nothing of Sell; its checkCurrentAndOwned, which Sell calls once an
-# offer is worked out, calls the game's first.
 
 const ShipSaleAdvisor = preload("res://ShipSaleAdvisor/Settings.gd")
 const _SSA_ADVISOR = preload("res://ShipSaleAdvisor/Advisor.gd")
@@ -130,7 +128,7 @@ func _ready():
 		fleet.connect("visibility_changed", self, "_ssaFleetVisibility")
 		_ssaAddNote(fleet)
 
-# Esc (or the pause button) while the dialog shows closes the dialog only, as in ShipCopyPaste: children get _input
+# Esc (or the pause button) while the dialog shows closes the dialog only: children get _input
 # before their parents, so the Fleet screen (Dealer.gd _input, which closes on these) doesn't see it, and every later
 # event of that frame is marked handled too, since Dealer.gd asks the action, which stays just pressed for the frame.
 func _input(_event):
@@ -179,7 +177,7 @@ func _on_Sell_pressed():
 	_ssaShow(offer)
 
 # Shift+Click on an enabled Sell button opens the settings instead of selling, and so does its gamepad twin on the
-# highlighted button (Badge.gd isPadShortcut), as MarketAdvisor's menu entry does: the click's gui_input signal comes
+# highlighted button (Badge.gd isPadShortcut): the click's gui_input signal comes
 # before the button's own _gui_input, and accepting the press there keeps the button from pressing.
 func _ssaOnSellInput(event, sell: Button):
 	var shiftClick = event is InputEventMouseButton and event.pressed and event.button_index == BUTTON_LEFT and event.shift

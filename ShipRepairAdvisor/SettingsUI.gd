@@ -1,7 +1,7 @@
 extends PanelContainer
 
 # ShipRepairAdvisor's settings screen: one more of the station's right-hand screens, opened in the Repairs screen's place
-# from its Repair button (Code.gd), built as MarketAdvisor's is. It copies the Repairs screen's frame and place, and is
+# from its Repair button (Code.gd). It copies the Repairs screen's frame and place, and is
 # built from the game's own Tuning parts, the way enceladus/Tuning.tscn nests them: the header, a window with the
 # description of the selected setting (framed as the Tuning screen's), then the slider, with two rows under it that
 # estimate what a system at its condition loses (Settings.gd failureRate, performanceLoss). It behaves like the game's
@@ -197,8 +197,8 @@ func _fill():
 	_showEstimates(_settings.getValue(ESTIMATED_SETTING))
 	Tool.deferCallWhenIdle(group, "focus")
 
-# The estimates' rows, right under the target's slider: copies of its line, as MarketAdvisor's settings screen makes the
-# row of its cash reserve, so their parts sit where the slider's do and their values right under its value. A line is
+# The estimates' rows, right under the target's slider: copies of its line, so their parts sit where the slider's do and
+# their values right under its value. A line is
 # copied without its signals, so its reset button can't reset the slider; the button keeps its room but can't be seen,
 # pressed or focused, and neither can the name, which is a button in the line: the D-pad reaches only the slider.
 func _addEstimates(group: Node):

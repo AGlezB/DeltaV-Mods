@@ -251,8 +251,7 @@ func _valid(key, value):
 			return value if value is String and value in models() else setting.default
 
 # The scene's own shipName (its root's, then that of the scene it inherits from). A scene that leaves it to the ship's
-# script has none there: then one ship is instanced, never added to the tree, read and freed (as DealerNotifier's
-# Settings.gd _shipNames does).
+# script has none there: then one ship is instanced, never added to the tree, read and freed.
 func _shipName(model) -> String:
 	if not _names.has(model):
 		var name = ""

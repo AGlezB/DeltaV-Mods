@@ -3,7 +3,7 @@
 Changes how the AR-1500 salvage arm (`SYSTEM_SALVAGE_ARM` on a ship) brings a target in and holds it: while feeding,
 along a path into the grinder or excavator that keeps clear of the rotors, claws and hull, without stopping at the
 opening; while not feeding, at the dock slot, steady against the ship's thrust and turns. Station dock arms are left
-alone. Works together with `ArmAltTargetSelection`, but does not need it (the two do not touch each other's code).
+alone.
 
 **Only ships with a grinder or an excavator are covered.** On any other ship (the OCP-209, for one) the mod
 does nothing at all and the game's own arm handling applies.

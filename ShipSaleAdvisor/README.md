@@ -77,9 +77,9 @@ it costs. Shift+Click on the sell button opens its settings.
   ship entries on the Fleet screen (`enceladus/Owned.tscn`, an instance of `Dealer.tscn`) and on the ship market. Only
   the Fleet's entries (`owned`) are changed. The tag `group = Fleet` in `Mod.manifest` names the screen. Its files:
   `Code.gd` (the extension), `Advisor.gd` (the plan: static functions of plain data, which touch neither the game nor
-  the scene), `Settings.gd` and `SettingsUI.gd` (the setting and its screen, as MarketAdvisor's), `FleetNote.gd` (the
-  note) and `Badge.gd`, the same file as the other mods' (its gamepad twin, `isPadShortcut`, and its small font; its
-  badge isn't used).
+  the scene), `Settings.gd` and `SettingsUI.gd` (the setting and its screen), `FleetNote.gd` (the note) and `Badge.gd`,
+  the same file in every mod of the repository that has a Shift badge (its gamepad twin, `isPadShortcut`, and its small
+  font; its badge isn't used).
 - **What it reads:** Sell is enabled only on a stored ship out of maintenance (`checkCurrentAndOwned`, `ship-ctrl.gd`
   `canBeSold`), and the entry's `ship` is built from that ship's config in `CurrentGame.state.garage`
   (`CurrentGame.gd` `getOwnedShips`). Its systems are the list it made at its setup, which the Fleet screen's ships
@@ -108,18 +108,18 @@ it costs. Shift+Click on the sell button opens its settings.
   ship will read it, then freed. Sell stays disabled meanwhile. The dialog shows only when the cash gain reaches the
   minimum gain (`Advisor.gd` `reaches`); otherwise `._on_Sell_pressed()` shows the game's confirmation.
 - **The dialog** (`_ssaDialogBuild`, `_ssaShow`), made on the first offer as a child of the entry: a
-  `ConfirmationDialog`, as ShipCopyPaste's, in the entry's menu theme (the line at the top in the menu font), the rows
-  and the warning in the Fleet screen's prose font (the Label font of the entry's `HBox/Margin`). The rows are a
-  two-column grid that shrinks to them, centred, `_SSA_COLUMN_GAP` (in heights of that font) between names and values;
-  the contents are as wide as the grid, the warning on one line and the line at the top on two need, up to
-  `_SSA_MAX_WIDTH_SHARE` of the screen, where they wrap. Money takes the Fleet screen's `colorPlus` and `colorMinus`,
-  as `Dealer.gd` `displayShip` colours a trade-in, with `_SSA_COLOR_PLUS_FALLBACK` and `_SSA_COLOR_MINUS_FALLBACK` only
-  where the screen has none; the warning, the colour of the game's maintenance label (`_SSA_WARNING_SCENE`, read from
-  the scene without making it; `_SSA_WARNING_FALLBACK`). The buttons are put in order with a spacer at each end and
-  between them, and the D-pad goes along them (explicit focus neighbours). `dialog_hide_on_ok` is off, so Prepare can
-  show a changed offer: the offer's texts are compared as JSON (`_ssaShown`). Esc and `pause` close it alone, as in
-  ShipCopyPaste: the extension's `_input` marks them handled, and every later event of that frame too, so `Dealer.gd`
-  `_input` doesn't close the Fleet screen. Sell emits the entry's `sell` signal, as `_on_SellConfirm_pressed` does.
+  `ConfirmationDialog`, in the entry's menu theme (the line at the top in the menu font), the rows and the warning in
+  the Fleet screen's prose font (the Label font of the entry's `HBox/Margin`). The rows are a two-column grid that
+  shrinks to them, centred, `_SSA_COLUMN_GAP` (in heights of that font) between names and values; the contents are as
+  wide as the grid, the warning on one line and the line at the top on two need, up to `_SSA_MAX_WIDTH_SHARE` of the
+  screen, where they wrap. Money takes the Fleet screen's `colorPlus` and `colorMinus`, as `Dealer.gd` `displayShip`
+  colours a trade-in, with `_SSA_COLOR_PLUS_FALLBACK` and `_SSA_COLOR_MINUS_FALLBACK` only where the screen has none;
+  the warning, the colour of the game's maintenance label (`_SSA_WARNING_SCENE`, read from the scene without making it;
+  `_SSA_WARNING_FALLBACK`). The buttons are put in order with a spacer at each end and between them, and the D-pad goes
+  along them (explicit focus neighbours). `dialog_hide_on_ok` is off, so Prepare can show a changed offer: the offer's
+  texts are compared as JSON (`_ssaShown`). Esc and `pause` close it alone: the extension's `_input` marks them handled,
+  and every later event of that frame too, so `Dealer.gd` `_input` doesn't close the Fleet screen. Sell emits the
+  entry's `sell` signal, as `_on_SellConfirm_pressed` does.
 - **Prepare** (`_ssaApply`) works on a copy of the stored config, without switching ships: each click as `doFixSystem`
   makes it (every damage less half of what it reads then) and pays it (`changeMoney(-price, true)`, insurance first),
   two `LOG_EVENT_REPAIR` entries, `giveXp` for the mechanics, the `FIX_PART` achievement; each slot as `Upgrades.gd`
@@ -127,11 +127,11 @@ it costs. Shift+Click on the sell button opens its settings.
   `LOG_EVENT_UPGRADE` entry); `maintaineceUntil` moved on as `addShipMaintanenceTime` moves it. Under
   `CurrentGame.shipMutex`, the copy replaces the stored config, and the instance built from it is dropped
   (`removeOwnedShipByHash`, as `switchShipTo` drops one); then the Fleet screen's `addShips()` makes a new entry.
-- **The settings screen** (`SettingsUI.gd`), made on first use among the station's screens
-  (`_SSA_SETTINGS_NODE`), copies the Fleet screen's frame and title and the Tuning screen's description window, and
-  behaves as MarketAdvisor's: `hidefoka`, the Shower, Esc, B and Start bringing the Fleet screen back with the focus on
-  the sell button that opened it. Shift+Click is read on Sell's `gui_input`, before the button presses
-  (`_ssaOnSellInput`, `accept_event`), and on `_on_Sell_pressed` with Shift held.
+- **The settings screen** (`SettingsUI.gd`), made on first use among the station's screens (`_SSA_SETTINGS_NODE`),
+  copies the Fleet screen's frame and title and the Tuning screen's description window, and behaves as the game's
+  screens: `hidefoka`, the Shower, Esc, B and Start bringing the Fleet screen back with the focus on the sell button
+  that opened it. Shift+Click is read on Sell's `gui_input`, before the button presses (`_ssaOnSellInput`,
+  `accept_event`), and on `_on_Sell_pressed` with Shift held.
 - **The note** (`FleetNote.gd`), added once to the Fleet screen's column (`_SSA_FLEET_COLUMN`) by its first entry, in
   `Badge.gd`'s `SMALL_FONT_THEME`, its text by the control scheme (`controlSchemeChaged`), loads the save's setting with
   it: the station is built anew after every load and new game.
@@ -142,9 +142,9 @@ it costs. Shift+Click on the sell button opens its settings.
   variables `_ssaDialog`, `_ssaIntro`, `_ssaGrid`, `_ssaWarning`, `_ssaSellButton`, `_ssaProseFont`, `_ssaOffer`,
   `_ssaShown`, `_ssaBusy`, `_ssaSold` and `_ssaClosedFrame`, and the functions `_ssa*` (the offer, the plan's data,
   the trial ship, the dialog, the settings and Prepare).
-- ShipCopyPaste extends the same script and touches nothing of Sell; its `checkCurrentAndOwned`, which Sell calls once
-  an offer is worked out, calls the game's first (tested in both load orders). ShipHighlightTypeAndPrice and
-  ShipSortByTypeAndPrice find the entries by their script's path, which the extension keeps (`take_over_path`).
+- Other mods may extend the same script, or find the entries by their script's path, which the extension keeps
+  (`take_over_path`): `_on_Sell_pressed` falls through to the parent's where there is no offer to make, and Sell calls
+  `checkCurrentAndOwned` once an offer is worked out, through the whole chain (tested with both kinds).
 - Tested outside the game, in a headless Godot 3.6 with the game's `SystemBuyUI.gd` in a stub of its scene, stubs of
   the Fleet and Equipment screens among the game's `HidingMarginContainer.gd`, ships whose systems follow the game's
   price formulas, and a `CurrentGame` stub (the `sale` suite of the repository's test harness, and `fleet` with it

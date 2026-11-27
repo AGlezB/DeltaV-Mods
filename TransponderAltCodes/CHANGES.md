@@ -1,5 +1,10 @@
 # TransponderAltCodes - Changes
 
+## 1.1.1
+- The README no longer names other mods: where the mod meets another one, it says what it does there in general
+  terms.
+- The README no longer warns against the mod's old name.
+
 ## 1.1.0
 - A ship the game meets again with a code it made before the mod was installed (the miners in the rings, a rescue's
   MAD-CERF and derelict, a crew agenda's derelict, the ring races' racer and drone, the ATLAS drone, Vilcy's ships)

@@ -1,10 +1,9 @@
 extends VBoxContainer
 
 # The dialog's second tab (SettingsUI.gd): the enemy ship, picked from a list laid out as the Dealer and Fleet screens'
-# (enceladus/Dealer.tscn), as DealerNotifier's settings screen builds it (DealerNotifier/SettingsUI.gd; the two mods
-# ship separately, so its code is copied here, adapted to one choice). A note with the setting's description, then the
-# ships, each in a row like a Dealer entry: the ship's picture, its name, and a switch where the Dealer has Buy. The
-# rows are the game's Tuning switches in Tuning groups, as enceladus/Tuning.tscn nests them, one group per series.
+# (enceladus/Dealer.tscn), for one choice. A note with the setting's description, then the ships, each in a row like a
+# Dealer entry: the ship's picture, its name, and a switch where the Dealer has Buy. The rows are the game's Tuning
+# switches in Tuning groups, as enceladus/Tuning.tscn nests them, one group per series.
 # The switches act as radio buttons: the current model's is on, switching another on picks it, and the current one
 # can't be switched off. The tab's description window (SettingsUI.gd) shows the focused ship's description, as the
 # Dealer shows it.

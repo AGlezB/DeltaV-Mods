@@ -94,13 +94,11 @@ Before reporting a bug with turrets to the game's developers, check that it also
 - **The texts.** `i18n/en.po` holds the row's name, its tooltip, the angle's text and its tooltip. `ModMain.gd` loads
   it with `load()` and `TranslationServer.add_translation`, as the game loads its own `.po` files. English is Godot's
   fallback language, so every language shows it until it gets its own file.
-- **Stacking.** CombatSimulator's `Turret.gd` extends `PDT.gd` too (`fire`, `perhapsFire`); by path the chain is game ←
-  CombatSimulator ← TurretLockableFacing. It disarms a turret by zeroing `firepower`, which a locked turret fires with,
-  so a disarmed turret stays disarmed. WeaponMaxPowerSwitch's `MechanicTab.gd` extends `SystemList.gd` too; by path
-  the chain is game ← TurretLockableFacing ← WeaponMaxPowerSwitch. It keeps its row first and this mod keeps its row
-  last, each moving only its own cells, and their keys differ. `getTarget` falls through to the parent with
-  `.getTarget()`, and `update` with
-  `.update()`; `_ready` and `_physics_process` never call the parent's (Godot runs them at every level).
+- **Stacking.** Other mods may extend `PDT.gd` and `SystemList.gd` too. A locked turret fires with its `firepower`, so
+  whatever zeroes that still keeps it from firing. The facing lock's row stays last in the Mechanic tab, and the mod
+  moves only its own cells; its key is `Shared.gd` `KEY`, which another mod's key must not take. `getTarget` falls
+  through to the parent with `.getTarget()`, and `update` with `.update()`; `_ready` and `_physics_process` never call
+  the parent's (Godot runs them at every level).
 - Members. `Code.gd`: the constants `_TLF_ALIGNED`, `_TLF_POWER_NEEDED` and `_TLF_CENTRE`; the variables
   `_tlfHardpoint`, `_tlfFireWithNoLock`, `_tlfReturnToDefault`, `_tlfApplied`, `_tlfSide` and `_tlfAngle`; the
   functions `_tlfRefresh()`, `_tlfTurret()`, `_tlfLocked()`, `_tlfTurn()` and `_tlfSideOf()`; overrides `_ready`,
@@ -110,10 +108,9 @@ Before reporting a bug with turrets to the game's developers, check that it also
   `_tlfSwitched()`; overrides `update`, and adds `_input`. `Shared.gd`: `LOCK_META`, `MOUNTS_GROUP`, `KEY_ACTION`,
   `KEY`, the `FACING_ANGLE_*` constants, `FORMAT_VERSION`, `addKey()`, `mounts()`, `isLocked()`, `setLocked()`,
   `weapons()`, `angle()`, `setAngle()`, `modId()` and `modVersion()`.
-- Tested outside the game, in a headless Godot 3.6 with the game's `PDT.gd`, `SystemList.gd`, `DamageLabel.gd` and
-  the Mechanic tab's switch and damage cell, on stub ships, hardpoints and weapons (the `turret` suite of the
-  repository's test harness, also with CombatSimulator, as is its `combat` suite, and with WeaponMaxPowerSwitch, as
-  is its `power` suite). The real check is playing the game.
+- Tested outside the game, in a headless Godot 3.6 with the game's `PDT.gd`, `SystemList.gd`, `DamageLabel.gd` and the
+  Mechanic tab's switch and damage cell, on stub ships, hardpoints and weapons (the `turret` suite of the repository's
+  test harness, also with other mods that extend the same game scripts). The real check is playing the game.
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.

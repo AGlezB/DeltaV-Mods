@@ -3,7 +3,7 @@ extends Reference
 # ServiceNotifier's settings model, shared by Code.gd and SettingsUI.gd: one instance (shared()) holds the current
 # values, and the rule both use to tell which services the mod watches (kindOf). The values are kept per save game, in
 # the game's UI store (CurrentGame.state.ui, which CurrentGame.saveToFile writes with the rest of the state), under the
-# mod's id from Mod.manifest, as CrewCheapHireNotifier's are: each save has its own money and its own services bought.
+# mod's id from Mod.manifest: each save has its own money and its own services bought.
 
 signal settingsChanged()
 

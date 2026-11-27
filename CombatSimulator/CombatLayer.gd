@@ -192,7 +192,7 @@ func _fullRect(control: Control):
 	control.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 # The end confirmation: the question and Yes / No, in the game's theme (the Tuning screen's, as the dialog uses:
-# `confirmTheme`), as ShipCopyPaste's dialog is built. Exclusive: clicks outside it do nothing.
+# `confirmTheme`). Exclusive: clicks outside it do nothing.
 func _buildConfirmation(confirmTheme):
 	_confirm = ConfirmationDialog.new()
 	_confirm.name = "EndConfirmation"

@@ -1,5 +1,9 @@
 # ArmAltPullBehavior - Changes
 
+## 1.6.3
+- The README no longer names other mods: where the mod meets another one, it says what it does there in general
+  terms.
+
 ## 1.6.2
 - Licensed under the MIT License instead of the GNU GPLv3: the LICENSE in the zip and the README's *About* and
   *Disclaimer* say so.

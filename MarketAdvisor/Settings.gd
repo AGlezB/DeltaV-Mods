@@ -3,7 +3,7 @@ extends Reference
 # MarketAdvisor's settings model, shared by Code.gd, SettingsUI.gd and StationMenu.gd (which reads only alertMark): one
 # instance (shared()) holds the current values. They are kept per save game, in the game's UI store
 # (CurrentGame.state.ui, which CurrentGame.saveToFile writes with the rest of the state), under the mod's id from
-# Mod.manifest, as CrewCheapHireNotifier's are: each save has its own money, and so its own floor. The same entry holds
+# Mod.manifest: each save has its own money, and so its own floor. The same entry holds
 # the tonnes the Trade button bought to keep cash in (parked), which aren't a setting.
 
 signal settingsChanged()
@@ -100,8 +100,8 @@ const SETTINGS = {
 }
 
 # The layout of the saved entry. Renaming a saved key without a migration is a major version.
-# 2: without alertInsurance and alertScrapwright, the Services entry's switches, which moved to ServiceNotifier. An
-# entry that still has them loads without them, and loses them the next time it is written.
+# 2: without alertInsurance and alertScrapwright, the Services entry's switches, which the mod no longer has. An entry
+# that still has them loads without them, and loses them the next time it is written.
 const FORMAT_VERSION = 2
 
 var cfg = {}

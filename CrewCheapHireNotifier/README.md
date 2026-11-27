@@ -170,11 +170,9 @@ Marks the Crew entry of the Enceladus Prime menu while someone cheap is for hire
     which the D-pad moves from entry to entry, and the game is played with a gamepad.
   - The badge's `mouse_filter` is `PASS`, so it gets the mouse's enter and exit and the mouse wheel still scrolls the
     list.
-  - The Hire button and the entry's labels are left as the game draws them, for other mods too
-    (CrewHighlightJobAndSalary colors the labels).
-  - **With CrewPerfectSort**, which extends the same script and overrides `fillCrew` too: mods load by path, so the
-    chain is game ← CrewCheapHireNotifier ← CrewPerfectSort. CrewPerfectSort calls the parent's `fillCrew` first and
-    only reorders the entries, so the badges stay. Both load orders are tested.
+  - The Hire button and the entry's labels are left as the game draws them, so other mods can change them too.
+  - Another mod that extends the same script and overrides `fillCrew` too, calling the parent's first and only
+    reordering the entries, keeps the badges, in either load order (tested).
 - **The settings screen** is one more of the station's right-hand screens: a child of
   `EnceladusMenu/MenuContainer/MarginContainer/CanvasLayer/MarginContainer` (`enceladus/HidingMarginContainer.gd`,
   whose `hideOnFocusOf` is the menu, so it is `../../CanvasLayer/MarginContainer` from there). It copies the live
@@ -188,13 +186,13 @@ Marks the Crew entry of the Enceladus Prime menu while someone cheap is for hire
   creates it on first use and calls `hidefoka()` before showing it, as focusing an entry does. Without the container
   or its Tuning screen (the demo's menu), there is no settings screen and no Shift badge, Shift+Click is a plain click
   and its gamepad twin does nothing.
-  - **The description window** (`_descriptionWindow()`), nested as `Tuning.tscn` nests its own, without the
-    simulator's parts, with the live Tuning screen's theme, margins and panel (`GAME_WINDOW_MARGIN`, `GAME_WINDOW`,
-    `GAME_WINDOW_INSIDE`), as DiveSkipTransit's settings screen builds it. On every `tuningChanged` (a row emits it
-    when it gets the focus too) it shows the row's setting's `label` + `DESCRIPTION_SUFFIX`, a key the Label translates,
-    as `Tuning.gd` `tuningChanged` does: for a crew limit row, the crew limit's. It keeps room for `DESCRIPTION_LINES`
-    lines (`_keepDescriptionHeight()`), so the groups below don't move as it changes; a longer description makes it
-    grow. On opening, it shows the first row's, which takes the focus.
+  - **The description window** (`_descriptionWindow()`), nested as `Tuning.tscn` nests its own, without the simulator's
+    parts, with the live Tuning screen's theme, margins and panel (`GAME_WINDOW_MARGIN`, `GAME_WINDOW`,
+    `GAME_WINDOW_INSIDE`). On every `tuningChanged` (a row emits it when it gets the focus too) it shows the row's
+    setting's `label` + `DESCRIPTION_SUFFIX`, a key the Label translates, as `Tuning.gd` `tuningChanged` does: for a
+    crew limit row, the crew limit's. It keeps room for `DESCRIPTION_LINES` lines (`_keepDescriptionHeight()`), so the
+    groups below don't move as it changes; a longer description makes it grow. On opening, it shows the first row's,
+    which takes the focus.
   - **The groups:** the first holds the settings that are not per job (the threshold and the tolerance), titled
     `GROUP_LABEL`, one row per setting named by its `label`. Each per-job setting (the crew limit) has a group of its
     own, titled by its `label`, with one row per job named by the job's key (`CREW_OCCUPATION_*`), sorted by the
@@ -245,10 +243,8 @@ Marks the Crew entry of the Enceladus Prime menu while someone cheap is for hire
 - Both extensions override `_ready` and `_notification` and do not call the parent's (`HireableCrew.gd` has a
   `_ready`, `EnceladusMenu.gd` neither): Godot runs every level of them by itself, `_ready` base first. A menu without
   a `Crew` button is left alone.
-- Four other mods extend `EnceladusMenu.gd` for their own entries: DealerNotifier, DiveSkipTransit, MarketAdvisor and
-  ServiceNotifier. Mods load by path, so the chain is game ← CrewCheapHireNotifier ← DealerNotifier ← DiveSkipTransit
-  ← MarketAdvisor ← ServiceNotifier; each writes only its own entry's text, their member names differ, and opening
-  one's screen hides the others' (`hidefoka`).
+- Other mods may extend `EnceladusMenu.gd` for their own entries: this one writes only the Crew entry's text, and
+  opening another screen hides its settings screen (`hidefoka`), as opening its own hides the others.
 - Members of the menu's extension (`Code.gd`): `CrewCheapHireNotifier`, `_CHEAP_HIRE_SETTINGS_UI` and
   `_CHEAP_HIRE_BADGE_SCRIPT` (preloads), `_CHEAP_HIRE_ALERT`, `_CHEAP_HIRE_SETTINGS_TOOLTIP` and
   `_CHEAP_HIRE_SETTINGS_TOOLTIP_PAD` (translation keys), `_CHEAP_HIRE_TUNING_SCREEN`, `_cheapHireButton`,
@@ -260,10 +256,9 @@ Marks the Crew entry of the Enceladus Prime menu while someone cheap is for hire
   `_CHEAP_HIRE_BADGE_TEXT` (translation keys), `_CHEAP_HIRE_CURRENCY`, `_CHEAP_HIRE_BADGE`, `_markCheapHires()`,
   `_cheapHireBadgeText()`, `_cheapHireTooltip()`, `_cheapHireAnchor()`, `_cheapHireBadge()` and
   `_cheapHireInitials()`.
-- **`Badge.gd`** is the same file in every mod that has a Shift badge (CombatSimulator, CrewCheapHireNotifier,
-  DealerNotifier, DiveSkipTransit, MarketAdvisor and ServiceNotifier): keep the copies identical. Constants:
-  `SMALL_FONT_THEME`, `TOOLTIP_DELAY`, `TOOLTIP_FADE`, `BUTTON_HOVER_MUTE` (how long the game's tooltip node keeps its
-  hover sound off as the mouse crosses the edge of a badge that lets it through to a button), `PAD_MODIFIER`,
+- **`Badge.gd`** is the same file in every mod of the repository that has a Shift badge: keep the copies identical.
+  Constants: `SMALL_FONT_THEME`, `TOOLTIP_DELAY`, `TOOLTIP_FADE`, `BUTTON_HOVER_MUTE` (how long the game's tooltip node
+  keeps its hover sound off as the mouse crosses the edge of a badge that lets it through to a button), `PAD_MODIFIER`,
   `PAD_BUTTON`, `PAD_MODIFIER_NAME` and `PAD_BUTTON_NAME` (as the game's gamepad glyphs name them,
   `hud/components/controls-xbox-key-sheet.png`) and `PAD_TEXT`. Functions: the static `isPadShortcut(event)`,
   `dress(button, text, padText)`, `hangBeside(button, gap)`, `setShiftTooltips(keyKey, padKey, modName)` and
@@ -272,12 +267,12 @@ Marks the Crew entry of the Enceladus Prime menu while someone cheap is for hire
   `TuningItems.gd`, `TuningFloatValue.gd`, `AnalogControlSlider.gd`, `HireableCrew.gd`, `CrewBio.gd`,
   `PlaySoundsOnTheseButtons.gd` and `Shower.tscn`. The station and the Hire tab are built in code as their scenes nest
   them, with a stub of a Hire screen entry's scene and stubs of `CurrentGame` and of the Crew and Tuning screens (the
-  `crew` suite of the repository's test harness), alone and with CrewPerfectSort in both load orders. The badge's
-  text is checked wherever it is shown, and its size when the text gets shorter; its tooltip with a mouse moved
-  through the scene tree's input, and with a gamepad on the Hire button's focus. The Shift badge's text and tooltip
-  are checked with each control scheme and after a language change, and Shift+Click's gamepad twin with gamepad button
-  events. The crew limit rows' value and its colours are checked on opening and as a slider moves, the descriptions on
-  opening and on a row's focus. The real check is playing the game.
+  `crew` suite of the repository's test harness), alone and, in both load orders, with another mod that reorders the
+  Hire screen's entries. The badge's text is checked wherever it is shown, and its size when the text gets shorter; its
+  tooltip with a mouse moved through the scene tree's input, and with a gamepad on the Hire button's focus. The Shift
+  badge's text and tooltip are checked with each control scheme and after a language change, and Shift+Click's gamepad
+  twin with gamepad button events. The crew limit rows' value and its colours are checked on opening and as a slider
+  moves, the descriptions on opening and on a row's focus. The real check is playing the game.
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.

@@ -254,10 +254,10 @@ func _sraFitList():
 		list.add_constant_override("margin_bottom", height)
 
 # The Shift badge (Badge.gd), in the Repair button's own frame and font colour (read once the button is in the tree,
-# where the screen's theme gives them), inside the button on the left, centred on it from top to bottom, as
-# CombatSimulator's on the simulator's button: as far from the button's left edge as the button keeps its text from its
-# edges (_sraBadgeInset). A Button doesn't lay out its children, so the badge hangs from it directly, anchored to the
-# middle of its left side, and grows right, up and down to its minimum size; the button makes room for it
+# where the screen's theme gives them), inside the button on the left, centred on it from top to bottom: as far from
+# the button's left edge as the button keeps its text from its edges (_sraBadgeInset). A Button doesn't lay out its
+# children, so the badge hangs from it directly, anchored to the middle of its left side, and grows right, up and down
+# to its minimum size; the button makes room for it
 # (_sraFitBadge). On the button, it lets the mouse through: a click on it is the button's, Shift+Click too. It keeps its
 # look while the button is disabled: Shift+Click still opens the settings then.
 func _sraMakeShiftBadge():
@@ -744,8 +744,8 @@ func _sraParkExact(info: Dictionary):
 	info.data.unreachable = unreachable
 	info.systems = systems
 
-# A trial ship built from `full` (a ship's whole config), set up out of sight, as ShipSaleAdvisor's (and the Fleet
-# entries') trial ships are: a dummy, its reactor off, in a cutscene, in a viewport of its own, its systems read in full
+# A trial ship built from `full` (a ship's whole config), set up out of sight, as the Fleet entries' trial ships are: a
+# dummy, its reactor off, in a cutscene, in a viewport of its own, its systems read in full
 # once set up and their conditions worked out (_SRA_SETTLE_FRAMES); null when it can't be set up. A coroutine. Free it
 # with _sraTrialDone.
 func _sraTrial(full: Dictionary):

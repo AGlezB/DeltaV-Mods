@@ -43,9 +43,7 @@ Where a mod opens its settings, or a screen of its own, with Shift+Click on a st
 Shift badge beside the entry, or on the button, is the reminder. With a gamepad, the badge shows the two buttons to use
 instead: hold the first and press the second on the highlighted entry or button.
 
-The two arm mods work together or alone. Do not install `CrewPerfectSort` together with `CrewSortByJobAndSalary`, the
-older mod it replaced: both sort the same lists. Nor `TransponderAltCodes` together with `AltTransponderCodes`, the
-same mod under its old name: both would load.
+The two arm mods work together or alone.
 
 ## Mods that change how the game plays
 

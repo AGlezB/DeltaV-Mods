@@ -81,7 +81,6 @@ func setup(tuning: Control, title: String):
 
 # The description's window, nested as Tuning.tscn nests its own (WindowMargin > Window > … > Description, without the
 # simulator's parts), with the live Tuning screen's theme, margins and panel; where the game lacks them, it is plain.
-# As DiveSkipTransit's settings screen builds it.
 func _descriptionWindow(tuning: Control) -> Control:
 	var margin = MarginContainer.new()
 	margin.name = "WindowMargin"

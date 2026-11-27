@@ -1,7 +1,7 @@
 extends PanelContainer
 
 # MarketAdvisor's settings screen: one more of the station's right-hand screens, opened in the Mineral Market's place
-# from its Trade button (Code.gd), built as DiveSkipTransit's is. It copies the Mineral Market screen's frame and place,
+# from its Trade button (Code.gd). It copies the Mineral Market screen's frame and place,
 # and is built from the game's own Tuning parts, the way enceladus/Tuning.tscn nests them: the header, a window with the
 # description of the selected setting (framed as the Tuning screen's), then groups of sliders and switches. Under the
 # cash group's rows, a row of the same layout shows the cash reserve they make, with its tolerance's range, its value

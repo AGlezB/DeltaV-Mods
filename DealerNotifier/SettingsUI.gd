@@ -115,8 +115,7 @@ func setup(dealer: Control, title: String):
 	vb.add_child(_scroll)
 	vb.add_child(_buttons())
 
-# Select all and Select none, side by side under the list, as CombatSimulator's dialog has its own, with the game's
-# button sounds.
+# Select all and Select none, side by side under the list, with the game's button sounds.
 func _buttons() -> HBoxContainer:
 	var buttons = HBoxContainer.new()
 	buttons.name = "Buttons"

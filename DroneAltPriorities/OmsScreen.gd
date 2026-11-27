@@ -1,8 +1,7 @@
 extends "res://hud/Hud.gd"
 
-# DroneAltPriorities's OMS tab, added to every OMS right after the Geologist tab, as GeologyByMass adds its own: the
-# settings for the ship's tug and haul plants (SettingsUI.gd), which the plants read from the ship's config
-# (Settings.gd).
+# DroneAltPriorities's OMS tab, added to every OMS right after the Geologist tab: the settings for the ship's tug and
+# haul plants (SettingsUI.gd), which the plants read from the ship's config (Settings.gd).
 #
 # Stacking: instance falls through to the parent with `.instance()`; new members start with `_`.
 

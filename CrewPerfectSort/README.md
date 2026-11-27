@@ -33,13 +33,11 @@ salary; in a dive, the crew a derelict's conversation offers to send over on EVA
   the game's order, and nothing changes in the save.
 - `Shared.gd` holds the code the scripts share, static, reached through the constant `CrewPerfectSort`: the Your Crew
   order (`yourCrewBefore`), which both the Your Crew screen and the EVA choice sort by.
-- CrewCheapHireNotifier extends `HireableCrew.gd` too: by path the chain is game ← CrewCheapHireNotifier ←
-  CrewPerfectSort, and this mod only reorders the entries, so their marks stay. CombatSimulator and TransponderAltCodes
-  extend `CurrentGame.gd` too: by path the chain is game ← CombatSimulator ← CrewPerfectSort ← TransponderAltCodes,
-  each overriding other functions.
-- Tested in the harness's `crew` suite, beside CrewCheapHireNotifier: the Hire screen's order, and the EVA choice's
-  from crew hired in another order, with benched and on-leave crew left out. The Your Crew screen is tested only in
-  the game.
+- Other mods can extend the same scripts: this mod only reorders the entries the game has added, so what another mod
+  puts on them stays, and of `CurrentGame.gd` it overrides only `getSpecificMemberNr`.
+- Tested in the harness's `crew` suite, also beside another mod that marks the Hire screen's entries: the Hire screen's
+  order, and the EVA choice's from crew hired in another order, with benched and on-leave crew left out. The Your Crew
+  screen is tested only in the game.
 - A game update that changes those scripts can break the screens or the EVA choice: if one misbehaves, remove the
   mod.
 
@@ -47,8 +45,6 @@ salary; in a dive, the crew a derelict's conversation offers to send over on EVA
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.
 2. Put the mod's zip in it, and remove any other version of the mod from there: they would all load. Do not unzip it.
 3. Launch the game with `--enable-mods`.
-
-Do not install it together with `CrewSortByJobAndSalary`, which sorts the same lists.
 
 Mods are unofficial and can break after game updates. Keep a backup of your save.
 

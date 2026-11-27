@@ -1,7 +1,7 @@
 extends PanelContainer
 
 # ShipSaleAdvisor's settings screen: one more of the station's right-hand screens, opened by Shift+Click (or its
-# gamepad twin) on a Sell button of the Fleet screen (Code.gd), built as MarketAdvisor's is. It copies the Fleet
+# gamepad twin) on a Sell button of the Fleet screen (Code.gd). It copies the Fleet
 # screen's frame and place, and is built from the game's own Tuning parts, the way enceladus/Tuning.tscn nests them:
 # the header, a window with the description of the selected setting (framed as the Tuning screen's), then the group of
 # sliders. It behaves like the game's screens (enceladus/Tuning.gd, enceladus/Crew.gd): the Shower fades it in and out,

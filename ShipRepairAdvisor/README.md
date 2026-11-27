@@ -88,8 +88,8 @@ or brings. Shift+Click on Repair opens its settings.
 - Script extension of `res://enceladus/Repairs.gd` (`installScriptExtension` in `ModMain.gd`), the Repairs screen's
   script. The tag `group = Repairs` in `Mod.manifest` names the screen. Its files: `Code.gd` (the extension),
   `Advisor.gd` (the plans: static functions of plain data, which touch neither the game nor the scene), `ParkDialog.gd`
-  (Park's confirmation), `Settings.gd` and `SettingsUI.gd` (the setting and its screen, as MarketAdvisor's) and
-  `Badge.gd`, the same file as the other mods'.
+  (Park's confirmation), `Settings.gd` and `SettingsUI.gd` (the setting and its screen) and `Badge.gd`, the same file in
+  every mod of the repository that has a Shift badge.
 - **The row** (`_sraBuildRow`): a `MarginContainer` named `ShipRepairAdvisor` added to the screen, which lays each of
   its children over its whole panel, so the row asks for the bottom only (`SIZE_SHRINK_END`), and the list's margin
   (`_SRA_LIST_MARGIN`) keeps the rows clear of it (`_sraFitList`). Inside, `Row`: the `Table` (a two-column grid at its
@@ -128,12 +128,12 @@ or brings. Shift+Click on Repair opens its settings.
   Buy is disabled, or whose piece didn't get fitted, is left out (`_sraLeftOutSlots`).
 - **The confirmation's figures** (`_sraParkExact`) are read on a trial ship (`_sraTrial`), built with
   `Shipyard.createShipByConfig` from a copy of the player's config with every slot bought for on the piece it gets and
-  its members' damage cleared, in a viewport of its own world on the screen (`_SRA_TRIAL_NODE`, `_SRA_TRIAL_SIZE`,
-  never drawn), set up as ShipSaleAdvisor's trial ships are (a dummy, reactor off, in a cutscene; up to
-  `_SRA_TRIAL_FRAMES` frames), then freed (`_sraTrialDone`). From it: the repairs of the members whose slot isn't
-  bought for (priced and judged by a copy of a row's script, out of the tree, told the trial ship), the members no
-  button reaches, and each out-and-back's second purchase (the cheapest piece's price less what the other piece's systems are
-  worth new). Park ignores further presses meanwhile (`_sraParkChecking`).
+  its members' damage cleared, in a viewport of its own world on the screen (`_SRA_TRIAL_NODE`, `_SRA_TRIAL_SIZE`, never
+  drawn), set up as the Dealer and Fleet entries set up their ships (`SystemBuyUI.gd`: a dummy, reactor off, in a
+  cutscene; up to `_SRA_TRIAL_FRAMES` frames), then freed (`_sraTrialDone`). From it: the repairs of the members whose
+  slot isn't bought for (priced and judged by a copy of a row's script, out of the tree, told the trial ship), the
+  members no button reaches, and each out-and-back's second purchase (the cheapest piece's price less what the other
+  piece's systems are worth new). Park ignores further presses meanwhile (`_sraParkChecking`).
 - **The dialog** (`ParkDialog.gd`), made on first use as a child of the screen, so it takes the station's menu theme: a
   `ConfirmationDialog` as the game's (no title, `popup_centered`, the game's `OK` and `CANCEL`, Cancel focused). The
   question and the notes in the dialog's font, wrapping at `MAX_WIDTH_SHARE` of the screen; the lines a two-column
@@ -145,18 +145,17 @@ or brings. Shift+Click on Repair opens its settings.
   close it alone: its `_input` runs before the screen's (`Repairs.gd` `_input`, which asks the action, not the event),
   and marks every later event of that frame handled too. It closes when the screen hides.
 - **The settings screen** (`SettingsUI.gd`), made on first use among the station's screens, copies the Repairs screen's
-  frame and title and the Tuning screen's description window (`_SRA_TUNING`), is built from the game's Tuning parts,
-  and behaves as MarketAdvisor's: `hidefoka`, the Shower, Esc, B and Start bringing the Repairs screen back with Repair
+  frame and title and the Tuning screen's description window (`_SRA_TUNING`), is built from the game's Tuning parts, and
+  behaves as the game's screens: `hidefoka`, the Shower, Esc, B and Start bringing the Repairs screen back with Repair
   highlighted. The estimates' rows are copies of the slider's line. Shift+Click and its gamepad twin are read on the
   Repair button's `gui_input`, before the button presses (`_sraOnRepairInput`, `accept_event`), disabled or not.
-- **The Shift badge** (`_sraMakeShiftBadge`, `Badge.gd` `dress`) hangs inside the Repair button, as CombatSimulator's on
-  the simulator's button: anchored to the middle of its left side, as far from its edge as the button keeps its text
-  (`_sraBadgeInset`); the button aligns its text right and widens to fit both (`_sraFitBadge`, whenever either changes
-  size), and the badge lets the mouse through, so a click on it is the button's. The row has its own copy of the game's
-  tooltip node (`_SRA_GAME_TOOLTIPS`), which shows the badge's tooltip (`_SRA_SETTINGS_TOOLTIP`,
-  `_SRA_SETTINGS_TOOLTIP_PAD`) on hover and, with a gamepad, while Repair is highlighted, and gives both buttons the
-  rows' hover and focus sounds; at the bottom of the screen the tooltip goes above the badge (`_process`,
-  `_sraPlaceTooltip`).
+- **The Shift badge** (`_sraMakeShiftBadge`, `Badge.gd` `dress`) hangs inside the Repair button: anchored to the middle
+  of its left side, as far from its edge as the button keeps its text (`_sraBadgeInset`); the button aligns its text
+  right and widens to fit both (`_sraFitBadge`, whenever either changes size), and the badge lets the mouse through, so
+  a click on it is the button's. The row has its own copy of the game's tooltip node (`_SRA_GAME_TOOLTIPS`), which shows
+  the badge's tooltip (`_SRA_SETTINGS_TOOLTIP`, `_SRA_SETTINGS_TOOLTIP_PAD`) on hover and, with a gamepad, while Repair
+  is highlighted, and gives both buttons the rows' hover and focus sounds; at the bottom of the screen the tooltip goes
+  above the badge (`_process`, `_sraPlaceTooltip`).
 - `_ready` (the parent's runs first, by itself), `_process` (the game's script has none) and `createRepairMenuFor`, an
   ordinary function that calls the parent's first.
 - Members of the extension: the preload constant `ShipRepairAdvisor` (`Settings.gd`), the constants `_SRA_*`, the
@@ -164,7 +163,13 @@ or brings. Shift+Click on Repair opens its settings.
   `_sraParkDialog`, `_sraShiftBadge`, `_sraTooltips`, `_sraTooltipOffset`, `_sraSettingsScreen`, `_sraQueued`,
   `_sraRunning`, `_sraLeftOut`, `_sraLeftOutSlots`, `_sraShipChanges` and `_sraParkChecking`, and the functions `_sra*`
   (the row, the badge and its tooltip, the settings, the plans' data, the rounds, Park's purchases, the trial ship and
-  the confirmation). `Badge.gd`'s members are listed in DiveSkipTransit's README. No other mod extends `Repairs.gd`.
+  the confirmation).
+- **`Badge.gd`**: keep the copies identical. Constants: `SMALL_FONT_THEME`, `TOOLTIP_DELAY`, `TOOLTIP_FADE`,
+  `BUTTON_HOVER_MUTE` (how long the game's tooltip node keeps its hover sound off as the mouse crosses the edge of a
+  badge that lets it through to a button), `PAD_MODIFIER`, `PAD_BUTTON`, `PAD_MODIFIER_NAME` and `PAD_BUTTON_NAME` (as
+  the game's gamepad glyphs name them, `hud/components/controls-xbox-key-sheet.png`) and `PAD_TEXT`. Functions: the
+  static `isPadShortcut(event)`, `dress(button, text, padText)`, `hangBeside(button, gap)`,
+  `setShiftTooltips(keyKey, padKey, modName)` and `attachTooltip(tooltips, focusOwner)`.
 - Tested outside the game, in a headless Godot 3.6 with the game's `Repairs.gd`, `Repairs.tscn` and its rows
   (`SystemShipRepairUI.gd`), the game's Equipment items (`SystemShipUpgradeUI.gd`) under a stub of the Equipment screen
   with the game's `updatePricesAndAvailability` and `buy`, ships whose systems follow the game's price formulas and keep

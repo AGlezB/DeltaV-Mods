@@ -90,10 +90,10 @@ also happens without the mod.
     a ship: it keeps the game's.
   - `NewGamePlusScreen.gd` overrides `rerollNames()`: `_tacModel` set to the model of `CurrentGame.initialShip` (the
     new game's ship) around the parent's call, through `set` and `get`.
-- With CombatSimulator, which extends `CurrentGame.gd` too, from `_init` as well: by path the chain is game ←
-  CombatSimulator ← TransponderAltCodes. They override different functions (CombatSimulator `giveXp`, `setStory`,
-  `recordEncounter`, `setDestinationHighlight` and `addShip`), and their members differ (the `transponder` and
-  `combat` suites of the repository's test harness load them together).
+- Other mods may extend `CurrentGame.gd` too, from `_init` as well: `_ready` doesn't call the parent's (Godot runs
+  every level by itself), `getNewTransponder` makes the code itself and falls through to the parent's only without a
+  model to name, and `getTransponder`, `validateState` and `createPlayerShip` call the parent's (the `transponder` and
+  `combat` suites of the repository's test harness load it with another such mod).
 - New members, all prefixed `_tac`: `_tacModel`, `_tacModelCode`, `_tacIsGameCode`, `_tacRecode`, `_tacNodeAdded`,
   `_tacShipAdded`, `_tacAddSuffix`, `_tacKeepName` (the name a suffixed or re-coded object keeps: the old code's
   stored name, or the one the game makes from it), `_tacDockAdded`, and the constants of what it matches in the game
@@ -115,9 +115,6 @@ also happens without the mod.
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.
 2. Put the mod's zip in it, and remove any other version of the mod from there: they would all load. Do not unzip it.
 3. Launch the game with `--enable-mods`.
-
-Do not install it together with `AltTransponderCodes`, the mod it replaces (the same mod under its old name): both
-would load.
 
 Mods are unofficial and can break after game updates. Keep a backup of your save.
 

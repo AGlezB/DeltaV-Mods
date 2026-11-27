@@ -1,8 +1,7 @@
 # ArmAltTargetSelection - ΔV: Rings of Saturn
 
 Changes how the AR-1500 salvage arm (`SYSTEM_SALVAGE_ARM` on a ship) chooses its
-target. Station dock arms are left alone. Works together with `ArmAltPullBehavior`, but does not
-need it (the two do not touch each other's code).
+target. Station dock arms are left alone.
 
 ![What the mod changes, shown on the Eagle-Prospector-VP](../_wiki/images/ArmAltTargetSelection-area.png)
 
@@ -65,7 +64,7 @@ Before reporting a bug with the arm to the game's developers, check that it also
 - **Intake centerline:** the line through the entry point along the direction the arm faces (the arm's local
   up). For a grinder or excavator at the front that is the ship's centerline; for the OCP-209, whose arm
   mounts are turned, it runs straight out through the side opening. (The arm's tilted `feedVelocity`
-  is not used.) `ArmAltPullBehavior` uses the same entry point and direction for its opening on ships with a grinder or excavator (it leaves the others to the game).
+  is not used.)
 - All of these are taken from the ship's own nodes, so any ship that mounts an arm works without a list of models.
 
 ### 4. Switching off and on

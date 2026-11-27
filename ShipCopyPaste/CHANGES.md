@@ -1,5 +1,9 @@
 # ShipCopyPaste - Changes
 
+## 1.2.1
+- The README no longer names other mods: where the mod meets another one, it says what it does there in general
+  terms.
+
 ## 1.2.0
 - On the Fleet screen, *Copy*, *Switch ship* and *Sell this ship* sit closer together, their icons
   `_SHIP_COPY_PASTE_ICON_GAP` apart instead of the game's wide spacing, so a long ship name has more room before it is

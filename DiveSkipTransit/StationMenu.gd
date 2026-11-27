@@ -1,8 +1,7 @@
 extends "res://enceladus/EnceladusMenu.gd"
 
-# The station menu (enceladus/EnceladusMenu.gd). DiveSkipTransit's settings open with Shift+Click on its dive entry,
-# the way CrewCheapHireNotifier's open from the Crew entry: a Shift badge beside the entry says so in its tooltip, and a
-# plain click on the entry still launches a dive.
+# The station menu (enceladus/EnceladusMenu.gd). DiveSkipTransit's settings open with Shift+Click on its dive entry: a
+# Shift badge beside the entry says so in its tooltip, and a plain click on the entry still launches a dive.
 
 # The settings (which skips are on): their model, shared with the settings screen and the skips.
 const DiveSkipTransit = preload("res://DiveSkipTransit/Settings.gd")

@@ -1,5 +1,10 @@
 # CrewPerfectSort - Changes
 
+## 1.3.2
+- The README no longer names other mods: where the mod meets another one, it says what it does there in general
+  terms.
+- The README no longer warns against the older mod this one replaced.
+
 ## 1.3.1
 - Licensed under the MIT License instead of the GNU GPLv3: the LICENSE in the zip and the README's *About* and
   *Disclaimer* say so.

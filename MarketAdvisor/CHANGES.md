@@ -1,5 +1,11 @@
 # MarketAdvisor - Changes
 
+## 1.3.4
+- The README and the code's comments no longer name other mods: where the mod meets another one, they say what it
+  does there in general terms.
+- The README explains the texts' loading and lists `Badge.gd`'s members itself, instead of pointing to another mod's
+  README.
+
 ## 1.3.3
 - The row under your cash in the Mineral Market's header reads *Parked in ore:*, with a colon, and its value sits a
   space's width further from the caption, clear of the colon (`MARKETADVISOR_PARKED`).

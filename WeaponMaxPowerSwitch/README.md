@@ -80,8 +80,7 @@ without the mod.
   `_WMPS_CABIN_LIGHT`, the Adrenaline booster's node, in every ship the player can fly; `_wmpsCabinLights`): its
   `modulate` and its spotlight's `color` (`lightNode`, a `Light2D`), kept first in `_wmpsLightWas` and put back when
   switched off. `CabinLight.gd` sets only the glow's alpha (`self_modulate`) and the spotlight's energy and visibility
-  (`Settings.cfg.display.lights` against `lightEssentiality`), never a colour, so the tint holds. DiveDisableAdrenalineBooster
-  extends `CabinLight.gd` only to switch the booster off when a dive starts, which leaves the colours alone.
+  (`Settings.cfg.display.lights` against `lightEssentiality`), never a colour, so the tint holds.
 - **The row** (`MechanicTab.gd`): built on the list's first `update()` once the ship is set up, cell by cell as the
   game lays out a system's row (`update`, `makeTogglerFor`, `makeLabelFor`, `makeCtrlsFor`, and `damageLabel({})` for
   the damage columns a system leaves empty), so the columns stay aligned: the switch (`toggleButton`,
@@ -118,17 +117,15 @@ without the mod.
   `_WMPS_TOOLTIP`, `_WMPS_ALARM_ON`, `_WMPS_ALARM_OFF`, `_wmpsCells`, `_wmpsSwitch`, `_wmpsLabel`, `_wmpsKeys`,
   `_wmpsAlarmPlayer`, `_wmpsAlarmLeft`, `_wmpsAlarm(times)`, `_wmpsAlarmFinished()`, `_wmpsReady()`, `_wmpsRow()`,
   `_wmpsBuild()`, `_wmpsKeyHint()` and `_wmpsSwitched()`. `Shared.gd`: `KEY_ACTION`, `KEY` and `addKey()`.
-- Stacks with DiveSkipTransit and GeologyByMass, which extend `ship-ctrl.gd` too (other functions), with
-  DiveDisableAdrenalineBooster (above), and with TurretLockableFacing, which extends `SystemList.gd` too: by path the
-  chain is game ← TurretLockableFacing ← WeaponMaxPowerSwitch. This mod keeps its row first and that one its row last,
-  each moving only its own cells, and their keys differ.
-- Tested only outside the game, in a headless Godot 3.6 (the `power` suite of the repository's test harness): the
-  switch on ships of the game's `ship-ctrl.gd`, out of the tree, with the game's `massdriver.gd`, `laser.gd` and
-  `emp.gd` held by its `WeaponSlot.gd` and `PDT.gd`, and its `CabinLight.gd`; the row, the key, the alarm's cues and the
-  gamepad on the game's `SystemList.gd` with its row parts, the alarm on its `PitchAdjustedAudio.gd`. Also with
-  DiveSkipTransit and GeologyByMass loaded, in every order (`power`, `skip`), with DiveDisableAdrenalineBooster
-  (`power`, `dive`), and with TurretLockableFacing, in both orders (`power`, `turret`). The real check is playing the
-  game.
+- **Stacking.** Other mods may extend `ship-ctrl.gd` and `SystemList.gd` too: `getTunedValue` falls through to the
+  parent's for every value the switch doesn't decide, and `update` calls the parent's first; `_input` (the game's
+  script has none) takes only the mod's key, `Shared.gd` `KEY`, which another mod's key must not take. The switch's row
+  stays first in the Mechanic tab, and the mod moves only its own cells.
+- Tested only outside the game, in a headless Godot 3.6 (the `power` suite of the repository's test harness): the switch
+  on ships of the game's `ship-ctrl.gd`, out of the tree, with the game's `massdriver.gd`, `laser.gd` and `emp.gd` held
+  by its `WeaponSlot.gd` and `PDT.gd`, and its `CabinLight.gd`; the row, the key, the alarm's cues and the gamepad on
+  the game's `SystemList.gd` with its row parts, the alarm on its `PitchAdjustedAudio.gd`. Also with other mods that
+  extend the same game scripts loaded, in every order. The real check is playing the game.
 
 ## Install
 1. In the game folder (next to `Delta-V.exe`), create a folder named `mods`.

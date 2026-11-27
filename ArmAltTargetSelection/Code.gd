@@ -108,7 +108,6 @@ func _buildArea():
 # Where targets go in: between the grinder's two rotors, or between the excavator's two claws
 # (the ship's centre if it has neither, e.g. the OCP-209, whose arms feed into the middle of its side
 # opening). The values come from the ship's own nodes, so every ship model is covered.
-# ArmAltPullBehavior uses the same points for its opening, so the two mods agree.
 func _intakePosition() -> Vector2:
 	for system in INTAKES:
 		var s = ship.hasSystem(system)

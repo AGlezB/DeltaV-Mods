@@ -1,7 +1,7 @@
 extends PanelContainer
 
 # DiveSkipTransit's settings screen: one more of the station's right-hand screens, opened from the menu's dive entry
-# (StationMenu.gd), built as CrewCheapHireNotifier's is. It copies the Tuning screen's frame and place and is built from
+# (StationMenu.gd). It copies the Tuning screen's frame and place and is built from
 # the game's own Tuning parts, the way enceladus/Tuning.tscn nests them: the header, a window with the description of
 # the selected setting, then groups of switches and sliders; between the window and the groups, the note that explains
 # the remass mark. It behaves like the game's screens (enceladus/Tuning.gd, enceladus/Crew.gd): the Shower fades it in
