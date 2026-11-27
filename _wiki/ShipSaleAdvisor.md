@@ -48,6 +48,8 @@ How the mod decides:
 
 It only works on ships you can sell: not the one you fly, nor one in maintenance (the game greys out their sell
 buttons). The mod doesn't switch ships to get one ready, so the ship you fly and the crew aboard stay as they are.
+It leaves the Dealer's trade-in alone too: when you buy a ship with the *Trade-in* switch on, the ship you fly is sold
+as the game sells it.
 
 ## Settings
 
