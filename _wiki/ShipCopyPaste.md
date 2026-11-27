@@ -17,13 +17,17 @@ it:
 **Copy** only works on ships of exactly the same model as the one you fly. When it is greyed out, point at it to see
 why. The ship you fly has no **Copy** button: there is nothing to copy onto itself.
 
+To make room for **Copy**, the three buttons (**Copy**, *Switch ship* and *Sell this ship*) sit closer together than
+the game spaces them, so long ship names still fit.
+
 **Without the mod:**
 
 ![The Fleet screen with four ships: the one you fly, a spare of the same model, and two ships of other models](images/ShipCopyPaste-fleet-without.png)
 
-**With the mod:** Copy on the spare of the same model, and greyed out on the ships of other models.
+**With the mod:** Copy on the spare of the same model, and greyed out on the ships of other models, with the buttons
+closer together.
 
-![The same Fleet screen, with the Copy buttons before Switch ship](images/ShipCopyPaste-fleet-with.png)
+![The same Fleet screen, with the Copy buttons before Switch ship, and the three buttons closer together](images/ShipCopyPaste-fleet-with.png)
 
 The window asks to make the ship you fly like the other one, with a row for each part of the setup. Where the two
 ships differ, the row has a switch, on when the window opens: switch off what you don't want copied. Where they are

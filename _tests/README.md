@@ -361,7 +361,10 @@ WeaponMaxPowerSwitch.
   `validateEmployment` that records the crew list it would put aboard).
   Checks that the market's entry gets nothing; every Fleet entry gets Copy, then a spacer, right before Use, Copy a copy
   of Use; Copy shows on the other ships' entries, the spacer on the current ship's (Copy's size, the mouse and the
-  focus passing by), so the details and Use sit at the same x on every entry; Copy enabled on another ship of the
+  focus passing by), so the details and Use sit at the same x on every entry; Copy, Use and Sell share copies of the
+  menu theme's normal, hover, pressed and disabled button styles, with the same side margins in each, their icons
+  `ICON_GAP` apart with the row's separation counted, the theme's styles keeping their margins (checked against a fresh
+  load of their files) and the market entry's buttons keeping theirs; Copy enabled on another ship of the
   current ship's model, disabled on another model with the tooltip saying why; Copy's icon has the Use icon's size,
   flags and colours (light strokes, dark edge), and differs from it; switching ships swaps Copy and the spacer. The
   comparisons: no crew list is no crew; values by what they hold (arrays in any order, ints as floats); a piece kept
@@ -1114,7 +1117,7 @@ WeaponMaxPowerSwitch.
   orders; the same 167 with DealerNotifier too; 3 control checks with `-Mods @()`), `geology` 106 (the same with
   DiveSkipTransit too, in both load orders, with LidarContactCallout too, and with WeaponMaxPowerSwitch too, in both;
   5 control checks with `-Mods @()`),
-  `fleet` 95 (the same with ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too, and with ShipSaleAdvisor too, in
+  `fleet` 98 (the same with ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too, and with ShipSaleAdvisor too, in
   both load orders; 3 control checks with `-Mods @()`), `skip` 135 (138 with CrewCheapHireNotifier too, the same with
   DealerNotifier as well; the same 135 with CombatSimulator too, and with GeologyByMass and WeaponMaxPowerSwitch too, in
   every load order; 13 control checks with `-Mods @()`), `dealer` 130 (133

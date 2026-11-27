@@ -8,7 +8,8 @@ screen's prices.
 - **What:** on the Fleet screen, right before *Switch ship*, every other ship gets a *Copy* button (two sheets). It is
   enabled on the ships of the exact same model as the one you fly, and opens a confirmation dialog that makes the ship
   you fly like that ship. A disabled *Copy*'s tooltip says why. The ship you fly has no *Copy*: there is nothing to copy
-  onto itself.
+  onto itself. *Copy*, *Switch ship* and *Sell this ship* sit closer together than the game spaces its buttons, their
+  icons `_SHIP_COPY_PASTE_ICON_GAP` apart, so that the third button doesn't cost a long ship name its end.
 - **Why:** repairs take hours. With two identical ships you can switch to the spare and dive while the other one is
   repaired, but each ship keeps its own equipment, tuning, mineral targeting and crew list, and the game has no way to
   carry them from one ship to another.
@@ -55,6 +56,15 @@ screen's prices.
   space to a hidden child, so without it that entry's details would sit further right than the others'. *Copy* is
   enabled when the ship's `model` is the current ship's (`CurrentGame.state.ship`) and its config is in
   `CurrentGame.state.garage`; a disabled one gets a tooltip saying why. The menu theme dims a disabled button's icon.
+- **The spacing:** the entry's buttons are flat, with a 48 px icon and the menu theme's button styles
+  (`menu/MenuTheme.tres`: `ButtonRoundCorners.tres` for normal, hover and pressed, `ButtonRoundCornersDisabled.tres`
+  for disabled), whose 16 px side margins, with the `HBox`'s `separation`, set the icons far apart. A Button takes its
+  least size from its `normal` style even when flat, and draws its icon at the offset of its state's style, so
+  `_shipCopyPasteTighten` gives *Copy*, `Use` and `Sell` (`_SHIP_COPY_PASTE_SELL`) one copy each of the four styles
+  (`_SHIP_COPY_PASTE_TIGHT_STYLES`), all with the same side margins: what `_SHIP_COPY_PASTE_ICON_GAP`, which a user may
+  edit inside the zip, leaves once the row's separation is counted. The theme's styles are shared, so they are never
+  edited. The focus frame keeps the theme's style: drawn over the whole button, under the icon, it now reaches behind
+  the icon's edges. The spacer takes *Copy*'s narrower size, so the entries stay lined up.
 - **The confirmation dialog**, made on the first *Copy* as a child of the entry: a `ConfirmationDialog`, as the game's
   own (the station's pause menu, `enceladus/PauseLayerEnceladus.tscn`: no title, `popup_centered()`, *Cancel*
   focused), with the game's button keys `OK` and `CANCEL` (the entry's Buy confirmation's). It inherits the entry's menu
@@ -124,9 +134,10 @@ screen's prices.
   `_shipCopyPasteSpacer`, `_shipCopyPasteDialog`, `_shipCopyPasteTitle`, `_shipCopyPasteParts`, `_shipCopyPasteRows`,
   `_shipCopyPasteStates`, `_shipCopyPasteList`, `_shipCopyPasteProseFont`, `_shipCopyPasteChoices`,
   `_shipCopyPastePlanShown`, `_shipCopyPasteShown`, `_shipCopyPasteFilling` and `_shipCopyPasteClosedFrame`, and the
-  functions `_shipCopyPaste*` (the button, icon, plan, comparisons, dialog and applying).
+  functions `_shipCopyPaste*` (the button, spacing, icon, plan, comparisons, dialog and applying).
 - ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice find the entries by their script's path, which the extension
-  keeps (`take_over_path`); tested together.
+  keeps (`take_over_path`); tested together. ShipSaleAdvisor extends the same script and changes what `Sell` does; this
+  mod only narrows `Sell`'s margins; tested together.
 - Tested outside the game, in a headless Godot 3.6 with the game's `SystemBuyUI.gd` and `SystemShipUpgradeUI.gd` in
   stubs of their scenes (with the game's confirmation animations and `Use` icon), the game's Tuning switch, stubs of the
   Fleet and Equipment screens, of the ships and of `CurrentGame` (the `fleet` suite of the repository's test harness),

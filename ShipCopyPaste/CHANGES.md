@@ -1,5 +1,13 @@
 # ShipCopyPaste - Changes
 
+## 1.2.0
+- On the Fleet screen, *Copy*, *Switch ship* and *Sell this ship* sit closer together, their icons
+  `_SHIP_COPY_PASTE_ICON_GAP` apart instead of the game's wide spacing, so a long ship name has more room before it is
+  cut short. The three buttons get copies of the game's button styles with narrower side margins; the game's own
+  styles are left as they are, and so are the ship market's entries.
+- Constants: new `_SHIP_COPY_PASTE_SELL`, `_SHIP_COPY_PASTE_ICON_GAP` (which a user may edit inside the zip) and
+  `_SHIP_COPY_PASTE_TIGHT_STYLES`. Function: new `_shipCopyPasteTighten` (README, *For modders*).
+
 ## 1.1.1
 - Licensed under the MIT License instead of the GNU GPLv3: the LICENSE in the zip and the README's *About* and
   *Disclaimer* say so.

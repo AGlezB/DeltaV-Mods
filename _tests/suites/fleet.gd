@@ -407,6 +407,35 @@ func run():
 	for e in entries:
 		columns.append([e.get_node("HBox/V").get_global_rect().position.x, e.get_node("HBox/Use").get_global_rect().position.x])
 	check("the details and Use at the same x on every entry, the current ship's too", columns[0] == columns[1] and columns[1] == columns[2], columns)
+	# The row's buttons closer together: Copy, Use and Sell share copies of the theme's styles with side margins that put
+	# their icons ICON_GAP apart, the row's separation counted. A Button takes its least size from `normal` and draws its
+	# icon at its state's style's offset, so every state keeps the same margins.
+	var buttons = [copy[copied], copied.get_node("HBox/Use"), copied.get_node("HBox/Sell")]
+	var tightStyles = spare._SHIP_COPY_PASTE_TIGHT_STYLES
+	var theme = load("res://menu/MenuTheme.tres")
+	var shared = true
+	for style in tightStyles:
+		var tight = buttons[1].get_stylebox(style)
+		var normal = buttons[1].get_stylebox("normal")
+		for button in buttons:
+			shared = shared and button.has_stylebox_override(style) and button.get_stylebox(style) == tight
+		shared = shared and tight != theme.get_stylebox(style, "Button") and tight.content_margin_left == normal.content_margin_left and tight.content_margin_right == normal.content_margin_right
+	check("Copy, Use and Sell share copies of the theme's normal, hover, pressed and disabled styles, with the same side margins in each (the icon doesn't move on hover or when disabled)", shared)
+	var gaps = []
+	for i in [0, 1]:
+		var a = buttons[i]
+		var b = buttons[i + 1]
+		var end = a.get_global_rect().position.x + a.get_stylebox("normal").content_margin_left + a.icon.get_width()
+		gaps.append(b.get_global_rect().position.x + b.get_stylebox("normal").content_margin_left - end)
+	check("the icons of Copy and Use, and of Use and Sell, ICON_GAP apart, the row's separation counted", gaps == [float(spare._SHIP_COPY_PASTE_ICON_GAP), float(spare._SHIP_COPY_PASTE_ICON_GAP)], [gaps, spare._SHIP_COPY_PASTE_ICON_GAP])
+	var untouched = true
+	for style in tightStyles:
+		var kept = theme.get_stylebox(style, "Button")
+		var fresh = ResourceLoader.load(kept.resource_path, "", true)
+		untouched = untouched and kept.content_margin_left == fresh.content_margin_left and kept.content_margin_right == fresh.content_margin_right
+		for nodeName in ["Use", "Buy", "Sell"]:
+			untouched = untouched and not sale.get_node("HBox/" + nodeName).has_stylebox_override(style)
+	check("the theme's styles keep their margins, and the market's entry its buttons' styles", untouched)
 	check("Copy enabled on the other ship of the current ship's model, with its tooltip", not copy[copied].disabled and copy[copied].hint_tooltip == spare._SHIP_COPY_PASTE_TIP_COPY)
 	check("disabled on a ship of another model, the tooltip saying so", copy[other].disabled and copy[other].hint_tooltip == spare._SHIP_COPY_PASTE_TIP_COPY_MODEL)
 	var useIcon = use.icon

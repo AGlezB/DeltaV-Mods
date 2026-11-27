@@ -130,8 +130,8 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
    - ServiceNotifier: `Code.gd` → `enceladus/EnceladusMenu.gd` (the alert mark on the Services entry, from the game's
      own rows of the Services screen, and Shift+Click on it opening its settings screen, which copies the Services
      screen's frame and the Tuning screen's description window).
-   - ShipCopyPaste: `Code.gd` → `enceladus/SystemBuyUI.gd` (the Fleet screen's entries; it prices through the
-     Equipment screen's items).
+   - ShipCopyPaste: `Code.gd` → `enceladus/SystemBuyUI.gd` (the Fleet screen's entries, whose buttons it also sets
+     closer together; it prices through the Equipment screen's items).
    - ShipRepairAdvisor: `Code.gd` → `enceladus/Repairs.gd` (the Repairs screen: the row at its bottom, with the Repair
      button, which presses the screen's own Fix and Replace, its table, and the Park button, which also buys through the
      Equipment screen's items, after its confirmation; Shift+Click on Repair, or its gamepad twin, opening its settings
@@ -245,8 +245,10 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
   Fleet screen's entries (`owned`): by path the chain is game ← ShipCopyPaste ← ShipSaleAdvisor. Both override `_ready`
   and `_input` (the game's script has no `_input`) without calling the parent's; ShipCopyPaste overrides
   `checkCurrentAndOwned`, calling the parent's first, which ShipSaleAdvisor calls once Sell's offer is worked out;
-  ShipSaleAdvisor overrides `_on_Sell_pressed`, falling through to the parent's, which ShipCopyPaste leaves alone. Their
-  member names must stay distinct. Loaded together in `fleet` and `sale` (both orders).
+  ShipSaleAdvisor overrides `_on_Sell_pressed`, falling through to the parent's, which ShipCopyPaste leaves alone.
+  ShipCopyPaste gives `Use` and `Sell`, with its Copy, copies of their button styles with narrower side margins
+  (`add_stylebox_override`), which ShipSaleAdvisor doesn't touch. Their member names must stay distinct. Loaded together
+  in `fleet` and `sale` (both orders).
 - CombatSimulator (`Turret.gd`) and TurretLockableFacing (`Code.gd`) both extend `ships/modules/PDT.gd`: by path the
   chain is game ← CombatSimulator ← TurretLockableFacing. They override different functions (CombatSimulator `fire` and
   `perhapsFire`; TurretLockableFacing `getTarget`, and `_ready` and `_physics_process`, without calling the parent's).

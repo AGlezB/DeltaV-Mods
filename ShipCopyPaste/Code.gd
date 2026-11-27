@@ -10,7 +10,9 @@ extends "res://enceladus/SystemBuyUI.gd"
 #   `model`), its tooltip saying why when it isn't. The current ship's entry has nothing to copy onto itself, so it gets
 #   a spacer of Copy's size instead: the ship's name stretches and the rest of the row is packed at its right end
 #   (enceladus/SystemBuyUI.tscn), and a hidden control takes no space, so without it that entry's details would sit
-#   further right than the others'.
+#   further right than the others'. Copy, Use and Sell get narrower side margins (copies of the theme's button styles,
+#   menu/MenuTheme.tres: 16 px each side of a 48 px icon), so their icons sit _SHIP_COPY_PASTE_ICON_GAP apart and the
+#   ship's name keeps more room.
 # - Copy opens a confirmation dialog, a ConfirmationDialog as the game's own (the station's pause menu,
 #   enceladus/PauseLayerEnceladus.tscn: no title, popup_centered, Cancel focused), in the entry's menu theme: the
 #   question, then one row per part of the setup (settings, crew aboard, equipment), each with the game's Tuning switch
@@ -52,6 +54,15 @@ const _SHIP_COPY_PASTE_LIDAR_DEFAULT = "defaultLidar"
 # lists take.
 const _SHIP_COPY_PASTE_USE = "HBox/Use"
 const _SHIP_COPY_PASTE_PROSE = "HBox/Margin"
+# The entry's Sell button, whose margins the mod narrows with Use's and Copy's.
+const _SHIP_COPY_PASTE_SELL = "HBox/Sell"
+# The space between two neighbouring icons of the row (Copy, Use, Sell), in pixels: the row's own separation plus the
+# buttons' side margins, which the mod sets to make up the rest. A user may edit it.
+const _SHIP_COPY_PASTE_ICON_GAP = 10
+# The button styles given those margins: `normal` sizes a button, flat or not, and each state's style places its icon,
+# so all four change together (or the icon would shift on hover or when disabled). The focus frame, drawn over the
+# whole button, keeps its own.
+const _SHIP_COPY_PASTE_TIGHT_STYLES = ["normal", "hover", "pressed", "disabled"]
 # The game's keys for the confirmation's buttons (the entry's Buy confirmation, BuyConfirm and BuyCancel).
 const _SHIP_COPY_PASTE_OK = "OK"
 const _SHIP_COPY_PASTE_CANCEL = "CANCEL"
@@ -173,6 +184,25 @@ func _shipCopyPasteBuild():
 	box.add_child(spacer)
 	box.move_child(spacer, use.get_index())
 	_shipCopyPasteSpacer = spacer
+	_shipCopyPasteTighten([_shipCopyPasteCopy, use, get_node_or_null(_SHIP_COPY_PASTE_SELL)])
+
+# The row's buttons with side margins that put their icons _SHIP_COPY_PASTE_ICON_GAP apart, the row's separation
+# counted: copies of each button's styles (the theme's are shared, never edited), one per style for the entry.
+func _shipCopyPasteTighten(buttons: Array):
+	var model = buttons[0]
+	var rest = max(0, _SHIP_COPY_PASTE_ICON_GAP - model.get_parent().get_constant("separation"))
+	var left = floor(rest / 2.0)
+	var right = rest - left
+	for style in _SHIP_COPY_PASTE_TIGHT_STYLES:
+		var box = model.get_stylebox(style)
+		if box == null:
+			continue
+		box = box.duplicate()
+		box.content_margin_left = left
+		box.content_margin_right = right
+		for button in buttons:
+			if button is Button:
+				button.add_stylebox_override(style, box)
 
 # A copy of the Use button (its look, size, icon size and smooth scrolling, its icon dimmed when disabled), without its
 # connections. Hidden and disabled until _shipCopyPasteRefresh decides.
