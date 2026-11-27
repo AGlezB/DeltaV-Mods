@@ -116,9 +116,9 @@ msgstr ""
 "works the same either way."
 
 # The caption of the row in the Mineral Market's header, under your cash, with what the ore the Trade button bought to
-# keep your cash in would sell for today (written like the game's "Insured for").
+# keep your cash in would sell for today. The value follows it in a label of its own, with a gap the mod adds.
 msgid "MARKETADVISOR_PARKED"
-msgstr "Parked in ore"
+msgstr "Parked in ore:"
 
 # The row at the bottom of the Mineral Market: the button, and the advice. A mineral is written as the market writes
 # it (Be, W, Fe…).

@@ -1,5 +1,12 @@
 # MarketAdvisor - Changes
 
+## 1.3.3
+- The row under your cash in the Mineral Market's header reads *Parked in ore:*, with a colon, and its value sits a
+  space's width further from the caption, clear of the colon (`MARKETADVISOR_PARKED`).
+- `Code.gd`: `_maBuildParked()` widens the row's `separation` by the width of a space in the caption's font, once the
+  row is in the tree.
+- README: the header's row.
+
 ## 1.3.2
 - Licensed under the MIT License instead of the GNU GPLv3: the LICENSE in the zip and the README's *About* and
   *Disclaimer* say so.

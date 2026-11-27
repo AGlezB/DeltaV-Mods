@@ -512,6 +512,10 @@ func market():
 		yield(freeStation(s), "completed")
 		return
 	check("market: its caption, the mod's text", r.get_node("InsuranceLabel").text == codeKeys._MA_PARKED and tr(codeKeys._MA_PARKED) != codeKeys._MA_PARKED)
+	var caption = r.get_node("InsuranceLabel")
+	var space = caption.get_font("font").get_string_size(" ").x
+	var gap = r.get_constant("separation")
+	check("market: its value a space of the caption's font further from the caption than the game's row has it", space > 0 and gap >= box.get_node("Insurence").get_constant("separation") + space, [gap, space])
 	check("market: a copy of the game's insurance row without the insurance display's script and sound", r.get_node("Insurance").get_script() == null and not r.has_node("Insurance/Pinger"))
 	check("market: the game's insurance row stays hidden", not box.get_node("Insurence").visible)
 	check("market: nothing parked, nothing worth", parkedValue(s) == parkedText(s) and parkedValue(s) == box.get_node("Money").format % CurrentGame.formatThousands(0), parkedValue(s))

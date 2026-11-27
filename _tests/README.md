@@ -773,7 +773,8 @@ WeaponMaxPowerSwitch.
   as parked, the line comparing
   today's prices with the chart's average, both lines in the Label font of `Badge.gd`'s `SMALL_FONT_THEME`, smaller
   than the Trade button's; the parked row right under your cash, a copy of the game's insurance row
-  without its script and sound, captioned by the mod's text, the game's row still hidden, worth nothing at first. With
+  without its script and sound, captioned by the mod's text, its separation wider than the game's row's by a space of
+  the caption's font, the game's row still hidden, worth nothing at first. With
   cash above the reserve: the advice to buy and what it leaves, the alert mark on the entry; Trade buys the main
   mineral through its slider (its holdings and trade log as the slider makes them), leaves what the advice said, within
   a tonne's price above the reserve, and parks it in the save; then no alert mark, the button disabled, the advice at
@@ -1123,7 +1124,7 @@ WeaponMaxPowerSwitch.
   CombatSimulator too), `combat` 153 (the same with TransponderAltCodes too, and with TurretLockableFacing too, in both
   load orders; 8 control checks with `-Mods @()`),
   `drones` 69 (the same in both load orders, with DroneAltPriorities alone and with LidarContactCallout too; 3 control
-  checks with `-Mods @()`), `market` 124 (4 control checks with `-Mods @()`), `services` 52 (3 control checks with
+  checks with `-Mods @()`), `market` 125 (4 control checks with `-Mods @()`), `services` 52 (3 control checks with
   `-Mods @()`), `sale` 75 with ShipCopyPaste (in both load orders; 2 control checks with `-Mods ShipCopyPaste` and with
   `-Mods @()`), `repairs` 156 (2 control checks with `-Mods @()`), `callout` 89 (the same with DroneAltPriorities and
   GeologyByMass too, in every load order; 3 control checks with `-Mods @()`), `turret` 101 (the same with

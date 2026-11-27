@@ -29,8 +29,9 @@ a trade is due.
   the advice can wait: it sells on a later day of the stay when the chart forecasts a higher price then, and buys on one
   with a lower price, naming the mineral and the date. With the ship ready, it trades now. The forecast is the chart's,
   as good as your crew's geologist makes it (GAME.md *Mineral Market*).
-- **The header:** a row right under your cash, *Parked in ore*, with what the parked tonnes would sell for today. It is
-  the game's own row for your insurance, which the market's header keeps hidden, copied.
+- **The header:** a row right under your cash, *Parked in ore:*, with what the parked tonnes would sell for today. It
+  is the game's own row for your insurance, which the market's header keeps hidden, copied, with a space's width more
+  between its caption and its value, so the value stays clear of the colon.
 - **The alert mark** (the " (*)" after a menu entry's text): on the station menu's Mineral Market entry while the
   advice is to trade now, unless *Mark the Mineral Market entry* is off. That text is all the mod changes in the menu:
   the entry's Shift+Click is left free for other mods. The Services entry's mark, for services that can be bought
@@ -76,7 +77,9 @@ a trade is due.
     list's side margins, its nodes named so a path reaches the button: `Details/MarketAdvisor/Row/Trade`; its two lines
     in the Label font of `Badge.gd`'s `SMALL_FONT_THEME`, a font override, so their colours stay the theme's) and the
     parked row (`_maBuildParked()`: a copy of the header's hidden `Insurence` row, `_MA_HEADER_ROW`, without its
-    scripts, signals and `Pinger` sound, captioned `_MA_PARKED`, its value written with the `Money` label's `format`),
+    scripts, signals and `Pinger` sound, captioned `_MA_PARKED`, its value written with the `Money` label's `format`;
+    once it is in the tree, its `separation` is the theme's plus the width of a space in the caption's font, the gap
+    before the value),
     and works the advice out again, once per frame and after the game's own handlers (`_maQueue()`), on
     `CurrentGame`'s `dayPassed`, `hourPassed`, `moneyChanged`, `moneyOrInsuranceChanged` and `employmentChanged`, on
     the settings' `settingsChanged` and when the screen shows.

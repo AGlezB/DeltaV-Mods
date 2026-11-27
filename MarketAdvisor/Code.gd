@@ -107,7 +107,9 @@ func _ready():
 
 # The parked row, in the header right under your cash: a copy of the game's hidden insurance row, without its scripts
 # and signals (so its value isn't the game's insurance display) and without its sound, shown. Its value is written as
-# the `Money` label writes your cash.
+# the `Money` label writes your cash. Both labels expand, so the gap between the caption and the value is the row's
+# separation, widened by a space of the caption's font, so the value never touches the caption's colon. The gap
+# is set once the row is in the tree, so the station's theme gives both the separation and the font.
 func _maBuildParked():
 	var box = get_node_or_null(_MA_HEADER_BOX)
 	if box == null or not box.get_node_or_null(_MA_HEADER_ROW) is Control:
@@ -127,6 +129,8 @@ func _maBuildParked():
 	caption.text = _MA_PARKED
 	var money = box.get_node_or_null(_MA_HEADER_MONEY)
 	box.add_child_below_node(money if money != null else box.get_node(_MA_HEADER_ROW), row)
+	var space = int(ceil(caption.get_font("font").get_string_size(" ").x))
+	row.add_constant_override("separation", row.get_constant("separation") + space)
 	if money != null and "format" in money:
 		_maMoneyFormat = money.format
 	_maParkedValue = value
