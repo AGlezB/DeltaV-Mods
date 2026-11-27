@@ -19,6 +19,9 @@ msgstr ""
 "count, nor does the chunk's value. The rows decide which chunks keep a full info box, and which ones the arm and the "
 "drones go for."
 
+msgid "GEOLOGYBYMASS_ALL_AT_DIVE"
+msgstr "Enable all minerals at the start of a dive"
+
 msgid "GEOLOGYBYMASS_MINERAL_SWITCH"
 msgstr "Count this mineral: a chunk with at least its mass passes every row of the Geologist tab."
 

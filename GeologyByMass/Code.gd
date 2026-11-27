@@ -21,12 +21,24 @@ extends "res://ships/ship-ctrl.gd"
 # ship's identifiedObjects (identifyMinerals / identifyValue -> ship-ctrl.gd addIdentifiedObject). A chunk not yet
 # identified, the switch off, a row without mineral targeting or another ship: the game decides.
 #
+# At the start of a dive, with the mod's switch for it on, every mineral's switch in the mod's tab is turned on
+# (Settings.gd diveStarted). A dive starts in the ring scene: Game.gd _ready builds the player's ship anew
+# (_respawn_ship -> CurrentGame.recreatePlayerShip) with zone "rings" and initialize true, before adding it to the tree.
+# Its HUD, a child of the ship, has made hud.config, where the settings live, by the ship's _ready. The game's other
+# builds of the player's ship don't match: the station's (enceladus/Enceladus.gd, Upgrades.gd: no zone), the
+# simulator's (zone "sim") and a teleport mid-dive (Game.gd _respawn_ship with `previous`: initialize false). A save
+# always loads at the station (menu/TitleMenu.gd), so the ring scene comes only with a new dive.
+#
 # Stacking: the parent's _ready etc. are never called (Godot runs every level by itself); isValidMineralTarget falls
 # through to the parent with `.isValidMineralTarget()`; new members start with `_`.
 
 const GeologyByMass = preload("res://GeologyByMass/Settings.gd")
 
 var _geologyByMassSettings = null
+
+func _ready():
+	if playerControlled and zone == "rings" and initialize:
+		_geologyByMass().diveStarted()
 
 func isValidMineralTarget(object: RigidBody2D, config: Dictionary) -> bool:
 	if not playerControlled or not ("minerals" in config and "minValue" in config):

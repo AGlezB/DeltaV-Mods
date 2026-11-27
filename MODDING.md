@@ -114,7 +114,8 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
    - DroneAltPriorities: `Code.gd` → `weapons/drone-plant.gd` (the nanodrone plants' choice of target); `OmsScreen.gd`
      → `hud/Hud.gd` (its OMS tab, added right after the Geologist tab as GeologyByMass adds its own).
    - GeologyByMass: `Code.gd` → `ships/ship-ctrl.gd` (the rule every row of the Geologist tab is judged by,
-     `isValidMineralTarget`); `OmsScreen.gd` → `hud/Hud.gd` (its OMS tab, added right after the Geologist tab from
+     `isValidMineralTarget`, and its switch that turns every mineral on in its tab when the player's ship is built for a
+     dive, from `_ready`); `OmsScreen.gd` → `hud/Hud.gd` (its OMS tab, added right after the Geologist tab from
      `instance()`); `GeologistTab.gd` → `hud/SystemMineralList.gd` (the Geologist tab's rows, whose mineral switches and
      Minimum values it disables and dims while its switch is on).
    - LidarContactCallout: `Code.gd` → `hud/Hud.gd` (the player's HUD in a dive or a simulator, whose comms line it
@@ -229,7 +230,8 @@ version (`CHECKED_AGAINST`): then re-check the values it cites and update that c
 - DiveSkipTransit (`Ship.gd`), GeologyByMass (`Code.gd`) and WeaponMaxPowerSwitch (`Code.gd`) all extend
   `ships/ship-ctrl.gd`, every ship's script, from `_init`: by path the chain is game ← DiveSkipTransit ← GeologyByMass ←
   WeaponMaxPowerSwitch. They override different functions (DiveSkipTransit `fastTravelTo`, GeologyByMass
-  `isValidMineralTarget`, WeaponMaxPowerSwitch `getTunedValue`). Their member names must stay distinct. Loaded together
+  `isValidMineralTarget`, WeaponMaxPowerSwitch `getTunedValue`); GeologyByMass also has a `_ready`, which Godot runs at
+  every level, and the other two have none. Their member names must stay distinct. Loaded together
   in `geology` (the first two, both orders), and all three in `skip` and `power` (every order).
 - DiveDisableAdrenalineBooster extends `ships/CabinLight.gd`, whose nodes WeaponMaxPowerSwitch (`Code.gd`) tints red
   while its switch is on (their `modulate` and their spotlight's `color`): DiveDisableAdrenalineBooster only switches the

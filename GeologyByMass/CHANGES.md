@@ -1,5 +1,20 @@
 # GeologyByMass - Changes
 
+## 2.1.0
+- New switch on the mod's OMS tab, *Enable all minerals at the start of a dive*, between the line on what the tab does
+  and the mineral rows, off at first. On, every mineral's switch on the tab turns on when a dive starts, H2O too, so the
+  set narrowed during a dive doesn't carry over to the next; the switch at the top and the least masses stay as they
+  are. It is kept with the ship, as the other settings are, and dimmed with the rows while the switch at the top is
+  off. With a gamepad, the D-pad goes down from the switch at the top to it, then into the mineral switches.
+- `Settings.gd`: new `ALL_AT_DIVE`, `isAllAtDive()` / `setAllAtDive()` and `diveStarted()`; the saved entry holds
+  `allAtDive` too, read as its default where it is missing, so `FORMAT_VERSION` is unchanged.
+- `Code.gd`: new `_ready()`, which calls `diveStarted()` for the player's ship built for a dive.
+- The tab's parts stand closer together, so that with the new switch they still fit the OMS, the line on the geologist
+  included: new `SettingsUI.gd` `SECTION_SPACING`.
+- `SettingsUI.gd`: new `_allAtDive`, `_allAtDiveRow` and `_onAllAtDiveToggled()`.
+- New text `GEOLOGYBYMASS_ALL_AT_DIVE`.
+- README: the new switch, when a dive starts, the members.
+
 ## 2.0.3
 - The line at the bottom of the mod's OMS tab shows the crew's Price prediction accuracy, the figure the Your Crew
   screen shows (morale included), with the game's own text for its name, so it comes in the game's language. It used to

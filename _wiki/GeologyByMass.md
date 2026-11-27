@@ -44,6 +44,11 @@ In the **GBM** tab:
 
 - The switch at the top, *Judge ore by mineral mass instead of the Geologist tab's switches and minimum value*: off at
   first.
+- Under it, *Enable all minerals at the start of a dive*: on, every mineral's switch turns back on, H2O too, each time
+  you launch a dive. If you switch minerals off as your hold fills, to keep your arm and your drones on the ones still
+  worth the space, the next dive starts with all of them again. The switch at the top and the masses stay as you set
+  them. Off at first: then the switches stay as you left them, from one dive to the next. The simulator doesn't count
+  as a dive.
 - One row for each mineral, H2O (water) too:
   - its switch: on, the mineral counts for every row. They start as the game's own do: every mineral on but H2O;
   - its mass, the least kg of it a chunk needs, from 0 kg to 5,000 kg, starting at 0;
@@ -54,11 +59,13 @@ In the **GBM** tab:
   with a happier one. The kg on the info boxes can be off by up to 100 % less that figure: at 60 %, by up to 40 %. Set
   the masses a bit lower or higher to allow for it.
 
-The sliders work like the ones in the *Geologist* tab. While the switch is off the rows are dimmed, but you can still
-set them. Point at a switch or a slider to read what it does. Each ship keeps its own settings, saved with your game.
-If you set masses before the tab had a switch for each mineral, each mineral keeps the mass it needed then.
+The sliders work like the ones in the *Geologist* tab. While the switch at the top is off, everything under it is
+dimmed, but you can still set it. Point at a mineral's switch or a slider to read what it does. Each ship keeps its own
+settings, saved with your game. If you set masses before the tab had a switch for each mineral, each mineral keeps the
+mass it needed then.
 
-With a gamepad, the D-pad moves down from the switch at the top into the mineral switches, up and down either column,
+With a gamepad, the D-pad moves down from the switch at the top to *Enable all minerals at the start of a dive*, then
+into the mineral switches, up and down either column,
 and left and right between a mineral's switch and its slider, and the description of what you select shows under it.
 Press A on a slider to change it with left and right, then A or B when you are done.
 
@@ -93,6 +100,8 @@ GeologyByMass/i18n/en.po GEOLOGYBYMASS_TAB = "GBM" | images/GeologyByMass-settin
 GeologyByMass/Settings.gd ENABLED.default = false -> off at first
 GeologyByMass/i18n/en.po GEOLOGYBYMASS_ENABLED = "Judge ore by mineral mass instead of the Geologist tab's switches and minimum value" | images/GeologyByMass-settings.png
 GeologyByMass/i18n/en.po GEOLOGYBYMASS_HINT = "GeologyByMass mod: while this is on, an identified chunk passes every row of the Geologist tab when it holds at least the mass set below for a mineral switched on here. The rows' own mineral switches and minimum values no longer count, nor does the chunk's value. The rows decide which chunks keep a full info box, and which ones the arm and the drones go for." | images/GeologyByMass-settings.png
+GeologyByMass/Settings.gd ALL_AT_DIVE.default = false -> Off at first
+GeologyByMass/i18n/en.po GEOLOGYBYMASS_ALL_AT_DIVE = "Enable all minerals at the start of a dive" | images/GeologyByMass-settings.png
 GeologyByMass/i18n/en.po GEOLOGYBYMASS_MINERAL_SWITCH = "Count this mineral: a chunk with at least its mass passes every row of the Geologist tab." -> counts for every row
 GeologyByMass/Settings.gd MIN_MASS.default = 0
 GeologyByMass/Settings.gd MIN_MASS.min = 0 -> 0 kg

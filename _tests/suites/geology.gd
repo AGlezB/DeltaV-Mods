@@ -5,9 +5,10 @@ extends "res://harness/suite.gd"
 # the mod's tab, against that mineral's least mass, instead of by its value and the row's own mineral switches
 # (ships/ship-ctrl.gd isValidMineralTarget, which every system asks with its own row); the settings live in the HUD's
 # mineralConfig (the ship's "hud.config"), next to the Geologist tab's own, and the entries of the earlier formats
-# (1.0.0's minMass, 1.1.0's base and extra masses) still load; the tab comes right after the Geologist tab, with a row
-# for every mineral of the market, H2O too: its switch, its name, its least mass and what that is worth at the day's
-# price, and at the bottom a line on the geologist aboard. The rule runs on ships of the game's ship-ctrl.gd (with the
+# (1.0.0's minMass, 1.1.0's base and extra masses) still load; the tab comes right after the Geologist tab, with the
+# switch that turns every mineral on when a dive starts (Code.gd _ready, for the player's ship as Game.gd _respawn_ship
+# builds it), a row for every mineral of the market, H2O too: its switch, its name, its least mass and what that is
+# worth at the day's price, and at the bottom a line on the geologist aboard. The rule runs on ships of the game's ship-ctrl.gd (with the
 # mod, its extension), out of the tree, compared with the same ship on the game's script where the game decides. The
 # tab runs on HUDs from harness/geology_hud.tscn (the game's Hud.gd, with an Inventory placeholder of
 # harness/geology_oms.tscn: the game's OMS.gd and TabsWithGamepadControl.gd, and the OMS's four role tabs) on
@@ -119,6 +120,20 @@ func gameShip(script, hudConfig, player = true):
 	s.playerControlled = player
 	s.shipConfig = {"hud": {"config": hudConfig}}
 	_ships.append(s)
+	return s
+
+# A ship as Game.gd _respawn_ship builds the player's, of the game's ship-ctrl.gd (with the mod, its extension), out of
+# the tree: in `zone`, with `initialize`, its HUD's row holding the mod's entry (under `modId`) with the switch at the
+# top on, Be's least mass `kg`, every mineral switched off but Fe, and the switch for the start of a dive `allAtDive`.
+func diveShip(modId, kg, allAtDive, zone, initialize = true, player = true):
+	var switches = {}
+	for m in CurrentGame.mineralPrices:
+		switches[m] = m == "Fe"
+	var hudConfig = row(CurrentGame.traceMinerals)
+	hudConfig[modId] = {"modVersion": "stored", "enabled": true, "allAtDive": allAtDive, "minMass": {"Be": kg}, "mineralOn": switches}
+	var s = gameShip(load(SHIP), hudConfig, player)
+	s.zone = zone
+	s.initialize = initialize
 	return s
 
 # Whether `ship` answers for `body` as the game does, with each of `configs`, and the game's answers are `expected`
@@ -377,18 +392,44 @@ func run():
 	check("the switch's label stands the tab's TOGGLE_SPACING after it, once laid out", header is HBoxContainer and title is Label and title != toggle and gap == tab.TOGGLE_SPACING, gap)
 	check("each slider shows its stored mass, and after it what that mass is worth at the day's price, as VALUE_FORMAT", values)
 	check("the rows are dimmed while the switch is off, and not while it is on", (grid.modulate == Color.white) == settings.isEnabled() and (settings.isEnabled() or grid.modulate.a < 1.0), grid.modulate)
+	var allAtDive = tab._allAtDive
+	var allAtDiveRow = allAtDive.get_parent()
+	var allAtDiveLabel = allAtDiveRow.get_child(allAtDiveRow.get_child_count() - 1)
+	var box = grid.get_parent()
+	var above = box.get_child(allAtDiveRow.get_index() - 1)
+	var allAtDiveGap = allAtDiveLabel.rect_position.x - (allAtDive.rect_position.x + allAtDive.rect_size.x)
+	check("between the line on what it does and the rows, the switch for the start of a dive: the Geologist tab's (MineralSystemToggle), showing the stored state (ALL_AT_DIVE's default at first), its label ALL_AT_DIVE's, TOGGLE_SPACING after it", allAtDive is CheckButton and allAtDive.get_script().resource_path == "res://hud/components/MineralSystemToggle.gd" and allAtDive.pressed == settings.isAllAtDive() and allAtDive.pressed == model.ALL_AT_DIVE.default and allAtDiveRow is HBoxContainer and allAtDiveRow.get_parent() == box and allAtDiveRow.get_index() == grid.get_index() - 1 and above is Label and above.text == tab.HINT and allAtDiveLabel is Label and allAtDiveLabel != allAtDive and allAtDiveLabel.text == model.ALL_AT_DIVE.label and allAtDiveGap == tab.TOGGLE_SPACING, [allAtDiveRow.get_index(), grid.get_index(), allAtDiveGap])
+	var sectionGap = allAtDiveRow.rect_position.y - (above.rect_position.y + above.rect_size.y)
+	check("the tab's parts stand its SECTION_SPACING apart, once laid out", box.get_constant("separation") == tab.SECTION_SPACING and sectionGap == tab.SECTION_SPACING, sectionGap)
 
 	var before = settings.isEnabled()
 	toggle.pressed = not before
 	check("pressing the switch stores it, in the HUD's mineralConfig", settings.isEnabled() == (not before) and hud.mineralConfig.get(modId, {}).get("enabled") == (not before))
 	toggle.pressed = true
-	check("switched on, the rows are not dimmed", grid.modulate == Color.white, grid.modulate)
+	check("switched on, the rows and the switch for the start of a dive are not dimmed", grid.modulate == Color.white and allAtDiveRow.modulate == Color.white, [grid.modulate, allAtDiveRow.modulate])
 	toggle.pressed = false
-	check("switched off, the rows are dimmed", grid.modulate.a < 1.0, grid.modulate)
+	check("switched off, the rows and the switch for the start of a dive are dimmed", grid.modulate.a < 1.0 and allAtDiveRow.modulate == grid.modulate, [grid.modulate, allAtDiveRow.modulate])
 	tab._switches["H2O"].pressed = true
 	check("pressing a mineral's switch stores it", settings.isMineralOn("H2O") and hud.mineralConfig[modId].get("mineralOn", {}).get("H2O") == true, hud.mineralConfig[modId])
 	tab._switches["H2O"].pressed = false
 	check("and pressing it again stores that", not settings.isMineralOn("H2O") and hud.mineralConfig[modId].mineralOn.H2O == false)
+	allAtDive.pressed = not model.ALL_AT_DIVE.default
+	check("pressing the switch for the start of a dive stores it", settings.isAllAtDive() == (not model.ALL_AT_DIVE.default) and hud.mineralConfig[modId].get("allAtDive") == (not model.ALL_AT_DIVE.default), hud.mineralConfig[modId])
+	allAtDive.pressed = model.ALL_AT_DIVE.default
+	check("and pressing it again stores that", settings.isAllAtDive() == model.ALL_AT_DIVE.default and hud.mineralConfig[modId].allAtDive == model.ALL_AT_DIVE.default)
+	# A dive starting while the tab isn't showing (Settings.gd diveStarted, which Code.gd calls): the tab shows it.
+	settings.setAllAtDive(true)
+	settings.setMineralOn(CurrentGame.traceMinerals[0], false)
+	settings.diveStarted()
+	yield(reopen(tabs, index), "completed")
+	var shownAllOn = allAtDive.pressed
+	for m in minerals:
+		shownAllOn = shownAllOn and tab._switches[m].pressed
+	check("each time the tab shows, it shows the switches as a dive's start left them: every mineral on, H2O too", shownAllOn and tab._switches["H2O"].pressed)
+	settings.setAllAtDive(model.ALL_AT_DIVE.default)
+	for m in minerals:
+		settings.setMineralOn(m, settings.mineralDefault(m))
+	yield(reopen(tabs, index), "completed")
 	var first = minerals[0]
 	var firstSlider = tab._sliders[first]
 	firstSlider.get_node(PRICE_BAR).value = k
@@ -451,9 +492,10 @@ func run():
 	yield(reopen(tabs, index), "completed")
 	TranslationServer.remove_translation(prediction)
 
-	# With a gamepad: down from the switch at the top to the first row's switch, up and down a column (the switches, or
-	# the sliders' values), left and right between a row's switch and its slider's value, and nowhere out of the tab;
-	# each switch and each value carries its description, which its own tooltip node shows when it gets the focus.
+	# With a gamepad: down from the switch at the top to the switch for the start of a dive, then to the first row's
+	# switch, up and down a column (the switches, or the sliders' values), left and right between a row's switch and its
+	# slider's value, and nowhere out of the tab; each mineral's switch and each value carries its description, which its
+	# own tooltip node shows when it gets the focus.
 	var switchColumn = []
 	var valueColumn = []
 	var described = true
@@ -479,10 +521,16 @@ func run():
 		walk.append(tabs.get_focus_owner())
 	check("gamepad: up, left and right stay on the switch at the top", walk == [toggle, toggle, toggle], walk)
 	walk = []
-	for i in minerals.size() + 1:
+	for i in minerals.size() + 2:
 		yield(tapJoy(JOY_DPAD_DOWN), "completed")
 		walk.append(tabs.get_focus_owner())
-	check("gamepad: down goes from it through each mineral's switch, and stays on the last", walk == switchColumn + [switchColumn[lastRow]], walk)
+	check("gamepad: down goes from it to the switch for the start of a dive, then through each mineral's switch, and stays on the last", walk == [allAtDive] + switchColumn + [switchColumn[lastRow]], walk)
+	walk = []
+	allAtDive.grab_focus()
+	for button in [JOY_DPAD_LEFT, JOY_DPAD_RIGHT, JOY_DPAD_UP]:
+		yield(tapJoy(button), "completed")
+		walk.append(tabs.get_focus_owner())
+	check("gamepad: left and right stay on the switch for the start of a dive, up goes back to the switch at the top", walk == [allAtDive, allAtDive, toggle], walk)
 	walk = []
 	for i in [0, lastRow]:
 		switchColumn[i].grab_focus()
@@ -506,7 +554,7 @@ func run():
 		for i in minerals.size():
 			yield(tapJoy(JOY_DPAD_UP), "completed")
 			walk.append(tabs.get_focus_owner())
-	check("gamepad: up goes back through either column, and from the first row to the switch at the top", walk == upValues.slice(1, lastRow) + [toggle] + upSwitches.slice(1, lastRow) + [toggle], walk)
+	check("gamepad: up goes back through either column, and from the first row to the switch for the start of a dive", walk == upValues.slice(1, lastRow) + [allAtDive] + upSwitches.slice(1, lastRow) + [allAtDive], walk)
 	check("gamepad: walking the tab changes nothing", same(hud.mineralConfig.get(modId, {}), beforeWalk), hud.mineralConfig.get(modId))
 
 	# The HUD: its info boxes ask the ship, with the HUD's row, whatever the switch
@@ -656,6 +704,28 @@ func run():
 	ship.playerControlled = true
 	settings.setEnabled(false)
 
+	# The start of a dive: Godot runs Code.gd's _ready as Game.gd _respawn_ship adds the player's ship to the ring scene.
+	# Called directly, it runs the mod's alone (a direct call takes the most derived), not the game's, which needs a whole
+	# ship.
+	var diving = diveShip(modId, k, true, "rings")
+	diving._ready()
+	var dived = diving._geologyByMass()
+	var allOn = true
+	for m in dived.minerals():
+		allOn = allOn and dived.isMineralOn(m)
+	check("a dive starts (the player's ship in the rings, initialize on), the switch for it on: every mineral switched on, H2O too", allOn and dived.isMineralOn("H2O"), diving.shipConfig.hud.config[modId].mineralOn)
+	check("and the switch at the top, the least masses and the switch for the start of a dive as they were", dived.isEnabled() and dived.getMinMass("Be") == k and dived.getMinMass("Fe") == float(mass.default) and dived.isAllAtDive())
+	var untouched = []
+	for built in [diveShip(modId, k, false, "rings"), diveShip(modId, k, true, ""), diveShip(modId, k, true, "sim"), diveShip(modId, k, true, "rings", false), diveShip(modId, k, true, "rings", true, false)]:
+		var beforeDive = JSON.print(built.shipConfig)
+		built._ready()
+		untouched.append(JSON.print(built.shipConfig) == beforeDive)
+	check("nothing changes, nor is stored: the switch for it off, the station's ship (no zone), the simulator's (sim), a teleport's copy (initialize off), another ship", untouched == [true, true, true, true, true], untouched)
+	var noRow = gameShip(load(SHIP), {}, true)
+	noRow.zone = "rings"
+	noRow._ready()
+	check("a ship whose HUD keeps no Geologist tab settings: nothing stored", noRow.shipConfig.hud.config.empty(), noRow.shipConfig)
+
 	# A HUD without mineral targeting: no tab
 	var shipBare = makeShip()
 	var hudBare = load(HUD_SCENE).instance()
@@ -672,11 +742,12 @@ func run():
 	var hud2 = makeHud(ship2)
 	var s2 = hud2._geologyByMass()
 	var config = hud2.mineralConfig
-	var defaults = s2.isEnabled() == enabledDesc.default
+	var defaults = s2.isEnabled() == enabledDesc.default and s2.isAllAtDive() == model.ALL_AT_DIVE.default
 	for m in s2.minerals():
 		defaults = defaults and s2.getMinMass(m) == float(mass.default) and s2.isMineralOn(m) == CurrentGame.traceMinerals.has(m) and s2.mineralDefault(m) == CurrentGame.traceMinerals.has(m)
 	check("a ship without the mod's entry gets the defaults, the switches the game's own for a new row", defaults)
 	s2.setEnabled(enabledDesc.default)
+	s2.setAllAtDive(model.ALL_AT_DIVE.default)
 	s2.setMinMass("Be", mass.default)
 	s2.setMineralOn("Be", true)
 	s2.setMineralOn("H2O", false)
@@ -693,18 +764,19 @@ func run():
 	check("a mass set is clamped to the range, snapped to a step, a non-number gives the default", low == mass.min and high == mass.max and between == mass.min + mass.step and text == float(mass.default), [low, high, between, text])
 	var game = {"minerals": config.minerals.duplicate(), "minValue": config.minValue, "albedo": config.albedo}
 	s2.setEnabled(not enabledDesc.default)
+	s2.setAllAtDive(not model.ALL_AT_DIVE.default)
 	s2.setMinMass("Be", k)
 	s2.setMineralOn("H2O", true)
 	var entry = config.get(modId, {})
 	var everyMineral = entry.get("minMass", {}).keys() == s2.minerals() and entry.get("mineralOn", {}).keys() == s2.minerals()
-	check("stored under the mod's id, with the format and the mod's version, and every mineral's mass and switch", entry.get("formatVersion") == model.FORMAT_VERSION and entry.get("modVersion") == manifestVersion() and s2.modVersion() == manifestVersion() and entry.get("enabled") == (not enabledDesc.default) and entry.get("minMass", {}).get("Be") == k and entry.get("mineralOn", {}).get("H2O") == true and everyMineral and entry.size() == 5, entry)
+	check("stored under the mod's id, with the format and the mod's version, both switches, and every mineral's mass and switch", entry.get("formatVersion") == model.FORMAT_VERSION and entry.get("modVersion") == manifestVersion() and s2.modVersion() == manifestVersion() and entry.get("enabled") == (not enabledDesc.default) and entry.get("allAtDive") == (not model.ALL_AT_DIVE.default) and entry.get("minMass", {}).get("Be") == k and entry.get("mineralOn", {}).get("H2O") == true and everyMineral and entry.size() == 6, entry)
 	check("the Geologist tab's own settings are untouched", config.minerals == game.minerals and config.minValue == game.minValue and config.albedo == game.albedo and config.size() == 4, config.keys())
 	check("stored in the ship's config itself (hud.config), as the game's are", ship2.getConfig("hud.config") == config and ship2.shipConfig.hud.config.has(modId))
 	var ship3 = makeShip(JSON.parse(JSON.print(ship2.shipConfig)).result)
 	var s3 = makeHud(ship3)._geologyByMass()
-	check("after a save and load (JSON) the values are back", s3.isEnabled() == (not enabledDesc.default) and s3.getMinMass("Be") == k and s3.isMineralOn("H2O") and s3.isMineralOn("Fe"), [s3.isEnabled(), s3.getMinMass("Be"), s3.isMineralOn("H2O")])
-	config[modId] = {"enabled": "yes", "minMass": {"Be": mass.min - mass.step, "Fe": "lots", "Pd": mass.max * 2, "V": mass.min + mass.step * 2.6}, "mineralOn": {"Be": "yes", "H2O": true, "Fe": false}}
-	check("a hand-edited entry is clamped, snapped, and non-values give the defaults", s2.isEnabled() == enabledDesc.default and s2.getMinMass("Be") == mass.min and s2.getMinMass("Fe") == float(mass.default) and s2.getMinMass("Pd") == mass.max and s2.getMinMass("V") == mass.min + 3 * mass.step and s2.isMineralOn("Be") and s2.isMineralOn("H2O") and not s2.isMineralOn("Fe"), [s2.isEnabled(), s2.getMinMass("Be"), s2.getMinMass("Fe"), s2.getMinMass("Pd"), s2.getMinMass("V"), s2.isMineralOn("Be")])
+	check("after a save and load (JSON) the values are back", s3.isEnabled() == (not enabledDesc.default) and s3.isAllAtDive() == (not model.ALL_AT_DIVE.default) and s3.getMinMass("Be") == k and s3.isMineralOn("H2O") and s3.isMineralOn("Fe"), [s3.isEnabled(), s3.isAllAtDive(), s3.getMinMass("Be"), s3.isMineralOn("H2O")])
+	config[modId] = {"enabled": "yes", "allAtDive": 1, "minMass": {"Be": mass.min - mass.step, "Fe": "lots", "Pd": mass.max * 2, "V": mass.min + mass.step * 2.6}, "mineralOn": {"Be": "yes", "H2O": true, "Fe": false}}
+	check("a hand-edited entry is clamped, snapped, and non-values give the defaults", s2.isEnabled() == enabledDesc.default and s2.isAllAtDive() == model.ALL_AT_DIVE.default and s2.getMinMass("Be") == mass.min and s2.getMinMass("Fe") == float(mass.default) and s2.getMinMass("Pd") == mass.max and s2.getMinMass("V") == mass.min + 3 * mass.step and s2.isMineralOn("Be") and s2.isMineralOn("H2O") and not s2.isMineralOn("Fe"), [s2.isEnabled(), s2.getMinMass("Be"), s2.getMinMass("Fe"), s2.getMinMass("Pd"), s2.getMinMass("V"), s2.isMineralOn("Be")])
 	config[modId] = {"enabled": true, "minMass": [1, 2], "mineralOn": "all"}
 	var notDictionaries = true
 	for m in s2.minerals():
@@ -718,10 +790,10 @@ func run():
 	var oldSwitches = true
 	for m in s2.minerals():
 		oldSwitches = oldSwitches and s2.isMineralOn(m) == s2.mineralDefault(m)
-	check("a format-1 entry's minMass reads as the least masses, the switches as their defaults", s2.isEnabled() and s2.getMinMass("Be") == k and s2.getMinMass("Fe") == float(mass.default) and oldSwitches)
+	check("a format-1 entry's minMass reads as the least masses, the switches as their defaults", s2.isEnabled() and s2.getMinMass("Be") == k and s2.getMinMass("Fe") == float(mass.default) and oldSwitches and s2.isAllAtDive() == model.ALL_AT_DIVE.default)
 	s2.setMinMass("Fe", changed)
 	entry = config.get(modId, {})
-	check("its first change stores it in this format", entry.get("formatVersion") == model.FORMAT_VERSION and entry.get("enabled") == true and entry.get("minMass", {}).get("Be") == k and entry.get("minMass", {}).get("Fe") == changed and entry.get("mineralOn", {}).get("H2O") == false and entry.size() == 5, entry)
+	check("its first change stores it in this format", entry.get("formatVersion") == model.FORMAT_VERSION and entry.get("enabled") == true and entry.get("allAtDive") == model.ALL_AT_DIVE.default and entry.get("minMass", {}).get("Be") == k and entry.get("minMass", {}).get("Fe") == changed and entry.get("mineralOn", {}).get("H2O") == false and entry.size() == 6, entry)
 	var base = mass.step # a base and an extra mass, and a pair whose sum is past the range
 	var extra = k
 	var stored2 = {"formatVersion": 2, "modVersion": "stored", "enabled": true, "baseMass": base, "extraMass": {"Be": extra, "Pt": mass.max}}
@@ -733,10 +805,10 @@ func run():
 	check("reading it stores nothing", same(config[modId], stored2), config[modId])
 	s2.setMineralOn("V", false)
 	entry = config.get(modId, {})
-	check("its first change stores it in this format, with every mineral's least mass", entry.get("formatVersion") == model.FORMAT_VERSION and entry.get("minMass", {}).get("Be") == base + extra and entry.get("minMass", {}).get("Fe") == base and entry.get("mineralOn", {}).get("V") == false and not entry.has("baseMass") and not entry.has("extraMass") and entry.size() == 5, entry)
+	check("its first change stores it in this format, with every mineral's least mass", entry.get("formatVersion") == model.FORMAT_VERSION and entry.get("minMass", {}).get("Be") == base + extra and entry.get("minMass", {}).get("Fe") == base and entry.get("mineralOn", {}).get("V") == false and entry.get("allAtDive") == model.ALL_AT_DIVE.default and not entry.has("baseMass") and not entry.has("extraMass") and entry.size() == 6, entry)
 
 	# A preheated ship: the HUD's _ready builds the OMS before it loads mineralConfig from the ship
-	var stored = {"formatVersion": model.FORMAT_VERSION, "modVersion": "stored", "enabled": not enabledDesc.default, "minMass": {"Be": k}, "mineralOn": {"H2O": true, "Be": false}}
+	var stored = {"formatVersion": model.FORMAT_VERSION, "modVersion": "stored", "enabled": not enabledDesc.default, "allAtDive": not model.ALL_AT_DIVE.default, "minMass": {"Be": k}, "mineralOn": {"H2O": true, "Be": false}}
 	var hot = {"minerals": CurrentGame.traceMinerals.duplicate(), "minValue": 0, "albedo": 0}
 	hot[modId] = stored
 	var ship4 = makeShip({"hud": {"config": hot}}, true)
@@ -748,12 +820,12 @@ func run():
 	if tab4 != null:
 		var beSlider = tab4._sliders.get("Be")
 		var beValue = tab4._values.get("Be")
-		check("and it shows the ship's stored values", tab4._toggle.pressed == stored.enabled and tab4._switches.H2O.pressed and not tab4._switches.Be.pressed and tab4._switches.Fe.pressed and beSlider != null and beSlider.value == k and beValue != null and beValue.text == worthText(tab4, "Be", k) and (tab4._grid.modulate == Color.white) == stored.enabled, [tab4._toggle.pressed, beSlider.value if beSlider != null else null, beValue.text if beValue != null else null])
+		check("and it shows the ship's stored values", tab4._toggle.pressed == stored.enabled and tab4._allAtDive.pressed == stored.allAtDive and tab4._switches.H2O.pressed and not tab4._switches.Be.pressed and tab4._switches.Fe.pressed and beSlider != null and beSlider.value == k and beValue != null and beValue.text == worthText(tab4, "Be", k) and (tab4._grid.modulate == Color.white) == stored.enabled, [tab4._toggle.pressed, beSlider.value if beSlider != null else null, beValue.text if beValue != null else null])
 		check("and stores nothing on its own", hud4.mineralConfig[modId] == stored and stored.modVersion == "stored")
 
 	# The texts (i18n/en.po), also in a language without them (Godot's fallback, en)
 	var ui = load(UI)
-	var keys = [tabName, enabledDesc.label, ui.HINT, model.MINERAL_SWITCH.label, mass.label, ui.NO_GEOLOGIST]
+	var keys = [tabName, enabledDesc.label, ui.HINT, model.ALL_AT_DIVE.label, model.MINERAL_SWITCH.label, mass.label, ui.NO_GEOLOGIST]
 	var translated = true
 	for key in keys:
 		translated = translated and tr(key) != key

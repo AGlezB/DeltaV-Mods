@@ -295,13 +295,16 @@ WeaponMaxPowerSwitch.
   and the geologist's line of `deriveStats`, and names the stat with a test translation of the game's key for it. The
   mod's settings descriptions come from its `Settings.gd`. Checks that the
   tab comes right after the Geologist tab, titled by its key, once however often the OMS is built, and that opening it
-  stores nothing; its switch, with its label at the mod's spacing (once laid out); a grid of four columns, one row per
+  stores nothing; its switch, with its label at the mod's spacing (once laid out); between the line on what it does and
+  the grid, the switch for the start of a dive (the Geologist tab's, showing the stored state, its label beside it at
+  the mod's spacing); the tab's parts at its `SECTION_SPACING` (once laid out); a grid of four columns, one row per
   mineral of the market, H2O too, in the Geologist tab's order: the mineral's switch (the Geologist tab's, showing the
   stored state, at first the game's own for a new row: every trace mineral on, H2O off), its name, its least mass
   slider (the Geologist tab's parts, the mod's range, step, unit, format, tooltip and bar width, also once laid out)
   and what that mass is worth at the day's price; the switches and the sliders store what they show, the worth follows
-  its slider, and the day's price each time the tab shows; the switch dims the rows; choosing the tab focuses the
-  switch. The line under the grid: the warning with nobody aboard, and with only a Pilot, a Geologist not in the dive
+  its slider, and the day's price each time the tab shows; the switch dims the rows and the switch for the start of a
+  dive, which stores what it shows too; the switches as a dive's start left them each time the tab shows; choosing the
+  tab focuses the switch. The line under the grid: the warning with nobody aboard, and with only a Pilot, a Geologist not in the dive
   crew or one on leave; a Geologist aboard, the crew's Price prediction accuracy as Your Crew shows it, named by the
   game's text, for talents across every Education level; bad morale lowering it and good morale raising it, as on Your
   Crew; the best Geologist in the dive crew among several; brought up to
@@ -314,7 +317,12 @@ WeaponMaxPowerSwitch.
   minimum; every switch off. With an arm's or drone plant's row (H2O switched on, its own Minimum value and albedo):
   H2O still only once switched on on the tab; an identified chunk the game refuses for its value and albedo passes; the
   game decides a chunk not yet identified (by the row's albedo, both ways), a row without mineral targeting, another
-  ship (its AI target, both ways) and the switch off again. The Geologist tab: off, as the game shows it (the HUD's and
+  ship (its AI target, both ways) and the switch off again. The start of a dive, on ships of the game's `ship-ctrl.gd`
+  built as `Game.gd` `_respawn_ship` builds the player's (in the rings, `initialize` on), calling the mod's `_ready`
+  directly (a direct call runs the most derived only, not the game's, which needs a whole ship): with its switch on,
+  every mineral switched on, H2O too, the switch at the top, the least masses and the switch itself as they were;
+  nothing changed or stored with its switch off, for the station's ship (no zone), the simulator's (`sim`), a teleport's
+  copy (`initialize` off) or another ship, nor for a ship whose HUD keeps no Geologist tab settings. The Geologist tab: off, as the game shows it (the HUD's and
   the arm's Minimum value, not the dock's; each row's mineral switches), and that column's title as the game's, taking
   focus; on, once the tab shows, the HUD's and the arm's mineral switches disabled and dimmed with the list's
   `modulateDisabled`, still showing their state, their Minimum values still shown with their values, dimmed, the
@@ -326,19 +334,21 @@ WeaponMaxPowerSwitch.
   nothing; the mineral list, every mineral of the market whatever the HUD's `onlyMinerals`; clamping and snapping of
   what is set or hand-edited, a switch that isn't a bool and masses or switches that aren't a dictionary giving the
   defaults; the entry in the HUD's `mineralConfig` (the ship's `hud.config`) under the manifest's id, with the format
-  and mod versions and every mineral's mass and switch, the game's keys untouched; a JSON round trip; a format-1 entry
-  (`minMass`, read as the least masses) and a format-2 entry (`baseMass` plus each `extraMass`, the base alone without
-  one, capped at the slider's most), reading storing nothing, and the rewrite on the first change. A preheated ship
+  and mod versions, both switches (kept through the other changes) and every mineral's mass and switch, the game's keys
+  untouched; a JSON round trip; a format-1 entry (`minMass`, read as the least masses) and a format-2 entry (`baseMass`
+  plus each `extraMass`, the base alone without one, capped at the slider's most), the switch for the start of a dive
+  at its default, reading storing nothing, and the rewrite on the first change. A preheated ship
   (its HUD builds the OMS before loading `mineralConfig`) gets the tab with its stored values. And the texts of
   `i18n/en.po`, also in a language without them. With DiveSkipTransit too, in either order (both extend
   `ship-ctrl.gd`), the same checks pass. The control checks (the OMS keeps its four tabs; the HUD asks its ship with its
   own row; the ship judges by value against the Minimum value; the Geologist tab shows the HUD's and the arm's Minimum
   value, not the dock's) run on the game's own scripts. With a gamepad: each mineral's switch carries its description,
   taken in by a game's tooltip node of its own, which shows it when the switch gets the focus, and each slider's value
-  its own; up, left and right stay on the switch at the top; down goes from it through each mineral's switch and stays
-  on the last; right goes from a switch to its row's value and stays there, left back and stays there; down goes
-  through the values and stays on the last; up goes back through either column, and from the first row to the switch
-  at the top; and walking the tab changes nothing.
+  its own; up, left and right stay on the switch at the top; down goes from it to the switch for the start of a dive,
+  then through each mineral's switch, and stays on the last; left and right stay on the switch for the start of a dive,
+  up goes back to the switch at the top; right goes from a switch to its row's value and stays there, left back and
+  stays there; down goes through the values and stays on the last; up goes back through either column, and from the
+  first row to the switch for the start of a dive; and walking the tab changes nothing.
 - `fleet` (`suites/fleet.gd`): Fleet entries built from the stub `SystemBuyUI.tscn` (the game's `SystemBuyUI.gd`) as
   `Dealer.gd` `doAddShips` makes them, under a Fleet screen stub (`harness/fleet_screen.gd`, which records
   `shipChanged` and `addShips`, and the Esc presses that reach its `_input`, once per frame, as `Dealer.gd` closes the
@@ -1100,7 +1110,7 @@ WeaponMaxPowerSwitch.
   WeaponMaxPowerSwitch too, in both load orders; 1 control check with `-Mods @()`),
   `boot` 5 (3 control checks with `-Mods @()`), `lidar` 40 (3 control checks with `-Mods @()`), `hud` 13 (the same with
   LidarContactCallout too; 3 control checks with `-Mods @()`), `crew` 167 (171 with CrewPerfectSort too, in both load
-  orders; the same 167 with DealerNotifier too; 3 control checks with `-Mods @()`), `geology` 96 (the same with
+  orders; the same 167 with DealerNotifier too; 3 control checks with `-Mods @()`), `geology` 106 (the same with
   DiveSkipTransit too, in both load orders, with LidarContactCallout too, and with WeaponMaxPowerSwitch too, in both;
   5 control checks with `-Mods @()`),
   `fleet` 95 (the same with ShipHighlightTypeAndPrice and ShipSortByTypeAndPrice too, and with ShipSaleAdvisor too, in

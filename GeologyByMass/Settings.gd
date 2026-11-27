@@ -1,17 +1,25 @@
 extends Reference
 
 # GeologyByMass's settings for one ship, shared by Code.gd (the ship's rule), OmsScreen.gd and SettingsUI.gd (the
-# mod's OMS tab): the switch at the top of the tab, and for each mineral a switch and the least mass. They live where
-# the game keeps the HUD's Geologist tab settings, the ship's config "hud.config" (hud/Hud.gd _ready: its
-# mineralConfig), under the mod's id from Mod.manifest, and are changed in place, as Hud.gd setMinValue changes the
-# Minimum value. So they are saved, loaded and carried with the ship exactly as the game's own are, and the rule reads
-# the same entry the tab writes. Reading never writes: a ship that never had the mod's entry gets the defaults.
+# mod's OMS tab): the switch at the top of the tab, the switch that turns every mineral on when a dive starts, and for
+# each mineral a switch and the least mass. They live where the game keeps the HUD's Geologist tab settings, the
+# ship's config "hud.config" (hud/Hud.gd _ready: its mineralConfig), under the mod's id from Mod.manifest, and are
+# changed in place, as Hud.gd setMinValue changes the Minimum value. So they are saved, loaded and carried with the
+# ship exactly as the game's own are, and the rule reads the same entry the tab writes. Reading never writes: a ship
+# that never had the mod's entry gets the defaults.
 
 # The switch: on, the mod's mineral switches and masses decide which identified chunks pass every row of the Geologist
 # tab (the info boxes, the arm, the drones), in place of each row's mineral switches and Minimum value. The default is
 # declared here only.
 const ENABLED = {
 	"label": "GEOLOGYBYMASS_ENABLED",
+	"default": false,
+}
+
+# The switch above the minerals: on, every mineral's switch is turned on when a dive starts (diveStarted, from Code.gd),
+# Water too, so a set narrowed during a dive doesn't carry over to the next. The default is declared here only.
+const ALL_AT_DIVE = {
+	"label": "GEOLOGYBYMASS_ALL_AT_DIVE",
 	"default": false,
 }
 
@@ -65,6 +73,23 @@ func setEnabled(how):
 	if not available() or how == isEnabled():
 		return
 	_entry().enabled = how
+
+func isAllAtDive() -> bool:
+	return _allAtDiveIn(_saved())
+
+func setAllAtDive(how):
+	how = bool(how)
+	if not available() or how == isAllAtDive():
+		return
+	_entry().allAtDive = how
+
+# At the start of a dive (Code.gd): with ALL_AT_DIVE on, every mineral's switch on. The switch at the top and the least
+# masses stay as they are.
+func diveStarted():
+	if not available() or not isAllAtDive():
+		return
+	for mineral in minerals():
+		setMineralOn(mineral, true)
 
 # A mineral's switch before anything is stored: the game's own default for a new row, on for the trace minerals
 # (CurrentGame.traceMinerals; Hud.gd, DockingArm.gd and drone-plant.gd _ready), so off for Water.
@@ -135,6 +160,10 @@ func _enabledIn(saved: Dictionary) -> bool:
 	var enabled = saved.get("enabled", ENABLED.default)
 	return enabled if enabled is bool else ENABLED.default
 
+func _allAtDiveIn(saved: Dictionary) -> bool:
+	var allAtDive = saved.get("allAtDive", ALL_AT_DIVE.default)
+	return allAtDive if allAtDive is bool else ALL_AT_DIVE.default
+
 func _switchIn(saved: Dictionary, mineral) -> bool:
 	var switches = saved.get("mineralOn")
 	var on = switches.get(mineral) if switches is Dictionary else null
@@ -160,6 +189,7 @@ func _entry() -> Dictionary:
 		"formatVersion": FORMAT_VERSION,
 		"modVersion": modVersion(),
 		"enabled": _enabledIn(saved),
+		"allAtDive": _allAtDiveIn(saved),
 		"minMass": masses,
 		"mineralOn": switches,
 	}

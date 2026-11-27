@@ -40,6 +40,12 @@ game's developers, check that it also happens without the mod.
 - **The overridden controls disabled:** while the switch is on, the Geologist tab disables and dims the mineral
   switches and the *Minimum value* of the rows the mod judges, since they no longer count, as the game dims a switch a
   row can't use. They stay in place, with their values; switched off, they work again, as they were.
+- **All minerals back at each dive:** the switch above the minerals, *Enable all minerals at the start of a dive*,
+  turns every mineral's switch back on, H2O too, when a dive starts. During a dive you may switch minerals off as the
+  hold fills, to keep the arm and the drones on the ones still worth the space; the switches are kept with the ship,
+  so the next dive would start with that narrowed set although the hold is empty again. It leaves the switch at the
+  top and the least masses alone. Off, the switches carry over from one dive to the next. The simulator and the
+  station don't count as a dive.
 - **When it applies:** every time the game asks. Each info box checks again by itself about once a second, the arm
   each time it picks a target, and each drone plant at each of its scans, so a change shows within a second, as a
   change in the Geologist tab does. A chunk not yet identified is left to the game, which judges it by the row's
@@ -49,23 +55,26 @@ game's developers, check that it also happens without the mod.
 - **Settings:** on the OMS tab right after the Geologist tab.
   - The switch at the top: on, the mod's switches and masses decide; off, the Geologist tab's rows do, as without the
     mod.
+  - Under the line on what it does, *Enable all minerals at the start of a dive*: on, every mineral's switch turns on
+    when a dive starts. Dimmed with the rows while the switch at the top is off; it still works.
   - Then one row per mineral of the Geologist tab's columns, H2O too: its switch, its name, a slider with its least
     mass in kg, and what that mass is worth.
   - At the bottom, the line on the geologist aboard, brought up to date, with the worths, each time the tab shows.
   - The sliders are the Geologist tab's own controls: pick the value to change it, then left and right (or drag the
     slider), and accept or cancel to leave. While the switch is off the rows are dimmed, but you can still set them.
-  - Pointing at a switch or a slider, or selecting it, shows what it does. With a gamepad, the D-pad goes down from
-    the switch at the top into the mineral switches, up and down either column (the switches, or the sliders' values),
-    left and right between a row's switch and its slider's value, and never leaves the tab.
+  - Pointing at a mineral's switch or a slider, or selecting it, shows what it does. With a gamepad, the D-pad goes down
+    from the switch at the top to the switch for the start of a dive, then into the mineral switches, up and down either
+    column (the switches, or the sliders' values), left and right between a row's switch and its slider's value, and
+    never leaves the tab.
   - They are kept with your ship, next to the Geologist tab's own settings, and saved and loaded with them. A ship
     that never had them starts from the defaults, as it does for the *Minimum value*. A ship's masses from before the
     least masses keep their thresholds: a mineral's base plus its extra mass becomes its least mass, up to the slider's
     most.
-  - The switch's default is `ENABLED`, and each mineral slider's default, range, step and unit are `MIN_MASS`, both at
-    the top of `GeologyByMass/Settings.gd`, inside the zip.
+  - The switch's default is `ENABLED`, the switch for the start of a dive's `ALL_AT_DIVE`, and each mineral slider's
+    default, range, step and unit are `MIN_MASS`, all at the top of `GeologyByMass/Settings.gd`, inside the zip.
 
 ## For modders
-- Five scripts: `Code.gd` (the rule, a script extension of the ship), `OmsScreen.gd` (adding the tab, a script
+- Five scripts: `Code.gd` (the rule and the start of a dive, a script extension of the ship), `OmsScreen.gd` (adding the tab, a script
   extension of the HUD), `GeologistTab.gd` (disabling the overridden controls, a script extension of the Geologist
   tab), `SettingsUI.gd` (the tab) and `Settings.gd` (the settings model they share).
 - Script extensions (`installScriptExtension` in `ModMain.gd`, in that order) of `res://ships/ship-ctrl.gd`, the script
@@ -95,6 +104,16 @@ game's developers, check that it also happens without the mod.
   `ship-ctrl.gd` `addIdentifiedObject`). Anything else (the switch off, another ship, a row without mineral targeting,
   a chunk not in `identifiedObjects`) falls through to the game's: by the value against `minValue` and the LIDAR
   return against `albedo`.
+- **The start of a dive** (`Code.gd` `_ready`): a dive starts in the ring scene, whose `Game.gd` `_ready` builds the
+  player's ship anew (`_respawn_ship` -> `CurrentGame.recreatePlayerShip`, which hands it the saved config itself,
+  `state.ship.config`) with `zone` "rings" and `initialize` true, then adds it to the tree. The HUD is a child of the
+  ship, so by the ship's `_ready` it has made its `mineralConfig`, where the settings live. For such a ship
+  (`playerControlled`), `Settings.gd` `diveStarted()` switches every mineral on when `ALL_AT_DIVE` is. The game's
+  other builds of the player's ship don't match: the station's (`enceladus/Enceladus.gd`, `Upgrades.gd`, no zone), the
+  simulator's (`zone` "sim", as CombatSimulator's arena sets it too) and the copy that replaces it after a teleport
+  mid-dive (`_respawn_ship` with `previous` sets `initialize` false). A save always loads at the station
+  (`menu/TitleMenu.gd`), so only a new dive reaches the ring scene. The mod's tab is built later, on the ship's
+  `instance` (deferred), so it shows the switches as the dive's start left them.
 - **The tab:** the HUD builds the OMS (`hud/OMS.tscn`) in `instance()`, replacing its `Inventory` placeholder. The
   mod's `instance()` (`OmsScreen.gd`) calls the parent's, then adds its tab with `call_deferred`: a preheated ship's
   HUD calls `instance()` from its `_ready` before it loads `mineralConfig` from the ship, and the tab shows the values
@@ -107,9 +126,13 @@ game's developers, check that it also happens without the mod.
   `hud/components/MineralLabel.tscn` for the names (coloured from `CurrentGame.specificMineralColors`, without focus)
   and `hud/components/PriceLabel.tscn`, the *Minimum value* control, for the sliders, with the mod's format
   (`MASS_FORMAT` and the unit), range, step and bar width (`SLIDER_WIDTH` in `SettingsUI.gd`), and its tooltip on both
-  the bar (`GAME_SLIDER_BAR`) and the value (`GAME_SLIDER_VALUE`, the button the D-pad lands on). The released game
-  draws no Godot tooltips: the control's own tooltip node (`menu/sfx/PlaySoundsOnTheseButtons.tscn`, `GAME_TOOLTIP`)
-  shows them on hover and on focus, and each mineral switch gets one of its own. A grid of four columns, one row per
+  the bar (`GAME_SLIDER_BAR`) and the value (`GAME_SLIDER_VALUE`, the button the D-pad lands on). Between the line on
+  what the tab does and the grid, the switch for the start of a dive (`_allAtDive`, the same switch, with its label
+  beside it), dimmed with the grid while the switch at the top is off. The tab's parts stand `SECTION_SPACING` apart,
+  less than the OMS theme's gap, so that they fit the OMS's height, the line on the geologist included: the game draws
+  its UI in screen pixels (`project.godot` sets no stretch mode), so the OMS is shorter in a smaller window. The
+  released game draws no Godot tooltips: the control's own tooltip node (`menu/sfx/PlaySoundsOnTheseButtons.tscn`,
+  `GAME_TOOLTIP`) shows them on hover and on focus, and each mineral switch gets one of its own. A grid of four columns, one row per
   mineral: the switch, the name, the least mass slider and what that mass is worth at the day's price
   (`CurrentGame.getMineralMarketPricePerKg`, as the info box prices a chunk, shown as `VALUE_FORMAT`), which follows
   its slider. Under it, the line on the geologist aboard (`_geologistLine()`): with no geologist (`GAME_GEOLOGIST`) in
@@ -121,9 +144,9 @@ game's developers, check that it also happens without the mod.
   mass error comes from the same stat: within ±(1 - the stat) (`hud/MineralMark.gd` `_ready`,
   `CurrentGame.getGeologistAccurancy`). `menu/TabsWithGamepadControl.gd` focuses the switch at the top when the tab is
   chosen. The D-pad's way from there (`_linkFocus()`, set as `hud/SystemMineralList.gd` `adjustFocus` sets the
-  Geologist tab's): down to the first mineral's switch; up and down a column, the switches or the sliders' values, in
-  the rows' order, the first row's leading back up to the switch at the top; left and right between a row's switch and
-  its slider's value (`focus_neighbour_*`). At the ends and the outer sides a control is its own neighbour, so the
+  Geologist tab's): down to the switch for the start of a dive, then to the first mineral's switch; up and down a
+  column, the switches or the sliders' values, in the rows' order, the first row's leading back up to the switch for
+  the start of a dive; left and right between a row's switch and its slider's value (`focus_neighbour_*`). At the ends and the outer sides a control is its own neighbour, so the
   focus never leaves the tab, and once A turns a value into its bar, left and right are the bar's. The values are
   filled in when the tab enters the tree and whenever it shows, only where they differ, so opening it stores nothing;
   the worths and the geologist's line follow the day's prices and the crew each time.
@@ -148,11 +171,13 @@ game's developers, check that it also happens without the mod.
 - **The settings model** (`Settings.gd`, a `Reference`): made from the ship, since the values belong to it, by each
   script that reads them, on first use: the ship's rule (`Code.gd`), the HUD's tab (`OmsScreen.gd`) and the Geologist
   tab (`GeologistTab.gd`). They read and write the same entry, so a change on the tab applies at once, with no
-  signal. `ENABLED`, `MINERAL_SWITCH` and `MIN_MASS` describe the switch at the top, the mineral switches and the
-  sliders (label, which is the tooltip of a mineral's switch and slider; for the switch at the top, its default; for the
-  sliders, default, min, max, step and unit; one description for every mineral). `minerals()` lists the minerals with
-  a row: every mineral of `CurrentGame.mineralPrices`, in the order of the Geologist tab's columns, H2O too.
-  `isEnabled()` / `setEnabled(how)`, `isMineralOn(mineral)` / `setMineralOn(mineral, how)`, whose default
+  signal. `ENABLED`, `ALL_AT_DIVE`, `MINERAL_SWITCH` and `MIN_MASS` describe the switch at the top, the switch for the
+  start of a dive, the mineral switches and the sliders (label, which is the tooltip of a mineral's switch and slider;
+  for the two switches, their default; for the sliders, default, min, max, step and unit; one description for every
+  mineral). `minerals()` lists the minerals with a row: every mineral of `CurrentGame.mineralPrices`, in the order of
+  the Geologist tab's columns, H2O too. `isEnabled()` / `setEnabled(how)`, `isAllAtDive()` / `setAllAtDive(how)`,
+  `diveStarted()` (with `ALL_AT_DIVE` on, every mineral's switch on, each written only on a change),
+  `isMineralOn(mineral)` / `setMineralOn(mineral, how)`, whose default
   (`mineralDefault(mineral)`) is the game's own for a new row (`CurrentGame.traceMinerals`, as `Hud.gd`,
   `DockingArm.gd` and `drone-plant.gd` `_ready` start theirs), `getMinMass(mineral)` / `setMinMass(mineral, kg)`, and
   `massRule()`, the same reads for the rule with the entry read once (above): reading never writes, and gives the
@@ -165,27 +190,30 @@ game's developers, check that it also happens without the mod.
   (`HUD_CONFIG`; `Hud.gd` `_ready`), under the mod's id from `Mod.manifest`, changed in place as `Hud.gd`
   `setMinValue` changes the *Minimum value*. So the game saves, loads and carries them with the ship
   (`CurrentGame.state.ship.config`, written as JSON, so numbers come back as floats). The entry holds `formatVersion`
-  (`FORMAT_VERSION`), `modVersion`, `enabled`, `minMass` (kg by mineral) and `mineralOn` (on or off by mineral), every
-  mineral's written at each change. Format 1 kept each mineral's least mass in `minMass` too; format 2 kept a base for
+  (`FORMAT_VERSION`), `modVersion`, `enabled`, `allAtDive`, `minMass` (kg by mineral) and `mineralOn` (on or off by
+  mineral), every mineral's written at each change. An entry of this format without `allAtDive` reads it as its
+  default, so it needed no new format. Format 1 kept each mineral's least mass in `minMass` too; format 2 kept a base for
   every mineral in `baseMass` and each mineral's extra mass on top of it in `extraMass`: an entry with `extraMass`
   reads each least mass as the base plus the extra, clamped to the slider's range, which keeps every threshold up to
   the slider's most. Neither had `mineralOn`, which reads as the defaults. The next change rewrites the entry in the
   current format. The game reads only its own keys there (`minerals`, `minValue`, `albedo`). A saved key renamed
   without a migration, or a new id, would lose the saved values.
 - Overrides, ordinary functions that fall through to the parent with `.name()`: `isValidMineralTarget(object, config)`
-  in `Code.gd`, `instance()` in `OmsScreen.gd`, `updateSystems(systems)` in `GeologistTab.gd`, which also has a
-  `_process` (Godot runs it at every level, so it doesn't call the parent's). None has a `_ready` of its own.
+  in `Code.gd`, `instance()` in `OmsScreen.gd`, `updateSystems(systems)` in `GeologistTab.gd`. `Code.gd` also has a
+  `_ready` and `GeologistTab.gd` a `_process`: Godot runs those at every level, so neither calls the parent's.
 - Members of `Code.gd`: `GeologyByMass` (preload), `_geologyByMassSettings` and `_geologyByMass()`. Of
   `OmsScreen.gd`: `GeologyByMass` and `_GEOLOGY_BY_MASS_UI` (preloads), `_GEOLOGY_BY_MASS_TAB`,
   `_GEOLOGY_BY_MASS_AFTER`, `_geologyByMassSettings`, `_geologyByMass()` and `_addGeologyByMassTab()`. Of
   `GeologistTab.gd`: `GeologyByMass` (preload), `_GEOLOGY_BY_MASS_VALUE`, `_GEOLOGY_BY_MASS_BAR`,
   `_GEOLOGY_BY_MASS_GAME`, `_geologyByMassSettings`, `_geologyByMassOverridden`, `_geologyByMass()`,
   `_geologyByMassOverride()` and `_geologyByMassControls()`.
-- Stacks with DiveSkipTransit, which extends `ship-ctrl.gd` too (other functions), and with DroneAltPriorities, which
-  extends `Hud.gd` too (another tab) and whose drone plants ask the ship's rule.
+- Stacks with DiveSkipTransit and WeaponMaxPowerSwitch, which extend `ship-ctrl.gd` too (other functions, and no
+  `_ready`), and with DroneAltPriorities, which extends `Hud.gd` too (another tab) and whose drone plants ask the
+  ship's rule.
 - Tested only outside the game, in a headless Godot 3.6 (the `geology` suite of the repository's test harness): the
   rule on ships of the game's `ship-ctrl.gd`, out of the tree, with the HUD's row and an arm's or drone plant's row,
-  compared with the game's own script where the game decides; the tab with the game's `Hud.gd`, `OMS.gd`,
+  compared with the game's own script where the game decides; the start of a dive on such ships, built as `Game.gd`
+  builds the player's, the station's, the simulator's and a teleport's copy; the tab with the game's `Hud.gd`, `OMS.gd`,
   `TabsWithGamepadControl.gd`, `PriceLabel.gd`, `RepeatingHSlider.gd`, `MineralLabel.gd`, `MineralSystemToggle.gd` and
   `PlaySoundsOnTheseButtons.gd`, an OMS built as its scene nests the tabs, and stubs of the ship and of `CurrentGame`,
   with the D-pad's way through the tab and the line on the geologist for every Education level and with morale; the

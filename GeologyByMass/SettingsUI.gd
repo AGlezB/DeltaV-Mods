@@ -1,17 +1,18 @@
 extends Tabs
 
-# GeologyByMass's OMS tab: the switch at the top, a line on what it does, then one row per mineral of the Geologist
-# tab's columns, Water too: its switch, its name, its least mass slider and what that mass is worth at the day's price;
-# at the bottom, a line on the geologist aboard, whose estimates the masses are judged on. Built from that tab's own
-# parts (hud/SystemMineralList.gd): its on/off switches, its mineral names, coloured the same way, and its Minimum value
-# slider, which keeps the game's focus and controller handling (press the value to edit it, left and right to change
-# it, accept or cancel to leave). A `Tabs` node, as every page of the OMS is (hud/OMS.tscn).
+# GeologyByMass's OMS tab: the switch at the top, a line on what it does, the switch that turns every mineral on when a
+# dive starts, then one row per mineral of the Geologist tab's columns, Water too: its switch, its name, its least mass
+# slider and what that mass is worth at the day's price; at the bottom, a line on the geologist aboard, whose estimates
+# the masses are judged on. Built from that tab's own parts (hud/SystemMineralList.gd): its on/off switches, its
+# mineral names, coloured the same way, and its Minimum value slider, which keeps the game's focus and controller
+# handling (press the value to edit it, left and right to change it, accept or cancel to leave). A `Tabs` node, as
+# every page of the OMS is (hud/OMS.tscn).
 #
-# With a gamepad: the D-pad goes down from the switch at the top into the rows, up and down a column (the switches, or
-# the sliders' values), and left and right between a row's switch and its slider's value, and stays in the tab
-# (_linkFocus). Each slider has the game's tooltip node (menu/sfx/PlaySoundsOnTheseButtons.tscn), which shows a
-# control's tooltip when it gets the focus, as on hover, for its bar and its value: the description goes on both. Each
-# mineral switch gets one of its own.
+# With a gamepad: the D-pad goes down from the switch at the top, through the switch for the start of a dive, into the
+# rows, up and down a column (the switches, or the sliders' values), and left and right between a row's switch and its
+# slider's value, and stays in the tab (_linkFocus). Each slider has the game's tooltip node
+# (menu/sfx/PlaySoundsOnTheseButtons.tscn), which shows a control's tooltip when it gets the focus, as on hover, for its
+# bar and its value: the description goes on both. Each mineral switch gets one of its own.
 
 const GeologyByMass = preload("res://GeologyByMass/Settings.gd")
 
@@ -38,6 +39,11 @@ const NO_GEOLOGIST = "GEOLOGYBYMASS_NO_GEOLOGIST"
 # (hud/SystemMineralList.gd modulateDisabled).
 const DIMMED = Color(1, 1, 1, 0.25)
 const MARGIN = 16
+# The gap between the tab's parts (the switch at the top, the line on what it does, the switch for the start of a dive,
+# the rows and the line on the geologist), in px: less than the OMS theme gives (hud/TNTRL-theme-inventory.tres
+# VBoxContainer separation), so that they all fit the OMS's height, the line on the geologist included. The game draws
+# its UI in screen pixels (project.godot sets no stretch mode), so the OMS is shorter in a smaller window.
+const SECTION_SPACING = 12
 # The width of each slider's bar, in px: wider than the game's Minimum value bar (hud/components/PriceLabel.tscn), so
 # each step is easier to hit.
 const SLIDER_WIDTH = 500
@@ -54,6 +60,8 @@ const STAT_FORMAT = "%s: %s"
 
 var _settings
 var _toggle
+var _allAtDive
+var _allAtDiveRow
 var _grid
 var _switches = {} # by mineral
 var _sliders = {} # by mineral
@@ -70,6 +78,7 @@ func setup(settings):
 		margin.add_constant_override("margin_" + side, MARGIN)
 	add_child(margin)
 	var box = VBoxContainer.new()
+	box.add_constant_override("separation", SECTION_SPACING)
 	margin.add_child(box)
 
 	var header = HBoxContainer.new()
@@ -88,6 +97,18 @@ func setup(settings):
 	hint.text = HINT
 	hint.autowrap = true
 	box.add_child(hint)
+
+	_allAtDiveRow = HBoxContainer.new()
+	_allAtDiveRow.add_constant_override("separation", TOGGLE_SPACING)
+	box.add_child(_allAtDiveRow)
+	_allAtDive = load(GAME_TOGGLE).instance()
+	_allAtDive.pressed = settings.isAllAtDive()
+	_allAtDive.connect("toggled", self, "_onAllAtDiveToggled")
+	_allAtDiveRow.add_child(_allAtDive)
+	var allAtDiveLabel = Label.new()
+	allAtDiveLabel.text = GeologyByMass.ALL_AT_DIVE.label
+	allAtDiveLabel.size_flags_vertical = SIZE_SHRINK_CENTER
+	_allAtDiveRow.add_child(allAtDiveLabel)
 
 	_grid = GridContainer.new()
 	_grid.columns = 4
@@ -126,21 +147,23 @@ func setup(settings):
 	connect("visibility_changed", self, "_refresh")
 
 # The D-pad's way through the tab, set as the Geologist tab sets its own (hud/SystemMineralList.gd adjustFocus): down
-# from the switch at the top to the first mineral's switch; up and down a column, the switches or the sliders' values,
-# in the rows' order, the first row's leading back up to the switch at the top; left and right between a row's switch
-# and its slider's value. At the ends and the outer sides it stays where it is, so it never leaves the tab for the rest
-# of the OMS; left and right are the value's once A has turned it into the bar.
+# from the switch at the top to the switch for the start of a dive, then to the first mineral's switch; up and down a
+# column, the switches or the sliders' values, in the rows' order, the first row's leading back up to the switch for
+# the start of a dive; left and right between a row's switch and its slider's value. At the ends and the outer sides it
+# stays where it is, so it never leaves the tab for the rest of the OMS; left and right are the value's once A has
+# turned it into the bar.
 func _linkFocus():
 	var switches = []
 	var values = []
 	for mineral in _settings.minerals():
 		switches.append(_switches[mineral])
 		values.append(_sliders[mineral].get_node(GAME_SLIDER_VALUE))
-	_link(_toggle, _toggle, switches[0], _toggle, _toggle)
+	_link(_toggle, _toggle, _allAtDive, _toggle, _toggle)
+	_link(_allAtDive, _toggle, switches[0], _allAtDive, _allAtDive)
 	for i in switches.size():
 		var last = min(i + 1, switches.size() - 1)
-		_link(switches[i], _toggle if i == 0 else switches[i - 1], switches[last], switches[i], values[i])
-		_link(values[i], _toggle if i == 0 else values[i - 1], values[last], switches[i], values[i])
+		_link(switches[i], _allAtDive if i == 0 else switches[i - 1], switches[last], switches[i], values[i])
+		_link(values[i], _allAtDive if i == 0 else values[i - 1], values[last], switches[i], values[i])
 
 func _link(node, top, bottom, left, right):
 	node.focus_neighbour_top = node.get_path_to(top)
@@ -172,6 +195,9 @@ func _refresh():
 	if _settings == null or not is_inside_tree():
 		return
 	_toggle.pressed = _settings.isEnabled()
+	var allAtDive = _settings.isAllAtDive()
+	if _allAtDive.pressed != allAtDive:
+		_allAtDive.pressed = allAtDive
 	for mineral in _sliders:
 		var on = _settings.isMineralOn(mineral)
 		if _switches[mineral].pressed != on:
@@ -205,11 +231,16 @@ func _geologistLine() -> String:
 	return STAT_FORMAT % [tr(GAME_PREDICTION), PREDICTION_FORMAT % (100 * accuracy)]
 
 func _dim():
-	_grid.modulate = Color.white if _settings.isEnabled() else DIMMED
+	var shade = Color.white if _settings.isEnabled() else DIMMED
+	_allAtDiveRow.modulate = shade
+	_grid.modulate = shade
 
 func _onEnabledToggled(how):
 	_settings.setEnabled(how)
 	_dim()
+
+func _onAllAtDiveToggled(how):
+	_settings.setAllAtDive(how)
 
 func _onMineralToggled(how, mineral):
 	_settings.setMineralOn(mineral, how)
